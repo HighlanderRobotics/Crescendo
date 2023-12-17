@@ -57,42 +57,14 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final StatusSignal<Double> turnAppliedVolts;
   private final StatusSignal<Double> turnCurrent;
 
-  // Gear ratios for SDS MK4i L2, adjust as necessary
-  private final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (17.0 / 27.0) * (45.0 / 15.0);
-  private final double TURN_GEAR_RATIO = 150.0 / 7.0;
-
   private final boolean isTurnMotorInverted = true;
-  private final Rotation2d absoluteEncoderOffset;
+  private final Rotation2d cancoderOffset;
 
-  public ModuleIOTalonFX(int index) {
-    switch (index) {
-      case 0:
-        driveTalon = new TalonFX(0);
-        turnTalon = new TalonFX(1);
-        cancoder = new CANcoder(2);
-        absoluteEncoderOffset = new Rotation2d(0.0); // MUST BE CALIBRATED
-        break;
-      case 1:
-        driveTalon = new TalonFX(3);
-        turnTalon = new TalonFX(4);
-        cancoder = new CANcoder(5);
-        absoluteEncoderOffset = new Rotation2d(0.0); // MUST BE CALIBRATED
-        break;
-      case 2:
-        driveTalon = new TalonFX(6);
-        turnTalon = new TalonFX(7);
-        cancoder = new CANcoder(8);
-        absoluteEncoderOffset = new Rotation2d(0.0); // MUST BE CALIBRATED
-        break;
-      case 3:
-        driveTalon = new TalonFX(9);
-        turnTalon = new TalonFX(10);
-        cancoder = new CANcoder(11);
-        absoluteEncoderOffset = new Rotation2d(0.0); // MUST BE CALIBRATED
-        break;
-      default:
-        throw new RuntimeException("Invalid module index");
-    }
+  public ModuleIOTalonFX(int driveID, int steerID, int cancoderID, Rotation2d cancoderOffset) {
+    driveTalon = new TalonFX(driveID);
+    turnTalon = new TalonFX(steerID);
+    cancoder = new CANcoder(cancoderID);
+    this.cancoderOffset = cancoderOffset;
 
     var driveConfig = new TalonFXConfiguration();
     driveConfig.CurrentLimits.StatorCurrentLimit = 40.0;
@@ -152,29 +124,29 @@ public class ModuleIOTalonFX implements ModuleIO {
         turnCurrent);
 
     inputs.drivePositionRad =
-        Units.rotationsToRadians(drivePosition.getValueAsDouble()) / DRIVE_GEAR_RATIO;
+        Units.rotationsToRadians(drivePosition.getValueAsDouble()) / Module.DRIVE_GEAR_RATIO;
     inputs.driveVelocityRadPerSec =
-        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / DRIVE_GEAR_RATIO;
+        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / Module.DRIVE_GEAR_RATIO;
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 
     inputs.turnAbsolutePosition =
         Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble())
-            .minus(absoluteEncoderOffset);
+            .minus(cancoderOffset);
     inputs.turnPosition =
-        Rotation2d.fromRotations(turnPosition.getValueAsDouble() / TURN_GEAR_RATIO);
+        Rotation2d.fromRotations(turnPosition.getValueAsDouble() / Module.TURN_GEAR_RATIO);
     inputs.turnVelocityRadPerSec =
-        Units.rotationsToRadians(turnVelocity.getValueAsDouble()) / TURN_GEAR_RATIO;
+        Units.rotationsToRadians(turnVelocity.getValueAsDouble()) / Module.TURN_GEAR_RATIO;
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
     inputs.odometryDrivePositionsRad =
         drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value) / DRIVE_GEAR_RATIO)
+            .mapToDouble((Double value) -> Units.rotationsToRadians(value) / Module.DRIVE_GEAR_RATIO)
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
-            .map((Double value) -> Rotation2d.fromRotations(value / TURN_GEAR_RATIO))
+            .map((Double value) -> Rotation2d.fromRotations(value / Module.TURN_GEAR_RATIO))
             .toArray(Rotation2d[]::new);
     drivePositionQueue.clear();
     turnPositionQueue.clear();

@@ -20,17 +20,20 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Robot;
-import frc.robot.subsystems.swerve.ModuleIOInputsAutoLogged;
 
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
-  private static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
+  public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
   public static final double ODOMETRY_FREQUENCY = 250.0;
+
+  // Gear ratios for SDS MK4i L2, adjust as necessary
+  public static final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (17.0 / 27.0) * (45.0 / 15.0);
+  public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
-  private final int index;
+  private final String suffix;
 
   private final SimpleMotorFeedforward driveFeedforward;
   private final PIDController driveFeedback;
@@ -41,9 +44,9 @@ public class Module {
   private double lastPositionMeters = 0.0; // Used for delta calculation
   private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
 
-  public Module(ModuleIO io, int index) {
+  public Module(ModuleIO io, String suffix) {
     this.io = io;
-    this.index = index;
+    this.suffix = suffix;
 
     // Switch constants based on mode (the physics simulator is treated as a
     // separate robot with different tuning)
@@ -79,7 +82,7 @@ public class Module {
   }
 
   public void periodic() {
-    Logger.processInputs("Drive/Module" + Integer.toString(index), inputs);
+    Logger.processInputs("Drive/Module" + suffix, inputs);
 
     // On first cycle, reset relative turn encoder
     // Wait until absolute angle is nonzero in case it wasn't initialized yet
