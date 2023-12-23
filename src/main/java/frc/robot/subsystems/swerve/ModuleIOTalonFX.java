@@ -40,6 +40,8 @@ import java.util.Queue;
  * "/Drive/ModuleX/TurnAbsolutePositionRad"
  */
 public class ModuleIOTalonFX implements ModuleIO {
+  private static final boolean IS_TURN_MOTOR_INVERTED = true;
+  
   private final TalonFX driveTalon;
   private final TalonFX turnTalon;
   private final CANcoder cancoder;
@@ -57,7 +59,6 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final StatusSignal<Double> turnAppliedVolts;
   private final StatusSignal<Double> turnCurrent;
 
-  private final boolean isTurnMotorInverted = true;
   private final Rotation2d cancoderOffset;
 
   public ModuleIOTalonFX(int driveID, int steerID, int cancoderID, Rotation2d cancoderOffset) {
@@ -67,16 +68,25 @@ public class ModuleIOTalonFX implements ModuleIO {
     this.cancoderOffset = cancoderOffset;
 
     var driveConfig = new TalonFXConfiguration();
+    // Current limits
     driveConfig.CurrentLimits.StatorCurrentLimit = 40.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    // Inverts
+    driveConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     driveTalon.getConfigurator().apply(driveConfig);
-    setDriveBrakeMode(true);
 
     var turnConfig = new TalonFXConfiguration();
+    // Current limits
     turnConfig.CurrentLimits.StatorCurrentLimit = 30.0;
     turnConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    // Inverts
+    turnConfig.MotorOutput.Inverted =
+        IS_TURN_MOTOR_INVERTED
+            ? InvertedValue.Clockwise_Positive
+            : InvertedValue.CounterClockwise_Positive;
+    turnConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     turnTalon.getConfigurator().apply(turnConfig);
-    setTurnBrakeMode(true);
 
     cancoder.getConfigurator().apply(new CANcoderConfiguration());
 
@@ -131,8 +141,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 
     inputs.turnAbsolutePosition =
-        Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble())
-            .minus(cancoderOffset);
+        Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble()).minus(cancoderOffset);
     inputs.turnPosition =
         Rotation2d.fromRotations(turnPosition.getValueAsDouble() / Module.TURN_GEAR_RATIO);
     inputs.turnVelocityRadPerSec =
@@ -142,7 +151,8 @@ public class ModuleIOTalonFX implements ModuleIO {
 
     inputs.odometryDrivePositionsRad =
         drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value) / Module.DRIVE_GEAR_RATIO)
+            .mapToDouble(
+                (Double value) -> Units.rotationsToRadians(value) / Module.DRIVE_GEAR_RATIO)
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
@@ -160,24 +170,5 @@ public class ModuleIOTalonFX implements ModuleIO {
   @Override
   public void setTurnVoltage(double volts) {
     turnTalon.setControl(new VoltageOut(volts));
-  }
-
-  @Override
-  public void setDriveBrakeMode(boolean enable) {
-    var config = new MotorOutputConfigs();
-    config.Inverted = InvertedValue.CounterClockwise_Positive;
-    config.NeutralMode = enable ? NeutralModeValue.Brake : NeutralModeValue.Coast;
-    driveTalon.getConfigurator().apply(config);
-  }
-
-  @Override
-  public void setTurnBrakeMode(boolean enable) {
-    var config = new MotorOutputConfigs();
-    config.Inverted =
-        isTurnMotorInverted
-            ? InvertedValue.Clockwise_Positive
-            : InvertedValue.CounterClockwise_Positive;
-    config.NeutralMode = enable ? NeutralModeValue.Brake : NeutralModeValue.Coast;
-    turnTalon.getConfigurator().apply(config);
   }
 }

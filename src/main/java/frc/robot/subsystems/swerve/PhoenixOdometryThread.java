@@ -94,13 +94,13 @@ public class PhoenixOdometryThread extends Thread {
       }
 
       // Save new data to queues
-      Swerve.odometryLock.lock();
+      SwerveSubsystem.odometryLock.lock();
       try {
         for (int i = 0; i < signals.length; i++) {
           queues.get(i).offer(signals[i].getValueAsDouble());
         }
       } finally {
-        Swerve.odometryLock.unlock();
+        SwerveSubsystem.odometryLock.unlock();
       }
     }
   }

@@ -23,19 +23,44 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Swerve extends SubsystemBase {
-  private static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
-  private static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
-  private static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
-  private static final double DRIVE_BASE_RADIUS =
+public class SwerveSubsystem extends SubsystemBase {
+  // Drivebase constants
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
+  public static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
+  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
+  public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
-  private static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  // Hardware constants
+  public static final int PigeonID = 0;
+  // FL
+  public static final int flDriveID = 0;
+  public static final int flTurnID = 1;
+  public static final int flCancoderID = 0;
+  public static final Rotation2d flCancoderOffset = Rotation2d.fromRotations(0.0);
+  // FR
+  public static final int frDriveID = 2;
+  public static final int frTurnID = 3;
+  public static final int frCancoderID = 1;
+  public static final Rotation2d frCancoderOffset = Rotation2d.fromRotations(0.0);
+  // BL
+  public static final int blDriveID = 4;
+  public static final int blTurnID = 5;
+  public static final int blCancoderID = 2;
+  public static final Rotation2d blCancoderOffset = Rotation2d.fromRotations(0.0);
+  // BR
+  public static final int brDriveID = 6;
+  public static final int brTurnID = 7;
+  public static final int brCancoderID = 3;
+  public static final Rotation2d brCancoderOffset = Rotation2d.fromRotations(0.0);
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -46,9 +71,7 @@ public class Swerve extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
 
-  public Swerve(
-      GyroIO gyroIO,
-      ModuleIO... moduleIOs) {
+  public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
     modules = new Module[moduleIOs.length];
     for (int i = 0; i < moduleIOs.length; i++) {
@@ -114,47 +137,60 @@ public class Swerve extends SubsystemBase {
    *
    * @param speeds Speeds in meters/sec
    */
-  public void runVelocity(ChassisSpeeds speeds) {
-    // Calculate module setpoints
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
-    SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+  public Command runVelocity(Supplier<ChassisSpeeds> speeds) {
+    return this.run(
+        () -> {
+          // Calculate module setpoints
+          ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds.get(), 0.02);
+          SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
-    // Send setpoints to modules
-    SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      // The module returns the optimized state, useful for logging
-      optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
-    }
+          // Send setpoints to modules
+          SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
+          for (int i = 0; i < 4; i++) {
+            // The module returns the optimized state, useful for logging
+            optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
+          }
 
-    // Log setpoint states
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+          // Log setpoint states
+          Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+          Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+        });
   }
 
   /** Stops the drive. */
-  public void stop() {
-    runVelocity(new ChassisSpeeds());
+  public Command stop() {
+    return runVelocity(() -> new ChassisSpeeds());
+  }
+
+  public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
+    return this.runVelocity(() -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getRotation()));
   }
 
   /**
    * Stops the drive and turns the modules to an X arrangement to resist movement. The modules will
    * return to their normal orientations the next time a nonzero velocity is requested.
    */
-  public void stopWithX() {
-    Rotation2d[] headings = new Rotation2d[4];
-    for (int i = 0; i < 4; i++) {
-      headings[i] = getModuleTranslations()[i].getAngle();
-    }
-    kinematics.resetHeadings(headings);
-    stop();
+  public Command stopWithX() {
+    return this.run(
+        () -> {
+          Rotation2d[] headings = new Rotation2d[4];
+          for (int i = 0; i < 4; i++) {
+            headings[i] = getModuleTranslations()[i].getAngle();
+          }
+          kinematics.resetHeadings(headings);
+          stop();
+        });
   }
 
   /** Runs forwards at the commanded voltage. */
-  public void runCharacterizationVolts(double volts) {
-    for (int i = 0; i < 4; i++) {
-      modules[i].runCharacterization(volts);
-    }
+  public Command runCharacterizationVolts(double volts) {
+    return this.run(
+        () -> {
+          for (int i = 0; i < 4; i++) {
+            modules[i].runCharacterization(volts);
+          }
+        });
   }
 
   /** Returns the average drive velocity in radians/sec. */
@@ -190,16 +226,6 @@ public class Swerve extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
-  }
-
-  /** Returns the maximum linear speed in meters per sec. */
-  public double getMaxLinearSpeedMetersPerSec() {
-    return MAX_LINEAR_SPEED;
-  }
-
-  /** Returns the maximum angular speed in radians per sec. */
-  public double getMaxAngularSpeedRadPerSec() {
-    return MAX_ANGULAR_SPEED;
   }
 
   /** Returns an array of module translations. */

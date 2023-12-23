@@ -4,6 +4,19 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.swerve.GyroIO;
+import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.ModuleIO;
+import frc.robot.subsystems.swerve.ModuleIOSim;
+import frc.robot.subsystems.swerve.ModuleIOTalonFX;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -11,20 +24,45 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-
 public class Robot extends LoggedRobot {
   public static enum RobotMode {
     SIM,
     REPLAY,
     REAL
   }
+
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   private Command autonomousCommand;
+
+  private CommandXboxController controller = new CommandXboxController(0);
+
+  private SwerveSubsystem swerve =
+      new SwerveSubsystem(
+          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
+          mode == RobotMode.REAL
+              ? new ModuleIO[] {
+                new ModuleIOTalonFX(
+                    SwerveSubsystem.flDriveID,
+                    SwerveSubsystem.flTurnID,
+                    SwerveSubsystem.flCancoderID,
+                    SwerveSubsystem.flCancoderOffset),
+                new ModuleIOTalonFX(
+                    SwerveSubsystem.frDriveID,
+                    SwerveSubsystem.frTurnID,
+                    SwerveSubsystem.frCancoderID,
+                    SwerveSubsystem.frCancoderOffset),
+                new ModuleIOTalonFX(
+                    SwerveSubsystem.blDriveID,
+                    SwerveSubsystem.blTurnID,
+                    SwerveSubsystem.blCancoderID,
+                    SwerveSubsystem.blCancoderOffset),
+                new ModuleIOTalonFX(
+                    SwerveSubsystem.brDriveID,
+                    SwerveSubsystem.brTurnID,
+                    SwerveSubsystem.brCancoderID,
+                    SwerveSubsystem.brCancoderOffset)
+              }
+              : new ModuleIO[] {new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim()});
 
   @Override
   public void robotInit() {
@@ -54,16 +92,30 @@ public class Robot extends LoggedRobot {
         break;
       case REPLAY:
         setUseTiming(false); // Run as fast as possible
-        String logPath = LogFileUtil.findReplayLog(); // Pull the replay log from AdvantageScope (or prompt the user)
+        String logPath =
+            LogFileUtil
+                .findReplayLog(); // Pull the replay log from AdvantageScope (or prompt the user)
         Logger.setReplaySource(new WPILOGReader(logPath)); // Read replay log
-        Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim"))); // Save outputs to a new log
+        Logger.addDataReceiver(
+            new WPILOGWriter(
+                LogFileUtil.addPathSuffix(logPath, "_sim"))); // Save outputs to a new log
         break;
       case SIM:
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         break;
     }
 
-    Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may be added.
+    Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may
+    // be added.
+
+    // Default Commands here
+    swerve.setDefaultCommand(
+        swerve.runVelocityFieldRelative(
+            () ->
+                new ChassisSpeeds(
+                    -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
   }
 
   @Override

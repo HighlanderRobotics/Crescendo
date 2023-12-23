@@ -20,7 +20,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Robot;
-
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -70,7 +69,6 @@ public class Module {
     }
 
     turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
-    setBrakeMode(true);
   }
 
   /**
@@ -158,12 +156,6 @@ public class Module {
     // Disable closed loop control for turn and drive
     angleSetpoint = null;
     speedSetpoint = null;
-  }
-
-  /** Sets whether brake mode is enabled. */
-  public void setBrakeMode(boolean enabled) {
-    io.setDriveBrakeMode(enabled);
-    io.setTurnBrakeMode(enabled);
   }
 
   /** Returns the current turn angle of the module. */

@@ -40,12 +40,12 @@ public interface ModuleIO {
   /** Run the drive motor at the specified voltage. */
   public default void setDriveVoltage(double volts) {}
 
+  /** Use onboard PIDF to run the drive motor at the specified speed */
+  public default void setDriveSetpoint(double metersPerSecond) {}
+
   /** Run the turn motor at the specified voltage. */
   public default void setTurnVoltage(double volts) {}
 
-  /** Enable or disable brake mode on the drive motor. */
-  public default void setDriveBrakeMode(boolean enable) {}
-
-  /** Enable or disable brake mode on the turn motor. */
-  public default void setTurnBrakeMode(boolean enable) {}
+  /** Use onboard PIDF to run the turn motor to the specified rotation */
+  public default void setTurnSetpoint(Rotation2d rotation) {}
 }
