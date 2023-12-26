@@ -164,7 +164,8 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
-    return this.runVelocity(() -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getRotation()));
+    return this.runVelocity(
+        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getRotation()));
   }
 
   /**

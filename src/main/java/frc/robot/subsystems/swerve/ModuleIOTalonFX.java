@@ -16,11 +16,11 @@ package frc.robot.subsystems.swerve;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -40,8 +40,9 @@ import java.util.Queue;
  * "/Drive/ModuleX/TurnAbsolutePositionRad"
  */
 public class ModuleIOTalonFX implements ModuleIO {
+  // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = true;
-  
+
   private final TalonFX driveTalon;
   private final TalonFX turnTalon;
   private final CANcoder cancoder;
@@ -69,7 +70,8 @@ public class ModuleIOTalonFX implements ModuleIO {
 
     var driveConfig = new TalonFXConfiguration();
     // Current limits
-    driveConfig.CurrentLimits.StatorCurrentLimit = 40.0;
+    // Do we want to limit supply current?
+    driveConfig.CurrentLimits.StatorCurrentLimit = Module.DRIVE_STATOR_CURRENT_LIMIT;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
@@ -78,7 +80,7 @@ public class ModuleIOTalonFX implements ModuleIO {
 
     var turnConfig = new TalonFXConfiguration();
     // Current limits
-    turnConfig.CurrentLimits.StatorCurrentLimit = 30.0;
+    turnConfig.CurrentLimits.StatorCurrentLimit = Module.TURN_STATOR_CURRENT_LIMIT;
     turnConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
     turnConfig.MotorOutput.Inverted =
@@ -86,9 +88,17 @@ public class ModuleIOTalonFX implements ModuleIO {
             ? InvertedValue.Clockwise_Positive
             : InvertedValue.CounterClockwise_Positive;
     turnConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    // Fused Cancoder
+    turnConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+    turnConfig.Feedback.FeedbackRemoteSensorID = cancoderID;
+    turnConfig.Feedback.RotorToSensorRatio = Module.TURN_GEAR_RATIO;
+    turnConfig.Feedback.SensorToMechanismRatio = 1.0;
+    turnConfig.Feedback.FeedbackRotorOffset = 0.0; // Is this correct? Cancoder config should handle it
     turnTalon.getConfigurator().apply(turnConfig);
 
-    cancoder.getConfigurator().apply(new CANcoderConfiguration());
+    var cancoderConfig = new CANcoderConfiguration();
+    cancoderConfig.MagnetSensor.MagnetOffset = cancoderOffset.getRotations();
+    cancoder.getConfigurator().apply(cancoderConfig);
 
     drivePosition = driveTalon.getPosition();
     drivePositionQueue =

@@ -62,7 +62,9 @@ public class Robot extends LoggedRobot {
                     SwerveSubsystem.brCancoderID,
                     SwerveSubsystem.brCancoderOffset)
               }
-              : new ModuleIO[] {new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim()});
+              : new ModuleIO[] {
+                new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim()
+              });
 
   @Override
   public void robotInit() {
