@@ -147,7 +147,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
           // Send setpoints to modules
           SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
-          for (int i = 0; i < 4; i++) {
+          for (int i = 0; i < modules.length; i++) {
             // The module returns the optimized state, useful for logging
             optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
           }
@@ -176,7 +176,7 @@ public class SwerveSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           Rotation2d[] headings = new Rotation2d[4];
-          for (int i = 0; i < 4; i++) {
+          for (int i = 0; i < modules.length; i++) {
             headings[i] = getModuleTranslations()[i].getAngle();
           }
           kinematics.resetHeadings(headings);
@@ -188,7 +188,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runCharacterizationVolts(double volts) {
     return this.run(
         () -> {
-          for (int i = 0; i < 4; i++) {
+          for (int i = 0; i < modules.length; i++) {
             modules[i].runCharacterization(volts);
           }
         });

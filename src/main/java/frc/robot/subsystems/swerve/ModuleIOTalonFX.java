@@ -17,6 +17,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -37,16 +39,18 @@ import java.util.Queue;
  * <p>To calibrate the absolute encoder offsets, point the modules straight (such that forward
  * motion on the drive motor will propel the robot forward) and copy the reported values from the
  * absolute encoders using AdvantageScope. These values are logged under
- * "/Drive/ModuleX/TurnAbsolutePositionRad"
+ * "/Swerve/ModuleX/TurnAbsolutePositionRad"
  */
 public class ModuleIOTalonFX implements ModuleIO {
   // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = true;
 
+  // Hardware
   private final TalonFX driveTalon;
   private final TalonFX turnTalon;
   private final CANcoder cancoder;
 
+  // Signals
   private final StatusSignal<Double> drivePosition;
   private final Queue<Double> drivePositionQueue;
   private final StatusSignal<Double> driveVelocity;
@@ -60,13 +64,16 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final StatusSignal<Double> turnAppliedVolts;
   private final StatusSignal<Double> turnCurrent;
 
-  private final Rotation2d cancoderOffset;
+  // Control modes
+  private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
+  private final VelocityVoltage drivePIDF = new VelocityVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicExpoVoltage turnMotionMagic = new MotionMagicExpoVoltage(0.0).withEnableFOC(true);
 
   public ModuleIOTalonFX(int driveID, int steerID, int cancoderID, Rotation2d cancoderOffset) {
     driveTalon = new TalonFX(driveID);
     turnTalon = new TalonFX(steerID);
     cancoder = new CANcoder(cancoderID);
-    this.cancoderOffset = cancoderOffset;
 
     var driveConfig = new TalonFXConfiguration();
     // Current limits
@@ -76,17 +83,24 @@ public class ModuleIOTalonFX implements ModuleIO {
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    // Controls Gains
+    driveConfig.Slot0.kV = 5800.0 / 12.0; // Hypothetical based on free speed
+    driveConfig.Slot0.kA = 0.0; // Find using sysid or hand tuning
+    driveConfig.Slot0.kS = 0.0;
+    driveConfig.Slot0.kP = 0.0;
+    driveConfig.Slot0.kD = 0.0;
+    
     driveTalon.getConfigurator().apply(driveConfig);
-
+    
     var turnConfig = new TalonFXConfiguration();
     // Current limits
     turnConfig.CurrentLimits.StatorCurrentLimit = Module.TURN_STATOR_CURRENT_LIMIT;
     turnConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
     turnConfig.MotorOutput.Inverted =
-        IS_TURN_MOTOR_INVERTED
-            ? InvertedValue.Clockwise_Positive
-            : InvertedValue.CounterClockwise_Positive;
+    IS_TURN_MOTOR_INVERTED
+    ? InvertedValue.Clockwise_Positive
+    : InvertedValue.CounterClockwise_Positive;
     turnConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     // Fused Cancoder
     turnConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
@@ -94,6 +108,14 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnConfig.Feedback.RotorToSensorRatio = Module.TURN_GEAR_RATIO;
     turnConfig.Feedback.SensorToMechanismRatio = 1.0;
     turnConfig.Feedback.FeedbackRotorOffset = 0.0; // Is this correct? Cancoder config should handle it
+    // Controls Gains
+    turnConfig.Slot0.kV = 5800.0 / 12.0; // Free speed over voltage, should find empirically
+    turnConfig.Slot0.kA = 0.0; // Find empirically
+    turnConfig.Slot0.kS = 0.0;
+    turnConfig.Slot0.kP = 0.0;
+    turnConfig.Slot0.kD = 0.0;
+    turnConfig.ClosedLoopGeneral.ContinuousWrap = true;
+
     turnTalon.getConfigurator().apply(turnConfig);
 
     var cancoderConfig = new CANcoderConfiguration();
@@ -116,7 +138,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnCurrent = turnTalon.getStatorCurrent();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        Module.ODOMETRY_FREQUENCY, drivePosition, turnPosition);
+        Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
         driveVelocity,
@@ -128,6 +150,7 @@ public class ModuleIOTalonFX implements ModuleIO {
         turnCurrent);
     driveTalon.optimizeBusUtilization();
     turnTalon.optimizeBusUtilization();
+    cancoder.optimizeBusUtilization();
   }
 
   @Override
@@ -151,7 +174,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 
     inputs.turnAbsolutePosition =
-        Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble()).minus(cancoderOffset);
+        Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
     inputs.turnPosition =
         Rotation2d.fromRotations(turnPosition.getValueAsDouble() / Module.TURN_GEAR_RATIO);
     inputs.turnVelocityRadPerSec =
@@ -166,7 +189,7 @@ public class ModuleIOTalonFX implements ModuleIO {
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
-            .map((Double value) -> Rotation2d.fromRotations(value / Module.TURN_GEAR_RATIO))
+            .map((Double value) -> Rotation2d.fromRotations(value)) // should be after offset + gear ratio
             .toArray(Rotation2d[]::new);
     drivePositionQueue.clear();
     turnPositionQueue.clear();
@@ -174,11 +197,21 @@ public class ModuleIOTalonFX implements ModuleIO {
 
   @Override
   public void setDriveVoltage(double volts) {
-    driveTalon.setControl(new VoltageOut(volts));
+    driveTalon.setControl(driveVoltage.withOutput(volts));
   }
 
   @Override
   public void setTurnVoltage(double volts) {
-    turnTalon.setControl(new VoltageOut(volts));
+    turnTalon.setControl(turnVoltage.withOutput(volts));
+  }
+
+  @Override
+  public void setDriveSetpoint(double metersPerSecond) {
+    driveTalon.setControl(drivePIDF.withVelocity(metersPerSecond));
+  }
+
+  @Override
+  public void setTurnSetpoint(Rotation2d rotation) {
+    turnTalon.setControl(turnMotionMagic.withPosition(rotation.getRotations()));
   }
 }

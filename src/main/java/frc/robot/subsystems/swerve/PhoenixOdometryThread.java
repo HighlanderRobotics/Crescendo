@@ -14,6 +14,7 @@
 package frc.robot.subsystems.swerve;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.unmanaged.Unmanaged;
@@ -55,7 +56,7 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   public Queue<Double> registerSignal(ParentDevice device, StatusSignal<Double> signal) {
-    isCANFD = Unmanaged.isNetworkFD(device.getNetwork());
+    isCANFD = CANBus.isNetworkFD(device.getNetwork());
     Queue<Double> queue = new ArrayBlockingQueue<>(100);
     signalsLock.lock();
     try {
@@ -78,13 +79,13 @@ public class PhoenixOdometryThread extends Thread {
       signalsLock.lock();
       try {
         if (isCANFD && signals.length > 0) {
-          BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY, signals);
+          BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals);
         } else {
           // "waitForAll" does not support blocking on multiple
           // signals with a bus that is not CAN FD, regardless
           // of Pro licensing. No reasoning for this behavior
           // is provided by the documentation.
-          Thread.sleep((long) (1000.0 / Module.ODOMETRY_FREQUENCY));
+          Thread.sleep((long) (1000.0 / Module.ODOMETRY_FREQUENCY_HZ));
           BaseStatusSignal.refreshAll(signals);
         }
       } catch (InterruptedException e) {
