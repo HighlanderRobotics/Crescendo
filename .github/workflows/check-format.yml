@@ -1,6 +1,6 @@
 # This is a basic workflow to check robot code formatting using spotless.
 
-name: CI
+name: Format
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the main branch.
