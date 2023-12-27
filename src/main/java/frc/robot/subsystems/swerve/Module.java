@@ -20,8 +20,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Robot;
-import frc.robot.subsystems.swerve.ModuleIOInputsAutoLogged;
-
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
