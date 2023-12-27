@@ -88,7 +88,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     driveConfig.Feedback.SensorToMechanismRatio = (1.0 / Module.DRIVE_GEAR_RATIO) * Module.WHEEL_RADIUS * 2 * Math.PI;
     // Controls Gains
     driveConfig.Slot0.kV = (5800.0 * (1.0 / Module.DRIVE_GEAR_RATIO) * Module.WHEEL_RADIUS * 2 * Math.PI) / 12.0; // Hypothetical based on free speed
-    driveConfig.Slot0.kA = 0.0; // Find using sysid or hand tuning
+    driveConfig.Slot0.kA = 0.0; // TODO: Find using sysid or hand tuning
     driveConfig.Slot0.kS = 0.0;
     driveConfig.Slot0.kP = 0.0;
     driveConfig.Slot0.kD = 0.0;
@@ -113,8 +113,11 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnConfig.Feedback.FeedbackRotorOffset = 0.0; // Is this correct? Cancoder config should handle it
     // Controls Gains
     turnConfig.Slot0.kV = (5800.0 / Module.TURN_GEAR_RATIO) / 12.0; // Free speed over voltage, should find empirically
-    turnConfig.Slot0.kA = 0.0; // Find empirically
-    turnConfig.Slot0.kS = 0.0;
+    turnConfig.Slot0.kA = Module.TURN_GEAR_RATIO * (9.37 / 483.0) / (0.004 * (12.0 / 483.0)); // Based on motor dynamics math, should find in real life
+    // gearing * Kt (torque per amp) / (intertia * resistance (nominal voltage / stall current))
+    // Yeah its messy and should be found using sysid later but its worth trying as a first guess
+    // If this works we can use a similar technique on future mechanisms
+    turnConfig.Slot0.kS = 0.0; // TODO: Find empirically
     turnConfig.Slot0.kP = 0.0;
     turnConfig.Slot0.kD = 0.0;
     turnConfig.ClosedLoopGeneral.ContinuousWrap = true;
