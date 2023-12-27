@@ -17,7 +17,6 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
-import com.ctre.phoenix6.unmanaged.Unmanaged;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;

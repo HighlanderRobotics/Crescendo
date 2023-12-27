@@ -56,10 +56,10 @@ public class Module {
 
     // Calculate position deltas for odometry
     int deltaCount =
-        Math.min(inputs.odometryDrivePositionsRad.length, inputs.odometryTurnPositions.length);
+        Math.min(inputs.odometryDrivePositionsMeters.length, inputs.odometryTurnPositions.length);
     positionDeltas = new SwerveModulePosition[deltaCount];
     for (int i = 0; i < deltaCount; i++) {
-      double positionMeters = inputs.odometryDrivePositionsRad[i] * WHEEL_RADIUS;
+      double positionMeters = inputs.odometryDrivePositionsMeters[i];
       Rotation2d angle =
           inputs.odometryTurnPositions[i];
       positionDeltas[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
@@ -75,10 +75,6 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(optimizedState.speedMetersPerSecond);
 
-    Logger.recordOutput("Swerve/Module" + suffix + " Angle Setpoint", optimizedState.angle);
-    Logger.recordOutput("Swerve/Module" + suffix + " Velocity", optimizedState.speedMetersPerSecond);
-    Logger.recordOutput("Swerve/Module" + suffix + " Voltage", 0.0); // Closed loop, so we dont directly set voltage
-
     return optimizedState;
   }
 
@@ -89,20 +85,12 @@ public class Module {
 
     // Open loop drive control
     io.setDriveVoltage(volts);
-
-    Logger.recordOutput("Swerve/Module" + suffix + " Angle Setpoint", 0.0);
-    Logger.recordOutput("Swerve/Module" + suffix + " Velocity", 0.0); // Open loop, so we dont directly set velocity
-    Logger.recordOutput("Swerve/Module" + suffix + " Voltage", volts);
   }
 
   /** Disables all outputs to motors. */
   public void stop() {
     io.setTurnVoltage(0.0);
     io.setDriveVoltage(0.0);
-
-    Logger.recordOutput("Swerve/Module" + suffix + " Angle Setpoint", 0.0);
-    Logger.recordOutput("Swerve/Module" + suffix + " Velocity", 0.0);
-    Logger.recordOutput("Swerve/Module" + suffix + " Voltage", 0.0);
   }
 
   /** Returns the current turn angle of the module. */
@@ -112,12 +100,12 @@ public class Module {
 
   /** Returns the current drive position of the module in meters. */
   public double getPositionMeters() {
-    return inputs.drivePositionRad * WHEEL_RADIUS;
+    return inputs.drivePositionMeters;
   }
 
   /** Returns the current drive velocity of the module in meters per second. */
   public double getVelocityMetersPerSec() {
-    return inputs.driveVelocityRadPerSec * WHEEL_RADIUS;
+    return inputs.driveVelocityMetersPerSec;
   }
 
   /** Returns the module position (turn angle and drive position). */
@@ -135,8 +123,8 @@ public class Module {
     return positionDeltas;
   }
 
-  /** Returns the drive velocity in radians/sec. */
+  /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
-    return inputs.driveVelocityRadPerSec;
+    return inputs.driveVelocityMetersPerSec;
   }
 }

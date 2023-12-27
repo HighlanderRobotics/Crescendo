@@ -83,8 +83,11 @@ public class ModuleIOTalonFX implements ModuleIO {
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    // Sensor
+    // Meters per second
+    driveConfig.Feedback.SensorToMechanismRatio = (1.0 / Module.DRIVE_GEAR_RATIO) * Module.WHEEL_RADIUS * 2 * Math.PI;
     // Controls Gains
-    driveConfig.Slot0.kV = 5800.0 / 12.0; // Hypothetical based on free speed
+    driveConfig.Slot0.kV = (5800.0 * (1.0 / Module.DRIVE_GEAR_RATIO) * Module.WHEEL_RADIUS * 2 * Math.PI) / 12.0; // Hypothetical based on free speed
     driveConfig.Slot0.kA = 0.0; // Find using sysid or hand tuning
     driveConfig.Slot0.kS = 0.0;
     driveConfig.Slot0.kP = 0.0;
@@ -109,7 +112,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnConfig.Feedback.SensorToMechanismRatio = 1.0;
     turnConfig.Feedback.FeedbackRotorOffset = 0.0; // Is this correct? Cancoder config should handle it
     // Controls Gains
-    turnConfig.Slot0.kV = 5800.0 / 12.0; // Free speed over voltage, should find empirically
+    turnConfig.Slot0.kV = (5800.0 / Module.TURN_GEAR_RATIO) / 12.0; // Free speed over voltage, should find empirically
     turnConfig.Slot0.kA = 0.0; // Find empirically
     turnConfig.Slot0.kS = 0.0;
     turnConfig.Slot0.kP = 0.0;
@@ -166,26 +169,26 @@ public class ModuleIOTalonFX implements ModuleIO {
         turnAppliedVolts,
         turnCurrent);
 
-    inputs.drivePositionRad =
-        Units.rotationsToRadians(drivePosition.getValueAsDouble()) / Module.DRIVE_GEAR_RATIO;
-    inputs.driveVelocityRadPerSec =
-        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / Module.DRIVE_GEAR_RATIO;
+    inputs.drivePositionMeters =
+        Units.rotationsToRadians(drivePosition.getValueAsDouble());
+    inputs.driveVelocityMetersPerSec =
+        Units.rotationsToRadians(driveVelocity.getValueAsDouble());
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 
     inputs.turnAbsolutePosition =
         Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
     inputs.turnPosition =
-        Rotation2d.fromRotations(turnPosition.getValueAsDouble() / Module.TURN_GEAR_RATIO);
+        Rotation2d.fromRotations(turnPosition.getValueAsDouble());
     inputs.turnVelocityRadPerSec =
-        Units.rotationsToRadians(turnVelocity.getValueAsDouble()) / Module.TURN_GEAR_RATIO;
+        Units.rotationsToRadians(turnVelocity.getValueAsDouble());
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
-    inputs.odometryDrivePositionsRad =
+    inputs.odometryDrivePositionsMeters =
         drivePositionQueue.stream()
             .mapToDouble(
-                (Double value) -> Units.rotationsToRadians(value) / Module.DRIVE_GEAR_RATIO)
+                (Double value) -> Units.rotationsToRadians(value))
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
