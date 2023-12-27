@@ -78,11 +78,15 @@ public class ModuleIOSim implements ModuleIO {
 
   @Override
   public void setDriveSetpoint(double metersPerSecond) {
-    setDriveVoltage(driveFeedforward.calculate(metersPerSecond) + driveController.calculate(driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS, metersPerSecond));
+    setDriveVoltage(
+        driveFeedforward.calculate(metersPerSecond)
+            + driveController.calculate(
+                driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS, metersPerSecond));
   }
 
   @Override
   public void setTurnSetpoint(Rotation2d rotation) {
-    setTurnVoltage(turnController.calculate(turnSim.getAngularPositionRotations(), rotation.getRotations()));
+    setTurnVoltage(
+        turnController.calculate(turnSim.getAngularPositionRotations(), rotation.getRotations()));
   }
 }
