@@ -13,6 +13,10 @@
 
 package frc.robot.subsystems.swerve;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -21,10 +25,13 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Vision.VisionIO;
+import frc.robot.subsystems.Vision.VisionIO.VisionIOInputs;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -71,12 +78,29 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
 
-  public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
+  private final VisionIO visionIO;
+  //private final VisionIOInputsAutoLogged visionInputs = new VisionIOInputsAutoLogged();
+  private AprilTagFieldLayout tagFieldLayout;
+  public SwerveDrivePoseEstimator estimator;
+  Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
+  Vector<N3> visStdDevs = VecBuilder.fill(1.3, 1.3, 3.3);
+
+  public SwerveSubsystem(GyroIO gyroIO, VisionIO visionIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
     modules = new Module[moduleIOs.length];
     for (int i = 0; i < moduleIOs.length; i++) {
       modules[i] = new Module(moduleIOs[i], Integer.toString(i));
     }
+    this.visionIO = visionIO;
+
+    estimator =
+        new SwerveDrivePoseEstimator(
+            kinematics,
+            new Rotation2d(),
+            new SwerveModulePosition[4],
+            new Pose2d(),
+            odoStdDevs,
+            visStdDevs); // TODO check
   }
 
   public void periodic() {
@@ -129,7 +153,83 @@ public class SwerveSubsystem extends SubsystemBase {
       }
       // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
+      // estimator.update(lastGyroRotation, null); //FIXME
     }
+    Logger.recordOutput("Swerve Pose", pose);
+
+    // visionIO.updateInputs(visionInputs, new Pose3d(pose));
+    // Logger.processInputs("Vision", visionInputs);
+    // PhotonPipelineResult result =
+    //     new PhotonPipelineResult(visionInputs.latency, visionInputs.targets);
+    // // result.setTimestampSeconds(visionInputs.timestamp);
+    // try {
+    //   var estPose =
+    //       VisionHelper.update(
+    //               result,
+    //               tagFieldLayout,
+    //               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    //               PoseStrategy.LOWEST_AMBIGUITY)
+    //           .get();
+    //   var visionPose =
+    //       VisionHelper.update(
+    //               result,
+    //               tagFieldLayout,
+    //               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    //               PoseStrategy.LOWEST_AMBIGUITY)
+    //           .get()
+    //           .estimatedPose;
+    //   Logger.recordOutput("Vision Pose", visionPose);
+    //   estimator.addVisionMeasurement(
+    //       visionPose.toPose2d(),
+    //       visionInputs.timestamp,
+    //       VisionHelper.findVisionMeasurements(estPose));
+    // } catch (NoSuchElementException e) {
+    // }
+
+    // From 6995 - untested
+    // try {
+    //   var estPose =
+    //       VisionHelper.update(
+    //               result, tagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    // PoseStrategy.LOWEST_AMBIGUITY)
+    //           .get();
+    // var visionPose =
+    //   VisionHelper.update(
+    //           result, tagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    // PoseStrategy.LOWEST_AMBIGUITY)
+    //       .get()
+    //       .estimatedPose;
+    // Logger.recordOutput("Vision Pose", visionPose);
+    //   VisionMeasurement measurement = new VisionMeasurement(estPose,
+    // VisionHelper.findVisionMeasurements(estPose));
+    //     while (measurement != null) {
+    //         var estimation = measurement.estimation();
+    //         var estimatedPose = estimation.estimatedPose;
+    //         // Check height of final pose for sanity. Robot should never be more than 0.5 m off
+    // the ground.
+    //         if (Math.abs(estimatedPose.getZ()) > 0.5) {
+    //             continue;
+    //         }
+    //         // Skip single-tag measurements with too-high ambiguity.
+    //         if (estimation.targetsUsed.size() < 2
+    //                 &&
+    // estimation.targetsUsed.get(0).getBestCameraToTarget().getTranslation().getNorm() >
+    // Units.feetToMeters(13)) {
+    //             continue;
+    //         }
+    //         estimator.addVisionMeasurement(
+    //                 measurement.estimation().estimatedPose.toPose2d(),
+    //                 measurement.estimation().timestampSeconds,
+    //                 measurement.confidence());
+    //         Logger.recordOutput("Odo + Vision Pose", estimator.getEstimatedPosition());
+    //       }
+    //     } catch (NoSuchElementException e) {
+    //     }
+    Logger.recordOutput(
+        "Kalman Pose",
+        new Pose2d(
+            estimator.getEstimatedPosition().getTranslation(),
+            Rotation2d.fromDegrees(estimator.getEstimatedPosition().getRotation().getDegrees())));
   }
 
   /**
