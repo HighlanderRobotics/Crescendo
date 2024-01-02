@@ -25,6 +25,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -41,26 +43,15 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
   // Hardware constants
   public static final int PigeonID = 0;
-  // FL
-  public static final int flDriveID = 0;
-  public static final int flTurnID = 1;
-  public static final int flCancoderID = 0;
-  public static final Rotation2d flCancoderOffset = Rotation2d.fromRotations(0.0);
-  // FR
-  public static final int frDriveID = 2;
-  public static final int frTurnID = 3;
-  public static final int frCancoderID = 1;
-  public static final Rotation2d frCancoderOffset = Rotation2d.fromRotations(0.0);
-  // BL
-  public static final int blDriveID = 4;
-  public static final int blTurnID = 5;
-  public static final int blCancoderID = 2;
-  public static final Rotation2d blCancoderOffset = Rotation2d.fromRotations(0.0);
-  // BR
-  public static final int brDriveID = 6;
-  public static final int brTurnID = 7;
-  public static final int brCancoderID = 3;
-  public static final Rotation2d brCancoderOffset = Rotation2d.fromRotations(0.0);
+
+  public static final ModuleConstants frontLeft =
+      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.0));
+  public static final ModuleConstants frontRight =
+      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(0.0));
+  public static final ModuleConstants backLeft =
+      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.0));
+  public static final ModuleConstants backRight =
+      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.0));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -75,8 +66,36 @@ public class SwerveSubsystem extends SubsystemBase {
     this.gyroIO = gyroIO;
     modules = new Module[moduleIOs.length];
     for (int i = 0; i < moduleIOs.length; i++) {
-      modules[i] = new Module(moduleIOs[i], Integer.toString(i));
+      modules[i] = new Module(moduleIOs[i]);
     }
+  }
+
+  /**
+   * Constructs an array of swerve module ios corresponding to the real robot.
+   *
+   * @return The array of swerve module ios.
+   */
+  public static ModuleIO[] getTalonFXModules() {
+    return new ModuleIO[] {
+      new ModuleIOTalonFX(frontLeft),
+      new ModuleIOTalonFX(frontRight),
+      new ModuleIOTalonFX(backLeft),
+      new ModuleIOTalonFX(backRight)
+    };
+  }
+
+  /**
+   * Constructs an array of swerve module ios corresponding to a simulated robot.
+   *
+   * @return The array of swerve module ios.
+   */
+  public static ModuleIO[] getSimModules() {
+    return new ModuleIO[] {
+      new ModuleIOSim("FrontLeft"),
+      new ModuleIOSim("FrontRight"),
+      new ModuleIOSim("BackLeft"),
+      new ModuleIOSim("BackRight")
+    };
   }
 
   public void periodic() {
@@ -186,12 +205,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Runs forwards at the commanded voltage. */
   public Command runCharacterizationVolts(double volts) {
-    return this.run(
-        () -> {
-          for (int i = 0; i < modules.length; i++) {
-            modules[i].runCharacterization(volts);
-          }
-        });
+    return this.run(() -> Arrays.stream(modules).forEach((mod) -> mod.runCharacterization(volts)));
   }
 
   /** Returns the average drive velocity in radians/sec. */
@@ -211,6 +225,15 @@ public class SwerveSubsystem extends SubsystemBase {
       states[i] = modules[i].getState();
     }
     return states;
+  }
+
+  @AutoLogOutput(key = "Odometry/Velocity")
+  public ChassisSpeeds getVelocity() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+        kinematics.toChassisSpeeds(
+            (SwerveModuleState[])
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+        getRotation());
   }
 
   /** Returns the current odometry pose. */

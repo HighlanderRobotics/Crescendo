@@ -13,9 +13,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
-import frc.robot.subsystems.swerve.ModuleIO;
-import frc.robot.subsystems.swerve.ModuleIOSim;
-import frc.robot.subsystems.swerve.ModuleIOTalonFX;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -34,37 +31,14 @@ public class Robot extends LoggedRobot {
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   private Command autonomousCommand;
 
-  private CommandXboxController controller = new CommandXboxController(0);
+  private final CommandXboxController controller = new CommandXboxController(0);
 
-  private SwerveSubsystem swerve =
+  private final SwerveSubsystem swerve =
       new SwerveSubsystem(
           mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
           mode == RobotMode.REAL
-              ? new ModuleIO[] {
-                new ModuleIOTalonFX(
-                    SwerveSubsystem.flDriveID,
-                    SwerveSubsystem.flTurnID,
-                    SwerveSubsystem.flCancoderID,
-                    SwerveSubsystem.flCancoderOffset),
-                new ModuleIOTalonFX(
-                    SwerveSubsystem.frDriveID,
-                    SwerveSubsystem.frTurnID,
-                    SwerveSubsystem.frCancoderID,
-                    SwerveSubsystem.frCancoderOffset),
-                new ModuleIOTalonFX(
-                    SwerveSubsystem.blDriveID,
-                    SwerveSubsystem.blTurnID,
-                    SwerveSubsystem.blCancoderID,
-                    SwerveSubsystem.blCancoderOffset),
-                new ModuleIOTalonFX(
-                    SwerveSubsystem.brDriveID,
-                    SwerveSubsystem.brTurnID,
-                    SwerveSubsystem.brCancoderID,
-                    SwerveSubsystem.brCancoderOffset)
-              }
-              : new ModuleIO[] {
-                new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim()
-              });
+              ? SwerveSubsystem.getTalonFXModules()
+              : SwerveSubsystem.getSimModules());
 
   @Override
   public void robotInit() {
