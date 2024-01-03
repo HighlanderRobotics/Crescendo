@@ -195,7 +195,9 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command stopWithX() {
     return this.run(
         () -> {
-          Rotation2d[] headings = (Rotation2d[]) Arrays.stream(getModuleTranslations()).map(Translation2d::getAngle).toArray();
+          Rotation2d[] headings =
+              (Rotation2d[])
+                  Arrays.stream(getModuleTranslations()).map(Translation2d::getAngle).toArray();
           kinematics.resetHeadings(headings);
           stop();
         });
@@ -218,7 +220,8 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states = (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
+    SwerveModuleState[] states =
+        (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
     return states;
   }
 
