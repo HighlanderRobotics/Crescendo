@@ -65,10 +65,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
-    modules = new Module[moduleIOs.length];
-    for (int i = 0; i < moduleIOs.length; i++) {
-      modules[i] = new Module(moduleIOs[i]);
-    }
+    modules = (Module[]) Arrays.stream(moduleIOs).map(Module::new).toArray();
   }
 
   /**
@@ -125,10 +122,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
     // Update odometry
     int deltaCount =
-        gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE;
-    for (int i = 0; i < 4; i++) {
-      deltaCount = Math.min(deltaCount, modules[i].getPositionDeltas().length);
-    }
+        Math.min(
+            gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
+            Arrays.stream(modules)
+                .map((m) -> m.getPositionDeltas().length)
+                .min(Integer::compare)
+                .get());
     for (int deltaIndex = 0; deltaIndex < deltaCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
@@ -196,10 +195,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command stopWithX() {
     return this.run(
         () -> {
-          Rotation2d[] headings = new Rotation2d[4];
-          for (int i = 0; i < modules.length; i++) {
-            headings[i] = getModuleTranslations()[i].getAngle();
-          }
+          Rotation2d[] headings = (Rotation2d[]) Arrays.stream(getModuleTranslations()).map(Translation2d::getAngle).toArray();
           kinematics.resetHeadings(headings);
           stop();
         });
@@ -222,10 +218,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = modules[i].getState();
-    }
+    SwerveModuleState[] states = (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
     return states;
   }
 
