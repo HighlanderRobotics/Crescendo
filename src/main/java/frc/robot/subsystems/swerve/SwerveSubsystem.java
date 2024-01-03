@@ -13,6 +13,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import com.google.common.collect.Streams;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -165,11 +166,12 @@ public class SwerveSubsystem extends SubsystemBase {
           SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
           // Send setpoints to modules
-          SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
-          for (int i = 0; i < modules.length; i++) {
-            // The module returns the optimized state, useful for logging
-            optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
-          }
+          SwerveModuleState[] optimizedSetpointStates =
+              Streams.zip(
+                      Arrays.stream(modules),
+                      Arrays.stream(setpointStates),
+                      (m, s) -> m.runSetpoint(s))
+                  .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
           Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
