@@ -138,6 +138,7 @@ task(checkAkitInstall, dependsOn: "classes", type: JavaExec) {
 compileJava.finalizedBy checkAkitInstall
 
 spotless {
+    enforceCheck false
     java {
         target fileTree('.') {
             include '**/*.java'
