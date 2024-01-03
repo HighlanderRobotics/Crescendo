@@ -84,7 +84,7 @@ public class Module {
   /** Runs the module with the specified voltage while controlling to zero degrees. */
   public void runCharacterization(double volts) {
     // Closed loop turn control
-    io.setTurnSetpoint(new Rotation2d());
+    io.setTurnSetpoint(Rotation2d.fromRotations(0.0));
 
     // Open loop drive control
     io.setDriveVoltage(volts);

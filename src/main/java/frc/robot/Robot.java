@@ -37,8 +37,8 @@ public class Robot extends LoggedRobot {
       new SwerveSubsystem(
           mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
           mode == RobotMode.REAL
-              ? SwerveSubsystem.getTalonFXModules()
-              : SwerveSubsystem.getSimModules());
+              ? SwerveSubsystem.createTalonFXModules()
+              : SwerveSubsystem.createSimModules());
 
   @Override
   public void robotInit() {

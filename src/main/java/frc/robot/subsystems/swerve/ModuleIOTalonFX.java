@@ -199,9 +199,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
     inputs.odometryDrivePositionsMeters =
-        drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value))
-            .toArray();
+        drivePositionQueue.stream().mapToDouble(Units::rotationsToRadians).toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
             .map(Rotation2d::fromRotations) // should be after offset + gear ratio

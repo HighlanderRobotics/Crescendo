@@ -75,7 +75,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The array of swerve module ios.
    */
-  public static ModuleIO[] getTalonFXModules() {
+  public static ModuleIO[] createTalonFXModules() {
     return new ModuleIO[] {
       new ModuleIOTalonFX(frontLeft),
       new ModuleIOTalonFX(frontRight),
@@ -89,7 +89,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The array of swerve module ios.
    */
-  public static ModuleIO[] getSimModules() {
+  public static ModuleIO[] createSimModules() {
     return new ModuleIO[] {
       new ModuleIOSim("FrontLeft"),
       new ModuleIOSim("FrontRight"),
@@ -179,7 +179,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Stops the drive. */
   public Command stop() {
-    return runVelocity(() -> new ChassisSpeeds());
+    return runVelocity(ChassisSpeeds::new);
   }
 
   public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
