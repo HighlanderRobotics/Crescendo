@@ -21,6 +21,8 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
+import com.pathplanner.lib.commands.PathPlannerAuto;
+
 public class Robot extends LoggedRobot {
   public static enum RobotMode {
     SIM,
@@ -115,6 +117,10 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
     }
+  }
+
+  public Command getAutonomousCommand() {
+    return new PathPlannerAuto("New Auto");
   }
 
   @Override

@@ -71,7 +71,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
-    modules = (Module[]) Arrays.stream(moduleIOs).map(Module::new).toArray();
+    modules = new Module[moduleIOs.length];
+    for (int i = 0; i < modules.length; i++) {
+      modules[i] = new Module(moduleIOs[i]);
+    }
 
     AutoBuilder.configureHolonomic(
                 this::getPose, // Robot pose supplier
@@ -243,9 +246,14 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
-  private SwerveModuleState[] getModuleStates() {
+  private SwerveModuleState[] getModuleStates(ModuleIO... moduleIOs) {
+  
     SwerveModuleState[] states =
-        (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
+    new SwerveModuleState[moduleIOs.length];
+    for (int i = 0; i < modules.length; i++) {
+      modules[i] = new Module(moduleIOs[i]);
+    }
+        
     return states;
   }
 
@@ -258,6 +266,7 @@ public class SwerveSubsystem extends SubsystemBase {
         getRotation());
   }
 
+  @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
   public ChassisSpeeds getRobotRelativeSpeeds(){
     return kinematics.toChassisSpeeds(
             (SwerveModuleState[])
