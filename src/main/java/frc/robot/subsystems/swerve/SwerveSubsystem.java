@@ -18,7 +18,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -35,7 +34,6 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -77,18 +75,21 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     AutoBuilder.configureHolonomic(
-                this::getPose, // Robot pose supplier
-                this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
-                this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-                this::consumeChassisSpeeds, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
-                new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
-                        new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
-                        new PIDConstants(5.0, 0.0, 0.0), // Rotation PID constants
-                        4.5, // Max module speed, in m/s
-                        0.4, // Drive base radius in meters. Distance from robot center to furthest module.
-                        new ReplanningConfig() // Default path replanning config. See the API for the options here
-                ),
-                this // Reference to this subsystem to set requirements
+        this::getPose, // Robot pose supplier
+        this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
+        this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+        this::consumeChassisSpeeds, // Method that will drive the robot given ROBOT RELATIVE
+        // ChassisSpeeds
+        new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in
+            // your Constants class
+            new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+            new PIDConstants(5.0, 0.0, 0.0), // Rotation PID constants
+            4.5, // Max module speed, in m/s
+            0.4, // Drive base radius in meters. Distance from robot center to furthest module.
+            new ReplanningConfig() // Default path replanning config. See the API for the options
+            // here
+            ),
+        this // Reference to this subsystem to set requirements
         );
   }
 
@@ -175,23 +176,21 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
-  private void consumeChassisSpeeds(ChassisSpeeds speeds){
+  private void consumeChassisSpeeds(ChassisSpeeds speeds) {
     // Calculate module setpoints
-        ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
-        SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
+    SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
-        // Send setpoints to modules
-        SwerveModuleState[] optimizedSetpointStates =
-            Streams.zip(
-                    Arrays.stream(modules),
-                    Arrays.stream(setpointStates),
-                    (m, s) -> m.runSetpoint(s))
-                .toArray(SwerveModuleState[]::new);
+    // Send setpoints to modules
+    SwerveModuleState[] optimizedSetpointStates =
+        Streams.zip(
+                Arrays.stream(modules), Arrays.stream(setpointStates), (m, s) -> m.runSetpoint(s))
+            .toArray(SwerveModuleState[]::new);
 
-        // Log setpoint states
-        Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-        Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+    // Log setpoint states
+    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
   }
 
   /**
@@ -200,8 +199,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public Command runVelocityCmd(Supplier<ChassisSpeeds> speeds) {
-    return this.run(
-        () -> consumeChassisSpeeds(speeds.get()));
+    return this.run(() -> consumeChassisSpeeds(speeds.get()));
   }
 
   /** Stops the drive. */
@@ -214,7 +212,6 @@ public class SwerveSubsystem extends SubsystemBase {
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getRotation()));
   }
 
- 
   /**
    * Stops the drive and turns the modules to an X arrangement to resist movement. The modules will
    * return to their normal orientations the next time a nonzero velocity is requested.
@@ -248,12 +245,12 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-  
+
     SwerveModuleState[] states = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
       states[i] = modules[i].getState();
     }
-        
+
     return states;
   }
 
@@ -267,10 +264,10 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
-  public ChassisSpeeds getRobotRelativeSpeeds(){
+  public ChassisSpeeds getRobotRelativeSpeeds() {
     return kinematics.toChassisSpeeds(
-            (SwerveModuleState[])
-                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+        (SwerveModuleState[])
+            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
   }
 
   /** Returns the current odometry pose. */
