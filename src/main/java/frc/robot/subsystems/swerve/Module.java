@@ -20,11 +20,17 @@ import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
-  // Constants
+  // Represents per-module constants
+  public record ModuleConstants(
+      String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
+
+  // Global constants
   public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
   public static final double ODOMETRY_FREQUENCY_HZ = 250.0;
 
   // Gear ratios for SDS MK4i L2, adjust as necessary
+  // These numbers are taken from SDS's website
+  // They are the gear tooth counts for each stage of the modules' gearboxes
   public static final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (17.0 / 27.0) * (45.0 / 15.0);
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
@@ -33,14 +39,12 @@ public class Module {
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
-  private final String suffix;
 
   private double lastPositionMeters = 0.0; // Used for delta calculation
   private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
 
-  public Module(ModuleIO io, String suffix) {
+  public Module(final ModuleIO io) {
     this.io = io;
-    this.suffix = suffix;
   }
 
   /**
@@ -52,15 +56,15 @@ public class Module {
   }
 
   public void periodic() {
-    Logger.processInputs("Swerve/Module" + suffix, inputs);
+    Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
 
     // Calculate position deltas for odometry
-    int deltaCount =
+    final int deltaCount =
         Math.min(inputs.odometryDrivePositionsMeters.length, inputs.odometryTurnPositions.length);
     positionDeltas = new SwerveModulePosition[deltaCount];
     for (int i = 0; i < deltaCount; i++) {
-      double positionMeters = inputs.odometryDrivePositionsMeters[i];
-      Rotation2d angle = inputs.odometryTurnPositions[i];
+      final double positionMeters = inputs.odometryDrivePositionsMeters[i];
+      final Rotation2d angle = inputs.odometryTurnPositions[i];
       positionDeltas[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
       lastPositionMeters = positionMeters;
     }
@@ -69,7 +73,7 @@ public class Module {
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
     // Optimize state based on current angle
-    var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
 
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(optimizedState.speedMetersPerSecond);
@@ -80,7 +84,7 @@ public class Module {
   /** Runs the module with the specified voltage while controlling to zero degrees. */
   public void runCharacterization(double volts) {
     // Closed loop turn control
-    io.setTurnSetpoint(new Rotation2d());
+    io.setTurnSetpoint(Rotation2d.fromRotations(0.0));
 
     // Open loop drive control
     io.setDriveVoltage(volts);

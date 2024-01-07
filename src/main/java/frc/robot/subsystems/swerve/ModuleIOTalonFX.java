@@ -27,6 +27,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Queue;
 
 /**
@@ -44,6 +45,8 @@ import java.util.Queue;
 public class ModuleIOTalonFX implements ModuleIO {
   // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = true;
+
+  private final String name;
 
   // Hardware
   private final TalonFX driveTalon;
@@ -71,14 +74,16 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final MotionMagicExpoVoltage turnMotionMagic =
       new MotionMagicExpoVoltage(0.0).withEnableFOC(true);
 
-  public ModuleIOTalonFX(int driveID, int steerID, int cancoderID, Rotation2d cancoderOffset) {
-    driveTalon = new TalonFX(driveID);
-    turnTalon = new TalonFX(steerID);
-    cancoder = new CANcoder(cancoderID);
+  public ModuleIOTalonFX(ModuleConstants constants) {
+    name = constants.prefix();
+
+    driveTalon = new TalonFX(constants.driveID());
+    turnTalon = new TalonFX(constants.turnID());
+    cancoder = new CANcoder(constants.cancoderID());
 
     var driveConfig = new TalonFXConfiguration();
     // Current limits
-    // Do we want to limit supply current?
+    // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.StatorCurrentLimit = Module.DRIVE_STATOR_CURRENT_LIMIT;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
@@ -111,7 +116,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     // Fused Cancoder
     turnConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-    turnConfig.Feedback.FeedbackRemoteSensorID = cancoderID;
+    turnConfig.Feedback.FeedbackRemoteSensorID = constants.cancoderID();
     turnConfig.Feedback.RotorToSensorRatio = Module.TURN_GEAR_RATIO;
     turnConfig.Feedback.SensorToMechanismRatio = 1.0;
     turnConfig.Feedback.FeedbackRotorOffset =
@@ -135,7 +140,7 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnTalon.getConfigurator().apply(turnConfig);
 
     var cancoderConfig = new CANcoderConfiguration();
-    cancoderConfig.MagnetSensor.MagnetOffset = cancoderOffset.getRotations();
+    cancoderConfig.MagnetSensor.MagnetOffset = constants.cancoderOffset().getRotations();
     cancoder.getConfigurator().apply(cancoderConfig);
 
     drivePosition = driveTalon.getPosition();
@@ -194,36 +199,37 @@ public class ModuleIOTalonFX implements ModuleIO {
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
     inputs.odometryDrivePositionsMeters =
-        drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value))
-            .toArray();
+        drivePositionQueue.stream().mapToDouble(Units::rotationsToRadians).toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
-            .map(
-                (Double value) ->
-                    Rotation2d.fromRotations(value)) // should be after offset + gear ratio
+            .map(Rotation2d::fromRotations) // should be after offset + gear ratio
             .toArray(Rotation2d[]::new);
     drivePositionQueue.clear();
     turnPositionQueue.clear();
   }
 
   @Override
-  public void setDriveVoltage(double volts) {
+  public void setDriveVoltage(final double volts) {
     driveTalon.setControl(driveVoltage.withOutput(volts));
   }
 
   @Override
-  public void setTurnVoltage(double volts) {
+  public void setTurnVoltage(final double volts) {
     turnTalon.setControl(turnVoltage.withOutput(volts));
   }
 
   @Override
-  public void setDriveSetpoint(double metersPerSecond) {
+  public void setDriveSetpoint(final double metersPerSecond) {
     driveTalon.setControl(drivePIDF.withVelocity(metersPerSecond));
   }
 
   @Override
-  public void setTurnSetpoint(Rotation2d rotation) {
+  public void setTurnSetpoint(final Rotation2d rotation) {
     turnTalon.setControl(turnMotionMagic.withPosition(rotation.getRotations()));
+  }
+
+  @Override
+  public String getModuleName() {
+    return name;
   }
 }
