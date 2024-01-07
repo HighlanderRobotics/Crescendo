@@ -4,11 +4,16 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.swerve.GyroIO;
+import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -25,6 +30,15 @@ public class Robot extends LoggedRobot {
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   private Command autonomousCommand;
+
+  private final CommandXboxController controller = new CommandXboxController(0);
+
+  private final SwerveSubsystem swerve =
+      new SwerveSubsystem(
+          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
+          mode == RobotMode.REAL
+              ? SwerveSubsystem.createTalonFXModules()
+              : SwerveSubsystem.createSimModules());
 
   @Override
   public void robotInit() {
@@ -69,6 +83,15 @@ public class Robot extends LoggedRobot {
 
     Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may
     // be added.
+
+    // Default Commands here
+    swerve.setDefaultCommand(
+        swerve.runVelocityFieldRelative(
+            () ->
+                new ChassisSpeeds(
+                    -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
   }
 
   @Override

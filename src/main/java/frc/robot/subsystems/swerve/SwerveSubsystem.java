@@ -13,6 +13,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import com.google.common.collect.Streams;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -23,40 +24,76 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Swerve extends SubsystemBase {
-  private static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
-  private static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
-  private static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
-  private static final double DRIVE_BASE_RADIUS =
+public class SwerveSubsystem extends SubsystemBase {
+  // Drivebase constants
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
+  public static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
+  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
+  public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
-  private static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  // Hardware constants
+  public static final int PigeonID = 0;
+
+  public static final ModuleConstants frontLeft =
+      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.0));
+  public static final ModuleConstants frontRight =
+      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(0.0));
+  public static final ModuleConstants backLeft =
+      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.0));
+  public static final ModuleConstants backRight =
+      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.0));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
-  private final Module[] modules = new Module[4]; // FL, FR, BL, BR
+  private final Module[] modules; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
 
-  public Swerve(
-      GyroIO gyroIO,
-      ModuleIO flModuleIO,
-      ModuleIO frModuleIO,
-      ModuleIO blModuleIO,
-      ModuleIO brModuleIO) {
+  public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
-    modules[0] = new Module(flModuleIO, 0);
-    modules[1] = new Module(frModuleIO, 1);
-    modules[2] = new Module(blModuleIO, 2);
-    modules[3] = new Module(brModuleIO, 3);
+    modules = (Module[]) Arrays.stream(moduleIOs).map(Module::new).toArray();
+  }
+
+  /**
+   * Constructs an array of swerve module ios corresponding to the real robot.
+   *
+   * @return The array of swerve module ios.
+   */
+  public static ModuleIO[] createTalonFXModules() {
+    return new ModuleIO[] {
+      new ModuleIOTalonFX(frontLeft),
+      new ModuleIOTalonFX(frontRight),
+      new ModuleIOTalonFX(backLeft),
+      new ModuleIOTalonFX(backRight)
+    };
+  }
+
+  /**
+   * Constructs an array of swerve module ios corresponding to a simulated robot.
+   *
+   * @return The array of swerve module ios.
+   */
+  public static ModuleIO[] createSimModules() {
+    return new ModuleIO[] {
+      new ModuleIOSim("FrontLeft"),
+      new ModuleIOSim("FrontRight"),
+      new ModuleIOSim("BackLeft"),
+      new ModuleIOSim("BackRight")
+    };
   }
 
   public void periodic() {
@@ -66,7 +103,7 @@ public class Swerve extends SubsystemBase {
       module.updateInputs();
     }
     odometryLock.unlock();
-    Logger.processInputs("Drive/Gyro", gyroInputs);
+    Logger.processInputs("Swerve/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
     }
@@ -85,10 +122,12 @@ public class Swerve extends SubsystemBase {
 
     // Update odometry
     int deltaCount =
-        gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE;
-    for (int i = 0; i < 4; i++) {
-      deltaCount = Math.min(deltaCount, modules[i].getPositionDeltas().length);
-    }
+        Math.min(
+            gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
+            Arrays.stream(modules)
+                .map((m) -> m.getPositionDeltas().length)
+                .min(Integer::compare)
+                .get());
     for (int deltaIndex = 0; deltaIndex < deltaCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
@@ -117,47 +156,56 @@ public class Swerve extends SubsystemBase {
    *
    * @param speeds Speeds in meters/sec
    */
-  public void runVelocity(ChassisSpeeds speeds) {
-    // Calculate module setpoints
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
-    SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+  public Command runVelocity(Supplier<ChassisSpeeds> speeds) {
+    return this.run(
+        () -> {
+          // Calculate module setpoints
+          ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds.get(), 0.02);
+          SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
-    // Send setpoints to modules
-    SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      // The module returns the optimized state, useful for logging
-      optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
-    }
+          // Send setpoints to modules
+          SwerveModuleState[] optimizedSetpointStates =
+              Streams.zip(
+                      Arrays.stream(modules),
+                      Arrays.stream(setpointStates),
+                      (m, s) -> m.runSetpoint(s))
+                  .toArray(SwerveModuleState[]::new);
 
-    // Log setpoint states
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+          // Log setpoint states
+          Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+          Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+        });
   }
 
   /** Stops the drive. */
-  public void stop() {
-    runVelocity(new ChassisSpeeds());
+  public Command stop() {
+    return runVelocity(ChassisSpeeds::new);
+  }
+
+  public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
+    return this.runVelocity(
+        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getRotation()));
   }
 
   /**
    * Stops the drive and turns the modules to an X arrangement to resist movement. The modules will
    * return to their normal orientations the next time a nonzero velocity is requested.
    */
-  public void stopWithX() {
-    Rotation2d[] headings = new Rotation2d[4];
-    for (int i = 0; i < 4; i++) {
-      headings[i] = getModuleTranslations()[i].getAngle();
-    }
-    kinematics.resetHeadings(headings);
-    stop();
+  public Command stopWithX() {
+    return this.run(
+        () -> {
+          Rotation2d[] headings =
+              (Rotation2d[])
+                  Arrays.stream(getModuleTranslations()).map(Translation2d::getAngle).toArray();
+          kinematics.resetHeadings(headings);
+          stop();
+        });
   }
 
   /** Runs forwards at the commanded voltage. */
-  public void runCharacterizationVolts(double volts) {
-    for (int i = 0; i < 4; i++) {
-      modules[i].runCharacterization(volts);
-    }
+  public Command runCharacterizationVolts(double volts) {
+    return this.run(() -> Arrays.stream(modules).forEach((mod) -> mod.runCharacterization(volts)));
   }
 
   /** Returns the average drive velocity in radians/sec. */
@@ -172,11 +220,18 @@ public class Swerve extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = modules[i].getState();
-    }
+    SwerveModuleState[] states =
+        (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
     return states;
+  }
+
+  @AutoLogOutput(key = "Odometry/Velocity")
+  public ChassisSpeeds getVelocity() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+        kinematics.toChassisSpeeds(
+            (SwerveModuleState[])
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+        getRotation());
   }
 
   /** Returns the current odometry pose. */
@@ -193,16 +248,6 @@ public class Swerve extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
-  }
-
-  /** Returns the maximum linear speed in meters per sec. */
-  public double getMaxLinearSpeedMetersPerSec() {
-    return MAX_LINEAR_SPEED;
-  }
-
-  /** Returns the maximum angular speed in radians per sec. */
-  public double getMaxAngularSpeedRadPerSec() {
-    return MAX_ANGULAR_SPEED;
   }
 
   /** Returns an array of module translations. */
