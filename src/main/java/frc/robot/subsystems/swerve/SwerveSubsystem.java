@@ -71,6 +71,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
     modules = new Module[moduleIOs.length];
+
     for (int i = 0; i < moduleIOs.length; i++) {
       modules[i] = new Module(moduleIOs[i]);
     }
@@ -261,8 +262,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public ChassisSpeeds getVelocity() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(
         kinematics.toChassisSpeeds(
-            (SwerveModuleState[])
-                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
         getRotation());
   }
 
