@@ -65,7 +65,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
-    modules = (Module[]) Arrays.stream(moduleIOs).map(Module::new).toArray();
+    modules = new Module[moduleIOs.length];
+    for (int i = 0; i < modules.length; i++) {
+      modules[i] = new Module(moduleIOs[i]);
+    }
   }
 
   /**
@@ -220,8 +223,11 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states =
-        (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
+    SwerveModuleState[] states = new SwerveModuleState[4];
+    for (int i = 0; i < 4; i++) {
+      states[i] = modules[i].getState();
+    }
+
     return states;
   }
 
@@ -229,7 +235,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public ChassisSpeeds getVelocity() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(
         kinematics.toChassisSpeeds(
-            (SwerveModuleState[])
                 Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
         getRotation());
   }
