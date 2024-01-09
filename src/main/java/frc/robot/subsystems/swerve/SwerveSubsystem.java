@@ -235,7 +235,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public ChassisSpeeds getVelocity() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(
         kinematics.toChassisSpeeds(
-                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
         getRotation());
   }
 
