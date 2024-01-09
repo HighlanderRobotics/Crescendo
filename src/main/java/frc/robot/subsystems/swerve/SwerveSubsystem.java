@@ -92,7 +92,8 @@ public class SwerveSubsystem extends SubsystemBase {
             ),
         this // Reference to this subsystem to set requirements
         );
-    PathPlannerLogging.setLogTargetPoseCallback((pose) -> Logger.recordOutput("PathPlanner/Target", pose));
+    PathPlannerLogging.setLogTargetPoseCallback(
+        (pose) -> Logger.recordOutput("PathPlanner/Target", pose));
   }
 
   /**

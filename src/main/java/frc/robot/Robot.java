@@ -99,8 +99,8 @@ public class Robot extends LoggedRobot {
     NamedCommands.registerCommand(
         "fender",
         Commands.deadline(
-          Commands.sequence(
-            Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
+            Commands.sequence(
+                Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
             swerve.stopCmd()));
     NamedCommands.registerCommand("intake", Commands.print("intake"));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
