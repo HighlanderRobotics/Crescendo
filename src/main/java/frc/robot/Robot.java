@@ -4,12 +4,14 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
@@ -92,6 +94,16 @@ public class Robot extends LoggedRobot {
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+
+    // Auto Bindings here
+    NamedCommands.registerCommand(
+        "fender",
+        Commands.deadline(
+          Commands.sequence(
+            Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
+            swerve.stopCmd()));
+    NamedCommands.registerCommand("intake", Commands.print("intake"));
+    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
   @Override
@@ -118,7 +130,7 @@ public class Robot extends LoggedRobot {
   }
 
   public Command getAutonomousCommand() {
-    return new PathPlannerAuto("New Auto");
+    return new PathPlannerAuto("local 4");
   }
 
   @Override

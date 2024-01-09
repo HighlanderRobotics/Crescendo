@@ -14,7 +14,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Fender"
+            "name": "fender"
           }
         },
         {
@@ -30,7 +30,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Intake"
+                  "name": "intake"
                 }
               }
             ]
@@ -39,7 +39,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Fender"
+            "name": "fender"
           }
         },
         {
@@ -55,7 +55,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Intake"
+                  "name": "intake"
                 }
               }
             ]
@@ -64,7 +64,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Fender"
+            "name": "fender"
           }
         },
         {
@@ -80,7 +80,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Intake"
+                  "name": "intake"
                 }
               }
             ]
@@ -89,7 +89,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Fender"
+            "name": "fender"
           }
         }
       ]
