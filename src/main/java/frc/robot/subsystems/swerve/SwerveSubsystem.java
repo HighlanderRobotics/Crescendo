@@ -37,8 +37,8 @@ import org.littletonrobotics.junction.Logger;
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
   public static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
-  public static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
-  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
+  public static final double TRACK_WIDTH_X = Units.inchesToMeters(20.5);
+  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(20.5);
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
@@ -46,13 +46,13 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final int PigeonID = 0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Front Left", 6, 5, 21, Rotation2d.fromRotations(0.735107));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Front Right", 8, 7, 23, Rotation2d.fromRotations(0.076172));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Back Left", 4, 3, 20, Rotation2d.fromRotations(0.85));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Back Right", 2, 1, 11, Rotation2d.fromRotations(0.245361));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
