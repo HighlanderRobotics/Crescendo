@@ -122,15 +122,11 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = getAutonomousCommand();
+    autonomousCommand = new PathPlannerAuto("local 4");
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
     }
-  }
-
-  public Command getAutonomousCommand() {
-    return new PathPlannerAuto("local 4");
   }
 
   @Override

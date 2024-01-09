@@ -79,7 +79,7 @@ public class SwerveSubsystem extends SubsystemBase {
         this::getPose, // Robot pose supplier
         this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
         this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-        this::consumeChassisSpeeds, // Method that will drive the robot given ROBOT RELATIVE
+        this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
         // ChassisSpeeds
         new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in
             // your Constants class
@@ -179,7 +179,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
-  private void consumeChassisSpeeds(ChassisSpeeds speeds) {
+  private void runVelocity(ChassisSpeeds speeds) {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
@@ -202,7 +202,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public Command runVelocityCmd(Supplier<ChassisSpeeds> speeds) {
-    return this.run(() -> consumeChassisSpeeds(speeds.get()));
+    return this.run(() -> runVelocity(speeds.get()));
   }
 
   /** Stops the drive. */
