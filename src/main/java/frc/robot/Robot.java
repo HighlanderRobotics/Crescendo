@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -62,7 +63,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -89,9 +90,11 @@ public class Robot extends LoggedRobot {
         swerve.runVelocityFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+
+    controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
   }
 
   @Override

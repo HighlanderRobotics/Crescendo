@@ -43,16 +43,16 @@ public class SwerveSubsystem extends SubsystemBase {
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
   // Hardware constants
-  public static final int PigeonID = 0;
+  public static final int PIGEON_ID = 0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 6, 5, 21, Rotation2d.fromRotations(0.735107));
+      new ModuleConstants("Front Left", 6, 5, 21, Rotation2d.fromRotations(0.125732));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 8, 7, 23, Rotation2d.fromRotations(0.076172));
+      new ModuleConstants("Front Right", 8, 7, 23, Rotation2d.fromRotations(0.461426));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 3, 20, Rotation2d.fromRotations(0.85));
+      new ModuleConstants("Back Left", 4, 3, 20, Rotation2d.fromRotations(0.152344));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 2, 1, 11, Rotation2d.fromRotations(0.245361));
+      new ModuleConstants("Back Right", 2, 1, 22, Rotation2d.fromRotations(-0.238281));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -253,6 +253,10 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
+  }
+
+  public void setYaw(Rotation2d yaw) {
+    gyroIO.setYaw(yaw);
   }
 
   /** Returns an array of module translations. */
