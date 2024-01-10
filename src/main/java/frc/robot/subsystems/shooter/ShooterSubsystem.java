@@ -15,17 +15,7 @@ public class ShooterSubsystem extends SubsystemBase{
     public ShooterSubsystem(ShooterIO io) {
         this.io = io;
         inputs =  new ShooterIOInputsAutoLogged();
-
-        SmartDashboard.putData("reset Shooter value", new InstantCommand(
-            ()->{io.reset(0);}
-            ));
     }
-
-    public InstantCommand reset (){
-        return new InstantCommand(
-             ()->{io.reset(0);}
-             );
-     }
 
     public RunCommand run(double velocity) {
         return new RunCommand(() -> {

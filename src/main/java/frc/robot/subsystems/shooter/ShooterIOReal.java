@@ -3,15 +3,14 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import frc.robot.Constants;
-
-public class ShooterIOReal {
+public class ShooterIOReal implements ShooterIO {
     
-    private TalonFX bottomShooterMotor = new TalonFX(Constants.BOTTOM_SHOOTER_MOTOR_ID);
+    private TalonFX bottomShooterMotor = new TalonFX(27);
     private VelocityVoltage bottomShooterMotorVelocity = new VelocityVoltage(0);
-
+    private VoltageOut voltageOut = new VoltageOut(0.0);
 
     private StatusSignal<Double> supplyVoltageSignal = bottomShooterMotor.getDutyCycle();
     private StatusSignal<Double> velocity = bottomShooterMotor.getRotorVelocity();
@@ -25,15 +24,14 @@ public class ShooterIOReal {
     }
 
     public void setVelocity(double velocity) {
-        bottomShooterMotor.setControl(bottomShooterMotorVelocity.withVelocity(velocity));
+        bottomShooterMotor.setControl(voltageOut.withOutput(velocity));
     }
-
 
     public ShooterIOInputsAutoLogged updateInputs() {
         ShooterIOInputsAutoLogged current = new ShooterIOInputsAutoLogged();
 
         current.currentDrawAmps = currentDraw.refresh().getValue();
-        current.velocityRPM = velocity.refresh().getValue() / Constants.BOTTOM_SHOOTER_GEAR_RATIO;
+        current.velocityRPM = velocity.refresh().getValue();
         current.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
 
         return(current);

@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -40,6 +42,7 @@ public class Robot extends LoggedRobot {
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
+  private final ShooterSubsystem shooter = new ShooterSubsystem(new ShooterIOReal());
 
   @Override
   public void robotInit() {
@@ -94,7 +97,12 @@ public class Robot extends LoggedRobot {
                     controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
+    shooter.setDefaultCommand(shooter.run(0.0));
+
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
+
+    controller.leftTrigger().whileTrue(shooter.run(5.0));
+    controller.rightTrigger().whileTrue(shooter.run(-10.0));
   }
 
   @Override

@@ -19,7 +19,5 @@ public interface ShooterIO {
 
   public abstract void setVelocity(double velocity);
 
-  public abstract void reset(double velocity);
-
   public abstract ShooterIOInputsAutoLogged updateInputs();
 }

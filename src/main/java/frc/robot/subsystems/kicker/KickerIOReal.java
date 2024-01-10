@@ -6,12 +6,11 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.util.Units;
-import frc.robot.Constants;
 
 public class KickerIOReal {
     
-    private TalonFX kickerMotor = new TalonFX(Constants.KICKER_MOTOR_ID);
-    private PositionVoltage motorRequest = new PositionVoltage(Constants.KICKER_MOTOR_ID);
+    private TalonFX kickerMotor = new TalonFX(12);
+    private PositionVoltage motorRequest = new PositionVoltage(0.0);
     
     private StatusSignal<Double> supplyVoltageSignal = kickerMotor.getDutyCycle();
     private StatusSignal<Double> position = kickerMotor.getRotorPosition();
@@ -26,19 +25,19 @@ public class KickerIOReal {
     }
 
     public void setPosition(double degrees) {
-        kickerMotor.setControl(motorRequest.withPosition(Units.degreesToRotations(degrees)*Constants.KICKER_GEAR_RATIO));    
+        kickerMotor.setControl(motorRequest.withPosition(Units.degreesToRotations(degrees)));    
     }
 
     public void reset(double degrees){ 
-        kickerMotor.setPosition((Units.degreesToRotations(degrees))*Constants.KICKER_GEAR_RATIO);
+        kickerMotor.setPosition((Units.degreesToRotations(degrees)));
     }
 
     public KickerIOInputsAutoLogged updateInputs() {
         KickerIOInputsAutoLogged current = new KickerIOInputsAutoLogged();
 
         current.currentDrawAmps = currentDraw.refresh().getValue();
-        current.positionRotations = position.refresh().getValue() / Constants.KICKER_GEAR_RATIO;
-        current.velocityRPM = velocity.refresh().getValue() / Constants.KICKER_GEAR_RATIO;
+        current.positionRotations = position.refresh().getValue();
+        current.velocityRPM = velocity.refresh().getValue();
         current.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
 
         return(current);

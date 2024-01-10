@@ -12,12 +12,11 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.util.Units;
-import frc.robot.Constants;
 
 public class PivotIOReal implements PivotIO{
 
-    private TalonFX pivotMotor = new TalonFX(Constants.PIVOT_MOTOR_ID);
-    private PositionVoltage motorRequest = new PositionVoltage(Constants.PIVOT_MOTOR_ID);
+    private TalonFX pivotMotor = new TalonFX(10);
+    private PositionVoltage motorRequest = new PositionVoltage(0.0);
     
     private StatusSignal<Double> supplyVoltageSignal = pivotMotor.getDutyCycle();
     private StatusSignal<Double> position = pivotMotor.getRotorPosition();
@@ -34,12 +33,12 @@ public class PivotIOReal implements PivotIO{
 
     @Override
     public void setPosition(double degrees) {
-        pivotMotor.setControl(motorRequest.withPosition(Units.degreesToRotations(degrees)*Constants.PIVOT_GEAR_RATIO));    
+        pivotMotor.setControl(motorRequest.withPosition(Units.degreesToRotations(degrees)));    
     }
 
     @Override
     public void reset(double degrees){ 
-        pivotMotor.setPosition((Units.degreesToRotations(degrees))*Constants.PIVOT_GEAR_RATIO);
+        pivotMotor.setPosition((Units.degreesToRotations(degrees)));
     }
    
 
@@ -48,8 +47,8 @@ public class PivotIOReal implements PivotIO{
         PivotIOInputsAutoLogged current = new PivotIOInputsAutoLogged();
 
         current.currentDrawAmps = currentDraw.refresh().getValue();
-        current.positionRotations = position.refresh().getValue() / Constants.PIVOT_GEAR_RATIO;
-        current.velocityRPM = velocity.refresh().getValue() / Constants.PIVOT_GEAR_RATIO;
+        current.positionRotations = position.refresh().getValue();
+        current.velocityRPM = velocity.refresh().getValue();
         current.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
 
         return(current);
