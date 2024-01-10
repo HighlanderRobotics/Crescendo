@@ -37,22 +37,22 @@ import org.littletonrobotics.junction.Logger;
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
   public static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
-  public static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
-  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
+  public static final double TRACK_WIDTH_X = Units.inchesToMeters(20.5);
+  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(20.5);
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
   // Hardware constants
-  public static final int PigeonID = 0;
+  public static final int PIGEON_ID = 0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Front Left", 6, 5, 21, Rotation2d.fromRotations(0.125732));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Front Right", 8, 7, 23, Rotation2d.fromRotations(0.461426));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Back Left", 4, 3, 20, Rotation2d.fromRotations(0.152344));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Back Right", 2, 1, 22, Rotation2d.fromRotations(-0.238281));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -65,7 +65,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
-    modules = (Module[]) Arrays.stream(moduleIOs).map(Module::new).toArray();
+    modules = new Module[moduleIOs.length];
+    for (int i = 0; i < modules.length; i++) {
+      modules[i] = new Module(moduleIOs[i]);
+    }
   }
 
   /**
@@ -220,8 +223,11 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states =
-        (SwerveModuleState[]) Arrays.stream(modules).map(Module::getState).toArray();
+    SwerveModuleState[] states = new SwerveModuleState[4];
+    for (int i = 0; i < 4; i++) {
+      states[i] = modules[i].getState();
+    }
+
     return states;
   }
 
@@ -229,8 +235,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public ChassisSpeeds getVelocity() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(
         kinematics.toChassisSpeeds(
-            (SwerveModuleState[])
-                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
         getRotation());
   }
 
@@ -248,6 +253,10 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
+  }
+
+  public void setYaw(Rotation2d yaw) {
+    gyroIO.setYaw(yaw);
   }
 
   /** Returns an array of module translations. */
