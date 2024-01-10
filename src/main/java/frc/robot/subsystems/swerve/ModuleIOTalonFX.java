@@ -17,7 +17,6 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -72,8 +71,7 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityVoltage drivePIDF = new VelocityVoltage(0.0).withEnableFOC(true);
-  private final PositionVoltage turnPID =
-      new PositionVoltage(0.0).withEnableFOC(true);
+  private final PositionVoltage turnPID = new PositionVoltage(0.0).withEnableFOC(true);
 
   public ModuleIOTalonFX(ModuleConstants constants) {
     name = constants.prefix();
@@ -96,8 +94,8 @@ public class ModuleIOTalonFX implements ModuleIO {
         (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
     // Controls Gains
     driveConfig.Slot0.kV = 2.5;
-        // (5800.0 * (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI)))
-        //     / 12.0; // Hypothetical based on free speed
+    // (5800.0 * (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI)))
+    //     / 12.0; // Hypothetical based on free speed
     driveConfig.Slot0.kA = 0.0; // TODO: Find using sysid or hand tuning
     driveConfig.Slot0.kS = 0.0;
     driveConfig.Slot0.kP = 0.25; // Guess
@@ -124,12 +122,12 @@ public class ModuleIOTalonFX implements ModuleIO {
         0.0; // Is this correct? Cancoder config should handle it
     // Controls Gains
     turnConfig.Slot0.kV = 0.0;
-        // (5800.0 / Module.TURN_GEAR_RATIO)
-        //     / 12.0; // Free speed over voltage, should find empirically
+    // (5800.0 / Module.TURN_GEAR_RATIO)
+    //     / 12.0; // Free speed over voltage, should find empirically
     turnConfig.Slot0.kA = 0.0;
-        // Module.TURN_GEAR_RATIO
-        //     * (9.37 / 483.0)
-        //     / (0.004 * (12.0 / 483.0)); // Based on motor dynamics math, should find in real life
+    // Module.TURN_GEAR_RATIO
+    //     * (9.37 / 483.0)
+    //     / (0.004 * (12.0 / 483.0)); // Based on motor dynamics math, should find in real life
     // gearing * Kt (torque per amp) / (intertia * resistance (nominal voltage / stall current))
     // Yeah its messy and should be found using sysid later but its worth trying as a first guess
     // If this works we can use a similar technique on future mechanisms

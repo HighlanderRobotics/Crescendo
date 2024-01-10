@@ -1,30 +1,31 @@
 package frc.robot.subsystems.shooter;
 
-import org.littletonrobotics.junction.Logger;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
 
-public class ShooterSubsystem extends SubsystemBase{
-    
-    ShooterIO io;
-    ShooterIOInputsAutoLogged inputs;
+public class ShooterSubsystem extends SubsystemBase {
 
-    public ShooterSubsystem(ShooterIO io) {
-        this.io = io;
-        inputs =  new ShooterIOInputsAutoLogged();
-    }
+  ShooterIO io;
+  ShooterIOInputsAutoLogged inputs;
 
-    public Command run(double velocity) {
-        return new RunCommand(() -> {
-            io.setVelocity(velocity);
-        }, this);
-    }  
+  public ShooterSubsystem(ShooterIO io) {
+    this.io = io;
+    inputs = new ShooterIOInputsAutoLogged();
+  }
 
-    @Override
-    public void periodic() {
-        inputs = io.updateInputs();
-        Logger.processInputs("Shooter", inputs);
-    }
+  public Command run(double velocity) {
+    return new RunCommand(
+        () -> {
+          io.setVelocity(velocity);
+        },
+        this);
+  }
+
+  @Override
+  public void periodic() {
+    inputs = io.updateInputs();
+    Logger.processInputs("Shooter", inputs);
+  }
 }

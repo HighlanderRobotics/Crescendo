@@ -15,7 +15,8 @@ public interface ShooterIO {
     public double velocityRPS;
     public double currentDrawAmps;
     public double temperatureCelsius;
-    public double motorOutputVolts;  }
+    public double motorOutputVolts;
+  }
 
   public abstract void setVelocity(double rotationsPerSecond);
 

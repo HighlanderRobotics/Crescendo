@@ -6,8 +6,6 @@ package frc.robot.subsystems.kicker;
 
 import org.littletonrobotics.junction.AutoLog;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-
 /** Add your docs here. */
 public interface KickerIO {
   @AutoLog

@@ -123,7 +123,6 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
-    
     // Update odometry
     int deltaCount =
         Math.min(

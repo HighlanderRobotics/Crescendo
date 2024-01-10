@@ -110,9 +110,13 @@ public class Robot extends LoggedRobot {
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
     controller.leftTrigger().whileTrue(Commands.parallel(shooter.run(5.0), pivot.run(100.0)));
-    controller.rightTrigger().whileTrue(Commands.parallel(shooter.run(-10.0), pivot.run(-15.0), Commands.waitSeconds(0.5).andThen(kicker.run(-25.0))));
-
-
+    controller
+        .rightTrigger()
+        .whileTrue(
+            Commands.parallel(
+                shooter.run(-10.0),
+                pivot.run(-15.0),
+                Commands.waitSeconds(0.5).andThen(kicker.run(-25.0))));
   }
 
   @Override
