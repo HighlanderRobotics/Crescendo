@@ -5,6 +5,8 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -107,6 +109,7 @@ public class Robot extends LoggedRobot {
     pivot.setDefaultCommand(pivot.run(0.0));
     kicker.setDefaultCommand(kicker.run(0.0));
 
+    // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
     controller.leftTrigger().whileTrue(Commands.parallel(shooter.run(5.0), pivot.run(100.0)));
@@ -117,6 +120,15 @@ public class Robot extends LoggedRobot {
                 shooter.run(-10.0),
                 pivot.run(-15.0),
                 Commands.waitSeconds(0.5).andThen(kicker.run(-25.0))));
+    // Auto Bindings here
+    NamedCommands.registerCommand(
+        "fender",
+        Commands.deadline(
+            Commands.sequence(
+                Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
+            swerve.stopCmd()));
+    NamedCommands.registerCommand("intake", Commands.print("intake"));
+    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
   @Override
@@ -135,7 +147,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = Commands.none();
+    autonomousCommand = new PathPlannerAuto("local 4");
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
