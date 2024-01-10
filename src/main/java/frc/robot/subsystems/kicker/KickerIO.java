@@ -6,13 +6,15 @@ package frc.robot.subsystems.kicker;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+
 /** Add your docs here. */
 public interface KickerIO {
   @AutoLog
   public class KickerIOInputs {
 
     // Motor values
-    public double velocityRPM;
+    public double velocityRPS;
     public double currentDrawAmps;
     public double temperatureCelsius;
     public double motorOutputVolts;

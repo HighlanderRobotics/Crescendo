@@ -12,12 +12,12 @@ public interface ShooterIO {
   public class ShooterIOInputs {
 
     // Motor values
-    public double velocityRPM;
+    public double velocityRPS;
     public double currentDrawAmps;
     public double temperatureCelsius;
     public double motorOutputVolts;  }
 
-  public abstract void setVelocity(double velocity);
+  public abstract void setVelocity(double rotationsPerSecond);
 
   public abstract ShooterIOInputsAutoLogged updateInputs();
 }

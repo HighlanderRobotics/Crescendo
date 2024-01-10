@@ -7,33 +7,37 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 public class ShooterIOReal implements ShooterIO {
+
+    public static final int SHOOTER_MOTOR_ID = 27; 
+    public static final double SHOOTER_GEAR_RATIO = 1; 
     
-    private TalonFX bottomShooterMotor = new TalonFX(27);
-    private VelocityVoltage bottomShooterMotorVelocity = new VelocityVoltage(0);
+    private TalonFX shooterMotor = new TalonFX(27);
+    private VelocityVoltage shooterMotorVelocity = new VelocityVoltage(0);
     private VoltageOut voltageOut = new VoltageOut(0.0);
 
-    private StatusSignal<Double> supplyVoltageSignal = bottomShooterMotor.getDutyCycle();
-    private StatusSignal<Double> velocity = bottomShooterMotor.getRotorVelocity();
-    private StatusSignal<Double> currentDraw = bottomShooterMotor.getStatorCurrent();
+    private StatusSignal<Double> supplyVoltageSignal = shooterMotor.getMotorVoltage();
+    private StatusSignal<Double> velocity = shooterMotor.getRotorVelocity();
+    private StatusSignal<Double> currentDraw = shooterMotor.getStatorCurrent();
 
     public ShooterIOReal(){
-        TalonFXConfiguration pivotConfig  = new TalonFXConfiguration();
-        pivotConfig.Slot0.kP = 1;
-        pivotConfig.Slot0.kD = 0.01;
-        pivotConfig.Slot0.kI = 0;
+        TalonFXConfiguration shooterConfig  = new TalonFXConfiguration();
+        shooterConfig.Slot0.kP = 0;
+        shooterConfig.Slot0.kD = 0;
+        shooterConfig.Slot0.kI = 0;
+        shooterConfig.Slot0.kV = 0;
     }
 
     public void setVelocity(double velocity) {
-        bottomShooterMotor.setControl(voltageOut.withOutput(velocity));
+        shooterMotor.setControl(voltageOut.withOutput(velocity));
     }
 
     public ShooterIOInputsAutoLogged updateInputs() {
-        ShooterIOInputsAutoLogged current = new ShooterIOInputsAutoLogged();
+        ShooterIOInputsAutoLogged updated = new ShooterIOInputsAutoLogged();
 
-        current.currentDrawAmps = currentDraw.refresh().getValue();
-        current.velocityRPM = velocity.refresh().getValue();
-        current.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
+        updated.currentDrawAmps = currentDraw.getValue();
+        updated.velocityRPS = velocity.getValue();
+        updated.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
 
-        return(current);
+        return(updated);
     }
 }

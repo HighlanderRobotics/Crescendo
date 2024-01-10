@@ -15,14 +15,16 @@ import edu.wpi.first.math.util.Units;
 
 public class PivotIOReal implements PivotIO{
 
+    public static final int PIVOT_MOTOR_ID = 10; 
+    public static final double PIVOT_GEAR_RATIO = (27.0 / 1) * (48.0 / 22); //check if this is the correct gear ratio
+
     private TalonFX pivotMotor = new TalonFX(10);
     private PositionVoltage motorRequest = new PositionVoltage(0.0);
     
-    private StatusSignal<Double> supplyVoltageSignal = pivotMotor.getDutyCycle();
+    private StatusSignal<Double> supplyVoltageSignal = pivotMotor.getMotorVoltage();
     private StatusSignal<Double> position = pivotMotor.getRotorPosition();
     private StatusSignal<Double> velocity = pivotMotor.getRotorVelocity();
     private StatusSignal<Double> currentDraw = pivotMotor.getStatorCurrent();
-
 
     public PivotIOReal (){
         TalonFXConfiguration pivotConfig  = new TalonFXConfiguration();
@@ -51,13 +53,13 @@ public class PivotIOReal implements PivotIO{
 
     @Override
     public PivotIOInputsAutoLogged updateInputs() {
-        PivotIOInputsAutoLogged current = new PivotIOInputsAutoLogged();
+        PivotIOInputsAutoLogged updated = new PivotIOInputsAutoLogged();
 
-        current.currentDrawAmps = currentDraw.refresh().getValue();
-        current.positionRotations = position.refresh().getValue();
-        current.velocityRPM = velocity.refresh().getValue();
-        current.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
+        updated.currentDrawAmps = currentDraw.getValue();
+        updated.positionRotations = position.getValue();
+        updated.velocityRPS = velocity.getValue();
+        updated.motorOutputVolts = 12 * supplyVoltageSignal.getValue();
 
-        return(current);
+        return(updated);
     }
 }

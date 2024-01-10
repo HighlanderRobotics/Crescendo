@@ -26,8 +26,8 @@ public class PivotSubsystem extends SubsystemBase {
             ));
     }
 
-    public InstantCommand reset (){
-       return new InstantCommand(
+    public Command reset (){
+       return this.runOnce(
             ()->{io.reset(0);}
             );
     }

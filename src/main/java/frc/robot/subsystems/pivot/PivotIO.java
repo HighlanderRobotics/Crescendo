@@ -12,7 +12,7 @@ public interface PivotIO {
   public class PivotIOInputs {
 
     // Motor values
-    public double velocityRPM;
+    public double velocityRPS;
     public double currentDrawAmps;
     public double temperatureCelsius;
     public double motorOutputVolts;
