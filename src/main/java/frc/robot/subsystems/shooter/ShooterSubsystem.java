@@ -3,6 +3,7 @@ package frc.robot.subsystems.shooter;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,7 +18,7 @@ public class ShooterSubsystem extends SubsystemBase{
         inputs =  new ShooterIOInputsAutoLogged();
     }
 
-    public RunCommand run(double velocity) {
+    public Command run(double velocity) {
         return new RunCommand(() -> {
             io.setVelocity(velocity);
         }, this);

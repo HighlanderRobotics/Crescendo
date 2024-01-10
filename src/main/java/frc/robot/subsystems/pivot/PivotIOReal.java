@@ -26,9 +26,16 @@ public class PivotIOReal implements PivotIO{
 
     public PivotIOReal (){
         TalonFXConfiguration pivotConfig  = new TalonFXConfiguration();
-        pivotConfig.Slot0.kP = 1;
-        pivotConfig.Slot0.kD = 0.01;
+        pivotConfig.Slot0.kP = 120;
+        pivotConfig.Slot0.kD = 0.0;
         pivotConfig.Slot0.kI = 0;
+
+        pivotConfig.Feedback.SensorToMechanismRatio = 58.9;
+
+        pivotConfig.CurrentLimits.StatorCurrentLimit = 40.0;
+        pivotConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+
+        pivotMotor.getConfigurator().apply(pivotConfig);
     }
 
     @Override

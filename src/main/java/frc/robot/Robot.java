@@ -12,6 +12,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.kicker.KickerIOReal;
+import frc.robot.subsystems.kicker.KickerSubsystem;
+import frc.robot.subsystems.pivot.PivotIOReal;
+import frc.robot.subsystems.pivot.PivotSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
@@ -43,6 +47,8 @@ public class Robot extends LoggedRobot {
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
   private final ShooterSubsystem shooter = new ShooterSubsystem(new ShooterIOReal());
+  private final PivotSubsystem pivot = new PivotSubsystem(new PivotIOReal());
+  private final KickerSubsystem kicker = new KickerSubsystem(new KickerIOReal());
 
   @Override
   public void robotInit() {
@@ -98,11 +104,15 @@ public class Robot extends LoggedRobot {
                     controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
     shooter.setDefaultCommand(shooter.run(0.0));
+    pivot.setDefaultCommand(pivot.run(0.0));
+    kicker.setDefaultCommand(kicker.run(0.0));
 
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
-    controller.leftTrigger().whileTrue(shooter.run(5.0));
-    controller.rightTrigger().whileTrue(shooter.run(-10.0));
+    controller.leftTrigger().whileTrue(Commands.parallel(shooter.run(5.0), pivot.run(100.0)));
+    controller.rightTrigger().whileTrue(Commands.parallel(shooter.run(-10.0), pivot.run(-15.0), Commands.waitSeconds(0.5).andThen(kicker.run(-25.0))));
+
+
   }
 
   @Override

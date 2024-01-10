@@ -7,7 +7,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.util.Units;
 
-public class KickerIOReal {
+public class KickerIOReal implements KickerIO {
     
     private TalonFX kickerMotor = new TalonFX(12);
     private PositionVoltage motorRequest = new PositionVoltage(0.0);
@@ -19,9 +19,13 @@ public class KickerIOReal {
 
     public KickerIOReal (){
         TalonFXConfiguration kickerConfig  = new TalonFXConfiguration();
-        kickerConfig.Slot0.kP = 1;
-        kickerConfig.Slot0.kD = 0.01;
-        kickerConfig.Slot0.kI = 0;
+        kickerConfig.Slot0.kP = 10.0;
+        kickerConfig.Slot0.kD = 0.0;
+        kickerConfig.Slot0.kI = 0.0;
+        kickerConfig.CurrentLimits.StatorCurrentLimit = 20.0;
+        kickerConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+        kickerConfig.Feedback.SensorToMechanismRatio = 125.0;
+        kickerMotor.getConfigurator().apply(kickerConfig);
     }
 
     public void setPosition(double degrees) {
