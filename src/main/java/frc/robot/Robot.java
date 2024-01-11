@@ -113,14 +113,10 @@ public class Robot extends LoggedRobot {
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
-    controller.leftTrigger().whileTrue(Commands.parallel(shooter.run(5.0), pivot.run(103.0)));
+    controller.leftTrigger().whileTrue(intake());
     controller
         .rightTrigger()
-        .whileTrue(
-            Commands.parallel(
-                shooter.run(-10.0),
-                pivot.run(-63.0),
-                Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360))));
+        .whileTrue(shootFender());
     controller
         .leftBumper()
         .whileTrue(
@@ -133,16 +129,10 @@ public class Robot extends LoggedRobot {
         .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
     // Auto Bindings here
     NamedCommands.registerCommand(
-        "fender", // Commands.print("pew")
-        Commands.parallel(
-                swerve.stopCmd(),
-                shooter.run(-10.0),
-                pivot.run(-63.0),
-                Commands.waitSeconds(0.75).andThen(kicker.run(-6.0 * 360).asProxy()))
-            .withTimeout(1.5)
-            .andThen(Commands.print("done shooting")));
+        "fender", shootFender()
+        );
     NamedCommands.registerCommand(
-        "intake", Commands.parallel(Commands.print("intake"), shooter.run(5.0), pivot.run(103.0)));
+        "intake", intake());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -152,13 +142,7 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void disabledInit() {}
-
-  @Override
   public void disabledPeriodic() {}
-
-  @Override
-  public void disabledExit() {}
 
   @Override
   public void autonomousInit() {
@@ -168,12 +152,6 @@ public class Robot extends LoggedRobot {
       autonomousCommand.schedule();
     }
   }
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void autonomousExit() {}
 
   @Override
   public void teleopInit() {
@@ -186,16 +164,21 @@ public class Robot extends LoggedRobot {
   public void teleopPeriodic() {}
 
   @Override
-  public void teleopExit() {}
-
-  @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
   }
 
-  @Override
-  public void testPeriodic() {}
+  private Command intake() {
+    return Commands.parallel(shooter.run(5.0), pivot.run(103.0));
+  }
 
-  @Override
-  public void testExit() {}
+  private Command shootFender() {
+    return Commands.parallel(
+                swerve.stopCmd(),
+                shooter.run(-10.0),
+                pivot.run(-63.0),
+                Commands.waitSeconds(0.75).andThen(kicker.run(-6.0 * 360).asProxy()))
+            .withTimeout(1.5)
+            .andThen(Commands.print("done shooting"));
+  }
 }
