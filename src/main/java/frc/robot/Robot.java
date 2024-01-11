@@ -4,8 +4,8 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -113,13 +113,13 @@ public class Robot extends LoggedRobot {
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
-    controller.leftTrigger().whileTrue(Commands.parallel(shooter.run(5.0), pivot.run(100.0)));
+    controller.leftTrigger().whileTrue(Commands.parallel(shooter.run(5.0), pivot.run(103.0)));
     controller
         .rightTrigger()
         .whileTrue(
             Commands.parallel(
                 shooter.run(-10.0),
-                pivot.run(-15.0),
+                pivot.run(-63.0),
                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360))));
     controller
         .leftBumper()
@@ -136,14 +136,13 @@ public class Robot extends LoggedRobot {
         "fender", // Commands.print("pew")
         Commands.parallel(
                 swerve.stopCmd(),
-                // shooter.run(-10.0),
-                pivot.run(-60.0),
-                Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+                shooter.run(-10.0),
+                pivot.run(-63.0),
+                Commands.waitSeconds(0.75).andThen(kicker.run(-6.0 * 360).asProxy()))
             .withTimeout(1.5)
             .andThen(Commands.print("done shooting")));
     NamedCommands.registerCommand(
-        "intake",
-        Commands.parallel(Commands.print("intake"), /*shooter.run(5.0),*/ pivot.run(100.0)));
+        "intake", Commands.parallel(Commands.print("intake"), shooter.run(5.0), pivot.run(103.0)));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -163,77 +162,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = AutoBuilder.buildAuto("local 4");
-    // autonomousCommand =
-    //     Commands.sequence(
-    //         swerve.runOnce(() -> swerve.setPose())
-    //         Commands.parallel(
-    //                 swerve.stopCmd(),
-    //                 shooter.run(-10.0),
-    //                 pivot.run(-30.0),
-    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
-    //             .withTimeout(1.5)
-    //             .andThen(Commands.print("done shooting")),
-    //         Choreo.choreoSwerveCommand(
-    //                 Choreo.getTrajectory("amp 4 local sgmt 1"),
-    //                 swerve::getPose,
-    //                 Choreo.choreoSwerveController(
-    //                     new PIDController(5.0, 0.0, 0.0),
-    //                     new PIDController(5.0, 0.0, 0.0),
-    //                     new PIDController(5.0, 0.0, 0.0)),
-    //                 swerve::runVelocity,
-    //                 () -> false,
-    //                 swerve)
-    //             .alongWith(
-    //                 Commands.parallel(
-    //                     Commands.print("intake"), shooter.run(5.0), pivot.run(100.0))),
-    //         Commands.parallel(
-    //                 swerve.stopCmd(),
-    //                 shooter.run(-10.0),
-    //                 pivot.run(-30.0),
-    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
-    //             .withTimeout(1.5)
-    //             .andThen(Commands.print("done shooting")),
-    //         Choreo.choreoSwerveCommand(
-    //                 Choreo.getTrajectory("amp 4 local sgmt 2"),
-    //                 swerve::getPose,
-    //                 Choreo.choreoSwerveController(
-    //                     new PIDController(5.0, 0.0, 0.0),
-    //                     new PIDController(5.0, 0.0, 0.0),
-    //                     new PIDController(5.0, 0.0, 0.0)),
-    //                 swerve::runVelocity,
-    //                 () -> false,
-    //                 swerve)
-    //             .alongWith(
-    //                 Commands.parallel(
-    //                     Commands.print("intake"), shooter.run(5.0), pivot.run(100.0))),
-    //         Commands.parallel(
-    //                 swerve.stopCmd(),
-    //                 shooter.run(-10.0),
-    //                 pivot.run(-30.0),
-    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
-    //             .withTimeout(1.5)
-    //             .andThen(Commands.print("done shooting")),
-    //         Choreo.choreoSwerveCommand(
-    //                 Choreo.getTrajectory("amp 4 local sgmt 3"),
-    //                 swerve::getPose,
-    //                 Choreo.choreoSwerveController(
-    //                     new PIDController(5.0, 0.0, 0.0),
-    //                     new PIDController(5.0, 0.0, 0.0),
-    //                     new PIDController(5.0, 0.0, 0.0)),
-    //                 swerve::runVelocity,
-    //                 () -> false,
-    //                 swerve)
-    //             .alongWith(
-    //                 Commands.parallel(
-    //                     Commands.print("intake"), shooter.run(5.0), pivot.run(100.0))),
-    //         Commands.parallel(
-    //                 swerve.stopCmd(),
-    //                 shooter.run(-10.0),
-    //                 pivot.run(-30.0),
-    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
-    //             .withTimeout(1.5)
-    //             .andThen(Commands.print("done shooting")));
+    autonomousCommand = new PathPlannerAuto("local 4");
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
