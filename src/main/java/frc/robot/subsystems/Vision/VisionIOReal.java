@@ -18,6 +18,6 @@ public class VisionIOReal implements VisionIO {
     var latestResult = camera.getLatestResult();
     inputs.timestamp = latestResult.getTimestampSeconds();
     inputs.latency = latestResult.getLatencyMillis();
-    // inputs.targets = latestResult.targets; //TODO
+    inputs.targets = latestResult.targets;
   }
 }
