@@ -198,7 +198,7 @@ public class SwerveSubsystem extends SubsystemBase {
     pose = odometry.update(gyroInputs.yawPosition, getModulePositions());
   }
 
-  private void runVelocity(ChassisSpeeds speeds) {
+  public void runVelocity(ChassisSpeeds speeds) {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);

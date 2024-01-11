@@ -133,17 +133,17 @@ public class Robot extends LoggedRobot {
         .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
     // Auto Bindings here
     NamedCommands.registerCommand(
-        "fender", Commands.print("pew")
-        // Commands.parallel(
-        //         swerve.stopCmd(),
-        //         shooter.run(-10.0),
-        //         pivot.run(-30.0),
-        //         Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
-        //     .withTimeout(1.5)
-        //     .andThen(Commands.print("done shooting"))
-        );
+        "fender", // Commands.print("pew")
+        Commands.parallel(
+                swerve.stopCmd(),
+                // shooter.run(-10.0),
+                pivot.run(-60.0),
+                Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+            .withTimeout(1.5)
+            .andThen(Commands.print("done shooting")));
     NamedCommands.registerCommand(
-        "intake", Commands.parallel(Commands.print("intake"), shooter.run(5.0), pivot.run(100.0)));
+        "intake",
+        Commands.parallel(Commands.print("intake"), /*shooter.run(5.0),*/ pivot.run(100.0)));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -164,6 +164,76 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     autonomousCommand = AutoBuilder.buildAuto("local 4");
+    // autonomousCommand =
+    //     Commands.sequence(
+    //         swerve.runOnce(() -> swerve.setPose())
+    //         Commands.parallel(
+    //                 swerve.stopCmd(),
+    //                 shooter.run(-10.0),
+    //                 pivot.run(-30.0),
+    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+    //             .withTimeout(1.5)
+    //             .andThen(Commands.print("done shooting")),
+    //         Choreo.choreoSwerveCommand(
+    //                 Choreo.getTrajectory("amp 4 local sgmt 1"),
+    //                 swerve::getPose,
+    //                 Choreo.choreoSwerveController(
+    //                     new PIDController(5.0, 0.0, 0.0),
+    //                     new PIDController(5.0, 0.0, 0.0),
+    //                     new PIDController(5.0, 0.0, 0.0)),
+    //                 swerve::runVelocity,
+    //                 () -> false,
+    //                 swerve)
+    //             .alongWith(
+    //                 Commands.parallel(
+    //                     Commands.print("intake"), shooter.run(5.0), pivot.run(100.0))),
+    //         Commands.parallel(
+    //                 swerve.stopCmd(),
+    //                 shooter.run(-10.0),
+    //                 pivot.run(-30.0),
+    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+    //             .withTimeout(1.5)
+    //             .andThen(Commands.print("done shooting")),
+    //         Choreo.choreoSwerveCommand(
+    //                 Choreo.getTrajectory("amp 4 local sgmt 2"),
+    //                 swerve::getPose,
+    //                 Choreo.choreoSwerveController(
+    //                     new PIDController(5.0, 0.0, 0.0),
+    //                     new PIDController(5.0, 0.0, 0.0),
+    //                     new PIDController(5.0, 0.0, 0.0)),
+    //                 swerve::runVelocity,
+    //                 () -> false,
+    //                 swerve)
+    //             .alongWith(
+    //                 Commands.parallel(
+    //                     Commands.print("intake"), shooter.run(5.0), pivot.run(100.0))),
+    //         Commands.parallel(
+    //                 swerve.stopCmd(),
+    //                 shooter.run(-10.0),
+    //                 pivot.run(-30.0),
+    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+    //             .withTimeout(1.5)
+    //             .andThen(Commands.print("done shooting")),
+    //         Choreo.choreoSwerveCommand(
+    //                 Choreo.getTrajectory("amp 4 local sgmt 3"),
+    //                 swerve::getPose,
+    //                 Choreo.choreoSwerveController(
+    //                     new PIDController(5.0, 0.0, 0.0),
+    //                     new PIDController(5.0, 0.0, 0.0),
+    //                     new PIDController(5.0, 0.0, 0.0)),
+    //                 swerve::runVelocity,
+    //                 () -> false,
+    //                 swerve)
+    //             .alongWith(
+    //                 Commands.parallel(
+    //                     Commands.print("intake"), shooter.run(5.0), pivot.run(100.0))),
+    //         Commands.parallel(
+    //                 swerve.stopCmd(),
+    //                 shooter.run(-10.0),
+    //                 pivot.run(-30.0),
+    //                 Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+    //             .withTimeout(1.5)
+    //             .andThen(Commands.print("done shooting")));
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
