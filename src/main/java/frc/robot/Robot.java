@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -101,9 +102,9 @@ public class Robot extends LoggedRobot {
         swerve.runVelocityFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
     shooter.setDefaultCommand(shooter.run(0.0));
     pivot.setDefaultCommand(pivot.run(0.0));
@@ -119,15 +120,27 @@ public class Robot extends LoggedRobot {
             Commands.parallel(
                 shooter.run(-10.0),
                 pivot.run(-15.0),
-                Commands.waitSeconds(0.5).andThen(kicker.run(-25.0))));
+                Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360))));
+    controller
+        .leftBumper()
+        .whileTrue(
+            Commands.parallel(
+                pivot.run(10.0),
+                shooter.run(-2.0),
+                Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360))));
+    controller
+        .a()
+        .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
     // Auto Bindings here
     NamedCommands.registerCommand(
-        "fender",
-        Commands.deadline(
-            Commands.sequence(
-                Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
-            swerve.stopCmd()));
-    NamedCommands.registerCommand("intake", Commands.print("intake"));
+        "fender", Commands.none()
+        // Commands.race(Commands.waitSeconds(1.0), swerve.stopWithXCmd(), pivot.run(0))
+        //     .asProxy()
+        //     .withTimeout(2.0)
+        );
+    NamedCommands.registerCommand(
+        "intake",
+        Commands.parallel(Commands.print("intake"), shooter.run(5.0), pivot.run(100.0)).asProxy());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 

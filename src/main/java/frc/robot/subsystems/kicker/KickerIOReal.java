@@ -19,14 +19,13 @@ public class KickerIOReal implements KickerIO {
 
   public KickerIOReal() {
     TalonFXConfiguration kickerConfig = new TalonFXConfiguration();
-    kickerConfig.Feedback.SensorToMechanismRatio = 125 / 1;
-    kickerConfig.Slot0.kP = 10.0;
+    kickerConfig.Slot0.kP = 50.0;
     kickerConfig.Slot0.kD = 0.0;
     kickerConfig.Slot0.kI = 0.0;
 
     kickerConfig.CurrentLimits.StatorCurrentLimit = 20.0;
     kickerConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    kickerConfig.Feedback.SensorToMechanismRatio = 125.0;
+    kickerConfig.Feedback.SensorToMechanismRatio = 1.0;
     kickerMotor.getConfigurator().apply(kickerConfig);
   }
 

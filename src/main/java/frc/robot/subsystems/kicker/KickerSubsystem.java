@@ -1,5 +1,6 @@
 package frc.robot.subsystems.kicker;
 
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -33,6 +34,7 @@ public class KickerSubsystem extends SubsystemBase {
   public RunCommand run(double degrees) {
     return new RunCommand(
         () -> {
+          Logger.recordOutput("Kicker/Target", Units.degreesToRotations(degrees));
           io.setPosition(degrees);
         },
         this);

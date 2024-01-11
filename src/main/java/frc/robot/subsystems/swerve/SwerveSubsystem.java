@@ -22,9 +22,9 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
@@ -67,6 +67,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
+  private SwerveDriveOdometry odometry;
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -86,16 +87,28 @@ public class SwerveSubsystem extends SubsystemBase {
             // your Constants class
             new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
             new PIDConstants(5.0, 0.0, 0.0), // Rotation PID constants
-            4.5, // Max module speed, in m/s
-            0.4, // Drive base radius in meters. Distance from robot center to furthest module.
+            MAX_LINEAR_SPEED, // Max module speed, in m/s
+            DRIVE_BASE_RADIUS, // Drive base radius in meters. Distance from robot center to
+            // furthest module.
             new ReplanningConfig() // Default path replanning config. See the API for the options
             // here
             ),
-        () -> true,
+        () -> false,
         this // Reference to this subsystem to set requirements
         );
     PathPlannerLogging.setLogTargetPoseCallback(
-        (pose) -> Logger.recordOutput("PathPlanner/Target", pose));
+        (pose) -> {
+          Logger.recordOutput("PathPlanner/Target", pose);
+          Logger.recordOutput(
+              "PathPlanner/Absolute Translation Error",
+              pose.minus(getPose()).getTranslation().getNorm());
+        });
+    PathPlannerLogging.setLogActivePathCallback(
+        (path) -> Logger.recordOutput("PathPlanner/Active Path", path.toArray(Pose2d[]::new)));
+    Logger.recordOutput("PathPlanner/Target", new Pose2d());
+    Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
+
+    odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
   }
 
   /**
@@ -151,34 +164,36 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // Update odometry
-    int deltaCount =
-        Math.min(
-            gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
-            Arrays.stream(modules)
-                .map((m) -> m.getPositionDeltas().length)
-                .min(Integer::compare)
-                .get());
-    for (int deltaIndex = 0; deltaIndex < deltaCount; deltaIndex++) {
-      // Read wheel deltas from each module
-      SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
-      for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        wheelDeltas[moduleIndex] = modules[moduleIndex].getPositionDeltas()[deltaIndex];
-      }
+    // int deltaCount =
+    //     Math.min(
+    //         gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
+    //         Arrays.stream(modules)
+    //             .map((m) -> m.getPositionDeltas().length)
+    //             .min(Integer::compare)
+    //             .get());
+    // for (int deltaIndex = 0; deltaIndex < deltaCount; deltaIndex++) {
+    //   // Read wheel deltas from each module
+    //   SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
+    //   for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
+    //     wheelDeltas[moduleIndex] = modules[moduleIndex].getPositionDeltas()[deltaIndex];
+    //   }
 
-      // The twist represents the motion of the robot since the last
-      // sample in x, y, and theta based only on the modules, without
-      // the gyro. The gyro is always disconnected in simulation.
-      var twist = kinematics.toTwist2d(wheelDeltas);
-      if (gyroInputs.connected) {
-        // If the gyro is connected, replace the theta component of the twist
-        // with the change in angle since the last sample.
-        Rotation2d gyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
-        twist = new Twist2d(twist.dx, twist.dy, gyroRotation.minus(lastGyroRotation).getRadians());
-        lastGyroRotation = gyroRotation;
-      }
-      // Apply the twist (change since last sample) to the current pose
-      pose = pose.exp(twist);
-    }
+    //   // The twist represents the motion of the robot since the last
+    //   // sample in x, y, and theta based only on the modules, without
+    //   // the gyro. The gyro is always disconnected in simulation.
+    //   var twist = kinematics.toTwist2d(wheelDeltas);
+    //   if (gyroInputs.connected) {
+    //     // If the gyro is connected, replace the theta component of the twist
+    //     // with the change in angle since the last sample.
+    //     Rotation2d gyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
+    //     twist = new Twist2d(twist.dx, twist.dy,
+    // gyroRotation.minus(lastGyroRotation).getRadians());
+    //     lastGyroRotation = gyroRotation;
+    //   }
+    // Apply the twist (change since last sample) to the current pose
+    // pose = pose.exp(twist);
+    // }
+    pose = odometry.update(gyroInputs.yawPosition, getModulePositions());
   }
 
   private void runVelocity(ChassisSpeeds speeds) {
@@ -186,6 +201,9 @@ public class SwerveSubsystem extends SubsystemBase {
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+
+    Logger.recordOutput("Swerve/Target Speeds", discreteSpeeds);
+    Logger.recordOutput("Swerve/Speed Error", discreteSpeeds.minus(getVelocity()));
 
     // Send setpoints to modules
     SwerveModuleState[] optimizedSetpointStates =
@@ -247,6 +265,16 @@ public class SwerveSubsystem extends SubsystemBase {
     return driveVelocityAverage / 4.0;
   }
 
+  private SwerveModulePosition[] getModulePositions() {
+
+    SwerveModulePosition[] positions = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      positions[i] = modules[i].getPosition();
+    }
+
+    return positions;
+  }
+
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
@@ -288,10 +316,12 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
+    odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
     gyroIO.setYaw(yaw);
+    setPose(new Pose2d(getPose().getTranslation(), yaw));
   }
 
   /** Returns an array of module translations. */

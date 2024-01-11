@@ -25,6 +25,10 @@ public class ShooterIOReal implements ShooterIO {
     shooterConfig.Slot0.kD = 0;
     shooterConfig.Slot0.kI = 0;
     shooterConfig.Slot0.kV = 0;
+
+    shooterConfig.CurrentLimits.StatorCurrentLimit = 100.0;
+    shooterConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    shooterMotor.getConfigurator().apply(shooterConfig);
   }
 
   public void setVelocity(double velocity) {
