@@ -16,7 +16,7 @@ public interface VisionIO {
   public static class VisionIOInputs {
     public double timestamp = 0.0;
     public double latency = 0.0;
-    public List<PhotonTrackedTarget> targets = new ArrayList<>();
+    public List<PhotonTrackedTarget> targets = new ArrayList<>(); // FIXME fix protobuf!!!!
     public double numTags = 0;
     public Pose3d pose = new Pose3d();
   }
