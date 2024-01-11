@@ -4,8 +4,8 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -133,14 +133,17 @@ public class Robot extends LoggedRobot {
         .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
     // Auto Bindings here
     NamedCommands.registerCommand(
-        "fender", Commands.none()
-        // Commands.race(Commands.waitSeconds(1.0), swerve.stopWithXCmd(), pivot.run(0))
-        //     .asProxy()
-        //     .withTimeout(2.0)
+        "fender", Commands.print("pew")
+        // Commands.parallel(
+        //         swerve.stopCmd(),
+        //         shooter.run(-10.0),
+        //         pivot.run(-30.0),
+        //         Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360).asProxy()))
+        //     .withTimeout(1.5)
+        //     .andThen(Commands.print("done shooting"))
         );
     NamedCommands.registerCommand(
-        "intake",
-        Commands.parallel(Commands.print("intake"), shooter.run(5.0), pivot.run(100.0)).asProxy());
+        "intake", Commands.parallel(Commands.print("intake"), shooter.run(5.0), pivot.run(100.0)));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -160,7 +163,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("local 4");
+    autonomousCommand = AutoBuilder.buildAuto("local 4");
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
