@@ -114,9 +114,7 @@ public class Robot extends LoggedRobot {
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
     controller.leftTrigger().whileTrue(intake());
-    controller
-        .rightTrigger()
-        .whileTrue(shootFender());
+    controller.rightTrigger().whileTrue(shootFender());
     controller
         .leftBumper()
         .whileTrue(
@@ -128,11 +126,8 @@ public class Robot extends LoggedRobot {
         .a()
         .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
     // Auto Bindings here
-    NamedCommands.registerCommand(
-        "fender", shootFender()
-        );
-    NamedCommands.registerCommand(
-        "intake", intake());
+    NamedCommands.registerCommand("fender", shootFender());
+    NamedCommands.registerCommand("intake", intake());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -174,11 +169,11 @@ public class Robot extends LoggedRobot {
 
   private Command shootFender() {
     return Commands.parallel(
-                swerve.stopCmd(),
-                shooter.run(-10.0),
-                pivot.run(-63.0),
-                Commands.waitSeconds(0.75).andThen(kicker.run(-6.0 * 360).asProxy()))
-            .withTimeout(1.5)
-            .andThen(Commands.print("done shooting"));
+            swerve.stopCmd(),
+            shooter.run(-10.0),
+            pivot.run(-63.0),
+            Commands.waitSeconds(0.75).andThen(kicker.run(-6.0 * 360).asProxy()))
+        .withTimeout(1.5)
+        .andThen(Commands.print("done shooting"));
   }
 }
