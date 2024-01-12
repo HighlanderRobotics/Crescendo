@@ -24,13 +24,14 @@ import java.util.Queue;
 
 /** IO implementation for Pigeon2 */
 public class GyroIOPigeon2 implements GyroIO {
-  private final Pigeon2 pigeon = new Pigeon2(20);
+  private final Pigeon2 pigeon = new Pigeon2(SwerveSubsystem.PIGEON_ID);
   private final StatusSignal<Double> yaw = pigeon.getYaw();
   private final Queue<Double> yawPositionQueue;
   private final StatusSignal<Double> yawVelocity = pigeon.getAngularVelocityZWorld();
 
   public GyroIOPigeon2() {
-    pigeon.getConfigurator().apply(new Pigeon2Configuration());
+    var config = new Pigeon2Configuration();
+    pigeon.getConfigurator().apply(config);
     pigeon.getConfigurator().setYaw(0.0);
     yaw.setUpdateFrequency(Module.ODOMETRY_FREQUENCY_HZ);
     yawVelocity.setUpdateFrequency(100.0);
@@ -49,5 +50,10 @@ public class GyroIOPigeon2 implements GyroIO {
             .map((Double value) -> Rotation2d.fromDegrees(value))
             .toArray(Rotation2d[]::new);
     yawPositionQueue.clear();
+  }
+
+  @Override
+  public void setYaw(Rotation2d yaw) {
+    pigeon.setYaw(yaw.getDegrees());
   }
 }

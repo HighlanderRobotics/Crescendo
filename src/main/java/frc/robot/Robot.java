@@ -6,6 +6,8 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -13,6 +15,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.kicker.KickerIOReal;
+import frc.robot.subsystems.kicker.KickerSubsystem;
+import frc.robot.subsystems.pivot.PivotIOReal;
+import frc.robot.subsystems.pivot.PivotSubsystem;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -41,6 +49,9 @@ public class Robot extends LoggedRobot {
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
+  private final ShooterSubsystem shooter = new ShooterSubsystem(new ShooterIOReal());
+  private final PivotSubsystem pivot = new PivotSubsystem(new PivotIOReal());
+  private final KickerSubsystem kicker = new KickerSubsystem(new KickerIOReal());
 
   @Override
   public void robotInit() {
@@ -64,7 +75,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -93,16 +104,30 @@ public class Robot extends LoggedRobot {
                 new ChassisSpeeds(
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
+    shooter.setDefaultCommand(shooter.run(0.0));
+    pivot.setDefaultCommand(pivot.run(-100.0));
+    kicker.setDefaultCommand(kicker.run(0.0));
+
+    // Controller bindings here
+    controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
+
+    controller.leftTrigger().whileTrue(intake());
+    controller.rightTrigger().whileTrue(shootFender());
+    controller
+        .leftBumper()
+        .whileTrue(
+            Commands.parallel(
+                pivot.run(10.0),
+                shooter.run(-2.0),
+                Commands.waitSeconds(0.5).andThen(kicker.run(-6.0 * 360))));
+    controller
+        .a()
+        .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
     // Auto Bindings here
-    NamedCommands.registerCommand(
-        "fender",
-        Commands.deadline(
-            Commands.sequence(
-                Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
-            swerve.stopCmd()));
-    NamedCommands.registerCommand("intake", Commands.print("intake"));
+    NamedCommands.registerCommand("fender", shootFender());
+    NamedCommands.registerCommand("intake", intake());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -112,13 +137,7 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void disabledInit() {}
-
-  @Override
   public void disabledPeriodic() {}
-
-  @Override
-  public void disabledExit() {}
 
   @Override
   public void autonomousInit() {
@@ -128,12 +147,6 @@ public class Robot extends LoggedRobot {
       autonomousCommand.schedule();
     }
   }
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void autonomousExit() {}
 
   @Override
   public void teleopInit() {
@@ -146,16 +159,21 @@ public class Robot extends LoggedRobot {
   public void teleopPeriodic() {}
 
   @Override
-  public void teleopExit() {}
-
-  @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
   }
 
-  @Override
-  public void testPeriodic() {}
+  private Command intake() {
+    return Commands.parallel(shooter.run(5.0), pivot.run(0.0));
+  }
 
-  @Override
-  public void testExit() {}
+  private Command shootFender() {
+    return Commands.parallel(
+            swerve.stopCmd(),
+            Commands.waitSeconds(0.5).andThen(shooter.run(-10.0)),
+            pivot.run(-160.0),
+            Commands.waitSeconds(1.0).andThen(kicker.run(-6.0 * 360).asProxy()))
+        .withTimeout(1.5)
+        .andThen(Commands.print("done shooting"));
+  }
 }
