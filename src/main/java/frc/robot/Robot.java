@@ -107,7 +107,7 @@ public class Robot extends LoggedRobot {
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
     shooter.setDefaultCommand(shooter.run(0.0));
-    pivot.setDefaultCommand(pivot.run(0.0));
+    pivot.setDefaultCommand(pivot.run(-100.0));
     kicker.setDefaultCommand(kicker.run(0.0));
 
     // Controller bindings here
@@ -164,15 +164,15 @@ public class Robot extends LoggedRobot {
   }
 
   private Command intake() {
-    return Commands.parallel(shooter.run(5.0), pivot.run(103.0));
+    return Commands.parallel(shooter.run(5.0), pivot.run(0.0));
   }
 
   private Command shootFender() {
     return Commands.parallel(
             swerve.stopCmd(),
-            shooter.run(-10.0),
-            pivot.run(-63.0),
-            Commands.waitSeconds(0.75).andThen(kicker.run(-6.0 * 360).asProxy()))
+            Commands.waitSeconds(0.5).andThen(shooter.run(-10.0)),
+            pivot.run(-160.0),
+            Commands.waitSeconds(1.0).andThen(kicker.run(-6.0 * 360).asProxy()))
         .withTimeout(1.5)
         .andThen(Commands.print("done shooting"));
   }
