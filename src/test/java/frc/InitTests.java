@@ -4,23 +4,22 @@
 
 package frc;
 
+import edu.wpi.first.hal.HAL;
+import frc.robot.Robot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import edu.wpi.first.hal.HAL;
-import frc.robot.Robot;
-
 /** Test robot init. */
 public class InitTests {
-    @BeforeEach
-    private void setup() {
-        HAL.initialize(500, 0);
-    }
-
-    @Test
-    private void initTest() {
-        var robot = new Robot();
-        robot.startCompetition();
-        robot.close();
-    }
+  @BeforeEach
+  private void setup() {
+    HAL.initialize(500, 0);
   }
+
+  @Test
+  private void initTest() {
+    var robot = new Robot();
+    robot.startCompetition();
+    robot.close();
+  }
+}
