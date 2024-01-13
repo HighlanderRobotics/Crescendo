@@ -4,33 +4,30 @@
 
 package frc.robot.subsystems.autoaim;
 
+import org.checkerframework.checker.units.qual.C;
+
+import com.google.flatbuffers.FlexBuffers.Map;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.interpolation.Interpolatable;
+import edu.wpi.first.wpilibj2.command.Command;
 
-class ShotAngle implements Comparable<ShotAngle> {
+class ShotData{
 
-    Rotation2d rotation;
+    double distance;
+    double SHOOTER_HEIGHT = 1.98; // meters 
 
-    public ShotAngle(Rotation2d rotation) {
-        this.rotation = rotation;
+    public ShotData(double distance) {
+        this.distance = distance;
     }
 
-    @Override
-    public int compareTo(ShotAngle o) {
-        return Double.valueOf(rotation.getRotations()).compareTo(o.rotation.getRotations());
+    public Command rotateShooterAngle(){
+        return new Command() {
+            double angle = Math.atan(SHOOTER_HEIGHT/distance);
+
+            
+        };
+
     }
 }
-
-// class ShotPose implements Comparable<ShotPose> {
-
-//     Pose2d pose;
-
-//     public ShotPose(Pose2d pose) {
-//         this.pose = pose;
-//     }
-
-//     @Override
-//     public int compareTo(ShotPose o) {
-//         return Double.valueOf(pose.getRotations()).compareTo(o.pose.getRotations());
-//     }
-// }
