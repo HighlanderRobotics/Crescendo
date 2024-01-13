@@ -4,30 +4,34 @@
 
 package frc.robot.subsystems.autoaim;
 
-import org.checkerframework.checker.units.qual.C;
-
-import com.google.flatbuffers.FlexBuffers.Map;
-
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.interpolation.Interpolatable;
-import edu.wpi.first.wpilibj2.command.Command;
 
-class ShotData{
+public class ShotData implements Interpolatable<ShotData> {
 
-    double distance;
-    double SHOOTER_HEIGHT = 1.98; // meters 
+  private double angle;
+  private double rotationsPerSecond;
 
-    public ShotData(double distance) {
-        this.distance = distance;
-    }
+  public ShotData(double angle, double rotationsPerSecond) {
+    this.angle = angle;
+    this.rotationsPerSecond = rotationsPerSecond;
+  }
 
-    public Command rotateShooterAngle(){
-        return new Command() {
-            double angle = Math.atan(SHOOTER_HEIGHT/distance);
+  public double getAngle() {
+    return angle;
+  }
 
-            
-        };
+  public double getRPM() {
+    return rotationsPerSecond;
+  }
 
-    }
+  @Override
+  public ShotData interpolate(ShotData endValue, double t) {
+    return new ShotData(
+        ((endValue.getAngle() - angle) * t) + angle,
+        ((endValue.getRPM() - rotationsPerSecond) * t) + rotationsPerSecond);
+  }
+
+  public String toString() {
+    return "" + getAngle() + " " + getRPM();
+  }
 }

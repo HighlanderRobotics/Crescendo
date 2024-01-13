@@ -31,6 +31,9 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.FieldConstants;
+import frc.robot.subsystems.autoaim.AutoAim;
+import frc.robot.subsystems.autoaim.ShotData;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
@@ -71,6 +74,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
+    new AutoAim();
     modules = new Module[moduleIOs.length];
 
     for (int i = 0; i < moduleIOs.length; i++) {
@@ -163,6 +167,23 @@ public class SwerveSubsystem extends SubsystemBase {
     if (DriverStation.isDisabled()) {
       Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+    }
+
+    double distance =
+        Math.sqrt(
+            Math.pow((pose.getX() - FieldConstants.BLUE_SPEAKER_POSE.getX()), 2)
+                + Math.pow((pose.getY() - FieldConstants.BLUE_SPEAKER_POSE.getY()), 2));
+    ShotData shotData = AutoAim.shotMap.get(distance);
+    Logger.recordOutput("Distance", distance);
+    for (double i = 0; i < 10; i++) {
+      System.out.println(AutoAim.shotMap.get(i));
+    }
+    System.out.println("--");
+    if (shotData == null) {
+      System.out.println("shotData is null!");
+    } else {
+      Logger.recordOutput("Shotmap Angle", shotData.getAngle());
+      Logger.recordOutput("Shotmap RPM", shotData.getRPM());
     }
 
     // Update odometry
