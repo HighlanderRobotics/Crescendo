@@ -33,6 +33,8 @@ public class VisionIOSim implements VisionIO {
     sim.update(pose);
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    // inputs.targets = result.targets;
+    for (int i = 0; i < result.targets.size(); i++) {
+      inputs.targets.add(i, new PhotonTrackedTargetProtobufWrapper(result.targets.get(i)));
+    }
   }
 }

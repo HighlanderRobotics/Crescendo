@@ -8,7 +8,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import java.util.ArrayList;
 import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
-import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Add your docs here. */
 public interface VisionIO {
@@ -16,7 +15,8 @@ public interface VisionIO {
   public static class VisionIOInputs {
     public double timestamp = 0.0;
     public double latency = 0.0;
-    public List<PhotonTrackedTarget> targets = new ArrayList<>(); // FIXME fix protobuf!!!!
+    public List<PhotonTrackedTargetProtobufWrapper> targets =
+        new ArrayList<>(); // FIXME fix protobuf!!!!
     public double numTags = 0;
     public Pose3d pose = new Pose3d();
   }

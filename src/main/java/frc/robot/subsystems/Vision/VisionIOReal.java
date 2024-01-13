@@ -15,9 +15,14 @@ public class VisionIOReal implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs, Pose3d pose) {
-    var latestResult = camera.getLatestResult();
-    inputs.timestamp = latestResult.getTimestampSeconds();
-    inputs.latency = latestResult.getLatencyMillis();
-    // inputs.targets = latestResult.targets;
+    var result = camera.getLatestResult();
+    inputs.timestamp = result.getTimestampSeconds();
+    inputs.latency = result.getLatencyMillis();
+    for (int i = 0; i < result.targets.size(); i++) {
+      inputs.targets.add(i, new PhotonTrackedTargetProtobufWrapper(result.targets.get(i)));
+    }
+    // for (PhotonTrackedTarget target : result.targets) {
+    //   inputs.targets.add(new PhotonTrackedTargetProtobufWrapper(target));
+    // }
   }
 }
