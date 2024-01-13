@@ -29,6 +29,7 @@
     },
     "Clients": {
       "open": true
-    }
+    },
+    "visible": true
   }
 }
