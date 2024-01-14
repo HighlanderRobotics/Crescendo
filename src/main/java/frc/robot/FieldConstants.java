@@ -4,10 +4,7 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 /** Add your docs here. */
@@ -16,6 +13,4 @@ public class FieldConstants {
   public static final Translation2d BLUE_SPEAKER_POSE = new Translation2d(-0.086473, 5.757474);
   public static final Translation2d RED_SPEAKER_POSE = new Translation2d(16.389722, 5.519);
   private static final Alliance Optional = null;
-
-
 }
