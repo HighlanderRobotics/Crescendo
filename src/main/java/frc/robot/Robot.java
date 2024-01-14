@@ -99,6 +99,13 @@ public class Robot extends LoggedRobot {
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
+    controller
+        .a()
+        .whileTrue(
+            swerve.pointTowardsTranslation(
+                () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
+
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 

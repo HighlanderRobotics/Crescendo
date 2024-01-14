@@ -19,14 +19,19 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -38,6 +43,7 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -175,7 +181,8 @@ public class SwerveSubsystem extends SubsystemBase {
                 + Math.pow((pose.getY() - FieldConstants.BLUE_SPEAKER_POSE.getY()), 2));
     ShotData shotData = AutoAim.shotMap.get(distance);
     Logger.recordOutput("Distance", distance);
-
+    Logger.recordOutput(
+        "Rotation To Speaker", getRotationToTranslation(FieldConstants.BLUE_SPEAKER_POSE));
     if (shotData == null) {
       System.out.println("shotData is null!");
     } else {
@@ -184,36 +191,34 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // Update odometry
-    // int deltaCount =
-    //     Math.min(
-    //         gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
-    //         Arrays.stream(modules)
-    //             .map((m) -> m.getPositionDeltas().length)
-    //             .min(Integer::compare)
-    //             .get());
-    // for (int deltaIndex = 0; deltaIndex < deltaCount; deltaIndex++) {
-    //   // Read wheel deltas from each module
-    //   SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
-    //   for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-    //     wheelDeltas[moduleIndex] = modules[moduleIndex].getPositionDeltas()[deltaIndex];
-    //   }
+    int deltaCount =
+        Math.min(
+            gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
+            Arrays.stream(modules)
+                .map((m) -> m.getPositionDeltas().length)
+                .min(Integer::compare)
+                .get());
+    for (int deltaIndex = 0; deltaIndex < deltaCount; deltaIndex++) {
+      // Read wheel deltas from each module
+      SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
+      for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
+        wheelDeltas[moduleIndex] = modules[moduleIndex].getPositionDeltas()[deltaIndex];
+      }
 
-    //   // The twist represents the motion of the robot since the last
-    //   // sample in x, y, and theta based only on the modules, without
-    //   // the gyro. The gyro is always disconnected in simulation.
-    //   var twist = kinematics.toTwist2d(wheelDeltas);
-    //   if (gyroInputs.connected) {
-    //     // If the gyro is connected, replace the theta component of the twist
-    //     // with the change in angle since the last sample.
-    //     Rotation2d gyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
-    //     twist = new Twist2d(twist.dx, twist.dy,
-    // gyroRotation.minus(lastGyroRotation).getRadians());
-    //     lastGyroRotation = gyroRotation;
-    //   }
-    // Apply the twist (change since last sample) to the current pose
-    // pose = pose.exp(twist);
-    // }
-    pose = odometry.update(gyroInputs.yawPosition, getModulePositions());
+      // The twist represents the motion of the robot since the last
+      // sample in x, y, and theta based only on the modules, without
+      // the gyro. The gyro is always disconnected in simulation.
+      var twist = kinematics.toTwist2d(wheelDeltas);
+      if (gyroInputs.connected) {
+        // If the gyro is connected, replace the theta component of the twist
+        // with the change in angle since the last sample.
+        Rotation2d gyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
+        twist = new Twist2d(twist.dx, twist.dy, gyroRotation.minus(lastGyroRotation).getRadians());
+        lastGyroRotation = gyroRotation;
+      }
+      // Apply the twist (change since last sample) to the current pose
+      pose = pose.exp(twist);
+    }
   }
 
   public void runVelocity(ChassisSpeeds speeds) {
@@ -352,5 +357,31 @@ public class SwerveSubsystem extends SubsystemBase {
       new Translation2d(-TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
       new Translation2d(-TRACK_WIDTH_X / 2.0, -TRACK_WIDTH_Y / 2.0)
     };
+  }
+
+  public Rotation2d getRotationToTranslation(Translation2d translation) {
+
+    double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() -  pose.getX());
+    return Rotation2d.fromRadians(angle);
+  }
+
+  public Command pointTowardsTranslation(DoubleSupplier x, DoubleSupplier y) {
+    ProfiledPIDController headingController = new ProfiledPIDController(1.0, 0.0, 0.0, new Constraints(10, 10));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return this.runVelocityFieldRelative(
+        () -> {
+
+          Logger.recordOutput("PIDController Setpoint", headingController.getSetpoint().position);
+          Logger.recordOutput("PIDController Error", headingController.getPositionError());
+          double calculated =
+              headingController.calculate(getPose().getRotation().getRadians(),
+                  getRotationToTranslation(FieldConstants.BLUE_SPEAKER_POSE).getRadians());
+
+          
+          Logger.recordOutput("PIDController calculate", calculated);
+          return new ChassisSpeeds(x.getAsDouble(), y.getAsDouble(), calculated + headingController.getSetpoint().velocity);
+        }).beforeStarting(() -> headingController.reset(new State(getPose().getRotation().getRadians(), getVelocity().omegaRadiansPerSecond)));
+    // return this.runVelocityFieldRelative(() -> new ChassisSpeeds(1,1,1));
   }
 }
