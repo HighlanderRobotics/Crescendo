@@ -19,7 +19,6 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -362,27 +361,37 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Rotation2d getRotationToTranslation(Translation2d translation) {
 
-    double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() -  pose.getX());
+    double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
     return Rotation2d.fromRadians(angle);
   }
 
   public Command pointTowardsTranslation(DoubleSupplier x, DoubleSupplier y) {
-    ProfiledPIDController headingController = new ProfiledPIDController(1.0, 0.0, 0.0, new Constraints(10, 10));
+    ProfiledPIDController headingController =
+        new ProfiledPIDController(1.0, 0.0, 0.0, new Constraints(10, 10));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     return this.runVelocityFieldRelative(
-        () -> {
+            () -> {
+              Logger.recordOutput(
+                  "PIDController Setpoint", headingController.getSetpoint().position);
+              Logger.recordOutput("PIDController Error", headingController.getPositionError());
+              double calculated =
+                  headingController.calculate(
+                      getPose().getRotation().getRadians(),
+                      getRotationToTranslation(FieldConstants.BLUE_SPEAKER_POSE).getRadians());
 
-          Logger.recordOutput("PIDController Setpoint", headingController.getSetpoint().position);
-          Logger.recordOutput("PIDController Error", headingController.getPositionError());
-          double calculated =
-              headingController.calculate(getPose().getRotation().getRadians(),
-                  getRotationToTranslation(FieldConstants.BLUE_SPEAKER_POSE).getRadians());
-
-          
-          Logger.recordOutput("PIDController calculate", calculated);
-          return new ChassisSpeeds(x.getAsDouble(), y.getAsDouble(), calculated + headingController.getSetpoint().velocity);
-        }).beforeStarting(() -> headingController.reset(new State(getPose().getRotation().getRadians(), getVelocity().omegaRadiansPerSecond)));
+              Logger.recordOutput("PIDController calculate", calculated);
+              return new ChassisSpeeds(
+                  x.getAsDouble(),
+                  y.getAsDouble(),
+                  calculated + headingController.getSetpoint().velocity);
+            })
+        .beforeStarting(
+            () ->
+                headingController.reset(
+                    new State(
+                        getPose().getRotation().getRadians(),
+                        getVelocity().omegaRadiansPerSecond)));
     // return this.runVelocityFieldRelative(() -> new ChassisSpeeds(1,1,1));
   }
 }
