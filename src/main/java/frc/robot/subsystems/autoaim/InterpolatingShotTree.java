@@ -1,0 +1,68 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.subsystems.autoaim;
+
+import java.util.TreeMap;
+
+/** Add your docs here. */
+public class InterpolatingShotTree {
+
+  private final TreeMap<Double, ShotData> map = new TreeMap<>();
+
+  public InterpolatingShotTree() {
+
+    // TODO Auto-generated constructor stub
+  }
+
+  public void put(Double key, ShotData value) {
+    map.put(key, value);
+  }
+
+  public ShotData get(Double key) {
+    ShotData val = map.get(key);
+    if (val == null) {
+      Double ceilingKey = map.ceilingKey(key);
+      Double floorKey = map.floorKey(key);
+
+      if (ceilingKey == null && floorKey == null) {
+        return null;
+      }
+      if (ceilingKey == null) {
+        return map.get(floorKey);
+      }
+      if (floorKey == null) {
+        return map.get(ceilingKey);
+      }
+      ShotData floor = map.get(floorKey);
+      ShotData ceiling = map.get(ceilingKey);
+
+      return interpolate(floor, ceiling, inverseInterpolate(ceilingKey, key, floorKey));
+    } else {
+      return val;
+    }
+  }
+
+  public void clear() {
+    map.clear();
+  }
+
+  private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
+    return new ShotData(
+        ((endValue.getAngle() - startValue.getAngle()) * t) + startValue.getAngle(),
+        ((endValue.getRPM() - startValue.getRPM()) * t) + startValue.getRPM());
+  }
+
+  private double inverseInterpolate(Double up, Double q, Double down) {
+    double upperToLower = up.doubleValue() - down.doubleValue();
+    if (upperToLower <= 0) {
+      return 0.0;
+    }
+    double queryToLower = q.doubleValue() - down.doubleValue();
+    if (queryToLower <= 0) {
+      return 0.0;
+    }
+    return queryToLower / upperToLower;
+  }
+}

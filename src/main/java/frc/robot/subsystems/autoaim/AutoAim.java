@@ -4,14 +4,10 @@
 
 package frc.robot.subsystems.autoaim;
 
-import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
-
 /** Add your docs here. */
 public class AutoAim {
 
-  public static final InterpolatingTreeMap<Double, ShotData> shotMap =
-      new InterpolatingTreeMap<Double, ShotData>(
-          ((a, b, t) -> ((b - a) * t) + a), ShotData::interpolate);
+  public static final InterpolatingShotTree shotMap = new InterpolatingShotTree();
 
   public AutoAim() {
 

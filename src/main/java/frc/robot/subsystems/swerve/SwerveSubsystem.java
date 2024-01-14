@@ -175,10 +175,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 + Math.pow((pose.getY() - FieldConstants.BLUE_SPEAKER_POSE.getY()), 2));
     ShotData shotData = AutoAim.shotMap.get(distance);
     Logger.recordOutput("Distance", distance);
-    for (double i = 0; i < 10; i++) {
-      System.out.println(AutoAim.shotMap.get(i));
-    }
-    System.out.println("--");
+
     if (shotData == null) {
       System.out.println("shotData is null!");
     } else {
