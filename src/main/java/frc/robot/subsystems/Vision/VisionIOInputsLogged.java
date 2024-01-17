@@ -3,8 +3,8 @@ package frc.robot.subsystems.Vision;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
-/** AutoLog does not work with PhotonTrackedTargets 
- * as of yet which is very sad but until it does
+/**
+ * AutoLog does not work with PhotonTrackedTargets as of yet which is very sad but until it does
  * here is a manual implementation
  */
 public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
