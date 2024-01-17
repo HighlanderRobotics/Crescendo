@@ -24,6 +24,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
@@ -36,15 +37,19 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Vision.VisionHelper;
 import frc.robot.subsystems.Vision.VisionIO;
-// import frc.robot.subsystems.Vision.VisionIOInputsAutoLogged;
+import frc.robot.subsystems.Vision.VisionIOInputsLogged;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonPipelineResult;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
@@ -77,6 +82,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   private final VisionIO visionIO;
   // private final VisionIOInputsAutoLogged visionInputs = new VisionIOInputsAutoLogged();
+  private final VisionIOInputsLogged visionInputs = new VisionIOInputsLogged();
   private AprilTagFieldLayout tagFieldLayout;
   public SwerveDrivePoseEstimator estimator;
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
@@ -203,34 +209,34 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     Logger.recordOutput("Swerve Pose", pose);
 
-    // visionIO.updateInputs(visionInputs, new Pose3d(pose));
-    // Logger.processInputs("Vision", visionInputs);
-    // PhotonPipelineResult result =
-    //     new PhotonPipelineResult(visionInputs.latency, visionInputs.targets);
-    // result.setTimestampSeconds(visionInputs.timestamp);
-    // try {
-    //   var estPose =
-    //       VisionHelper.update(
-    //               result,
-    //               tagFieldLayout,
-    //               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-    //               PoseStrategy.LOWEST_AMBIGUITY)
-    //           .get();
-    //   var visionPose =
-    //       VisionHelper.update(
-    //               result,
-    //               tagFieldLayout,
-    //               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-    //               PoseStrategy.LOWEST_AMBIGUITY)
-    //           .get()
-    //           .estimatedPose;
-    //   Logger.recordOutput("Vision Pose", visionPose);
-    //   estimator.addVisionMeasurement(
-    //       visionPose.toPose2d(),
-    //       visionInputs.timestamp,
-    //       VisionHelper.findVisionMeasurements(estPose));
-    // } catch (NoSuchElementException e) {
-    // }
+    visionIO.updateInputs(visionInputs, new Pose3d(pose));
+    Logger.processInputs("Vision", visionInputs);
+    PhotonPipelineResult result =
+        new PhotonPipelineResult(visionInputs.latency, visionInputs.targets);
+    result.setTimestampSeconds(visionInputs.timestamp);
+    try {
+      var estPose =
+          VisionHelper.update(
+                  result,
+                  tagFieldLayout,
+                  PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                  PoseStrategy.LOWEST_AMBIGUITY)
+              .get();
+      var visionPose =
+          VisionHelper.update(
+                  result,
+                  tagFieldLayout,
+                  PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                  PoseStrategy.LOWEST_AMBIGUITY)
+              .get()
+              .estimatedPose;
+      Logger.recordOutput("Vision Pose", visionPose);
+      estimator.addVisionMeasurement(
+          visionPose.toPose2d(),
+          visionInputs.timestamp,
+          VisionHelper.findVisionMeasurements(estPose));
+    } catch (NoSuchElementException e) {
+    }
 
     // From 6995 - untested
     // try {

@@ -18,11 +18,6 @@ public class VisionIOReal implements VisionIO {
     var result = camera.getLatestResult();
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    for (int i = 0; i < result.targets.size(); i++) {
-      inputs.targets.add(i, new PhotonTrackedTargetProtobufWrapper(result.targets.get(i)));
-    }
-    // for (PhotonTrackedTarget target : result.targets) {
-    //   inputs.targets.add(new PhotonTrackedTargetProtobufWrapper(target));
-    // }
+    inputs.targets = result.targets;
   }
 }
