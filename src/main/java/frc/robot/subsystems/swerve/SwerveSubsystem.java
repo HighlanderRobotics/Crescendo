@@ -41,7 +41,6 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOInputsLogged;
-
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
