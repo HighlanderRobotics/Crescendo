@@ -15,8 +15,8 @@ public class FieldConstants {
   public static final Translation2d RED_SPEAKER_POSE = new Translation2d(16.389722, 5.757474);
 
   public static Translation2d getSpeaker() {
-    //Logger.recordOutput("red speaker", RED_SPEAKER_POSE);
-    //Logger.recordOutput("blue speaker", BLUE_SPEAKER_POSE);
+    // Logger.recordOutput("red speaker", RED_SPEAKER_POSE);
+    // Logger.recordOutput("blue speaker", BLUE_SPEAKER_POSE);
 
     if (DriverStation.getAlliance().isPresent()) {
       return DriverStation.getAlliance().get() == Alliance.Red
