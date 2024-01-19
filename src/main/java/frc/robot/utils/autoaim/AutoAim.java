@@ -11,7 +11,7 @@ public class AutoAim {
 
   public AutoAim() {
 
-    // Examples ultil we aquire actual data
+    // Examples until we aquire actual data
     for (double i = 0; i < 10; i++) {
       shotMap.put(i, new ShotData(5 * i, 100 * i));
     }
