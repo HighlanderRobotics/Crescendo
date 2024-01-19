@@ -23,7 +23,6 @@ public class FieldConstants {
           ? RED_SPEAKER_POSE
           : BLUE_SPEAKER_POSE;
     } else {
-
       return BLUE_SPEAKER_POSE; // default to blue
     }
   }
