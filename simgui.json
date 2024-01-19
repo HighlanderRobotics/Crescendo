@@ -1,7 +1,9 @@
 {
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo"
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/reset Kicker value": "Command",
+      "/SmartDashboard/reset Pivot value": "Command"
     }
   },
   "NetworkTables": {
@@ -29,6 +31,7 @@
     },
     "Clients": {
       "open": true
-    }
+    },
+    "visible": true
   }
 }
