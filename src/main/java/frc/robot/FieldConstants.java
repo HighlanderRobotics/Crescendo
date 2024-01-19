@@ -15,8 +15,6 @@ public class FieldConstants {
   public static final Translation2d RED_SPEAKER_POSE = new Translation2d(16.389722, 5.757474);
 
   public static Translation2d getSpeaker() {
-
-
     if (DriverStation.getAlliance().isPresent()) {
       return DriverStation.getAlliance().get() == Alliance.Red
           ? RED_SPEAKER_POSE
