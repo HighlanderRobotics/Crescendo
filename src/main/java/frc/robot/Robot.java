@@ -18,7 +18,6 @@ import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
-
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;

@@ -41,7 +41,6 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOInputsLogged;
-
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
@@ -84,7 +83,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final VisionIO visionIO;
   // private final VisionIOInputsAutoLogged visionInputs = new VisionIOInputsAutoLogged();
   private final VisionIOInputsLogged visionInputs = new VisionIOInputsLogged();
-  private AprilTagFieldLayout tagFieldLayout;
+  private AprilTagFieldLayout fieldTags;
   public SwerveDrivePoseEstimator estimator;
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   Vector<N3> visStdDevs = VecBuilder.fill(1.3, 1.3, 3.3);
@@ -219,16 +218,18 @@ public class SwerveSubsystem extends SubsystemBase {
       var estPose =
           VisionHelper.update(
                   result,
-                  tagFieldLayout,
+                  VisionHelper.CAMERA_MATRIX_OPT,
+                  VisionHelper.DIST_COEFFS_OPT,
                   PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                  PoseStrategy.LOWEST_AMBIGUITY)
+                  fieldTags)
               .get();
       var visionPose =
           VisionHelper.update(
                   result,
-                  tagFieldLayout,
+                  VisionHelper.CAMERA_MATRIX_OPT,
+                  VisionHelper.DIST_COEFFS_OPT,
                   PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                  PoseStrategy.LOWEST_AMBIGUITY)
+                  fieldTags)
               .get()
               .estimatedPose;
       Logger.recordOutput("Vision Pose", visionPose);

@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.MathUtil;
@@ -28,6 +27,7 @@ import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.estimation.TargetModel;
 import org.photonvision.estimation.VisionEstimation;
+import org.photonvision.targeting.PNPResult;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
@@ -166,49 +166,36 @@ public class VisionHelper {
         minAreaRectCorners,
         detectedCorners));
   }
-  /**
-   * Poll data from the configured cameras and update the estimated position of the robot. Returns
-   * empty if there are no cameras set or no targets were found from the cameras.
-   *
-   * @return an EstimatedRobotPose with an estimated pose, the timestamp, and targets used to create
-   *     the estimate
-   */
+
   public static Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult result,
-      AprilTagFieldLayout fieldTags,
-      PoseStrategy primaryStrategy,
-      PoseStrategy multiTagFallbackStrategy) {
-
-    double poseCacheTimestampSeconds = -1;
-
-    // Time in the past -- give up, since the following if expects times > 0
-    if (result.getTimestampSeconds() < 0) {
-      return Optional.empty();
-    }
-
-    // If the pose cache timestamp was set, and the result is from the same timestamp, return an
-    // empty result
-    // if (poseCacheTimestampSeconds > 0
-    //     && Math.abs(poseCacheTimestampSeconds - result.getTimestampSeconds()) < 1e-6) {
-    //   return Optional.empty();
-    // }
-
-    // Remember the timestamp of the current result used
-    poseCacheTimestampSeconds = result.getTimestampSeconds();
-
-    // If no targets seen, trivial case -- return empty result
-    if (!result.hasTargets()) {
-      return Optional.empty();
-    }
-
+      PhotonPipelineResult cameraResult,
+      Matrix<N3, N3> cameraMatrixOpt,
+      Matrix<N5, N1> distCoeffsOpt,
+      PoseStrategy strat,
+      AprilTagFieldLayout fieldTags) {
     Optional<EstimatedRobotPose> estimatedPose;
-    switch (primaryStrategy) {
+    switch (strat) {
       case LOWEST_AMBIGUITY:
-        estimatedPose = lowestAmbiguityStrategy(result, fieldTags);
+        estimatedPose = lowestAmbiguityStrategy(cameraResult, fieldTags);
+        break;
+      case MULTI_TAG_PNP_ON_RIO:
+        estimatedPose =
+            multiTagOnRioStrategy(
+                cameraResult,
+                Optional.of(cameraMatrixOpt),
+                Optional.of(distCoeffsOpt),
+                fieldTags,
+                PoseStrategy.LOWEST_AMBIGUITY); // TODO the optional thing seems dumb
         break;
       case MULTI_TAG_PNP_ON_COPROCESSOR:
         estimatedPose =
-            multiTagPNPStrategy(result, fieldTags, primaryStrategy, multiTagFallbackStrategy);
+            multiTagOnCoprocStrategy(
+                cameraResult,
+                Optional.of(cameraMatrixOpt),
+                Optional.of(distCoeffsOpt),
+                fieldTags,
+                VisionHelper.CAMERA_TO_ROBOT,
+                strat); // TODO make multiple cameras/coprocs actually work
         break;
       default:
         DriverStation.reportError(
@@ -216,77 +203,129 @@ public class VisionHelper {
         return Optional.empty();
     }
 
+    // if (estimatedPose.isEmpty()) {
+    //     lastPose = null;
+    // } //TODO i will ignore this and hope it does not cause issues
+
     return estimatedPose;
   }
 
-  private static Optional<EstimatedRobotPose> multiTagPNPStrategy(
+  /**
+   * Poll data from the configured cameras and update the estimated position of the robot. Returns
+   * // * empty if there are no cameras set or no targets were found from the cameras. // * //
+   * * @return an EstimatedRobotPose with an estimated pose, the timestamp, and targets used to
+   * create // * the estimate //
+   */
+  // public static Optional<EstimatedRobotPose> update(
+  //     PhotonPipelineResult result,
+  //     Optional<Matrix<N3, N3>> cameraMatrixOpt,
+  //     Optional<Matrix<N5, N1>> distCoeffsOpt,
+  //     PoseStrategy multiTagFallbackStrategy) {
+
+  //   double poseCacheTimestampSeconds = -1;
+
+  //   // Time in the past -- give up, since the following if expects times > 0
+  //   if (result.getTimestampSeconds() < 0) {
+  //     return Optional.empty();
+  //   }
+
+  //   // If the pose cache timestamp was set, and the result is from the same timestamp, return an
+  //   // empty result
+  //   // if (poseCacheTimestampSeconds > 0
+  //   //     && Math.abs(poseCacheTimestampSeconds - result.getTimestampSeconds()) < 1e-6) {
+  //   //   return Optional.empty();
+  //   // }
+
+  //   // Remember the timestamp of the current result used
+  //   poseCacheTimestampSeconds = result.getTimestampSeconds();
+
+  //   // If no targets seen, trivial case -- return empty result
+  //   if (!result.hasTargets()) {
+  //     return Optional.empty();
+  //   }
+
+  //   Optional<EstimatedRobotPose> estimatedPose;
+  //   switch (distCoeffsOpt) {
+  //     case LOWEST_AMBIGUITY:
+  //       estimatedPose = lowestAmbiguityStrategy(result, cameraMatrixOpt);
+  //       break;
+  //     case MULTI_TAG_PNP_ON_COPROCESSOR:
+  //       estimatedPose =
+  //           multiTagPNPStrategy(result, cameraMatrixOpt, distCoeffsOpt,
+  // multiTagFallbackStrategy);
+  //       break;
+  //     default:
+  //       DriverStation.reportError(
+  //           "[PhotonPoseEstimator] Unknown Position Estimation Strategy!", false);
+  //       return Optional.empty();
+  //   }
+
+  //   return estimatedPose;
+  // }
+
+  private static Optional<EstimatedRobotPose> multiTagOnRioStrategy(
       PhotonPipelineResult result,
+      Optional<Matrix<N3, N3>> cameraMatrixOpt,
+      Optional<Matrix<N5, N1>> distCoeffsOpt,
       AprilTagFieldLayout fieldTags,
-      PoseStrategy primaryStrategy,
       PoseStrategy multiTagFallbackStrategy) {
-    // Arrays we need declared up front
-    var visCorners = new ArrayList<TargetCorner>();
-    var knownVisTags = new ArrayList<AprilTag>();
-    var fieldToCams = new ArrayList<Pose3d>();
-    var fieldToCamsAlt = new ArrayList<Pose3d>();
-    double[] visCornersX = new double[4 * result.getTargets().size()];
-    double[] visCornersY = new double[4 * result.getTargets().size()];
-
-    if (result.getTargets().size() < 2) {
-      // Run fallback strategy instead
-      return update(result, fieldTags, primaryStrategy, multiTagFallbackStrategy);
+    boolean hasCalibData = cameraMatrixOpt.isPresent() && distCoeffsOpt.isPresent();
+    // cannot run multitagPNP, use fallback strategy
+    if (!hasCalibData || result.getTargets().size() < 2) {
+      return update(
+          result, cameraMatrixOpt.get(), distCoeffsOpt.get(), multiTagFallbackStrategy, fieldTags);
     }
 
-    for (var target : result.getTargets()) {
-      visCorners.addAll(target.getDetectedCorners());
+    PNPResult pnpResult =
+        VisionEstimation.estimateCamPosePNP(
+            cameraMatrixOpt.get(),
+            distCoeffsOpt.get(),
+            result.getTargets(),
+            fieldTags,
+            TargetModel.kAprilTag36h11);
+    // try fallback strategy if solvePNP fails for some reason
+    if (!pnpResult.isPresent)
+      return update(
+          result, cameraMatrixOpt.get(), distCoeffsOpt.get(), multiTagFallbackStrategy, fieldTags);
+    var best =
+        new Pose3d()
+            .plus(pnpResult.best) // field-to-camera
+            .plus(
+                VisionHelper.CAMERA_TO_ROBOT
+                    .inverse()); // field-to-robot //TODO camera to robot or robot to camera?? also
+    // fix for multiple cams
 
-      var tagPoseOpt = fieldTags.getTagPose(target.getFiducialId());
-      if (tagPoseOpt.isEmpty()) {
-        DriverStation.reportError(
-            "[PhotonPoseEstimator] Tried to get pose of unknown AprilTag: "
-                + target.getFiducialId(),
-            false);
-        continue;
-      }
+    return Optional.of(
+        new EstimatedRobotPose(
+            best,
+            result.getTimestampSeconds(),
+            result.getTargets(),
+            PoseStrategy.MULTI_TAG_PNP_ON_RIO));
+  }
 
-      var tagPose = tagPoseOpt.get();
-
-      // actual layout poses of visible tags -- not exposed, so have to recreate
-      knownVisTags.add(new AprilTag(target.getFiducialId(), tagPose));
-
-      fieldToCams.add(tagPose.transformBy(target.getBestCameraToTarget().inverse()));
-      fieldToCamsAlt.add(tagPose.transformBy(target.getAlternateCameraToTarget().inverse()));
-    }
-
-    boolean hasCalibData = true;
-
-    for (TargetCorner corner : visCorners) {
-      visCornersX[visCorners.indexOf(corner)] = corner.x;
-      visCornersY[visCorners.indexOf(corner)] = corner.y;
-    }
-    // multi-target solvePNP
-    if (hasCalibData) {
-      var pnpResults =
-          VisionEstimation.estimateCamPosePNP(
-              CAMERA_MATRIX_OPT,
-              DIST_COEFFS_OPT,
-              result.targets,
-              fieldTags,
-              TargetModel.kAprilTag36h11);
+  private static Optional<EstimatedRobotPose> multiTagOnCoprocStrategy(
+      PhotonPipelineResult result,
+      Optional<Matrix<N3, N3>> cameraMatrixOpt,
+      Optional<Matrix<N5, N1>> distCoeffsOpt,
+      AprilTagFieldLayout fieldTags,
+      Transform3d robotToCamera,
+      PoseStrategy multiTagFallbackStrategy) {
+    if (result.getMultiTagResult().estimatedPose.isPresent) {
+      var best_tf = result.getMultiTagResult().estimatedPose.best;
       var best =
           new Pose3d()
-              .plus(pnpResults.best) // field-to-camera
-              .plus(CAMERA_TO_ROBOT); // field-to-robot
-      // var alt = new Pose3d()
-      // .plus(pnpResults.alt) // field-to-camera
-      // .plus(robotToCamera.inverse()); // field-to-robot
-      var estimatedRobotPose =
+              .plus(best_tf) // field-to-camera
+              .relativeTo(fieldTags.getOrigin())
+              .plus(robotToCamera.inverse()); // field-to-robot
+      return Optional.of(
           new EstimatedRobotPose(
-              best, result.getTimestampSeconds(), result.getTargets(), primaryStrategy);
-      return Optional.of(estimatedRobotPose);
+              best,
+              result.getTimestampSeconds(),
+              result.getTargets(),
+              PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
     } else {
-      System.out.println("No calib data, fallback to lowest ambiguity");
-      return lowestAmbiguityStrategy(result, fieldTags);
+      return update(
+          result, cameraMatrixOpt.get(), distCoeffsOpt.get(), multiTagFallbackStrategy, fieldTags);
     }
   }
 

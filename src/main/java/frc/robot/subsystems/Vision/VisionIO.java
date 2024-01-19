@@ -21,5 +21,6 @@ public interface VisionIO {
     public Pose3d pose = new Pose3d();
   }
 
-  public default void updateInputs(VisionIOInputs inputs, Pose3d pose) {};
+  public default void updateInputs(VisionIOInputs inputs, Pose3d pose) {}
+  ;
 }
