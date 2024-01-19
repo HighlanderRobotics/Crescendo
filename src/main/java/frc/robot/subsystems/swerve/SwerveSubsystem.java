@@ -176,12 +176,12 @@ public class SwerveSubsystem extends SubsystemBase {
 
     double distance =
         Math.sqrt(
-            Math.pow((pose.getX() - FieldConstants.BLUE_SPEAKER_POSE.getX()), 2)
-                + Math.pow((pose.getY() - FieldConstants.BLUE_SPEAKER_POSE.getY()), 2));
+            Math.pow((pose.getX() - FieldConstants.getSpeaker().getX()), 2)
+                + Math.pow((pose.getY() - FieldConstants.getSpeaker().getY()), 2));
     ShotData shotData = AutoAim.shotMap.get(distance);
     Logger.recordOutput("Distance", distance);
     Logger.recordOutput(
-        "Rotation To Speaker", getRotationToTranslation(FieldConstants.BLUE_SPEAKER_POSE));
+        "Rotation To Speaker", getRotationToTranslation(FieldConstants.getSpeaker()));
     if (shotData == null) {
       System.out.println("shotData is null!");
     } else {
@@ -377,7 +377,7 @@ public class SwerveSubsystem extends SubsystemBase {
               double calculated =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
-                      getRotationToTranslation(FieldConstants.BLUE_SPEAKER_POSE).getRadians());
+                      getRotationToTranslation(FieldConstants.getSpeaker()).getRadians());
 
               Logger.recordOutput("PIDController calculate", calculated);
               return new ChassisSpeeds(
