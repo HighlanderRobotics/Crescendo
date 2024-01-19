@@ -2,18 +2,20 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems.autoaim;
+package frc.robot.utils.autoaim;
 
 import java.util.TreeMap;
 
-/** Add your docs here. */
+/* 
+ * Class for a TreeMap of ShotData that interpolates between unknown values
+ * Modified version of WPILib's InterpolatingTreeMap
+ */
 public class InterpolatingShotTree {
 
   private final TreeMap<Double, ShotData> map = new TreeMap<>();
 
   public InterpolatingShotTree() {
 
-    // TODO Auto-generated constructor stub
   }
 
   public void put(Double key, ShotData value) {

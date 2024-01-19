@@ -99,6 +99,7 @@ public class Robot extends LoggedRobot {
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
+    // Test binding for autoaim
     controller
         .a()
         .whileTrue(

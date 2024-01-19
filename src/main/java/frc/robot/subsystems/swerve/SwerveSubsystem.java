@@ -36,9 +36,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
-import frc.robot.subsystems.autoaim.AutoAim;
-import frc.robot.subsystems.autoaim.ShotData;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.utils.autoaim.AutoAim;
+
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -174,21 +174,6 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
-    double distance =
-        Math.sqrt(
-            Math.pow((pose.getX() - FieldConstants.getSpeaker().getX()), 2)
-                + Math.pow((pose.getY() - FieldConstants.getSpeaker().getY()), 2));
-    ShotData shotData = AutoAim.shotMap.get(distance);
-    Logger.recordOutput("Distance", distance);
-    Logger.recordOutput(
-        "Rotation To Speaker", getRotationToTranslation(FieldConstants.getSpeaker()));
-    if (shotData == null) {
-      System.out.println("shotData is null!");
-    } else {
-      Logger.recordOutput("Shotmap Angle", shotData.getAngle());
-      Logger.recordOutput("Shotmap RPM", shotData.getRPM());
-    }
-
     // Update odometry
     int deltaCount =
         Math.min(
@@ -220,7 +205,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
-  public void runVelocity(ChassisSpeeds speeds) {
+  private void runVelocity(ChassisSpeeds speeds) {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
@@ -366,20 +351,18 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Command pointTowardsTranslation(DoubleSupplier x, DoubleSupplier y) {
     ProfiledPIDController headingController =
-        new ProfiledPIDController(1.0, 0.0, 0.0, new Constraints(10, 10));
+        // assume we can accelerate to max in 0.5 seconds
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     return this.runVelocityFieldRelative(
             () -> {
-              Logger.recordOutput(
-                  "PIDController Setpoint", headingController.getSetpoint().position);
-              Logger.recordOutput("PIDController Error", headingController.getPositionError());
               double calculated =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
                       getRotationToTranslation(FieldConstants.getSpeaker()).getRadians());
 
-              Logger.recordOutput("PIDController calculate", calculated);
               return new ChassisSpeeds(
                   x.getAsDouble(),
                   y.getAsDouble(),
@@ -391,6 +374,5 @@ public class SwerveSubsystem extends SubsystemBase {
                     new State(
                         getPose().getRotation().getRadians(),
                         getVelocity().omegaRadiansPerSecond)));
-    // return this.runVelocityFieldRelative(() -> new ChassisSpeeds(1,1,1));
   }
 }
