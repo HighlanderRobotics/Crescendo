@@ -6,7 +6,7 @@ package frc.robot.utils.autoaim;
 
 import java.util.TreeMap;
 
-/* 
+/*
  * Class for a TreeMap of ShotData that interpolates between unknown values
  * Modified version of WPILib's InterpolatingTreeMap
  */
@@ -14,9 +14,7 @@ public class InterpolatingShotTree {
 
   private final TreeMap<Double, ShotData> map = new TreeMap<>();
 
-  public InterpolatingShotTree() {
-
-  }
+  public InterpolatingShotTree() {}
 
   public void put(Double key, ShotData value) {
     map.put(key, value);

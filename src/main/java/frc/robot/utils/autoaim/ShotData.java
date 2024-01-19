@@ -5,6 +5,7 @@
 package frc.robot.utils.autoaim;
 
 import edu.wpi.first.math.interpolation.Interpolatable;
+
 /*
  * Holds data about each shot in which we interpolate with
  */

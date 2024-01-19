@@ -38,7 +38,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
-
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
