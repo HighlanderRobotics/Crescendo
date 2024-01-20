@@ -12,8 +12,8 @@ import org.photonvision.PhotonCamera;
 /** Add your docs here. */
 public class VisionIOReal implements VisionIO {
   // constants
-  public static String CAMERA_NAME;
-  public static PhotonCamera camera;
+  public String CAMERA_NAME;
+  public PhotonCamera camera;
 
   /*** Transform3d from the center of the robot to the camera mount position (ie,
    *     robot ➔ camera) in the <a href=
@@ -29,7 +29,7 @@ public class VisionIOReal implements VisionIO {
   }
 
   @Override
-  public void updateInputs(VisionIOInputs inputs, Pose3d pose) { // TODO
+  public void updateInputs(VisionIOInputs inputs, Pose3d pose) {
     var result = camera.getLatestResult();
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
@@ -37,6 +37,4 @@ public class VisionIOReal implements VisionIO {
     inputs.numTags = result.targets.size();
     inputs.pose = pose;
   }
-
-  public void updateInputs() {}
 }

@@ -92,9 +92,10 @@ public class SwerveSubsystem extends SubsystemBase {
   private SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
   public static final Transform3d leftCamToRobot = new Transform3d(); // TODO find
   public static final Transform3d rightCamToRobot = new Transform3d(); // TODO find
-  public static final VisionConstants leftCam = new VisionConstants("Left Camera", leftCamToRobot);
+  public static final VisionConstants leftCam =
+      new VisionConstants("Left Camera", leftCamToRobot, "Left Camera Sim System");
   public static final VisionConstants rightCam =
-      new VisionConstants("Right Camera", rightCamToRobot);
+      new VisionConstants("Right Camera", rightCamToRobot, "Right Camera Sim System");
   public static final VisionConstants[] cameraConstants = new VisionConstants[] {leftCam, rightCam};
 
   public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO... moduleIOs) {
@@ -174,15 +175,15 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static VisionIO[] createSimCameras() {
     return new VisionIO[] {
-      new VisionIOSim("LeftCam", "LeftSystem"), // TODO
-      new VisionIOSim("RightCam", "RightSystem")
+      new VisionIOSim(leftCam), // TODO
+      new VisionIOSim(rightCam)
     };
   }
 
   public void periodic() {
     for (var camera : cameras) {
-      camera.io.updateInputs(camera.inputs, new Pose3d(pose)); // TODO so sketch
-      Logger.processInputs("Vision", camera.inputs); // TODO so sketch
+      camera.updateInputs(new Pose3d(pose));
+      Logger.processInputs("Vision", camera.inputs);
     }
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
@@ -248,7 +249,6 @@ public class SwerveSubsystem extends SubsystemBase {
       PhotonPipelineResult result =
           new PhotonPipelineResult(camera.inputs.latency, camera.inputs.coprocPNPTargets);
       result.setTimestampSeconds(camera.inputs.timestamp);
-
       try {
         var estPose =
             VisionHelper.update(

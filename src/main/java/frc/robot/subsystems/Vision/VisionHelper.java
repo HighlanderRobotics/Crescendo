@@ -52,98 +52,100 @@ public class VisionHelper {
           new TagCountDeviation(
               new UnitDeviationParams(.25, .07, .25), new UnitDeviationParams(.15, 1, 1.5)));
 
-  public static void logPhotonTrackedTarget(
-      PhotonTrackedTarget target, LogTable table, String name) {
+  public class Logging {
+    public static void logPhotonTrackedTarget(
+        PhotonTrackedTarget target, LogTable table, String name) {
 
-    logTransform3d(target.getBestCameraToTarget(), table, name);
-    logTransform3d(target.getAlternateCameraToTarget(), table, "alt " + name);
-    logCorners(target, table, name);
+      logTransform3d(target.getBestCameraToTarget(), table, name);
+      logTransform3d(target.getAlternateCameraToTarget(), table, "alt " + name);
+      logCorners(target, table, name);
 
-    table.put("Yaw " + name, target.getYaw());
-    table.put("Pitch " + name, target.getPitch());
-    table.put("Area " + name, target.getArea());
-    table.put("Skew " + name, target.getSkew());
-    table.put("Fiducial ID " + name, target.getFiducialId());
-    table.put("Pose Ambiguity " + name, target.getPoseAmbiguity());
-  }
-
-  public static void logCorners(PhotonTrackedTarget target, LogTable table, String name) {
-    double[] detectedCornersX = new double[4];
-    double[] detectedCornersY = new double[4];
-    double[] minAreaRectCornersX = new double[4];
-    double[] minAreaRectCornersY = new double[4];
-
-    for (int i = 0; i < 4; i++) {
-      detectedCornersX[i] = target.getDetectedCorners().get(i).x;
-      detectedCornersY[i] = target.getDetectedCorners().get(i).y;
-      minAreaRectCornersX[i] = target.getMinAreaRectCorners().get(i).x;
-      minAreaRectCornersY[i] = target.getMinAreaRectCorners().get(i).y;
+      table.put("Yaw " + name, target.getYaw());
+      table.put("Pitch " + name, target.getPitch());
+      table.put("Area " + name, target.getArea());
+      table.put("Skew " + name, target.getSkew());
+      table.put("Fiducial ID " + name, target.getFiducialId());
+      table.put("Pose Ambiguity " + name, target.getPoseAmbiguity());
     }
-    table.put("detected corners x " + name, detectedCornersX);
-    table.put("detected corners y " + name, detectedCornersY);
-    table.put("min area rect corners x " + name, minAreaRectCornersX);
-    table.put("min area rect corners Y " + name, minAreaRectCornersY);
-  }
 
-  public static void logTransform3d(Transform3d transform3d, LogTable table, String name) {
-    double rotation[] = new double[4];
-    rotation[0] = transform3d.getRotation().getQuaternion().getW();
-    rotation[1] = transform3d.getRotation().getQuaternion().getX();
-    rotation[2] = transform3d.getRotation().getQuaternion().getY();
-    rotation[3] = transform3d.getRotation().getQuaternion().getZ();
-    table.put("rotation " + name, rotation);
+    public static void logCorners(PhotonTrackedTarget target, LogTable table, String name) {
+      double[] detectedCornersX = new double[4];
+      double[] detectedCornersY = new double[4];
+      double[] minAreaRectCornersX = new double[4];
+      double[] minAreaRectCornersY = new double[4];
 
-    double translation[] = new double[3];
-    translation[0] = transform3d.getTranslation().getX();
-    translation[1] = transform3d.getTranslation().getY();
-    translation[2] = transform3d.getTranslation().getZ();
-    table.put("translation " + name, translation);
-  }
-
-  public static Transform3d getLoggedTransform3d(double[] translation, double[] rotation) {
-    Transform3d transform3d =
-        new Transform3d(
-            new Translation3d(translation[0], translation[1], translation[2]),
-            new Rotation3d(new Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])));
-    return transform3d;
-  }
-
-  public static Transform3d getLoggedTransform3d(LogTable table, String name) {
-    double[] rotation = table.get("rotation " + name, new double[4]);
-    double[] translation = table.get("translation " + name, new double[3]);
-    return getLoggedTransform3d(translation, rotation);
-  }
-
-  public static PhotonTrackedTarget getLoggedPhotonTrackedTarget(LogTable table, String name) {
-    double[] translation = table.get("translation " + name, new double[3]);
-    double[] rotation = table.get("rotation " + name, new double[4]);
-    double[] altTranslation = table.get("translation alt " + name, new double[3]);
-    double[] altRotation = table.get("rotation alt " + name, new double[4]);
-    double[] detectedCornersX = table.get("detected corners x " + name, new double[4]);
-    double[] detectedCornersY = table.get("detected corners y " + name, new double[4]);
-    double[] minAreaRectCornersX = table.get("min area rect corners x " + name, new double[4]);
-    double[] minAreaRectCornersY = table.get("min area rect corners y " + name, new double[4]);
-
-    List<TargetCorner> detectedCorners = new ArrayList<>();
-    List<TargetCorner> minAreaRectCorners = new ArrayList<>();
-
-    for (int i = 0; i < 4; i++) {
-      detectedCorners.add(new TargetCorner(detectedCornersX[i], detectedCornersY[i]));
-      minAreaRectCorners.add(new TargetCorner(minAreaRectCornersX[i], minAreaRectCornersY[i]));
+      for (int i = 0; i < 4; i++) {
+        detectedCornersX[i] = target.getDetectedCorners().get(i).x;
+        detectedCornersY[i] = target.getDetectedCorners().get(i).y;
+        minAreaRectCornersX[i] = target.getMinAreaRectCorners().get(i).x;
+        minAreaRectCornersY[i] = target.getMinAreaRectCorners().get(i).y;
+      }
+      table.put("detected corners x " + name, detectedCornersX);
+      table.put("detected corners y " + name, detectedCornersY);
+      table.put("min area rect corners x " + name, minAreaRectCornersX);
+      table.put("min area rect corners Y " + name, minAreaRectCornersY);
     }
-    Transform3d pose = getLoggedTransform3d(translation, rotation);
-    Transform3d altPose = getLoggedTransform3d(altTranslation, altRotation);
-    return (new PhotonTrackedTarget(
-        table.get("yaw " + name, -1),
-        table.get("pitch " + name, -1),
-        table.get("area " + name, -1),
-        table.get("skew " + name, -1),
-        (int) (table.get("fiducial id " + name, -1)),
-        pose,
-        altPose,
-        table.get("pose ambiguity " + name, -1),
-        minAreaRectCorners,
-        detectedCorners));
+
+    public static void logTransform3d(Transform3d transform3d, LogTable table, String name) {
+      double rotation[] = new double[4];
+      rotation[0] = transform3d.getRotation().getQuaternion().getW();
+      rotation[1] = transform3d.getRotation().getQuaternion().getX();
+      rotation[2] = transform3d.getRotation().getQuaternion().getY();
+      rotation[3] = transform3d.getRotation().getQuaternion().getZ();
+      table.put("rotation " + name, rotation);
+
+      double translation[] = new double[3];
+      translation[0] = transform3d.getTranslation().getX();
+      translation[1] = transform3d.getTranslation().getY();
+      translation[2] = transform3d.getTranslation().getZ();
+      table.put("translation " + name, translation);
+    }
+
+    public static Transform3d getLoggedTransform3d(double[] translation, double[] rotation) {
+      Transform3d transform3d =
+          new Transform3d(
+              new Translation3d(translation[0], translation[1], translation[2]),
+              new Rotation3d(new Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])));
+      return transform3d;
+    }
+
+    public static Transform3d getLoggedTransform3d(LogTable table, String name) {
+      double[] rotation = table.get("rotation " + name, new double[4]);
+      double[] translation = table.get("translation " + name, new double[3]);
+      return getLoggedTransform3d(translation, rotation);
+    }
+
+    public static PhotonTrackedTarget getLoggedPhotonTrackedTarget(LogTable table, String name) {
+      double[] translation = table.get("translation " + name, new double[3]);
+      double[] rotation = table.get("rotation " + name, new double[4]);
+      double[] altTranslation = table.get("translation alt " + name, new double[3]);
+      double[] altRotation = table.get("rotation alt " + name, new double[4]);
+      double[] detectedCornersX = table.get("detected corners x " + name, new double[4]);
+      double[] detectedCornersY = table.get("detected corners y " + name, new double[4]);
+      double[] minAreaRectCornersX = table.get("min area rect corners x " + name, new double[4]);
+      double[] minAreaRectCornersY = table.get("min area rect corners y " + name, new double[4]);
+
+      List<TargetCorner> detectedCorners = new ArrayList<>();
+      List<TargetCorner> minAreaRectCorners = new ArrayList<>();
+
+      for (int i = 0; i < 4; i++) {
+        detectedCorners.add(new TargetCorner(detectedCornersX[i], detectedCornersY[i]));
+        minAreaRectCorners.add(new TargetCorner(minAreaRectCornersX[i], minAreaRectCornersY[i]));
+      }
+      Transform3d pose = getLoggedTransform3d(translation, rotation);
+      Transform3d altPose = getLoggedTransform3d(altTranslation, altRotation);
+      return (new PhotonTrackedTarget(
+          table.get("yaw " + name, -1),
+          table.get("pitch " + name, -1),
+          table.get("area " + name, -1),
+          table.get("skew " + name, -1),
+          (int) (table.get("fiducial id " + name, -1)),
+          pose,
+          altPose,
+          table.get("pose ambiguity " + name, -1),
+          minAreaRectCorners,
+          detectedCorners));
+    }
   }
 
   /**

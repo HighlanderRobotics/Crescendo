@@ -15,7 +15,8 @@ import edu.wpi.first.math.numbers.N5;
 
 /** Add your docs here. */
 public class Vision {
-  public record VisionConstants(String cameraName, Transform3d robotToCamera) {}
+  public record VisionConstants(
+      String cameraName, Transform3d robotToCamera, String simVisionSystemName) {}
 
   public final Matrix<N3, N3> CAMERA_MATRIX_OPT =
       MatBuilder.fill(
@@ -40,7 +41,7 @@ public class Vision {
           -0.004530368741385627,
           -0.040501622476628085); // TODO tune maybe
 
-  public final VisionIO io; // maybe this shouldnt be public idk
+  private final VisionIO io;
   public final VisionIOInputsLogged inputs = new VisionIOInputsLogged();
   public final VisionConstants constants;
 
