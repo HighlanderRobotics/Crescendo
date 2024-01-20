@@ -342,7 +342,8 @@ public class SwerveSubsystem extends SubsystemBase {
     };
   }
 
-  public Rotation2d getRotationToTranslation(Translation2d translation) {
+  public Rotation2d getRotationToTranslation(
+      Translation2d translation, DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
 
     double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
     return Rotation2d.fromRadians(angle);
@@ -360,7 +361,7 @@ public class SwerveSubsystem extends SubsystemBase {
               double calculated =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
-                      getRotationToTranslation(FieldConstants.getSpeaker()).getRadians());
+                      getRotationToTranslation(FieldConstants.getSpeaker()).getRadians(), x,y);
 
               return new ChassisSpeeds(
                   x.getAsDouble(),
