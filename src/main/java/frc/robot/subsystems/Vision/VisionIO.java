@@ -15,12 +15,11 @@ public interface VisionIO {
   public static class VisionIOInputs {
     public double timestamp = 0.0;
     public double latency = 0.0;
-    public List<PhotonTrackedTarget> targets =
+    public List<PhotonTrackedTarget> coprocPNPTargets = // TODO is this a bad name
         new ArrayList<>(); // TODO make protobuf work whenever that happens
-    public double numTags = 0;
+    public double numTags = 0; // TODO why isn't this just targets.size()?
     public Pose3d pose = new Pose3d();
   }
 
   public default void updateInputs(VisionIOInputs inputs, Pose3d pose) {}
-  ;
 }

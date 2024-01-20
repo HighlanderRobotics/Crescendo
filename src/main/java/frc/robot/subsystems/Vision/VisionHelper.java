@@ -17,7 +17,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,30 +32,10 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
 public class VisionHelper {
-  // constants
-  public static final Matrix<N3, N3> CAMERA_MATRIX_OPT =
-      MatBuilder.fill(
-          Nat.N3(),
-          Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO tune maybe
-  public static final Matrix<N5, N1> DIST_COEFFS_OPT =
-      MatBuilder.fill(
-          Nat.N5(),
-          Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085); // TODO tune maybe
-  public static final Transform3d CAMERA_TO_ROBOT = new Transform3d(); // TODO find
+
+  /***
+   * To be added
+   */
   public static final List<TagCountDeviation> TAG_COUNT_DEVIATION_PARAMS =
       List.of(
           // 1 tag
@@ -80,12 +59,12 @@ public class VisionHelper {
     logTransform3d(target.getAlternateCameraToTarget(), table, "alt " + name);
     logCorners(target, table, name);
 
-    table.put("yaw " + name, target.getYaw());
-    table.put("pitch " + name, target.getPitch());
-    table.put("area " + name, target.getArea());
-    table.put("skew " + name, target.getSkew());
-    table.put("fiducial id " + name, target.getFiducialId());
-    table.put("pose ambiguity " + name, target.getPoseAmbiguity());
+    table.put("Yaw " + name, target.getYaw());
+    table.put("Pitch " + name, target.getPitch());
+    table.put("Area " + name, target.getArea());
+    table.put("Skew " + name, target.getSkew());
+    table.put("Fiducial ID " + name, target.getFiducialId());
+    table.put("Pose Ambiguity " + name, target.getPoseAmbiguity());
   }
 
   public static void logCorners(PhotonTrackedTarget target, LogTable table, String name) {
@@ -167,34 +146,58 @@ public class VisionHelper {
         detectedCorners));
   }
 
+  /**
+   * Updates the estimated position of the robot. Returns empty if:
+   *
+   * <ul>
+   *   <li>The timestamp of the provided pipeline result is the same as in the previous call to
+   *       {@code update()}.
+   *   <li>No targets were found in the pipeline results.
+   * </ul>
+   *
+   * @param cameraResult The latest pipeline result from the camera.
+   * @param cameraMatrix Camera calibration data that can be used in the case of no assigned
+   *     PhotonCamera.
+   * @param distCoeffs Camera calibration data that can be used in the case of no assigned
+   *     PhotonCamera
+   * @param strat The selected pose solving strategy.
+   * @param robotToCamera Transform3d from the center of the robot to the camera mount position (ie,
+   *     robot ➔ camera) in the <a href=
+   *     "https://docs.wpilib.org/en/stable/docs/software/advanced-controls/geometry/coordinate-systems.html#robot-coordinate-system">Robot
+   *     Coordinate System</a>.
+   * @return an {@link EstimatedRobotPose} with an estimated pose, timestamp, and targets used to
+   *     create the estimate.
+   */
   public static Optional<EstimatedRobotPose> update(
       PhotonPipelineResult cameraResult,
-      Matrix<N3, N3> cameraMatrixOpt,
-      Matrix<N5, N1> distCoeffsOpt,
+      Matrix<N3, N3> cameraMatrix,
+      Matrix<N5, N1> distCoeffs,
       PoseStrategy strat,
-      AprilTagFieldLayout fieldTags) {
+      AprilTagFieldLayout fieldTags,
+      Transform3d robotToCamera) {
     Optional<EstimatedRobotPose> estimatedPose;
     switch (strat) {
       case LOWEST_AMBIGUITY:
-        estimatedPose = lowestAmbiguityStrategy(cameraResult, fieldTags);
+        estimatedPose = lowestAmbiguityStrategy(cameraResult, fieldTags, robotToCamera);
         break;
       case MULTI_TAG_PNP_ON_RIO:
         estimatedPose =
             multiTagOnRioStrategy(
                 cameraResult,
-                Optional.of(cameraMatrixOpt),
-                Optional.of(distCoeffsOpt),
+                Optional.of(cameraMatrix),
+                Optional.of(distCoeffs),
                 fieldTags,
-                PoseStrategy.LOWEST_AMBIGUITY); // TODO the optional thing seems dumb
+                PoseStrategy.LOWEST_AMBIGUITY,
+                robotToCamera);
         break;
       case MULTI_TAG_PNP_ON_COPROCESSOR:
         estimatedPose =
             multiTagOnCoprocStrategy(
                 cameraResult,
-                Optional.of(cameraMatrixOpt),
-                Optional.of(distCoeffsOpt),
+                Optional.of(cameraMatrix),
+                Optional.of(distCoeffs),
                 fieldTags,
-                VisionHelper.CAMERA_TO_ROBOT,
+                robotToCamera,
                 strat); // TODO make multiple cameras/coprocs actually work
         break;
       default:
@@ -203,97 +206,65 @@ public class VisionHelper {
         return Optional.empty();
     }
 
-    // if (estimatedPose.isEmpty()) {
-    //     lastPose = null;
-    // } //TODO i will ignore this and hope it does not cause issues
-
     return estimatedPose;
   }
 
   /**
-   * Poll data from the configured cameras and update the estimated position of the robot. Returns
-   * // * empty if there are no cameras set or no targets were found from the cameras. // * //
-   * * @return an EstimatedRobotPose with an estimated pose, the timestamp, and targets used to
-   * create // * the estimate //
+   * Runs SolvePNP on the roborio
+   *
+   * @param result The latest pipeline result from the camera.
+   * @param cameraMatrix Camera calibration data that can be used in the case of no assigned
+   *     PhotonCamera.
+   * @param distCoeffs Camera calibration data that can be used in the case of no assigned
+   *     PhotonCamera
+   * @param robotToCamera Transform3d from the center of the robot to the camera mount position (ie,
+   *     robot ➔ camera) in the <a href=
+   *     "https://docs.wpilib.org/en/stable/docs/software/advanced-controls/geometry/coordinate-systems.html#robot-coordinate-system">Robot
+   *     Coordinate System</a>.
+   * @param multiTagFallbackStrategy Fallback strategy in case the rio fails. Should usually be
+   *     lowest ambiguity
+   * @return an {@link EstimatedRobotPose} with an estimated pose, timestamp, and targets used to
+   *     create the estimate.
    */
-  // public static Optional<EstimatedRobotPose> update(
-  //     PhotonPipelineResult result,
-  //     Optional<Matrix<N3, N3>> cameraMatrixOpt,
-  //     Optional<Matrix<N5, N1>> distCoeffsOpt,
-  //     PoseStrategy multiTagFallbackStrategy) {
-
-  //   double poseCacheTimestampSeconds = -1;
-
-  //   // Time in the past -- give up, since the following if expects times > 0
-  //   if (result.getTimestampSeconds() < 0) {
-  //     return Optional.empty();
-  //   }
-
-  //   // If the pose cache timestamp was set, and the result is from the same timestamp, return an
-  //   // empty result
-  //   // if (poseCacheTimestampSeconds > 0
-  //   //     && Math.abs(poseCacheTimestampSeconds - result.getTimestampSeconds()) < 1e-6) {
-  //   //   return Optional.empty();
-  //   // }
-
-  //   // Remember the timestamp of the current result used
-  //   poseCacheTimestampSeconds = result.getTimestampSeconds();
-
-  //   // If no targets seen, trivial case -- return empty result
-  //   if (!result.hasTargets()) {
-  //     return Optional.empty();
-  //   }
-
-  //   Optional<EstimatedRobotPose> estimatedPose;
-  //   switch (distCoeffsOpt) {
-  //     case LOWEST_AMBIGUITY:
-  //       estimatedPose = lowestAmbiguityStrategy(result, cameraMatrixOpt);
-  //       break;
-  //     case MULTI_TAG_PNP_ON_COPROCESSOR:
-  //       estimatedPose =
-  //           multiTagPNPStrategy(result, cameraMatrixOpt, distCoeffsOpt,
-  // multiTagFallbackStrategy);
-  //       break;
-  //     default:
-  //       DriverStation.reportError(
-  //           "[PhotonPoseEstimator] Unknown Position Estimation Strategy!", false);
-  //       return Optional.empty();
-  //   }
-
-  //   return estimatedPose;
-  // }
-
   private static Optional<EstimatedRobotPose> multiTagOnRioStrategy(
       PhotonPipelineResult result,
-      Optional<Matrix<N3, N3>> cameraMatrixOpt,
-      Optional<Matrix<N5, N1>> distCoeffsOpt,
+      Optional<Matrix<N3, N3>> cameraMatrix,
+      Optional<Matrix<N5, N1>> distCoeffs,
       AprilTagFieldLayout fieldTags,
-      PoseStrategy multiTagFallbackStrategy) {
-    boolean hasCalibData = cameraMatrixOpt.isPresent() && distCoeffsOpt.isPresent();
+      PoseStrategy multiTagFallbackStrategy,
+      Transform3d robotToCamera) {
+    boolean hasCalibData = cameraMatrix.isPresent() && distCoeffs.isPresent();
     // cannot run multitagPNP, use fallback strategy
     if (!hasCalibData || result.getTargets().size() < 2) {
       return update(
-          result, cameraMatrixOpt.get(), distCoeffsOpt.get(), multiTagFallbackStrategy, fieldTags);
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          fieldTags,
+          robotToCamera);
     }
 
     PNPResult pnpResult =
         VisionEstimation.estimateCamPosePNP(
-            cameraMatrixOpt.get(),
-            distCoeffsOpt.get(),
+            cameraMatrix.get(),
+            distCoeffs.get(),
             result.getTargets(),
             fieldTags,
             TargetModel.kAprilTag36h11);
     // try fallback strategy if solvePNP fails for some reason
     if (!pnpResult.isPresent)
       return update(
-          result, cameraMatrixOpt.get(), distCoeffsOpt.get(), multiTagFallbackStrategy, fieldTags);
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          fieldTags,
+          robotToCamera);
     var best =
         new Pose3d()
             .plus(pnpResult.best) // field-to-camera
-            .plus(
-                VisionHelper.CAMERA_TO_ROBOT
-                    .inverse()); // field-to-robot //TODO camera to robot or robot to camera?? also
-    // fix for multiple cams
+            .plus(robotToCamera.inverse()); // field-to-robot
 
     return Optional.of(
         new EstimatedRobotPose(
@@ -303,10 +274,27 @@ public class VisionHelper {
             PoseStrategy.MULTI_TAG_PNP_ON_RIO));
   }
 
+  /**
+   * Runs SolvePNP on a coprocessor
+   *
+   * @param result The latest pipeline result from the camera.
+   * @param cameraMatrix Camera calibration data that can be used in the case of no assigned
+   *     PhotonCamera.
+   * @param distCoeffs Camera calibration data that can be used in the case of no assigned
+   *     PhotonCamera
+   * @param robotToCamera Transform3d from the center of the robot to the camera mount position (ie,
+   *     robot ➔ camera) in the <a href=
+   *     "https://docs.wpilib.org/en/stable/docs/software/advanced-controls/geometry/coordinate-systems.html#robot-coordinate-system">Robot
+   *     Coordinate System</a>.
+   * @param multiTagFallbackStrategy Fallback strategy in case the coproc fails. Should usually be
+   *     the rio or lowest ambiguity
+   * @return an {@link EstimatedRobotPose} with an estimated pose, timestamp, and targets used to
+   *     create the estimate.
+   */
   private static Optional<EstimatedRobotPose> multiTagOnCoprocStrategy(
       PhotonPipelineResult result,
-      Optional<Matrix<N3, N3>> cameraMatrixOpt,
-      Optional<Matrix<N5, N1>> distCoeffsOpt,
+      Optional<Matrix<N3, N3>> cameraMatrix,
+      Optional<Matrix<N5, N1>> distCoeffs,
       AprilTagFieldLayout fieldTags,
       Transform3d robotToCamera,
       PoseStrategy multiTagFallbackStrategy) {
@@ -325,7 +313,12 @@ public class VisionHelper {
               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
     } else {
       return update(
-          result, cameraMatrixOpt.get(), distCoeffsOpt.get(), multiTagFallbackStrategy, fieldTags);
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          fieldTags,
+          robotToCamera);
     }
   }
 
@@ -338,7 +331,7 @@ public class VisionHelper {
    *     estimation.
    */
   private static Optional<EstimatedRobotPose> lowestAmbiguityStrategy(
-      PhotonPipelineResult result, AprilTagFieldLayout fieldTags) {
+      PhotonPipelineResult result, AprilTagFieldLayout fieldTags, Transform3d robotToCamera) {
     PhotonTrackedTarget lowestAmbiguityTarget = null;
 
     double lowestAmbiguityScore = 10;
@@ -378,21 +371,21 @@ public class VisionHelper {
             targetPosition
                 .get()
                 .transformBy(lowestAmbiguityTarget.getBestCameraToTarget().inverse())
-                .transformBy(CAMERA_TO_ROBOT),
+                .transformBy(robotToCamera),
             result.getTimestampSeconds(),
             result.getTargets(),
             PoseStrategy.LOWEST_AMBIGUITY);
     return Optional.of(estimatedRobotPose);
   }
 
-  // 5026
+  /*** 5026 - to be tuned if necessary*/
   public static record UnitDeviationParams(
       double distanceMultiplier, double eulerMultiplier, double minimum) {
     private double computeUnitDeviation(double averageDistance) {
       return Math.max(minimum, eulerMultiplier * Math.exp(averageDistance * distanceMultiplier));
     }
   }
-
+  /*** 5026 - to be tuned if necessary*/
   public static record TagCountDeviation(
       UnitDeviationParams xParams, UnitDeviationParams yParams, UnitDeviationParams thetaParams) {
     private Matrix<N3, N1> computeDeviation(double averageDistance) {
@@ -411,7 +404,7 @@ public class VisionHelper {
 
   public static record VisionMeasurement(
       EstimatedRobotPose estimation, Matrix<N3, N1> confidence) {}
-
+  /*** 5026 - to be tuned if necessary*/
   public static Matrix<N3, N1> findVisionMeasurements(EstimatedRobotPose estimation) {
     double sumDistance = 0;
     for (var target : estimation.targetsUsed) {
@@ -428,35 +421,6 @@ public class VisionHelper {
                     estimation.targetsUsed.size() - 1, 0, TAG_COUNT_DEVIATION_PARAMS.size() - 1))
             .computeDeviation(avgDistance);
 
-    // System.out.println(
-    //     String.format(
-    //         "with %d tags at smallest distance %f and pose ambiguity factor %f, confidence
-    // multiplier %f",
-    //         estimation.targetsUsed.size(),
-    //         smallestDistance,
-    //         poseAmbiguityFactor,
-    //         confidenceMultiplier));
-
     return deviation;
-  }
-  // Reject unreasonable vision poses
-  public static void sanityCheck(VisionMeasurement measurement, EstimatedRobotPose estimatedPose) {
-    while (measurement != null) { // Could change depending on what the climb is
-      if (Math.abs(measurement.estimation.estimatedPose.getZ()) > 0.5) {
-        continue;
-      }
-      // Skip single-tag measurements with too-high ambiguity.
-      if (measurement.estimation.targetsUsed.size() < 2
-          && measurement
-                  .estimation
-                  .targetsUsed
-                  .get(0)
-                  .getBestCameraToTarget()
-                  .getTranslation()
-                  .getNorm()
-              > Units.feetToMeters(13)) {
-        continue;
-      }
-    }
   }
 }

@@ -4,30 +4,35 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import org.photonvision.PhotonCamera;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
-import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.geometry.Pose3d;
-
 /** Add your docs here. */
 public class VisionIOSim implements VisionIO {
-  public static final String SIM_VISION_SYSTEM_NAME = "sim vision";
-  public static final String SIM_CAMERA_NAME = "sim camera";
-  VisionSystemSim sim = new VisionSystemSim(SIM_VISION_SYSTEM_NAME);
-  PhotonCamera camera = new PhotonCamera(SIM_CAMERA_NAME); //TODO ???? what how why
-  SimCameraProperties cameraProp = new SimCameraProperties(); //TODO find
+  private final String SIM_VISION_SYSTEM_NAME;
+  private final String SIM_CAMERA_NAME;
+  VisionSystemSim sim;
+  PhotonCamera camera;
+  SimCameraProperties cameraProp = new SimCameraProperties(); // TODO find
   PhotonCameraSim simCamera = new PhotonCameraSim(camera, cameraProp);
+  Transform3d cameraToRobot = new Transform3d(); // TODO find
 
-  public VisionIOSim() {
+  public VisionIOSim(final String simCameraName, final String simVisionSystemName) {
+    this.SIM_CAMERA_NAME = simCameraName;
+    this.SIM_VISION_SYSTEM_NAME = simVisionSystemName;
+    this.sim = new VisionSystemSim(SIM_VISION_SYSTEM_NAME);
+    this.camera = new PhotonCamera(SIM_CAMERA_NAME);
     try {
       var field = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
       field.setOrigin(OriginPosition.kBlueAllianceWallRightSide);
       sim.addAprilTags(field);
-      sim.addCamera(simCamera, VisionHelper.CAMERA_TO_ROBOT);
+      sim.addCamera(simCamera, cameraToRobot);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -35,10 +40,10 @@ public class VisionIOSim implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs, Pose3d pose) {
-    // var result = 
+    // var result =
     // sim.update(pose);
     // inputs.timestamp = result.getTimestampSeconds();
     // inputs.latency = result.getLatencyMillis();
-    // inputs.targets = result.targets; //TODO aaaaaaa
+    // inputs.coprocPNPTargets = result.targets; //TODO aaaaaaa
   }
 }

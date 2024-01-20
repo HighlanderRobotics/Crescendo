@@ -16,8 +16,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.vision.VisionIOReal;
-import frc.robot.subsystems.vision.VisionIOSim;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -40,7 +38,9 @@ public class Robot extends LoggedRobot {
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
           mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
-          mode == RobotMode.REAL ? new VisionIOReal() : new VisionIOSim(),
+          mode == RobotMode.REAL
+              ? SwerveSubsystem.createCameras()
+              : SwerveSubsystem.createSimCameras(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
