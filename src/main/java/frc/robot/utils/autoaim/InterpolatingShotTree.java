@@ -51,7 +51,8 @@ public class InterpolatingShotTree {
   private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
     return new ShotData(
         ((endValue.getAngle() - startValue.getAngle()) * t) + startValue.getAngle(),
-        ((endValue.getRPM() - startValue.getRPM()) * t) + startValue.getRPM());
+        ((endValue.getRPM() - startValue.getRPM()) * t) + startValue.getRPM(),
+        ((endValue.getFlightTime() - startValue.getFlightTime()) * t) + startValue.getFlightTime());
   }
 
   private double inverseInterpolate(Double up, Double q, Double down) {

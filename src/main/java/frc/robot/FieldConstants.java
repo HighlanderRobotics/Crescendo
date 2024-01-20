@@ -4,17 +4,24 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import org.littletonrobotics.junction.Logger;
 
 /** Add your docs here. */
 public class FieldConstants {
 
-  public static final Translation2d BLUE_SPEAKER_POSE = new Translation2d(-0.086473, 5.757474);
-  public static final Translation2d RED_SPEAKER_POSE = new Translation2d(16.389722, 5.757474);
+  public static final Pose2d BLUE_SPEAKER_POSE =
+      new Pose2d(new Translation2d(-0.086473, 5.757474), new Rotation2d());
+  public static final Pose2d RED_SPEAKER_POSE =
+      new Pose2d(new Translation2d(16.389722, 5.757474), new Rotation2d());
 
-  public static Translation2d getSpeaker() {
+  public static Pose2d getSpeaker() {
+    Logger.recordOutput("blue speaker", BLUE_SPEAKER_POSE);
+    Logger.recordOutput("red speaker", RED_SPEAKER_POSE);
     if (DriverStation.getAlliance().isPresent()) {
       return DriverStation.getAlliance().get() == Alliance.Red
           ? RED_SPEAKER_POSE

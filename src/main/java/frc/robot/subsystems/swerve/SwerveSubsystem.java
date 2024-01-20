@@ -22,6 +22,7 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -38,6 +39,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.autoaim.InterpolatingShotTree;
+
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -75,6 +78,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
+  
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -342,14 +346,25 @@ public class SwerveSubsystem extends SubsystemBase {
     };
   }
 
-  public Rotation2d getRotationToTranslation(
-      Translation2d translation, DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
-
+  public Rotation2d getRotationToTranslation(Pose2d translation) {
     double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
     return Rotation2d.fromRadians(angle);
   }
+  @AutoLogOutput(key = "Autoaim/Target")
+  public Pose2d getVirtualTarget(){
+    double distance =
+        Math.sqrt(
+            Math.pow((pose.getX() - FieldConstants.getSpeaker().getX()), 2)
+                + Math.pow((pose.getY() - FieldConstants.getSpeaker().getY()), 2));
+    return  FieldConstants.getSpeaker()
+                                  .transformBy(
+                                      new Transform2d(
+                                          getVelocity().vxMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
+                                          getVelocity().vyMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
+                                          FieldConstants.getSpeaker().getRotation()).inverse());
+  }
 
-  public Command pointTowardsTranslation(DoubleSupplier x, DoubleSupplier y) {
+  public Command pointTowardsTranslation(DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 0.5 seconds
         new ProfiledPIDController(
@@ -361,11 +376,13 @@ public class SwerveSubsystem extends SubsystemBase {
               double calculated =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
-                      getRotationToTranslation(FieldConstants.getSpeaker()).getRadians(), x,y);
+                      getRotationToTranslation(
+                              getVirtualTarget())
+                          .getRadians());
 
               return new ChassisSpeeds(
-                  x.getAsDouble(),
-                  y.getAsDouble(),
+                  xMetersPerSecond.getAsDouble(),
+                  yMetersPerSecond.getAsDouble(),
                   calculated + headingController.getSetpoint().velocity);
             })
         .beforeStarting(

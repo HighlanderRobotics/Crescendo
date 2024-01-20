@@ -13,7 +13,7 @@ public class AutoAim {
 
     // Examples until we aquire actual data
     for (double i = 0; i < 10; i++) {
-      shotMap.put(i, new ShotData(5 * i, 100 * i));
+      shotMap.put(i, new ShotData(5 * i, 100 * i, 0.1 * i));
     }
   }
 }

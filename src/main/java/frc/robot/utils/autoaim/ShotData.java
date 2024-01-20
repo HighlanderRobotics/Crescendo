@@ -13,10 +13,12 @@ public class ShotData implements Interpolatable<ShotData> {
 
   private double angle;
   private double rotationsPerSecond;
+  private double flightTime;
 
-  public ShotData(double angle, double rotationsPerSecond) {
+  public ShotData(double angle, double rotationsPerSecond, double flightTime) {
     this.angle = angle;
     this.rotationsPerSecond = rotationsPerSecond;
+    this.flightTime = flightTime;
   }
 
   public double getAngle() {
@@ -27,14 +29,20 @@ public class ShotData implements Interpolatable<ShotData> {
     return rotationsPerSecond;
   }
 
+  public double getFlightTime(){
+    return flightTime;
+  }
+
+
   @Override
   public ShotData interpolate(ShotData endValue, double t) {
     return new ShotData(
         ((endValue.getAngle() - angle) * t) + angle,
-        ((endValue.getRPM() - rotationsPerSecond) * t) + rotationsPerSecond);
+        ((endValue.getRPM() - rotationsPerSecond) * t) + rotationsPerSecond,
+        ((endValue.getFlightTime() - flightTime) * t) + flightTime);
   }
 
   public String toString() {
-    return "" + getAngle() + " " + getRPM();
+    return "" + getAngle() + " " + getRPM() + " " + getFlightTime();
   }
 }
