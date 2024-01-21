@@ -106,7 +106,6 @@ public class Robot extends LoggedRobot {
             swerve.pointTowardsTranslation(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
-    controller.b().toggleOnTrue(swerve.changeVirtualTarget());
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }

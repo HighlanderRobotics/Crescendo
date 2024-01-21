@@ -35,13 +35,10 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
-import frc.robot.utils.autoaim.InterpolatingShotTree;
-
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -356,34 +353,19 @@ public class SwerveSubsystem extends SubsystemBase {
   @AutoLogOutput(key = "Autoaim/Target")
   public Pose2d getVirtualTarget() {
 
-    Pose2d target = speakerTarget ? FieldConstants.getSpeaker() : FieldConstants.getAmp();
-    InterpolatingShotTree shotMap = speakerTarget ? AutoAim.speakerShotMap : AutoAim.ampShotMap;
-    
+    Pose2d target = FieldConstants.getSpeaker();
+
     double distance =
         Math.sqrt(
             Math.pow((pose.getX() - target.getX()), 2)
                 + Math.pow((pose.getY() - target.getY()), 2));
-    System.out.println(shotMap.get(distance).toString());
+    
     return target.transformBy(
         new Transform2d(
-                getVelocity().vxMetersPerSecond
-                    * shotMap.get(distance).getFlightTime(),
-                getVelocity().vyMetersPerSecond
-                    * shotMap.get(distance).getFlightTime(),
+                getVelocity().vxMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
+                getVelocity().vyMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
                 target.getRotation())
             .inverse());
-  }
-
-  public Command changeVirtualTarget() {
-    return new InstantCommand(
-        () -> {
-          if (speakerTarget) {
-            speakerTarget = false;
-          } else {
-            speakerTarget = true;
-          }
-        },
-        this);
   }
 
   public Command pointTowardsTranslation(
