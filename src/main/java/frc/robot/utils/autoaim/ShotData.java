@@ -9,7 +9,7 @@ import edu.wpi.first.math.interpolation.Interpolatable;
 /*
  * Holds data about each shot in which we interpolate with
  */
-public class ShotData implements Interpolatable<ShotData> {
+public class ShotData{
 
   private double angle;
   private double rotationsPerSecond;
@@ -33,13 +33,6 @@ public class ShotData implements Interpolatable<ShotData> {
     return flightTime;
   }
 
-  @Override
-  public ShotData interpolate(ShotData endValue, double t) {
-    return new ShotData(
-        ((endValue.getAngle() - angle) * t) + angle,
-        ((endValue.getRPM() - rotationsPerSecond) * t) + rotationsPerSecond,
-        ((endValue.getFlightTime() - flightTime) * t) + flightTime);
-  }
 
   public String toString() {
     return "" + getAngle() + " " + getRPM() + " " + getFlightTime();
