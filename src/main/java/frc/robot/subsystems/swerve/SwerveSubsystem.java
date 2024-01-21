@@ -35,6 +35,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
@@ -78,7 +79,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
-  
+
+  private static boolean speakerTarget = true;
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -350,21 +352,42 @@ public class SwerveSubsystem extends SubsystemBase {
     double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
     return Rotation2d.fromRadians(angle);
   }
+
   @AutoLogOutput(key = "Autoaim/Target")
-  public Pose2d getVirtualTarget(){
+  public Pose2d getVirtualTarget() {
+
+    Pose2d target = speakerTarget ? FieldConstants.getSpeaker() : FieldConstants.getAmp();
+    InterpolatingShotTree shotMap = speakerTarget ? AutoAim.speakerShotMap : AutoAim.ampShotMap;
+    
     double distance =
         Math.sqrt(
-            Math.pow((pose.getX() - FieldConstants.getSpeaker().getX()), 2)
-                + Math.pow((pose.getY() - FieldConstants.getSpeaker().getY()), 2));
-    return  FieldConstants.getSpeaker()
-                                  .transformBy(
-                                      new Transform2d(
-                                          getVelocity().vxMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
-                                          getVelocity().vyMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
-                                          FieldConstants.getSpeaker().getRotation()).inverse());
+            Math.pow((pose.getX() - target.getX()), 2)
+                + Math.pow((pose.getY() - target.getY()), 2));
+    System.out.println(shotMap.get(distance).toString());
+    return target.transformBy(
+        new Transform2d(
+                getVelocity().vxMetersPerSecond
+                    * shotMap.get(distance).getFlightTime(),
+                getVelocity().vyMetersPerSecond
+                    * shotMap.get(distance).getFlightTime(),
+                target.getRotation())
+            .inverse());
   }
 
-  public Command pointTowardsTranslation(DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
+  public Command changeVirtualTarget() {
+    return new InstantCommand(
+        () -> {
+          if (speakerTarget) {
+            speakerTarget = false;
+          } else {
+            speakerTarget = true;
+          }
+        },
+        this);
+  }
+
+  public Command pointTowardsTranslation(
+      DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 0.5 seconds
         new ProfiledPIDController(
@@ -376,9 +399,7 @@ public class SwerveSubsystem extends SubsystemBase {
               double calculated =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
-                      getRotationToTranslation(
-                              getVirtualTarget())
-                          .getRadians());
+                      getRotationToTranslation(getVirtualTarget()).getRadians());
 
               return new ChassisSpeeds(
                   xMetersPerSecond.getAsDouble(),

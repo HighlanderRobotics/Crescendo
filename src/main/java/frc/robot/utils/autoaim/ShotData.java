@@ -29,10 +29,9 @@ public class ShotData implements Interpolatable<ShotData> {
     return rotationsPerSecond;
   }
 
-  public double getFlightTime(){
+  public double getFlightTime() {
     return flightTime;
   }
-
 
   @Override
   public ShotData interpolate(ShotData endValue, double t) {
