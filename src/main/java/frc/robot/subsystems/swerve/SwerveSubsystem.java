@@ -359,7 +359,7 @@ public class SwerveSubsystem extends SubsystemBase {
         Math.sqrt(
             Math.pow((pose.getX() - target.getX()), 2)
                 + Math.pow((pose.getY() - target.getY()), 2));
-    
+
     return target.transformBy(
         new Transform2d(
                 getVelocity().vxMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
