@@ -13,13 +13,13 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
   public void toLog(LogTable table) {
     table.put("Timestamp", timestamp);
     table.put("Latency", latency);
-    for (int i = 0; i < coprocPNPTargets.size(); i++) {
+    for (int i = 0; i < targets.size(); i++) {
       VisionHelper.Logging.logPhotonTrackedTarget(
-          coprocPNPTargets.get(i), table, String.valueOf(i));
+          targets.get(i), table, String.valueOf(i));
       numTags += 1;
     }
     table.put("NumTags", numTags);
-    table.put("Pose", pose);
+    table.put("Pose", coprocPNPPose);
   }
 
   @Override
@@ -27,20 +27,20 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     timestamp = table.get("Timestamp", timestamp);
     latency = table.get("Latency", latency);
     for (int i = 0; i < table.get("NumTags", numTags); i++) {
-      this.coprocPNPTargets.add(
+      this.targets.add(
           VisionHelper.Logging.getLoggedPhotonTrackedTarget(table, String.valueOf(i)));
     }
     numTags = table.get("NumTags", numTags);
-    pose = table.get("Pose", pose);
+    coprocPNPPose = table.get("Pose", coprocPNPPose);
   }
 
   public VisionIOInputsLogged clone() {
     VisionIOInputsLogged copy = new VisionIOInputsLogged();
     copy.timestamp = this.timestamp;
     copy.latency = this.latency;
-    copy.coprocPNPTargets = this.coprocPNPTargets;
+    copy.targets = this.targets;
     copy.numTags = this.numTags;
-    copy.pose = this.pose;
+    copy.coprocPNPPose = this.coprocPNPPose;
     return copy;
   }
 }

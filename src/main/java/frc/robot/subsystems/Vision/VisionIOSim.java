@@ -17,8 +17,8 @@ import frc.robot.subsystems.vision.Vision.VisionConstants;
 
 /** Add your docs here. */
 public class VisionIOSim implements VisionIO {
-  public String SIM_VISION_SYSTEM_NAME;
-  public String SIM_CAMERA_NAME;
+  public String simVisionSystemName;
+  public String simCameraName;
   VisionSystemSim sim;
   PhotonCamera camera;
   SimCameraProperties cameraProp = new SimCameraProperties();
@@ -26,10 +26,10 @@ public class VisionIOSim implements VisionIO {
   Transform3d robotToCamera;
 
   public VisionIOSim(VisionConstants constants) {
-    this.SIM_CAMERA_NAME = constants.cameraName();
-    this.SIM_VISION_SYSTEM_NAME = constants.simVisionSystemName();
-    this.sim = new VisionSystemSim(SIM_VISION_SYSTEM_NAME);
-    this.camera = new PhotonCamera(SIM_CAMERA_NAME);
+    this.simCameraName = constants.cameraName();
+    this.simVisionSystemName = constants.simVisionSystemName();
+    this.sim = new VisionSystemSim(simVisionSystemName);
+    this.camera = new PhotonCamera(simCameraName);
     this.robotToCamera = constants.robotToCamera();
     sim.addCamera(simCamera, robotToCamera);
 
@@ -56,6 +56,6 @@ public class VisionIOSim implements VisionIO {
     sim.update(pose);
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    inputs.coprocPNPTargets = result.targets; // TODO aaaaaaa
+    inputs.targets = result.targets; // TODO aaaaaaa
   }
 }

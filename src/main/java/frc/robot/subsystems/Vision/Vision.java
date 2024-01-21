@@ -4,9 +4,7 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
@@ -16,30 +14,7 @@ import edu.wpi.first.math.numbers.N5;
 /** Add your docs here. */
 public class Vision {
   public record VisionConstants(
-      String cameraName, Transform3d robotToCamera, String simVisionSystemName) {}
-
-  public final Matrix<N3, N3> CAMERA_MATRIX_OPT =
-      MatBuilder.fill(
-          Nat.N3(),
-          Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO tune maybe
-  public final Matrix<N5, N1> DIST_COEFFS_OPT =
-      MatBuilder.fill(
-          Nat.N5(),
-          Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085); // TODO tune maybe
+      String cameraName, Transform3d robotToCamera, String simVisionSystemName, Matrix<N3, N3> CAMERA_MATRIX_OPT, Matrix<N5, N1> DIST_COEFFS_OPT) {}
 
   private final VisionIO io;
   public final VisionIOInputsLogged inputs = new VisionIOInputsLogged();

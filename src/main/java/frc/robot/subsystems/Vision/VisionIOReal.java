@@ -4,16 +4,23 @@
 
 package frc.robot.subsystems.vision;
 
+import org.photonvision.PhotonCamera;
+
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N5;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
-import org.photonvision.PhotonCamera;
 
 /** Add your docs here. */
 public class VisionIOReal implements VisionIO {
   // constants
-  public String CAMERA_NAME;
+  public String cameraName;
   public PhotonCamera camera;
+  public Matrix<N3, N3> cameraMatrixOpt;
+  public Matrix<N5, N1> distCoeffsOpt;
 
   /*** Transform3d from the center of the robot to the camera mount position (ie,
    *     robot ➔ camera) in the <a href=
@@ -23,9 +30,11 @@ public class VisionIOReal implements VisionIO {
   public Transform3d robotToCamera;
 
   public VisionIOReal(VisionConstants constants) {
-    CAMERA_NAME = constants.cameraName();
-    camera = new PhotonCamera(CAMERA_NAME);
+    cameraName = constants.cameraName();
+    camera = new PhotonCamera(cameraName);
     robotToCamera = constants.robotToCamera();
+    cameraMatrixOpt = constants.CAMERA_MATRIX_OPT();
+    distCoeffsOpt = constants.DIST_COEFFS_OPT();
   }
 
   @Override
@@ -33,8 +42,8 @@ public class VisionIOReal implements VisionIO {
     var result = camera.getLatestResult();
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    inputs.coprocPNPTargets = result.targets;
+    inputs.targets = result.targets;
     inputs.numTags = result.targets.size();
-    inputs.pose = pose;
+    inputs.coprocPNPPose = pose;
   }
 }

@@ -13,13 +13,28 @@
 
 package frc.robot.subsystems.swerve;
 
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonPipelineResult;
+
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -33,7 +48,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N5;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -45,15 +62,6 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.targeting.PhotonPipelineResult;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
@@ -90,15 +98,57 @@ public class SwerveSubsystem extends SubsystemBase {
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   Vector<N3> visStdDevs = VecBuilder.fill(1.3, 1.3, 3.3);
   private SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
-  public static final Transform3d leftCamToRobot = new Transform3d(); // TODO find
-  public static final Transform3d rightCamToRobot = new Transform3d(); // TODO find
+  public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX_OPT =
+      MatBuilder.fill(
+          Nat.N3(),
+          Nat.N3(),
+          923.5403619629557,
+          0.0,
+          644.4965658066068,
+          0.0,
+          925.8136962361125,
+          402.6412935350414,
+          0.0,
+          0.0,
+          1.0); // TODO find!!
+  public static final Matrix<N5, N1> LEFT_DIST_COEFFS_OPT =
+      MatBuilder.fill(
+          Nat.N5(),
+          Nat.N1(),
+          0.05452153950284706,
+          -0.04331612051891956,
+          0.00176988756858703,
+          -0.004530368741385627,
+          -0.040501622476628085); // TODO find!!
+  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX_OPT =
+      MatBuilder.fill(
+          Nat.N3(),
+          Nat.N3(),
+          923.5403619629557,
+          0.0,
+          644.4965658066068,
+          0.0,
+          925.8136962361125,
+          402.6412935350414,
+          0.0,
+          0.0,
+          1.0); // TODO find!!
+  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS_OPT =
+      MatBuilder.fill(
+          Nat.N5(),
+          Nat.N1(),
+          0.05452153950284706,
+          -0.04331612051891956,
+          0.00176988756858703,
+          -0.004530368741385627,
+          -0.040501622476628085); // TODO find!!
   public static final VisionConstants leftCam =
-      new VisionConstants("Left Camera", leftCamToRobot, "Left Camera Sim System");
+      new VisionConstants("Left Camera", new Transform3d(), "Left Camera Sim System", LEFT_CAMERA_MATRIX_OPT, LEFT_DIST_COEFFS_OPT); //TODO find transforms
   public static final VisionConstants rightCam =
-      new VisionConstants("Right Camera", rightCamToRobot, "Right Camera Sim System");
-  public static final VisionConstants[] cameraConstants = new VisionConstants[] {leftCam, rightCam};
+      new VisionConstants("Right Camera", new Transform3d(), "Right Camera Sim System", RIGHT_CAMERA_MATRIX_OPT, RIGHT_DIST_COEFFS_OPT); //TODO find transforms
+  
 
-  public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO... moduleIOs) {
+  public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
     this.gyroIO = gyroIO;
     cameras = new Vision[visionIOs.length];
     modules = new Module[moduleIOs.length];
@@ -164,7 +214,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The array of vision IOs.
    */
-  public static VisionIO[] createCameras() {
+  public static VisionIO[] createRealCameras() {
     return new VisionIO[] {new VisionIOReal(leftCam), new VisionIOReal(rightCam)};
   }
 
@@ -175,7 +225,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static VisionIO[] createSimCameras() {
     return new VisionIO[] {
-      new VisionIOSim(leftCam), // TODO
+      new VisionIOSim(leftCam),
       new VisionIOSim(rightCam)
     };
   }
@@ -247,14 +297,14 @@ public class SwerveSubsystem extends SubsystemBase {
 
     for (var camera : cameras) {
       PhotonPipelineResult result =
-          new PhotonPipelineResult(camera.inputs.latency, camera.inputs.coprocPNPTargets);
+          new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
       result.setTimestampSeconds(camera.inputs.timestamp);
       try {
         var estPose =
             VisionHelper.update(
                     result,
-                    camera.CAMERA_MATRIX_OPT,
-                    camera.DIST_COEFFS_OPT,
+                    camera.constants.CAMERA_MATRIX_OPT(),
+                    camera.constants.DIST_COEFFS_OPT(),
                     PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                     fieldTags,
                     camera.constants.robotToCamera())
@@ -262,8 +312,8 @@ public class SwerveSubsystem extends SubsystemBase {
         var visionPose =
             VisionHelper.update(
                     result,
-                    camera.CAMERA_MATRIX_OPT,
-                    camera.DIST_COEFFS_OPT,
+                    camera.constants.CAMERA_MATRIX_OPT(),
+                    camera.constants.DIST_COEFFS_OPT(),
                     PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                     fieldTags,
                     camera.constants.robotToCamera())
@@ -440,6 +490,12 @@ public class SwerveSubsystem extends SubsystemBase {
       new Translation2d(TRACK_WIDTH_X / 2.0, -TRACK_WIDTH_Y / 2.0),
       new Translation2d(-TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
       new Translation2d(-TRACK_WIDTH_X / 2.0, -TRACK_WIDTH_Y / 2.0)
+    };
+  }
+  public static VisionConstants[] getCameraConstants() {
+    return new VisionConstants[] {
+      leftCam,
+      rightCam
     };
   }
 }
