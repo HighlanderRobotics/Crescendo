@@ -4,6 +4,7 @@
 
 package frc.robot.utils.autoaim;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import java.util.TreeMap;
 
 import edu.wpi.first.math.MathUtil;
