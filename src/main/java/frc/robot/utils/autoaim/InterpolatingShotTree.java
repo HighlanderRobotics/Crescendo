@@ -6,6 +6,7 @@ package frc.robot.utils.autoaim;
 
 import java.util.TreeMap;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 /*
@@ -52,9 +53,9 @@ public class InterpolatingShotTree {
 
   private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
     return new ShotData(
-        Rotation2d.fromDegrees(((endValue.getAngle().getDegrees() - startValue.getAngle().getDegrees()) * t) + startValue.getAngle().getDegrees()),
-        ((endValue.getRPM() - startValue.getRPM()) * t) + startValue.getRPM(),
-        ((endValue.getFlightTime() - startValue.getFlightTime()) * t) + startValue.getFlightTime());
+        Rotation2d.fromRadians(MathUtil.interpolate(startValue.getAngle().getRadians(), endValue.getAngle().getRadians(), t)),
+        MathUtil.interpolate(startValue.getRPM(), endValue.getRPM(), t),
+        MathUtil.interpolate(startValue.getFlightTime(), endValue.getFlightTime(), t));
   }
 
   private double inverseInterpolate(Double up, Double q, Double down) {
