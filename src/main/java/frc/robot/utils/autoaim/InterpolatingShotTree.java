@@ -6,6 +6,8 @@ package frc.robot.utils.autoaim;
 
 import java.util.TreeMap;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+
 /*
  * Class for a TreeMap of ShotData that interpolates between unknown values
  * Modified version of WPILib's InterpolatingTreeMap
@@ -50,7 +52,7 @@ public class InterpolatingShotTree {
 
   private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
     return new ShotData(
-        ((endValue.getAngle() - startValue.getAngle()) * t) + startValue.getAngle(),
+        Rotation2d.fromDegrees(((endValue.getAngle().getDegrees() - startValue.getAngle().getDegrees()) * t) + startValue.getAngle().getDegrees()),
         ((endValue.getRPM() - startValue.getRPM()) * t) + startValue.getRPM(),
         ((endValue.getFlightTime() - startValue.getFlightTime()) * t) + startValue.getFlightTime());
   }

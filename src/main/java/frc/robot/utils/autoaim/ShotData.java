@@ -4,22 +4,24 @@
 
 package frc.robot.utils.autoaim;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+
 /*
  * Holds data about each shot in which we interpolate with
  */
 public class ShotData {
 
-  private double angle;
+  private Rotation2d angle;
   private double rotationsPerSecond;
-  private double flightTime;
+  private double flightTimeSeconds;
 
-  public ShotData(double angle, double rotationsPerSecond, double flightTime) {
+  public ShotData(Rotation2d angle, double rotationsPerSecond, double flightTime) {
     this.angle = angle;
     this.rotationsPerSecond = rotationsPerSecond;
-    this.flightTime = flightTime;
+    this.flightTimeSeconds = flightTime;
   }
 
-  public double getAngle() {
+  public Rotation2d getAngle() {
     return angle;
   }
 
@@ -28,7 +30,7 @@ public class ShotData {
   }
 
   public double getFlightTime() {
-    return flightTime;
+    return flightTimeSeconds;
   }
 
   public String toString() {

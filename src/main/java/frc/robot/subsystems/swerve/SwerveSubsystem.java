@@ -348,15 +348,12 @@ public class SwerveSubsystem extends SubsystemBase {
     return Rotation2d.fromRadians(angle);
   }
 
-  @AutoLogOutput(key = "Autoaim/Target")
+  @AutoLogOutput(key = "Autoaim/Virtual Target")
   public Pose2d getVirtualTarget() {
 
     Pose2d target = FieldConstants.getSpeaker();
 
-    double distance =
-        Math.sqrt(
-            Math.pow((pose.getX() - target.getX()), 2)
-                + Math.pow((pose.getY() - target.getY()), 2));
+    double distance = pose.minus(target).getTranslation().getNorm();
 
     return target.transformBy(
         new Transform2d(
@@ -376,7 +373,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     return this.runVelocityFieldRelative(
             () -> {
-              double calculated =
+              double feedbackOutput =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
                       getRotationToTranslation(getVirtualTarget()).getRadians());
@@ -384,7 +381,7 @@ public class SwerveSubsystem extends SubsystemBase {
               return new ChassisSpeeds(
                   xMetersPerSecond.getAsDouble(),
                   yMetersPerSecond.getAsDouble(),
-                  calculated + headingController.getSetpoint().velocity);
+                  feedbackOutput + headingController.getSetpoint().velocity);
             })
         .beforeStarting(
             () ->

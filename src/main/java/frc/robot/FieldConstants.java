@@ -14,9 +14,9 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 public class FieldConstants {
 
   public static final Pose2d BLUE_SPEAKER_POSE =
-      new Pose2d(new Translation2d(-0.086473, 5.757474), new Rotation2d());
+      new Pose2d(new Translation2d(-0.086473, 5.757474), Rotation2d.fromDegrees(0));
   public static final Pose2d RED_SPEAKER_POSE =
-      new Pose2d(new Translation2d(16.389722, 5.757474), new Rotation2d());
+      new Pose2d(new Translation2d(16.389722, 5.757474), Rotation2d.fromDegrees(180));
 
   public static Pose2d getSpeaker() {
     if (DriverStation.getAlliance().isPresent()) {
