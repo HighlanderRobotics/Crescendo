@@ -9,7 +9,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 /*
  * Holds data about each shot in which we interpolate with
  */
-public class ShotData{
+public class ShotData {
 
   private Rotation2d angle;
   private double rotationsPerSecond;
@@ -32,7 +32,6 @@ public class ShotData{
   public double getFlightTime() {
     return flightTimeSeconds;
   }
-
 
   public String toString() {
     return "" + getAngle() + " " + getRPM() + " " + getFlightTime();

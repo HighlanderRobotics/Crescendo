@@ -4,11 +4,9 @@
 
 package frc.robot.utils.autoaim;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import java.util.TreeMap;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import java.util.TreeMap;
 
 /*
  * Class for a TreeMap of ShotData that interpolates between unknown values
@@ -54,7 +52,9 @@ public class InterpolatingShotTree {
 
   private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
     return new ShotData(
-        Rotation2d.fromRadians(MathUtil.interpolate(startValue.getAngle().getRadians(), endValue.getAngle().getRadians(), t)),
+        Rotation2d.fromRadians(
+            MathUtil.interpolate(
+                startValue.getAngle().getRadians(), endValue.getAngle().getRadians(), t)),
         MathUtil.interpolate(startValue.getRPM(), endValue.getRPM(), t),
         MathUtil.interpolate(startValue.getFlightTime(), endValue.getFlightTime(), t));
   }
