@@ -344,14 +344,16 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Rotation2d getRotationToTranslation(Pose2d translation) {
-    double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
+    double angle =
+        Math.atan2(
+            translation.getY() - getPose().getY(),
+            translation.getX() - getPose().getX());
     return Rotation2d.fromRadians(angle);
   }
 
-
   /**
    * Transforms the speaker pose by the robots current velocity (assumes constant velocity)
-   * 
+   *
    * @return The transformed pose
    */
   @AutoLogOutput(key = "Autoaim/Virtual Target")
@@ -371,22 +373,19 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Gets the pose at some time in the future
-   * 
+   *
    * @param time time in seconds
-   * 
    * @return The future pose
    */
   public Pose2d getFuturePose(double time) {
     return getPose()
         .transformBy(
             new Transform2d(
-                getVelocity().vxMetersPerSecond * time,
-                getVelocity().vyMetersPerSecond * time,
-                getRotation()));
+                getRobotRelativeSpeeds().vxMetersPerSecond * time,
+                getRobotRelativeSpeeds().vyMetersPerSecond * time,
+                new Rotation2d()));
   }
 
-
-  
   @AutoLogOutput(key = "AutoAim/FuturePose")
   public Pose2d getFuturePose() {
     return getFuturePose(AutoAim.LOOKAHEAD_TIME);
@@ -394,12 +393,40 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Faces the robot towards a translation on the field
-   * 
+   *
    * @param xMetersPerSecond Requested X velocity
    * @param yMetersPerSecond Requested Y velocity
-   * 
+   * @param time Time in the future to point from
    * @return A command refrence that rotates the robot to a computed rotation
    */
+  public Command pointTowardsTranslation(
+      DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
+    ProfiledPIDController headingController =
+        // assume we can accelerate to max in 0.5 seconds
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return this.runVelocityFieldRelative(
+            () -> {
+              double feedbackOutput =
+                  headingController.calculate(
+                      getFuturePose(time).getRotation().getRadians(),
+                      getRotationToTranslation(getVirtualTarget()).getRadians());
+
+              return new ChassisSpeeds(
+                  xMetersPerSecond.getAsDouble(),
+                  yMetersPerSecond.getAsDouble(),
+                  feedbackOutput + headingController.getSetpoint().velocity);
+            })
+        .beforeStarting(
+            () ->
+                headingController.reset(
+                    new State(
+                        getFuturePose(time).getRotation().getRadians(),
+                        getVelocity().omegaRadiansPerSecond)));
+  }
+
   public Command pointTowardsTranslation(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
     ProfiledPIDController headingController =

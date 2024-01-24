@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.utils.autoaim.AutoAim;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -108,12 +110,45 @@ public class Robot extends LoggedRobot {
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+
+    controller.b().toggleOnTrue(autoAimDemo(() -> swerve.getVelocity()));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
   }
+
+  public Command autoAimDemo(Supplier<ChassisSpeeds> speeds) {
+    ChassisSpeeds fixedspeeds = new ChassisSpeeds(0, 0, 0);
+    double distance =
+        swerve
+            .getFuturePose(AutoAim.LOOKAHEAD_TIME)
+            .minus(FieldConstants.getSpeaker())
+            .getTranslation()
+            .getNorm();
+    return Commands.sequence( 
+        Commands.print("Distance: " + distance),
+        Commands.print("RPM: " + AutoAim.shotMap.get(distance).getRPM()),
+        Commands.print("Shooter Angle: " + AutoAim.shotMap.get(distance).getAngle().getRadians()),
+        Commands.print("Flight Time: " + AutoAim.shotMap.get(distance).getFlightTime()),
+        Commands.print(
+            "Robot Angle: "
+                + swerve.getRotationToTranslation(FieldConstants.getSpeaker()).getRadians()),
+        Commands.deadline(
+            Commands.waitSeconds(1),
+            Commands.sequence(
+                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
+                Commands.print("Spin Up Shooter")),
+            Commands.sequence(
+                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7), Commands.print("Aim Shooter")),
+            Commands.sequence(swerve.runVelocityFieldRelative(() -> fixedspeeds)),
+            Commands.sequence(
+                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
+                Commands.print("Rotate Robot"))),
+        Commands.print("Whoosh!"));
+  }
+  
 
   @Override
   public void disabledPeriodic() {}
