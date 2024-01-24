@@ -14,7 +14,11 @@ import edu.wpi.first.math.numbers.N5;
 /** Add your docs here. */
 public class Vision {
   public record VisionConstants(
-      String cameraName, Transform3d robotToCamera, String simVisionSystemName, Matrix<N3, N3> CAMERA_MATRIX_OPT, Matrix<N5, N1> DIST_COEFFS_OPT) {}
+      String cameraName,
+      Transform3d robotToCamera,
+      String simVisionSystemName,
+      Matrix<N3, N3> CAMERA_MATRIX_OPT,
+      Matrix<N5, N1> DIST_COEFFS_OPT) {}
 
   private final VisionIO io;
   public final VisionIOInputsLogged inputs = new VisionIOInputsLogged();

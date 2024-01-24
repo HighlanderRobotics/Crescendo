@@ -14,8 +14,7 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     table.put("Timestamp", timestamp);
     table.put("Latency", latency);
     for (int i = 0; i < targets.size(); i++) {
-      VisionHelper.Logging.logPhotonTrackedTarget(
-          targets.get(i), table, String.valueOf(i));
+      VisionHelper.Logging.logPhotonTrackedTarget(targets.get(i), table, String.valueOf(i));
       numTags += 1;
     }
     table.put("NumTags", numTags);
@@ -27,8 +26,7 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     timestamp = table.get("Timestamp", timestamp);
     latency = table.get("Latency", latency);
     for (int i = 0; i < table.get("NumTags", numTags); i++) {
-      this.targets.add(
-          VisionHelper.Logging.getLoggedPhotonTrackedTarget(table, String.valueOf(i)));
+      this.targets.add(VisionHelper.Logging.getLoggedPhotonTrackedTarget(table, String.valueOf(i)));
     }
     numTags = table.get("NumTags", numTags);
     coprocPNPPose = table.get("Pose", coprocPNPPose);

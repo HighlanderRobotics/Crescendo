@@ -17,6 +17,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -37,6 +38,7 @@ public class PhoenixOdometryThread extends Thread {
       new ReentrantLock(); // Prevents conflicts when registering signals
   private BaseStatusSignal[] signals = new BaseStatusSignal[0];
   private final List<Queue<Double>> queues = new ArrayList<>();
+  private final List<Queue<Double>> timestampQueues = new ArrayList<>();
   private boolean isCANFD = false;
 
   private static PhoenixOdometryThread instance = null;
@@ -51,7 +53,14 @@ public class PhoenixOdometryThread extends Thread {
   private PhoenixOdometryThread() {
     setName("PhoenixOdometryThread");
     setDaemon(true);
-    start();
+    // start(); why is this deleted?
+  }
+
+  @Override
+  public void start() {
+    if (timestampQueues.size() > 0) {
+      super.start();
+    }
   }
 
   public Queue<Double> registerSignal(ParentDevice device, StatusSignal<Double> signal) {
@@ -67,6 +76,17 @@ public class PhoenixOdometryThread extends Thread {
 
     } finally {
       signalsLock.unlock();
+    }
+    return queue;
+  }
+
+  public Queue<Double> makeTimestampQueue() {
+    Queue<Double> queue = new ArrayDeque<>(100);
+    SwerveSubsystem.odometryLock.lock();
+    try {
+      timestampQueues.add(queue);
+    } finally {
+      SwerveSubsystem.odometryLock.unlock();
     }
     return queue;
   }

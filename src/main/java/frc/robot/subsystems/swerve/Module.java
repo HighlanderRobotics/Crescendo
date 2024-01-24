@@ -42,6 +42,7 @@ public class Module {
 
   private double lastPositionMeters = 0.0; // Used for delta calculation
   private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
+  private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
   public Module(final ModuleIO io) {
     this.io = io;
@@ -129,5 +130,15 @@ public class Module {
   /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
     return inputs.driveVelocityMetersPerSec;
+  }
+
+  /** Returns the timestamps of the samples received this cycle. */
+  public double[] getOdometryTimestamps() {
+    return inputs.odometryTimestamps;
+  }
+
+  /** Returns the module positions received this cycle. */
+  public SwerveModulePosition[] getOdometryPositions() {
+    return odometryPositions;
   }
 }

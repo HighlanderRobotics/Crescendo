@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems.vision;
 
-import org.photonvision.PhotonCamera;
-
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -13,6 +11,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+import org.photonvision.PhotonCamera;
 
 /** Add your docs here. */
 public class VisionIOReal implements VisionIO {
