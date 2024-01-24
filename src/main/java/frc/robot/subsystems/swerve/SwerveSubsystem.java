@@ -345,9 +345,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Rotation2d getRotationToTranslation(Pose2d translation) {
     double angle =
-        Math.atan2(
-            translation.getY() - getPose().getY(),
-            translation.getX() - getPose().getX());
+        Math.atan2(translation.getY() - getPose().getY(), translation.getX() - getPose().getX());
     return Rotation2d.fromRadians(angle);
   }
 

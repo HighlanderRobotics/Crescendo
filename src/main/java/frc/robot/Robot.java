@@ -127,7 +127,7 @@ public class Robot extends LoggedRobot {
             .minus(FieldConstants.getSpeaker())
             .getTranslation()
             .getNorm();
-    return Commands.sequence( 
+    return Commands.sequence(
         Commands.print("Distance: " + distance),
         Commands.print("RPM: " + AutoAim.shotMap.get(distance).getRPM()),
         Commands.print("Shooter Angle: " + AutoAim.shotMap.get(distance).getAngle().getRadians()),
@@ -148,7 +148,6 @@ public class Robot extends LoggedRobot {
                 Commands.print("Rotate Robot"))),
         Commands.print("Whoosh!"));
   }
-  
 
   @Override
   public void disabledPeriodic() {}
