@@ -77,7 +77,6 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
 
-
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
     new AutoAim();
@@ -349,6 +348,12 @@ public class SwerveSubsystem extends SubsystemBase {
     return Rotation2d.fromRadians(angle);
   }
 
+
+  /**
+   * Transforms the speaker pose by the robots current velocity (assumes constant velocity)
+   * 
+   * @return The transformed pose
+   */
   @AutoLogOutput(key = "Autoaim/Target")
   public Pose2d getVirtualTarget() {
 
@@ -367,6 +372,37 @@ public class SwerveSubsystem extends SubsystemBase {
             .inverse());
   }
 
+  /**
+   * Gets the pose at some time in the future
+   * 
+   * @param time time in seconds
+   * 
+   * @return The future pose
+   */
+  public Pose2d getFuturePose(double time) {
+    return getPose()
+        .transformBy(
+            new Transform2d(
+                getVelocity().vxMetersPerSecond * time,
+                getVelocity().vyMetersPerSecond * time,
+                getRotation()));
+  }
+
+
+  
+  @AutoLogOutput(key = "AutoAim/FuturePose")
+  public Pose2d getFuturePose() {
+    return getFuturePose(AutoAim.LOOKAHEAD_TIME);
+  }
+
+  /**
+   * Faces the robot towards a translation on the field
+   * 
+   * @param xMetersPerSecond Requested X velocity
+   * @param yMetersPerSecond Requested Y velocity
+   * 
+   * @return A command refrence that rotates the robot to a computed rotation
+   */
   public Command pointTowardsTranslation(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
     ProfiledPIDController headingController =
@@ -379,7 +415,7 @@ public class SwerveSubsystem extends SubsystemBase {
             () -> {
               double calculated =
                   headingController.calculate(
-                      getPose().getRotation().getRadians(),
+                      getFuturePose().getRotation().getRadians(),
                       getRotationToTranslation(getVirtualTarget()).getRadians());
 
               return new ChassisSpeeds(
@@ -391,7 +427,7 @@ public class SwerveSubsystem extends SubsystemBase {
             () ->
                 headingController.reset(
                     new State(
-                        getPose().getRotation().getRadians(),
+                        getFuturePose().getRotation().getRadians(),
                         getVelocity().omegaRadiansPerSecond)));
   }
 }

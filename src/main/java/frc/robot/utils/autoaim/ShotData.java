@@ -4,12 +4,10 @@
 
 package frc.robot.utils.autoaim;
 
-import edu.wpi.first.math.interpolation.Interpolatable;
-
 /*
  * Holds data about each shot in which we interpolate with
  */
-public class ShotData{
+public class ShotData {
 
   private double angle;
   private double rotationsPerSecond;
@@ -32,7 +30,6 @@ public class ShotData{
   public double getFlightTime() {
     return flightTime;
   }
-
 
   public String toString() {
     return "" + getAngle() + " " + getRPM() + " " + getFlightTime();

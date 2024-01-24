@@ -9,7 +9,9 @@ public class AutoAim {
 
   public static final InterpolatingShotTree shotMap = new InterpolatingShotTree();
 
-  public AutoAim() {
+  public static final double LOOKAHEAD_TIME = 1;
+
+  static {
 
     // Examples until we aquire actual data
     for (double i = 0; i < 10; i++) {
