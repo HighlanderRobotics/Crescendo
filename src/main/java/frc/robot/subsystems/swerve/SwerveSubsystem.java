@@ -348,10 +348,9 @@ public class SwerveSubsystem extends SubsystemBase {
     return Rotation2d.fromRadians(angle);
   }
 
-
   /**
    * Transforms the speaker pose by the robots current velocity (assumes constant velocity)
-   * 
+   *
    * @return The transformed pose
    */
   @AutoLogOutput(key = "Autoaim/Virtual Target")
@@ -371,9 +370,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Gets the pose at some time in the future
-   * 
+   *
    * @param time time in seconds
-   * 
    * @return The future pose
    */
   public Pose2d getFuturePose(double time) {
@@ -385,8 +383,6 @@ public class SwerveSubsystem extends SubsystemBase {
                 getRotation()));
   }
 
-
-  
   @AutoLogOutput(key = "AutoAim/FuturePose")
   public Pose2d getFuturePose() {
     return getFuturePose(AutoAim.LOOKAHEAD_TIME);
@@ -394,10 +390,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Faces the robot towards a translation on the field
-   * 
+   *
    * @param xMetersPerSecond Requested X velocity
    * @param yMetersPerSecond Requested Y velocity
-   * 
    * @return A command refrence that rotates the robot to a computed rotation
    */
   public Command pointTowardsTranslation(
