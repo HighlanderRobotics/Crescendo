@@ -6,20 +6,18 @@ package frc.robot.subsystems.routing;
 
 import org.littletonrobotics.junction.AutoLog;
 
-import frc.robot.subsystems.routing.RoutingIOInputsAutoLogged;
-
 /** Add your docs here. */
 public interface RoutingIO {
   @AutoLog
-  public class RoutingIOInputs {
+  public static class RoutingIOInputs {
     // Motor values
-    public double velocityRPS;
-    public double currentDrawAmps;
-    public double temperatureCelsius;
-    public double motorOutputVolts;
+    public double velocityRPS = 0.0;
+    public double currentDrawAmps = 0.0;
+    public double temperatureCelsius = 0.0;
+    public double motorOutputVolts = 0.0;
   }
-  
-  public abstract RoutingIOInputsAutoLogged updateInputs();
+
+  public abstract void updateInputs(RoutingIOInputsAutoLogged inputs);
 
   public abstract void setVelocity(double rps);
 }

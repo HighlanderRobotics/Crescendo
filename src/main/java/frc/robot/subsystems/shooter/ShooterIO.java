@@ -9,18 +9,18 @@ import org.littletonrobotics.junction.AutoLog;
 /** Add your docs here. */
 public interface ShooterIO {
   @AutoLog
-  public class ShooterIOInputs {
+  public static class ShooterIOInputs {
 
     // Motor values
-    public double velocityRPS;
-    public double currentDrawAmps;
-    public double temperatureCelsius;
-    public double motorOutputVolts;
+    public double velocityRPS = 0.0;
+    public double currentDrawAmps = 0.0;
+    public double temperatureCelsius = 0.0;
+    public double motorOutputVolts = 0.0;
   }
 
   public abstract void setVoltage(double voltage);
 
   public abstract void setVelocity(double rps);
 
-  public abstract ShooterIOInputsAutoLogged updateInputs();
+  public abstract void updateInputs(ShooterIOInputsAutoLogged inputs);
 }

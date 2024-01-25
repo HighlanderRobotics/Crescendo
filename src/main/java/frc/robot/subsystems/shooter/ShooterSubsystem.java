@@ -8,11 +8,10 @@ import org.littletonrobotics.junction.Logger;
 public class ShooterSubsystem extends SubsystemBase {
 
   ShooterIO io;
-  ShooterIOInputsAutoLogged inputs;
+  ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
   public ShooterSubsystem(ShooterIO io) {
     this.io = io;
-    inputs = new ShooterIOInputsAutoLogged();
   }
 
   public Command run(double voltage) {
@@ -29,7 +28,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    inputs = io.updateInputs();
+    io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
   }
 }

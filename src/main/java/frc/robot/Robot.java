@@ -114,7 +114,9 @@ public class Robot extends LoggedRobot {
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
     controller.leftTrigger().whileTrue(intake());
-    controller.rightTrigger().whileTrue(shootFender());
+    controller
+        .rightTrigger()
+        .whileTrue(Commands.parallel(shooter.runVelocity(50.0), routing.run(50.0)));
     controller
         .leftBumper()
         .whileTrue(
