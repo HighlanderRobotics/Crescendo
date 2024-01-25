@@ -16,6 +16,11 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class ElevatorSubsystem extends SubsystemBase {
+  // Constants
+  // TODO find real values
+  public static final double GEAR_RATIO = 6.0 / 1.0;
+  public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(2.0);
+
   ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   ElevatorIO io;
 

@@ -17,9 +17,9 @@ public class ElevatorIOSim implements ElevatorIO {
   ElevatorSim physicsSim =
       new ElevatorSim(
           DCMotor.getKrakenX60Foc(2),
-          6.0,
+          ElevatorSubsystem.GEAR_RATIO,
           Units.lbsToKilograms(20.0),
-          Units.inchesToMeters(2.0),
+          ElevatorSubsystem.DRUM_RADIUS_METERS,
           0.0,
           1.0,
           true,
