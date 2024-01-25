@@ -12,8 +12,8 @@ public class ShooterIOReal implements ShooterIO {
   public static final double SHOOTER_GEAR_RATIO = 1;
 
   private TalonFX shooterMotor = new TalonFX(27);
-  private VelocityVoltage shooterMotorVelocity = new VelocityVoltage(0);
-  private VoltageOut voltageOut = new VoltageOut(0.0);
+  private VelocityVoltage shooterMotorVelocity = new VelocityVoltage(0).withEnableFOC(true);
+  private VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
   private StatusSignal<Double> supplyVoltageSignal = shooterMotor.getMotorVoltage();
   private StatusSignal<Double> velocity = shooterMotor.getRotorVelocity();
@@ -21,18 +21,22 @@ public class ShooterIOReal implements ShooterIO {
 
   public ShooterIOReal() {
     TalonFXConfiguration shooterConfig = new TalonFXConfiguration();
-    shooterConfig.Slot0.kP = 0;
+    shooterConfig.Slot0.kP = 1.0;
     shooterConfig.Slot0.kD = 0;
     shooterConfig.Slot0.kI = 0;
-    shooterConfig.Slot0.kV = 0;
+    shooterConfig.Slot0.kV = 5.0;
 
     shooterConfig.CurrentLimits.StatorCurrentLimit = 100.0;
     shooterConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     shooterMotor.getConfigurator().apply(shooterConfig);
   }
 
-  public void setVelocity(double velocity) {
-    shooterMotor.setControl(voltageOut.withOutput(velocity));
+  public void setVoltage(double voltage) {
+    shooterMotor.setControl(voltageOut.withOutput(voltage));
+  }
+
+  public void setVelocity(double rps) {
+    shooterMotor.setControl(shooterMotorVelocity.withVelocity(rps));
   }
 
   public ShooterIOInputsAutoLogged updateInputs() {

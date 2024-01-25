@@ -15,12 +15,16 @@ public class ShooterSubsystem extends SubsystemBase {
     inputs = new ShooterIOInputsAutoLogged();
   }
 
-  public Command run(double velocity) {
+  public Command run(double voltage) {
     return new RunCommand(
         () -> {
-          io.setVelocity(velocity);
+          io.setVoltage(voltage);
         },
         this);
+  }
+
+  public Command runVelocity(double rps) {
+    return this.run(() -> io.setVelocity(rps));
   }
 
   @Override

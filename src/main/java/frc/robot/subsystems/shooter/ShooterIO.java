@@ -18,7 +18,9 @@ public interface ShooterIO {
     public double motorOutputVolts;
   }
 
-  public abstract void setVelocity(double rotationsPerSecond);
+  public abstract void setVoltage(double voltage);
+
+  public abstract void setVelocity(double rps);
 
   public abstract ShooterIOInputsAutoLogged updateInputs();
 }
