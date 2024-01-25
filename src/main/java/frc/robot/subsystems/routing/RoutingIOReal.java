@@ -1,5 +1,6 @@
 package frc.robot.subsystems.routing;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -12,7 +13,7 @@ public class RoutingIOReal implements RoutingIO {
   private TalonFX motor = new TalonFX(12);
   private VelocityVoltage velocityOut = new VelocityVoltage(0.0).withEnableFOC(true);
 
-  private StatusSignal<Double> supplyVoltageSignal = motor.getMotorVoltage();
+  private StatusSignal<Double> voltage = motor.getMotorVoltage();
   private StatusSignal<Double> velocity = motor.getVelocity();
   private StatusSignal<Double> currentDraw = motor.getStatorCurrent();
 
@@ -29,12 +30,15 @@ public class RoutingIOReal implements RoutingIO {
     config.CurrentLimits.StatorCurrentLimitEnable = true;
     config.Feedback.SensorToMechanismRatio = 1.0;
     motor.getConfigurator().apply(config);
+
+    BaseStatusSignal.setUpdateFrequencyForAll(50, voltage, velocity, currentDraw);
+    motor.optimizeBusUtilization();
   }
 
   public void updateInputs(RoutingIOInputsAutoLogged inputs) {
     inputs.currentDrawAmps = currentDraw.getValueAsDouble();
-    inputs.velocityRPS = motor.getVelocity().getValueAsDouble();
-    inputs.motorOutputVolts = supplyVoltageSignal.getValueAsDouble();
+    inputs.velocityRPS = velocity.getValueAsDouble();
+    inputs.motorOutputVolts = voltage.getValueAsDouble();
   }
 
   @Override
