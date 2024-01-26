@@ -20,4 +20,6 @@ public interface RoutingIO {
   public abstract void updateInputs(RoutingIOInputsAutoLogged inputs);
 
   public abstract void setVelocity(double rps);
+
+  public abstract void setVoltage(double voltage);
 }

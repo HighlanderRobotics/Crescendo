@@ -20,6 +20,10 @@ public class RoutingSubsystem extends SubsystemBase {
         });
   }
 
+  public Command stop() {
+    return this.run(() -> io.setVoltage(0.0));
+  }
+
   @Override
   public void periodic() {
     io.updateInputs(inputs);

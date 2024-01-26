@@ -26,7 +26,7 @@ public class ShooterIOReal implements ShooterIO {
     config.Slot0.kP = 0.1;
     config.Slot0.kD = 0;
     config.Slot0.kI = 0;
-    config.Slot0.kV = 5.0;
+    config.Slot0.kV = 0.12;
 
     config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
@@ -52,7 +52,7 @@ public class ShooterIOReal implements ShooterIO {
 
   @Override
   public void updateInputs(ShooterIOInputsAutoLogged inputs) {
-    
+    BaseStatusSignal.refreshAll(currentDraw, velocity, voltage);
     inputs.currentDrawAmps = currentDraw.getValueAsDouble();
     inputs.velocityRPS = velocity.getValueAsDouble();
     inputs.motorOutputVolts = voltage.getValueAsDouble();

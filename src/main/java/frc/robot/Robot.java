@@ -108,7 +108,7 @@ public class Robot extends LoggedRobot {
 
     shooter.setDefaultCommand(shooter.run(0.0));
     pivot.setDefaultCommand(pivot.run(-100.0));
-    routing.setDefaultCommand(routing.run(0.0));
+    routing.setDefaultCommand(routing.stop());
 
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
@@ -116,7 +116,7 @@ public class Robot extends LoggedRobot {
     controller.leftTrigger().whileTrue(intake());
     controller
         .rightTrigger()
-        .whileTrue(Commands.parallel(shooter.runVelocity(50.0), routing.run(50.0)));
+        .whileTrue(Commands.parallel(shooter.runVelocity(-100.0), routing.run(100.0)));
     controller
         .leftBumper()
         .whileTrue(
