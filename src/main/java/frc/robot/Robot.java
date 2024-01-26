@@ -143,7 +143,6 @@ public class Robot extends LoggedRobot {
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7), Commands.print("Aim Shooter")),
             Commands.sequence(
-                
                 (swerve.pointTowardsTranslation(
                     () -> swerve.shotSpeeds.vxMetersPerSecond,
                     () -> swerve.shotSpeeds.vyMetersPerSecond))),
