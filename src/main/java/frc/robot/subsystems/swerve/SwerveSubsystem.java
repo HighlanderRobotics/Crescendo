@@ -13,6 +13,9 @@
 
 package frc.robot.subsystems.swerve;
 
+import static edu.wpi.first.units.Units.Volts;
+
+import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -32,9 +35,14 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
@@ -75,6 +83,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
+
+  private final SysIdRoutine moduleSteerRoutine;
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -119,6 +129,19 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
 
     odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
+
+    moduleSteerRoutine = 
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,         // Default ramp rate is acceptable
+                Volts.of(4), // Reduce dynamic voltage to 4 to prevent motor brownout
+                null,          // Default timeout is acceptable
+                                       // Log state with Phoenix SignalLogger class
+                (state)->SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts)-> modules[0].runCharacterization(volts.in(Volts)),
+                null,
+                this));
   }
 
   /**
@@ -373,5 +396,16 @@ public class SwerveSubsystem extends SubsystemBase {
                     new State(
                         getPose().getRotation().getRadians(),
                         getVelocity().omegaRadiansPerSecond)));
+  }
+
+  public Command runModuleSteerCharacterizationCmd() {
+    return Commands.sequence(
+        this.runOnce(() -> SignalLogger.start()),
+        moduleSteerRoutine.quasistatic(Direction.kForward),
+        moduleSteerRoutine.quasistatic(Direction.kReverse),
+        moduleSteerRoutine.dynamic(Direction.kForward),
+        moduleSteerRoutine.dynamic(Direction.kReverse),
+        this.runOnce(() -> SignalLogger.stop())
+      );
   }
 }
