@@ -39,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.autoaim.ShotData;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -76,6 +77,9 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
+
+  public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0);
+  public ChassisSpeeds shotSpeeds = new ChassisSpeeds();
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -174,6 +178,9 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
+    Logger.recordOutput("ShotData/Angle", curShotData.getAngle());
+    Logger.recordOutput("ShotData/RPM", curShotData.getRPM());
+    Logger.recordOutput("ShotData/Flight Time", curShotData.getFlightTime());
     // Update odometry
     int deltaCount =
         Math.min(
@@ -345,9 +352,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Rotation2d getRotationToTranslation(Pose2d translation) {
     double angle =
-        Math.atan2(
-            translation.getY() - getPose().getY(),
-            translation.getX() - getPose().getX());
+        Math.atan2(translation.getY() - getPose().getY(), translation.getX() - getPose().getX());
     return Rotation2d.fromRadians(angle);
   }
 

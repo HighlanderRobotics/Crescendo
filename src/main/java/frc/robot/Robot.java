@@ -120,21 +120,21 @@ public class Robot extends LoggedRobot {
   }
 
   public Command autoAimDemo(Supplier<ChassisSpeeds> speeds) {
-    ChassisSpeeds fixedspeeds = new ChassisSpeeds(0, 0, 0);
-    double distance =
-        swerve
-            .getFuturePose(AutoAim.LOOKAHEAD_TIME)
-            .minus(FieldConstants.getSpeaker())
-            .getTranslation()
-            .getNorm();
-    return Commands.sequence( 
-        Commands.print("Distance: " + distance),
-        Commands.print("RPM: " + AutoAim.shotMap.get(distance).getRPM()),
-        Commands.print("Shooter Angle: " + AutoAim.shotMap.get(distance).getAngle().getRadians()),
-        Commands.print("Flight Time: " + AutoAim.shotMap.get(distance).getFlightTime()),
-        Commands.print(
-            "Robot Angle: "
-                + swerve.getRotationToTranslation(FieldConstants.getSpeaker()).getRadians()),
+
+    return Commands.sequence(
+        Commands.runOnce(
+            () -> {
+              swerve.shotSpeeds = speeds.get();
+              swerve.curShotData =
+                  AutoAim.shotMap.get(
+                      swerve
+                          .getFuturePose(AutoAim.LOOKAHEAD_TIME)
+                          .minus(FieldConstants.getSpeaker())
+                          .getTranslation()
+                          .getNorm());
+              System.out.println(swerve.shotSpeeds.toString());
+            },
+            swerve),
         Commands.deadline(
             Commands.waitSeconds(1),
             Commands.sequence(
@@ -142,13 +142,16 @@ public class Robot extends LoggedRobot {
                 Commands.print("Spin Up Shooter")),
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7), Commands.print("Aim Shooter")),
-            Commands.sequence(swerve.runVelocityFieldRelative(() -> fixedspeeds)),
+            Commands.sequence(
+                
+                (swerve.pointTowardsTranslation(
+                    () -> swerve.shotSpeeds.vxMetersPerSecond,
+                    () -> swerve.shotSpeeds.vyMetersPerSecond))),
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
                 Commands.print("Rotate Robot"))),
         Commands.print("Whoosh!"));
   }
-  
 
   @Override
   public void disabledPeriodic() {}

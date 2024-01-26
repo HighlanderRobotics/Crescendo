@@ -5,6 +5,7 @@
 package frc.robot.utils.autoaim;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import org.littletonrobotics.junction.AutoLogOutput;
 
 /*
  * Holds data about each shot in which we interpolate with
@@ -21,13 +22,16 @@ public class ShotData {
     this.flightTimeSeconds = flightTime;
   }
 
+
   public Rotation2d getAngle() {
     return angle;
   }
 
+
   public double getRPM() {
     return rotationsPerSecond;
   }
+
 
   public double getFlightTime() {
     return flightTimeSeconds;
