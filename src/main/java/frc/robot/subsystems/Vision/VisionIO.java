@@ -21,5 +21,5 @@ public interface VisionIO {
     public Pose3d coprocPNPPose = new Pose3d();
   }
 
-  public default void updateInputs(VisionIOInputs inputs, Pose3d pose) {}
+  public default void updateInputs(VisionIOInputs inputs) {}
 }

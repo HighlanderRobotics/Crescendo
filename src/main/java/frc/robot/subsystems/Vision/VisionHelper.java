@@ -18,6 +18,8 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import frc.robot.Robot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.estimation.TargetModel;
 import org.photonvision.estimation.VisionEstimation;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PNPResult;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -80,10 +83,10 @@ public class VisionHelper {
         minAreaRectCornersX[i] = target.getMinAreaRectCorners().get(i).x;
         minAreaRectCornersY[i] = target.getMinAreaRectCorners().get(i).y;
       }
-      table.put("detected corners x " + name, detectedCornersX);
-      table.put("detected corners y " + name, detectedCornersY);
-      table.put("min area rect corners x " + name, minAreaRectCornersX);
-      table.put("min area rect corners Y " + name, minAreaRectCornersY);
+      table.put("Detected Corners X " + name, detectedCornersX);
+      table.put("Detected Corners Y " + name, detectedCornersY);
+      table.put("Min Area Rect Corners X " + name, minAreaRectCornersX);
+      table.put("Min Area Rect Corners Y " + name, minAreaRectCornersY);
     }
 
     public static void logTransform3d(Transform3d transform3d, LogTable table, String name) {
@@ -200,7 +203,8 @@ public class VisionHelper {
                 Optional.of(distCoeffs),
                 fieldTags,
                 robotToCamera,
-                strat); // TODO make multiple cameras/coprocs actually work
+                PoseStrategy
+                    .MULTI_TAG_PNP_ON_RIO); // TODO make multiple cameras/coprocs actually work
         break;
       default:
         DriverStation.reportError(
@@ -424,5 +428,11 @@ public class VisionHelper {
             .computeDeviation(avgDistance);
 
     return deviation;
+  }
+
+  /** A Field2d for visualizing our robot and objects on the field. */
+  public static Field2d getSimDebugField(VisionSystemSim visionSim) {
+    if (!Robot.isSimulation()) return null;
+    return visionSim.getDebugField();
   }
 }

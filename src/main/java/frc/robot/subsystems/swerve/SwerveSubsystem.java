@@ -43,6 +43,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
@@ -50,7 +51,9 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -58,6 +61,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 
 public class SwerveSubsystem extends SubsystemBase {
@@ -86,7 +90,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final Module[] modules; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  private Pose2d pose = new Pose2d();
+  private static Pose2d pose = new Pose2d();
   private SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -101,8 +105,9 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveDrivePoseEstimator estimator;
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   Vector<N3> visStdDevs = VecBuilder.fill(1.3, 1.3, 3.3);
+  private double lastEstTimestamp = 0;
 
-  public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX_OPT =
+  public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
           Nat.N3(),
           Nat.N3(),
@@ -115,7 +120,7 @@ public class SwerveSubsystem extends SubsystemBase {
           0.0,
           0.0,
           1.0); // TODO find!!
-  public static final Matrix<N5, N1> LEFT_DIST_COEFFS_OPT =
+  public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
@@ -150,14 +155,14 @@ public class SwerveSubsystem extends SubsystemBase {
       new VisionConstants(
           "Left Camera",
           new Transform3d(),
-          "Left Camera Sim System",
-          LEFT_CAMERA_MATRIX_OPT,
-          LEFT_DIST_COEFFS_OPT); // TODO find transforms
+          new VisionSystemSim("Left Camera Sim System"),
+          LEFT_CAMERA_MATRIX,
+          LEFT_DIST_COEFFS); // TODO find transforms
   public static final VisionConstants rightCam =
       new VisionConstants(
           "Right Camera",
           new Transform3d(),
-          "Right Camera Sim System",
+          new VisionSystemSim("Right Camera Sim System"),
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT); // TODO find transforms
 
@@ -237,13 +242,15 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createSimCameras() {
-    return new VisionIO[] {new VisionIOSim(leftCam), new VisionIOSim(rightCam)};
+    return new VisionIO[] {
+      new VisionIOSim(leftCam, () -> getPose3dFromPose()),
+      new VisionIOSim(rightCam, () -> getPose3dFromPose())
+    };
   }
 
   public void periodic() {
     for (var camera : cameras) {
-      camera.updateInputs(new Pose3d(pose));
-      Logger.processInputs("Vision", camera.inputs);
+      camera.updateInputs();
     }
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
@@ -272,14 +279,6 @@ public class SwerveSubsystem extends SubsystemBase {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount = sampleTimestamps.length;
-
-    // int deltaCount =
-    //     Math.min(
-    //         gyroInputs.connected ? gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE,
-    //         Arrays.stream(modules)
-    //             .map((m) -> m.getPositionDeltas().length)
-    //             .min(Integer::compare)
-    //             .get());
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
@@ -305,71 +304,72 @@ public class SwerveSubsystem extends SubsystemBase {
       // Apply update
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
     }
-    Logger.recordOutput("Swerve Pose", pose);
 
-    for (var camera : cameras) {
-      PhotonPipelineResult result =
-          new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
-      result.setTimestampSeconds(camera.inputs.timestamp);
-      try {
-        var estPose =
+    if (Robot.isReal()) {
+      List<Pose3d> visionPoses = new ArrayList<>();
+      for (var camera : cameras) {
+        PhotonPipelineResult result =
+            new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
+        result.setTimestampSeconds(camera.inputs.timestamp);
+        try {
+          var estPose =
+              VisionHelper.update(
+                      result,
+                      camera.constants.cameraMatrix(),
+                      camera.constants.distCoeffs(),
+                      PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                      fieldTags,
+                      camera.constants.robotToCamera())
+                  .get();
+          var visionPose = estPose.estimatedPose;
+          visionPoses.add(visionPose);
+          Logger.recordOutput(
+              "Vision/Vision Pose From " + camera.constants.cameraName(), visionPose);
+          estimator.addVisionMeasurement(
+              visionPose.toPose2d(),
+              camera.inputs.timestamp,
+              VisionHelper.findVisionMeasurements(estPose));
+        } catch (NoSuchElementException e) {
+        }
+      }
+    } else {
+      List<Pose3d> simVisionPoses = new ArrayList<>();
+      for (var camera : cameras) {
+        PhotonPipelineResult result =
+            new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
+        result.setTimestampSeconds(camera.inputs.timestamp);
+        double latestTimestamp = result.getTimestampSeconds();
+        boolean newResult = Math.abs(latestTimestamp - lastEstTimestamp) > 1e-5;
+        var simEst =
             VisionHelper.update(
-                    result,
-                    camera.constants.CAMERA_MATRIX_OPT(),
-                    camera.constants.DIST_COEFFS_OPT(),
-                    PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                    fieldTags,
-                    camera.constants.robotToCamera())
-                .get();
-        var visionPose = estPose.estimatedPose;
-        Logger.recordOutput("Vision Pose", visionPose);
+                result,
+                camera.constants.cameraMatrix(),
+                camera.constants.distCoeffs(),
+                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                fieldTags,
+                camera.constants.robotToCamera());
+        simEst.ifPresentOrElse(
+            est ->
+                VisionHelper.getSimDebugField(camera.constants.simSystem())
+                    .getObject("VisionEstimation")
+                    .setPose(est.estimatedPose.toPose2d()),
+            () -> {
+              if (newResult)
+                VisionHelper.getSimDebugField(camera.constants.simSystem())
+                    .getObject("VisionEstimation")
+                    .setPoses();
+            });
+
+        var visionPose = simEst.get().estimatedPose;
+        simVisionPoses.add(visionPose);
+        Logger.recordOutput("Vision/Vision Pose From " + camera.constants.cameraName(), visionPose);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
-            VisionHelper.findVisionMeasurements(estPose));
-      } catch (NoSuchElementException e) {
+            VisionHelper.findVisionMeasurements(simEst.get()));
+        if (newResult) lastEstTimestamp = latestTimestamp;
       }
     }
-
-    // From 6995 - untested
-    // try {
-    //   var estPose =
-    //       VisionHelper.update(
-    //               result, tagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-    // PoseStrategy.LOWEST_AMBIGUITY)
-    //           .get();
-    // var visionPose =
-    //   VisionHelper.update(
-    //           result, tagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-    // PoseStrategy.LOWEST_AMBIGUITY)
-    //       .get()
-    //       .estimatedPose;
-    // Logger.recordOutput("Vision Pose", visionPose);
-    //   VisionMeasurement measurement = new VisionMeasurement(estPose,
-    // VisionHelper.findVisionMeasurements(estPose));
-    //     while (measurement != null) {
-    //         var estimation = measurement.estimation();
-    //         var estimatedPose = estimation.estimatedPose;
-    //         // Check height of final pose for sanity. Robot should never be more than 0.5 m off
-    // the ground.
-    //         if (Math.abs(estimatedPose.getZ()) > 0.5) {
-    //             continue;
-    //         }
-    //         // Skip single-tag measurements with too-high ambiguity.
-    //         if (estimation.targetsUsed.size() < 2
-    //                 &&
-    // estimation.targetsUsed.get(0).getBestCameraToTarget().getTranslation().getNorm() >
-    // Units.feetToMeters(13)) {
-    //             continue;
-    //         }
-    //         estimator.addVisionMeasurement(
-    //                 measurement.estimation().estimatedPose.toPose2d(),
-    //                 measurement.estimation().timestampSeconds,
-    //                 measurement.confidence());
-    //         Logger.recordOutput("Odo + Vision Pose", estimator.getEstimatedPosition());
-    //       }
-    //     } catch (NoSuchElementException e) {
-    //     }
     Logger.recordOutput(
         "Kalman Pose",
         new Pose2d(
@@ -476,6 +476,10 @@ public class SwerveSubsystem extends SubsystemBase {
     return pose;
   }
 
+  public static Pose3d getPose3dFromPose() {
+    return new Pose3d(pose);
+  }
+
   /** Returns the current odometry rotation. */
   public Rotation2d getRotation() {
     return pose.getRotation();
@@ -484,6 +488,10 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
+    estimator.resetPosition(
+        pose.getRotation(),
+        lastModulePositions,
+        pose); // this might be bad if lastModulePositions hasnt been set yet
   }
 
   /** Returns an array of module translations. */

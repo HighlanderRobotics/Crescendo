@@ -5,7 +5,6 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -32,17 +31,16 @@ public class VisionIOReal implements VisionIO {
     cameraName = constants.cameraName();
     camera = new PhotonCamera(cameraName);
     robotToCamera = constants.robotToCamera();
-    cameraMatrixOpt = constants.CAMERA_MATRIX_OPT();
-    distCoeffsOpt = constants.DIST_COEFFS_OPT();
+    cameraMatrixOpt = constants.cameraMatrix();
+    distCoeffsOpt = constants.distCoeffs();
   }
 
   @Override
-  public void updateInputs(VisionIOInputs inputs, Pose3d pose) {
+  public void updateInputs(VisionIOInputs inputs) {
     var result = camera.getLatestResult();
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
     inputs.targets = result.targets;
     inputs.numTags = result.targets.size();
-    inputs.coprocPNPPose = pose;
   }
 }

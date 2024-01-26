@@ -9,6 +9,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+import java.util.function.Supplier;
 import org.photonvision.PhotonCamera;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
@@ -16,19 +17,20 @@ import org.photonvision.simulation.VisionSystemSim;
 
 /** Add your docs here. */
 public class VisionIOSim implements VisionIO {
-  public String simVisionSystemName;
   public String simCameraName;
   VisionSystemSim sim;
   PhotonCamera camera;
-  SimCameraProperties cameraProp = new SimCameraProperties();
-  PhotonCameraSim simCamera = new PhotonCameraSim(camera, cameraProp);
+  SimCameraProperties cameraProp;
+  PhotonCameraSim simCamera;
   Transform3d robotToCamera;
+  Supplier<Pose3d> pose;
 
-  public VisionIOSim(VisionConstants constants) {
+  public VisionIOSim(VisionConstants constants, Supplier<Pose3d> pose) {
     this.simCameraName = constants.cameraName();
-    this.simVisionSystemName = constants.simVisionSystemName();
-    this.sim = new VisionSystemSim(simVisionSystemName);
+    this.sim = constants.simSystem();
+    this.cameraProp = new SimCameraProperties();
     this.camera = new PhotonCamera(simCameraName);
+    this.simCamera = new PhotonCameraSim(camera, cameraProp);
     this.robotToCamera = constants.robotToCamera();
     sim.addCamera(simCamera, robotToCamera);
 
@@ -50,9 +52,9 @@ public class VisionIOSim implements VisionIO {
   }
 
   @Override
-  public void updateInputs(VisionIOInputs inputs, Pose3d pose) {
+  public void updateInputs(VisionIOInputs inputs) {
     var result = camera.getLatestResult();
-    sim.update(pose);
+    sim.update(pose.get().toPose2d());
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
     inputs.targets = result.targets; // TODO aaaaaaa

@@ -33,8 +33,6 @@ public interface ModuleIO {
     public double[] odometryDrivePositionsMeters = new double[] {};
     public Rotation2d[] odometryTurnPositions = new Rotation2d[] {};
     public double[] odometryTimestamps = new double[] {};
-    public double[] odometryDrivePositionsRad =
-        new double[] {}; // TODO is this diff from odometryDrivePositionsMeters
   }
 
   /** Updates the set of loggable inputs. */

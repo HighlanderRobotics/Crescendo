@@ -5,20 +5,21 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import org.littletonrobotics.junction.Logger;
+import org.photonvision.simulation.VisionSystemSim;
 
 /** Add your docs here. */
 public class Vision {
   public record VisionConstants(
       String cameraName,
       Transform3d robotToCamera,
-      String simVisionSystemName,
-      Matrix<N3, N3> CAMERA_MATRIX_OPT,
-      Matrix<N5, N1> DIST_COEFFS_OPT) {}
+      VisionSystemSim simSystem,
+      Matrix<N3, N3> cameraMatrix,
+      Matrix<N5, N1> distCoeffs) {}
 
   private final VisionIO io;
   public final VisionIOInputsLogged inputs = new VisionIOInputsLogged();
@@ -29,7 +30,8 @@ public class Vision {
     this.constants = constants;
   }
 
-  public void updateInputs(Pose3d pose) {
-    io.updateInputs(inputs, pose);
+  public void updateInputs() {
+    Logger.processInputs(constants.cameraName, inputs);
+    io.updateInputs(inputs);
   }
 }
