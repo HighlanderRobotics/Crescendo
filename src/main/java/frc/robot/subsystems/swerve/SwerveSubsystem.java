@@ -13,6 +13,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -85,6 +86,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
+  private final SysIdRoutine driveRoutine;
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -134,12 +136,24 @@ public class SwerveSubsystem extends SubsystemBase {
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null,         // Default ramp rate is acceptable
-                Volts.of(4), // Reduce dynamic voltage to 4 to prevent motor brownout
+                Volts.of(8),
                 null,          // Default timeout is acceptable
                                        // Log state with Phoenix SignalLogger class
                 (state)->SignalLogger.writeString("state", state.toString())),
             new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts)-> modules[0].runCharacterization(volts.in(Volts)),
+                (Measure<Voltage> volts)-> modules[0].runSteerCharacterization(volts.in(Volts)),
+                null,
+                this));
+    driveRoutine = 
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,         // Default ramp rate is acceptable
+                Volts.of(4), // Reduce dynamic voltage to 4 to prevent motor brownout
+                Seconds.of(5),
+                                       // Log state with Phoenix SignalLogger class
+                (state)->SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts)-> runDriveCharacterizationVolts(volts.in(Volts)),
                 null,
                 this));
   }
@@ -283,8 +297,8 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /** Runs forwards at the commanded voltage. */
-  public Command runCharacterizationVoltsCmd(double volts) {
-    return this.run(() -> Arrays.stream(modules).forEach((mod) -> mod.runCharacterization(volts)));
+  private void runDriveCharacterizationVolts(double volts) {
+    Arrays.stream(modules).forEach((mod) -> mod.runDriveCharacterization(volts));
   }
 
   /** Returns the average drive velocity in radians/sec. */
@@ -402,10 +416,33 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         this.runOnce(() -> SignalLogger.start()),
         moduleSteerRoutine.quasistatic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
         moduleSteerRoutine.quasistatic(Direction.kReverse),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
         moduleSteerRoutine.dynamic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
         moduleSteerRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop())
       );
+  }
+
+  public Command runDriveCharacterizationCmd() {
+    return Commands.sequence(
+      this.runOnce(() -> SignalLogger.start()),
+        driveRoutine.quasistatic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        driveRoutine.quasistatic(Direction.kReverse),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        driveRoutine.dynamic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        driveRoutine.dynamic(Direction.kReverse),
+        this.runOnce(() -> SignalLogger.stop())
+    );
   }
 }
