@@ -79,7 +79,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private SwerveDriveOdometry odometry;
 
   public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0);
-  public ChassisSpeeds shotSpeeds = new ChassisSpeeds();
+  public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -377,7 +377,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets the pose at some time in the future
+   * Gets the pose at some time in the future, assuming constant velocity
    *
    * @param time time in seconds
    * @return The future pose
@@ -388,9 +388,15 @@ public class SwerveSubsystem extends SubsystemBase {
             new Transform2d(
                 getRobotRelativeSpeeds().vxMetersPerSecond * time,
                 getRobotRelativeSpeeds().vyMetersPerSecond * time,
-                new Rotation2d()));
+                Rotation2d.fromRadians(getRobotRelativeSpeeds().omegaRadiansPerSecond)));
   }
 
+  /**
+   * Gets the pose at some time in the future, assuming constant velocity
+   * Uses fixed lookahead time specified in AutoAim.java
+   * 
+   * @return The future pose
+   */
   @AutoLogOutput(key = "AutoAim/FuturePose")
   public Pose2d getFuturePose() {
     return getFuturePose(AutoAim.LOOKAHEAD_TIME);
@@ -404,7 +410,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param time Time in the future to point from
    * @return A command refrence that rotates the robot to a computed rotation
    */
-  public Command pointTowardsTranslation(
+  public Command pointTowardsTranslationCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 0.5 seconds
@@ -412,12 +418,14 @@ public class SwerveSubsystem extends SubsystemBase {
             1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
+    Pose2d virtualTarget = getVirtualTarget();
+
     return this.runVelocityFieldRelative(
             () -> {
               double feedbackOutput =
                   headingController.calculate(
-                      getFuturePose(time).getRotation().getRadians(),
-                      getRotationToTranslation(getVirtualTarget()).getRadians());
+                      getPose().getRotation().getRadians(),
+                      getRotationToTranslation(virtualTarget).getRadians());
 
               return new ChassisSpeeds(
                   xMetersPerSecond.getAsDouble(),
@@ -428,35 +436,19 @@ public class SwerveSubsystem extends SubsystemBase {
             () ->
                 headingController.reset(
                     new State(
-                        getFuturePose(time).getRotation().getRadians(),
+                        getPose().getRotation().getRadians(),
                         getVelocity().omegaRadiansPerSecond)));
   }
-
-  public Command pointTowardsTranslation(
+  /**
+   * Faces the robot towards a translation on the field
+   * Uses a constant lookahead time specified in AutoAim.java
+   *
+   * @param xMetersPerSecond Requested X velocity
+   * @param yMetersPerSecond Requested Y velocity
+   * @return A command refrence that rotates the robot to a computed rotation
+   */
+  public Command pointTowardsTranslationCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
-    ProfiledPIDController headingController =
-        // assume we can accelerate to max in 0.5 seconds
-        new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
-    headingController.enableContinuousInput(-Math.PI, Math.PI);
-
-    return this.runVelocityFieldRelative(
-            () -> {
-              double feedbackOutput =
-                  headingController.calculate(
-                      getFuturePose().getRotation().getRadians(),
-                      getRotationToTranslation(getVirtualTarget()).getRadians());
-
-              return new ChassisSpeeds(
-                  xMetersPerSecond.getAsDouble(),
-                  yMetersPerSecond.getAsDouble(),
-                  feedbackOutput + headingController.getSetpoint().velocity);
-            })
-        .beforeStarting(
-            () ->
-                headingController.reset(
-                    new State(
-                        getFuturePose().getRotation().getRadians(),
-                        getVelocity().omegaRadiansPerSecond)));
+    return pointTowardsTranslationCmd(xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME);
   }
 }

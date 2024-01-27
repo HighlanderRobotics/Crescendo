@@ -105,13 +105,13 @@ public class Robot extends LoggedRobot {
     controller
         .a()
         .whileTrue(
-            swerve.pointTowardsTranslation(
+            swerve.pointTowardsTranslationCmd(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
 
-    controller.b().toggleOnTrue(autoAimDemo(() -> swerve.getVelocity()));
+    controller.b().whileTrue(autoAimDemo(() -> swerve.getVelocity()));
   }
 
   @Override
@@ -119,12 +119,20 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
   }
 
+
+  /**
+   * A demo command that goes through all the steps of a shoot while moving algorithm
+   * Has print commands for any unimplemented functionality
+   * 
+   * @param speeds
+   * @return A command that takes the robot through an auto aim sequence
+   */
   public Command autoAimDemo(Supplier<ChassisSpeeds> speeds) {
 
     return Commands.sequence(
         Commands.runOnce(
             () -> {
-              swerve.shotSpeeds = speeds.get();
+              swerve.curShotSpeeds = speeds.get();
               swerve.curShotData =
                   AutoAim.shotMap.get(
                       swerve
@@ -132,7 +140,7 @@ public class Robot extends LoggedRobot {
                           .minus(FieldConstants.getSpeaker())
                           .getTranslation()
                           .getNorm());
-              System.out.println(swerve.shotSpeeds.toString());
+              System.out.println(swerve.curShotSpeeds.toString());
             },
             swerve),
         Commands.deadline(
@@ -143,10 +151,9 @@ public class Robot extends LoggedRobot {
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7), Commands.print("Aim Shooter")),
             Commands.sequence(
-                
-                (swerve.pointTowardsTranslation(
-                    () -> swerve.shotSpeeds.vxMetersPerSecond,
-                    () -> swerve.shotSpeeds.vyMetersPerSecond))),
+                (swerve.pointTowardsTranslationCmd(
+                    () -> swerve.curShotSpeeds.vxMetersPerSecond,
+                    () -> swerve.curShotSpeeds.vyMetersPerSecond))),
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
                 Commands.print("Rotate Robot"))),
