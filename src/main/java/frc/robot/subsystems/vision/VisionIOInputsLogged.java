@@ -1,4 +1,4 @@
-package frc.robot.subsystems.nate;
+package frc.robot.subsystems.vision;
 
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
