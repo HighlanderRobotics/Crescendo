@@ -82,8 +82,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0);
   public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
 
-
-
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
     new AutoAim();
@@ -355,7 +353,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Rotation2d getRotationToTranslation(Pose2d translation) {
     double angle =
-        Math.atan2(translation.getY() - getFuturePose().getY(), translation.getX() - getFuturePose().getX());
+        Math.atan2(
+            translation.getY() - getFuturePose().getY(),
+            translation.getX() - getFuturePose().getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -421,7 +421,6 @@ public class SwerveSubsystem extends SubsystemBase {
             1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
-
     return this.runVelocityFieldRelative(
             () -> {
               double feedbackOutput =
@@ -437,17 +436,17 @@ public class SwerveSubsystem extends SubsystemBase {
         .beforeStarting(
             () -> {
               System.out.println(Timer.getFPGATimestamp());
-              Logger.recordOutput("AutoAim/Ending Pose", new Pose2d(
-               getFuturePose().getX(),
-               getFuturePose().getY(),
-               getRotationToTranslation(
-                getVirtualTarget())));
-                headingController.reset(
-                    new State(
-                        getFuturePose().getRotation().getRadians(),
-                        getVelocity().omegaRadiansPerSecond));
-
-                      });
+              Logger.recordOutput(
+                  "AutoAim/Ending Pose",
+                  new Pose2d(
+                      getFuturePose().getX(),
+                      getFuturePose().getY(),
+                      getRotationToTranslation(getVirtualTarget())));
+              headingController.reset(
+                  new State(
+                      getFuturePose().getRotation().getRadians(),
+                      getVelocity().omegaRadiansPerSecond));
+            });
   }
 
   /**
