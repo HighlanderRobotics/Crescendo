@@ -9,6 +9,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -144,7 +145,7 @@ public class Robot extends LoggedRobot {
             },
             swerve),
         Commands.deadline(
-            Commands.waitSeconds(1),
+            Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME),
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
                 Commands.print("Spin Up Shooter")),
@@ -157,7 +158,7 @@ public class Robot extends LoggedRobot {
             Commands.sequence(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
                 Commands.print("Rotate Robot"))),
-        Commands.print("Whoosh!"));
+        Commands.print("Whoosh!")).andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
   }
 
   @Override

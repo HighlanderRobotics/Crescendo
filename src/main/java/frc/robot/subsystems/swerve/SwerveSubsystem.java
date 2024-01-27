@@ -34,6 +34,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.FieldConstants;
@@ -80,6 +81,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0);
   public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
+
+
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -352,7 +355,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Rotation2d getRotationToTranslation(Pose2d translation) {
     double angle =
-        Math.atan2(translation.getY() - getPose().getY(), translation.getX() - getPose().getX());
+        Math.atan2(translation.getY() - getFuturePose().getY(), translation.getX() - getFuturePose().getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -366,7 +369,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     Pose2d target = FieldConstants.getSpeaker();
 
-    double distance = pose.minus(target).getTranslation().getNorm();
+    double distance = getFuturePose().minus(target).getTranslation().getNorm();
 
     return target.transformBy(
         new Transform2d(
@@ -388,7 +391,7 @@ public class SwerveSubsystem extends SubsystemBase {
             new Transform2d(
                 getRobotRelativeSpeeds().vxMetersPerSecond * time,
                 getRobotRelativeSpeeds().vyMetersPerSecond * time,
-                Rotation2d.fromRadians(getRobotRelativeSpeeds().omegaRadiansPerSecond)));
+                Rotation2d.fromRadians(getRobotRelativeSpeeds().omegaRadiansPerSecond * time)));
   }
 
   /**
@@ -415,17 +418,16 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 0.5 seconds
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
-    Pose2d virtualTarget = getVirtualTarget();
 
     return this.runVelocityFieldRelative(
             () -> {
               double feedbackOutput =
                   headingController.calculate(
                       getPose().getRotation().getRadians(),
-                      getRotationToTranslation(virtualTarget).getRadians());
+                      getRotationToTranslation(getVirtualTarget()).getRadians());
 
               return new ChassisSpeeds(
                   xMetersPerSecond.getAsDouble(),
@@ -433,11 +435,19 @@ public class SwerveSubsystem extends SubsystemBase {
                   feedbackOutput + headingController.getSetpoint().velocity);
             })
         .beforeStarting(
-            () ->
+            () -> {
+              System.out.println(Timer.getFPGATimestamp());
+              Logger.recordOutput("AutoAim/Ending Pose", new Pose2d(
+               getFuturePose().getX(),
+               getFuturePose().getY(),
+               getRotationToTranslation(
+                getVirtualTarget())));
                 headingController.reset(
                     new State(
-                        getPose().getRotation().getRadians(),
-                        getVelocity().omegaRadiansPerSecond)));
+                        getFuturePose().getRotation().getRadians(),
+                        getVelocity().omegaRadiansPerSecond));
+
+                      });
   }
   /**
    * Faces the robot towards a translation on the field
