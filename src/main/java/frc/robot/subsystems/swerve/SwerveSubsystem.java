@@ -395,9 +395,9 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets the pose at some time in the future, assuming constant velocity
-   * Uses fixed lookahead time specified in AutoAim.java
-   * 
+   * Gets the pose at some time in the future, assuming constant velocity Uses fixed lookahead time
+   * specified in AutoAim.java
+   *
    * @return The future pose
    */
   @AutoLogOutput(key = "AutoAim/FuturePose")
@@ -449,9 +449,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
                       });
   }
+
   /**
-   * Faces the robot towards a translation on the field
-   * Uses a constant lookahead time specified in AutoAim.java
+   * Faces the robot towards a translation on the field Uses a constant lookahead time specified in
+   * AutoAim.java
    *
    * @param xMetersPerSecond Requested X velocity
    * @param yMetersPerSecond Requested Y velocity
