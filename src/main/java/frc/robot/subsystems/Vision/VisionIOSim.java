@@ -9,7 +9,9 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+import java.util.Optional;
 import java.util.function.Supplier;
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
@@ -23,9 +25,9 @@ public class VisionIOSim implements VisionIO {
   SimCameraProperties cameraProp;
   PhotonCameraSim simCamera;
   Transform3d robotToCamera;
-  Supplier<Pose3d> pose;
+  public static Supplier<Pose3d> pose;
 
-  public VisionIOSim(VisionConstants constants, Supplier<Pose3d> pose) {
+  public VisionIOSim(VisionConstants constants) {
     this.simCameraName = constants.cameraName();
     this.sim = constants.simSystem();
     this.cameraProp = new SimCameraProperties();
@@ -45,10 +47,24 @@ public class VisionIOSim implements VisionIO {
       var field = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
       field.setOrigin(OriginPosition.kBlueAllianceWallRightSide);
       sim.addAprilTags(field);
-
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  @Override
+  public void setSimPose(Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {
+    simEst.ifPresentOrElse(
+        est ->
+            VisionHelper.getSimDebugField(camera.constants.simSystem())
+                .getObject("VisionEstimation")
+                .setPose(est.estimatedPose.toPose2d()),
+        () -> {
+          if (newResult)
+            VisionHelper.getSimDebugField(camera.constants.simSystem())
+                .getObject("VisionEstimation")
+                .setPoses();
+        });
   }
 
   @Override

@@ -204,7 +204,7 @@ public class VisionHelper {
                 fieldTags,
                 robotToCamera,
                 PoseStrategy
-                    .MULTI_TAG_PNP_ON_RIO); // TODO make multiple cameras/coprocs actually work
+                    .MULTI_TAG_PNP_ON_RIO);
         break;
       default:
         DriverStation.reportError(
@@ -411,7 +411,7 @@ public class VisionHelper {
   public static record VisionMeasurement(
       EstimatedRobotPose estimation, Matrix<N3, N1> confidence) {}
   /*** 5026 - to be tuned if necessary*/
-  public static Matrix<N3, N1> findVisionMeasurements(EstimatedRobotPose estimation) {
+  public static Matrix<N3, N1> findVisionMeasurementStdDevs(EstimatedRobotPose estimation) {
     double sumDistance = 0;
     for (var target : estimation.targetsUsed) {
       var t3d = target.getBestCameraToTarget();

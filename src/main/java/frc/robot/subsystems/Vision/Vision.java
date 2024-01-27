@@ -9,7 +9,9 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.simulation.VisionSystemSim;
 
 /** Add your docs here. */
@@ -28,6 +30,10 @@ public class Vision {
   public Vision(final VisionIO io, final VisionConstants constants) {
     this.io = io;
     this.constants = constants;
+  }
+
+  public void setSimPose(Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {
+    this.io.setSimPose(simEst, camera, newResult);
   }
 
   public void updateInputs() {
