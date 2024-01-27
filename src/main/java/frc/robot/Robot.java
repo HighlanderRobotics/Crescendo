@@ -119,11 +119,10 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
   }
 
-
   /**
-   * A demo command that goes through all the steps of a shoot while moving algorithm
-   * Has print commands for any unimplemented functionality
-   * 
+   * A demo command that goes through all the steps of a shoot while moving algorithm Has print
+   * commands for any unimplemented functionality
+   *
    * @param speeds
    * @return A command that takes the robot through an auto aim sequence
    */
