@@ -31,7 +31,7 @@ public class ElevatorIOSim implements ElevatorIO {
   @Override
   public void updateInputs(ElevatorIOInputsAutoLogged inputs) {
     if (DriverStation.isDisabled()) {
-        stop();
+      stop();
     }
     physicsSim.update(0.020);
     inputs.elevatorPositionMeters = physicsSim.getPositionMeters();

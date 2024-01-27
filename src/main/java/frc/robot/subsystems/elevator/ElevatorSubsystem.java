@@ -10,9 +10,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 import java.util.function.DoubleSupplier;
-
 import org.littletonrobotics.junction.Logger;
 
 public class ElevatorSubsystem extends SubsystemBase {
@@ -27,7 +25,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   // For dashboard
   Mechanism2d mech2d = new Mechanism2d(3.0, Units.feetToMeters(4.0));
   MechanismRoot2d root = // CAD distance from origin to center of carriage at full retraction
-      mech2d.getRoot("Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
+      mech2d.getRoot(
+          "Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
   MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, 80);
 
   /** Creates a new ElevatorSubsystem. */
@@ -47,9 +46,10 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   public Command setExtension(DoubleSupplier meters) {
-    return this.run(() -> {
-      io.setTarget(meters.getAsDouble());
-      Logger.recordOutput("Elevator/Setpoint", meters.getAsDouble());
-    });
+    return this.run(
+        () -> {
+          io.setTarget(meters.getAsDouble());
+          Logger.recordOutput("Elevator/Setpoint", meters.getAsDouble());
+        });
   }
 }
