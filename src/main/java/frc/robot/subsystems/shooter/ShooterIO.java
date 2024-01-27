@@ -25,12 +25,12 @@ public interface ShooterIO {
      public double FlywheelAmp = 0.0;
      public double FlywheelTempc = 0.0;
      public double FlywheelVelocity = 0.0;
-     public double turnAppliedVolts = 0.0;
- 
+     public double pivotAppliedVolts = 0.0;
+  
      }
-     public default void setTurnVoltage(final double volts) {} //set voltage
-     public default void setDriveSetpoint(final double metersPerSecond) {} //set speed
-     public default void setTurnSetpoint(final Rotation2d rotation) {} //set specfic rotation
+     public default void setFlywheelVelocity(final double volts) {} //set voltage
+     public default void setPivotVoltage(final double metersPerSecond) {} //set speed
+     public default void setPivotSetpoint(final Rotation2d rotation) {} //set specfic rotation
      public abstract ShooterIOInputs updateInputs();
 
 }
