@@ -2,14 +2,14 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems.vision;
+package frc.robot.subsystems.nate;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
-import frc.robot.subsystems.vision.Vision.VisionConstants;
+import frc.robot.subsystems.nate.Vision.VisionConstants;
 import org.photonvision.PhotonCamera;
 
 /** Add your docs here. */

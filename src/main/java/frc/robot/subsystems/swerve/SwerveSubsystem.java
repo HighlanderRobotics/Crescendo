@@ -44,12 +44,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
-import frc.robot.subsystems.vision.Vision;
-import frc.robot.subsystems.vision.Vision.VisionConstants;
-import frc.robot.subsystems.vision.VisionHelper;
-import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOReal;
-import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.subsystems.nate.Vision;
+import frc.robot.subsystems.nate.Vision.VisionConstants;
+import frc.robot.subsystems.nate.VisionHelper;
+import frc.robot.subsystems.nate.VisionIO;
+import frc.robot.subsystems.nate.VisionIOSim;
+import frc.robot.subsystems.nate.VisionIOReal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -243,7 +243,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The array of vision IOs.
    */
-  public VisionIO[] createSimCameras() {
+  public static VisionIO[] createSimCameras() {
     return new VisionIO[] {
       new VisionIOSim(leftCam), new VisionIOSim(rightCam)
     };

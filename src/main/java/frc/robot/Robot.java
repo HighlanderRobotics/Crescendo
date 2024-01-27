@@ -43,8 +43,7 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimCameras(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
-              : SwerveSubsystem.createSimModules(),
-              );
+              : SwerveSubsystem.createSimModules());
 
   @Override
   public void robotInit() {
