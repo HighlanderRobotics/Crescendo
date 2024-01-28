@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.elevator;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -43,6 +45,8 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     carriage.setLength(inputs.elevatorPositionMeters);
     Logger.recordOutput("Elevator/Mechanism2d", mech2d);
+
+    Logger.recordOutput("Elevator/Carriage Pose", new Pose3d(carriage.getLength() * Math.cos(Units.degreesToRadians(carriage.getAngle())), 0.0, carriage.getLength() * Math.sin(Units.degreesToRadians(carriage.getAngle())), new Rotation3d()));
   }
 
   public Command setExtension(DoubleSupplier meters) {
