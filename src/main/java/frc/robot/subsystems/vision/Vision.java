@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
 
 /** Add your docs here. */
 public class Vision {
@@ -25,11 +27,9 @@ public class Vision {
 
   private final VisionIO io;
   public final VisionIOInputsLogged inputs = new VisionIOInputsLogged();
-  public final VisionConstants constants;
 
-  public Vision(final VisionIO io, final VisionConstants constants) {
+  public Vision(final VisionIO io) {
     this.io = io;
-    this.constants = constants;
   }
 
   public void setSimPose(Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {
@@ -37,7 +37,20 @@ public class Vision {
   }
 
   public void updateInputs() {
-    Logger.processInputs(constants.cameraName, inputs);
     io.updateInputs(inputs);
+  }
+
+  public void processInputs() {
+    Logger.processInputs(io.getName(), inputs);
+  }
+
+  public Optional<EstimatedRobotPose> update(
+      PhotonPipelineResult result, AprilTagFieldLayout fieldTags) {
+    var estPose = io.update(result, fieldTags);
+    return estPose;
+  }
+
+  public String getName() {
+    return io.getName();
   }
 }

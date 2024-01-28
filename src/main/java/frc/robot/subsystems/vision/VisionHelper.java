@@ -203,8 +203,7 @@ public class VisionHelper {
                 Optional.of(distCoeffs),
                 fieldTags,
                 robotToCamera,
-                PoseStrategy
-                    .MULTI_TAG_PNP_ON_RIO);
+                PoseStrategy.MULTI_TAG_PNP_ON_RIO);
         break;
       default:
         DriverStation.reportError(

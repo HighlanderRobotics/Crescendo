@@ -4,11 +4,13 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose3d;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Add your docs here. */
@@ -27,4 +29,13 @@ public interface VisionIO {
 
   public default void setSimPose(
       Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {}
+
+  public default String getName() {
+    return "Default";
+  }
+
+  public default Optional<EstimatedRobotPose> update(
+      PhotonPipelineResult result, AprilTagFieldLayout fieldTags) {
+    return Optional.empty();
+  }
 }

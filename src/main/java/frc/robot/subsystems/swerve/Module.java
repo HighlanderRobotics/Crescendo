@@ -59,15 +59,14 @@ public class Module {
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
 
-    // Calculate position deltas for odometry
-    final int deltaCount =
-        Math.min(inputs.odometryDrivePositionsMeters.length, inputs.odometryTurnPositions.length);
-    positionDeltas = new SwerveModulePosition[deltaCount];
-    for (int i = 0; i < deltaCount; i++) {
+    // Calculate positions for odometry
+    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
+    odometryPositions = new SwerveModulePosition[sampleCount];
+    for (int i = 0; i < sampleCount; i++) {
       final double positionMeters = inputs.odometryDrivePositionsMeters[i];
-      final Rotation2d angle = inputs.odometryTurnPositions[i];
-      positionDeltas[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
-      lastPositionMeters = positionMeters;
+      final Rotation2d angle =
+          inputs.odometryTurnPositions[i]; // im going to assume the offset is alr taken care of
+      odometryPositions[i] = new SwerveModulePosition(positionMeters, angle);
     }
   }
 

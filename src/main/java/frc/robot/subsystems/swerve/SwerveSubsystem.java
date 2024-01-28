@@ -45,12 +45,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.vision.Vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
-import frc.robot.subsystems.vision.Vision.VisionConstants;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,7 +59,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 
@@ -90,7 +88,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final Module[] modules; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  private static Pose2d pose = new Pose2d();
+  private Pose2d pose = new Pose2d();
   private SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -102,7 +100,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   private final Vision[] cameras;
   private AprilTagFieldLayout fieldTags;
-  public SwerveDrivePoseEstimator estimator;
+  public SwerveDrivePoseEstimator estimator =
+      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   Vector<N3> visStdDevs = VecBuilder.fill(1.3, 1.3, 3.3);
   private double lastEstTimestamp = 0;
@@ -151,14 +150,14 @@ public class SwerveSubsystem extends SubsystemBase {
           0.00176988756858703,
           -0.004530368741385627,
           -0.040501622476628085); // TODO find!!
-  public static final VisionConstants leftCam =
+  public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left Camera",
           new Transform3d(),
           new VisionSystemSim("Left Camera Sim System"),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS); // TODO find transforms
-  public static final VisionConstants rightCam =
+  public static final VisionConstants rightCamConstants =
       new VisionConstants(
           "Right Camera",
           new Transform3d(),
@@ -175,10 +174,10 @@ public class SwerveSubsystem extends SubsystemBase {
       modules[i] = new Module(moduleIOs[i]);
     }
     for (int i = 0; i < visionIOs.length; i++) {
-      cameras[i] = new Vision(visionIOs[i], null);
+      cameras[i] = new Vision(visionIOs[i]);
     }
 
-    //mildly questionable
+    // mildly questionable
     VisionIOSim.pose = this::getPose3d;
 
     AutoBuilder.configureHolonomic(
@@ -236,7 +235,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createRealCameras() {
-    return new VisionIO[] {new VisionIOReal(leftCam), new VisionIOReal(rightCam)};
+    return new VisionIO[] {new VisionIOReal(leftCamConstants), new VisionIOReal(rightCamConstants)};
   }
 
   /**
@@ -245,14 +244,13 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createSimCameras() {
-    return new VisionIO[] {
-      new VisionIOSim(leftCam), new VisionIOSim(rightCam)
-    };
+    return new VisionIO[] {new VisionIOSim(leftCamConstants), new VisionIOSim(rightCamConstants)};
   }
 
   public void periodic() {
     for (var camera : cameras) {
       camera.updateInputs();
+      camera.processInputs();
     }
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
@@ -314,19 +312,12 @@ public class SwerveSubsystem extends SubsystemBase {
       result.setTimestampSeconds(camera.inputs.timestamp);
       boolean newResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
       try {
-        var estPose =
-            VisionHelper.update(
-                result,
-                camera.constants.cameraMatrix(),
-                camera.constants.distCoeffs(),
-                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                fieldTags,
-                camera.constants.robotToCamera());
+        var estPose = camera.update(result, fieldTags);
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
         visionPoses.add(visionPose);
-        Logger.recordOutput("Vision/Vision Pose From " + camera.constants.cameraName(), visionPose);
+        Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -452,7 +443,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    SwerveSubsystem.pose = pose;
+    this.pose = pose;
     try {
       estimator.resetPosition(pose.getRotation(), lastModulePositions, pose);
     } catch (Exception e) {
@@ -470,7 +461,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {leftCam, rightCam};
+    return new VisionConstants[] {leftCamConstants, rightCamConstants};
   }
 
   /** Returns the module positions (turn angles and drive velocities) for all of the modules. */
