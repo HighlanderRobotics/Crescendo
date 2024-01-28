@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public class ShooterIOReal implements ShooterIO {
@@ -29,6 +30,8 @@ public class ShooterIOReal implements ShooterIO {
     config.Slot0.kV = 0.12;
 
     config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+    config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     config.CurrentLimits.StatorCurrentLimit = 60.0;
     config.CurrentLimits.StatorCurrentLimitEnable = true;

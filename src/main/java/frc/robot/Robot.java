@@ -116,7 +116,7 @@ public class Robot extends LoggedRobot {
     controller.leftTrigger().whileTrue(intake());
     controller
         .rightTrigger()
-        .whileTrue(Commands.parallel(shooter.runVelocity(-100.0), routing.run(100.0)));
+        .whileTrue(Commands.parallel(shooter.runVelocity(80.0), routing.run(80.0)));
     controller
         .leftBumper()
         .whileTrue(
