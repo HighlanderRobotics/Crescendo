@@ -128,16 +128,18 @@ public class Robot extends LoggedRobot {
                       Math.atan2(
                           swerve.getVelocity().vyMetersPerSecond,
                           swerve.getVelocity().vxMetersPerSecond);
-                  
+
                   swerve.polarDistance =
                       MathUtil.clamp(
                           swerve.polarDistance,
                           -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
                           SwerveSubsystem.MAX_LINEAR_SPEED / 2);
-                  Logger.recordOutput("AutoAim/Polar Sppeeds", new ChassisSpeeds(
-                      swerve.polarDistance * Math.cos(swerve.polarRadians),
-                      swerve.polarDistance * Math.sin(swerve.polarRadians),
-                      swerve.getVelocity().omegaRadiansPerSecond));
+                  Logger.recordOutput(
+                      "AutoAim/Polar Sppeeds",
+                      new ChassisSpeeds(
+                          swerve.polarDistance * Math.cos(swerve.polarRadians),
+                          swerve.polarDistance * Math.sin(swerve.polarRadians),
+                          swerve.getVelocity().omegaRadiansPerSecond));
                   return new ChassisSpeeds(
                       swerve.polarDistance * Math.cos(swerve.polarRadians),
                       swerve.polarDistance * Math.sin(swerve.polarRadians),
