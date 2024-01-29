@@ -60,15 +60,15 @@ public class VisionHelper {
         PhotonTrackedTarget target, LogTable table, String name) {
 
       logTransform3d(target.getBestCameraToTarget(), table, name);
-      logTransform3d(target.getAlternateCameraToTarget(), table, "alt " + name);
+      logTransform3d(target.getAlternateCameraToTarget(), table, "Alt " + name);
       logCorners(target, table, name);
 
-      table.put("Yaw " + name, target.getYaw());
-      table.put("Pitch " + name, target.getPitch());
-      table.put("Area " + name, target.getArea());
-      table.put("Skew " + name, target.getSkew());
-      table.put("Fiducial ID " + name, target.getFiducialId());
-      table.put("Pose Ambiguity " + name, target.getPoseAmbiguity());
+      table.put("Tags/Yaw " + name, target.getYaw());
+      table.put("Tags/Pitch " + name, target.getPitch());
+      table.put("Tags/Area " + name, target.getArea());
+      table.put("Tags/Skew " + name, target.getSkew());
+      table.put("Tags/Fiducial ID " + name, target.getFiducialId());
+      table.put("Tags/Pose Ambiguity " + name, target.getPoseAmbiguity());
     }
 
     public static void logCorners(PhotonTrackedTarget target, LogTable table, String name) {
@@ -83,10 +83,10 @@ public class VisionHelper {
         minAreaRectCornersX[i] = target.getMinAreaRectCorners().get(i).x;
         minAreaRectCornersY[i] = target.getMinAreaRectCorners().get(i).y;
       }
-      table.put("Detected Corners X " + name, detectedCornersX);
-      table.put("Detected Corners Y " + name, detectedCornersY);
-      table.put("Min Area Rect Corners X " + name, minAreaRectCornersX);
-      table.put("Min Area Rect Corners Y " + name, minAreaRectCornersY);
+      table.put("Tags/Detected Corners X " + name, detectedCornersX);
+      table.put("Tags/Detected Corners Y " + name, detectedCornersY);
+      table.put("Tags/Min Area Rect Corners X " + name, minAreaRectCornersX);
+      table.put("Tags/Min Area Rect Corners Y " + name, minAreaRectCornersY);
     }
 
     public static void logTransform3d(Transform3d transform3d, LogTable table, String name) {
@@ -95,13 +95,13 @@ public class VisionHelper {
       rotation[1] = transform3d.getRotation().getQuaternion().getX();
       rotation[2] = transform3d.getRotation().getQuaternion().getY();
       rotation[3] = transform3d.getRotation().getQuaternion().getZ();
-      table.put("rotation " + name, rotation);
+      table.put("Tags/Rotation " + name, rotation);
 
       double translation[] = new double[3];
       translation[0] = transform3d.getTranslation().getX();
       translation[1] = transform3d.getTranslation().getY();
       translation[2] = transform3d.getTranslation().getZ();
-      table.put("translation " + name, translation);
+      table.put("Tags/Translation " + name, translation);
     }
 
     public static Transform3d getLoggedTransform3d(double[] translation, double[] rotation) {
@@ -113,21 +113,22 @@ public class VisionHelper {
     }
 
     public static Transform3d getLoggedTransform3d(LogTable table, String name) {
-      double[] rotation = table.get("rotation " + name, new double[4]);
-      double[] translation = table.get("translation " + name, new double[3]);
+      double[] rotation = table.get("Tags/Rotation " + name, new double[4]);
+      double[] translation = table.get("Tags/Translation " + name, new double[3]);
       return getLoggedTransform3d(translation, rotation);
     }
 
     public static PhotonTrackedTarget getLoggedPhotonTrackedTarget(LogTable table, String name) {
-      double[] translation = table.get("translation " + name, new double[3]);
-      double[] rotation = table.get("rotation " + name, new double[4]);
-      double[] altTranslation = table.get("translation alt " + name, new double[3]);
-      double[] altRotation = table.get("rotation alt " + name, new double[4]);
-      double[] detectedCornersX = table.get("detected corners x " + name, new double[4]);
-      double[] detectedCornersY = table.get("detected corners y " + name, new double[4]);
-      double[] minAreaRectCornersX = table.get("min area rect corners x " + name, new double[4]);
-      double[] minAreaRectCornersY = table.get("min area rect corners y " + name, new double[4]);
-
+      double[] translation = table.get("Tags/Translation " + name, new double[3]);
+      double[] rotation = table.get("Tags/Rotation " + name, new double[4]);
+      double[] altTranslation = table.get("Tags/Translation Alt " + name, new double[3]);
+      double[] altRotation = table.get("Tags/Rotation Alt " + name, new double[4]);
+      double[] detectedCornersX = table.get("Tags/Detected Corners X " + name, new double[4]);
+      double[] detectedCornersY = table.get("Tags/Detected Corners Y " + name, new double[4]);
+      double[] minAreaRectCornersX =
+          table.get("Tags/Min Area Rect Corners X " + name, new double[4]);
+      double[] minAreaRectCornersY =
+          table.get("Tags/Min Area Rect Corners Y " + name, new double[4]);
       List<TargetCorner> detectedCorners = new ArrayList<>();
       List<TargetCorner> minAreaRectCorners = new ArrayList<>();
 
@@ -138,14 +139,14 @@ public class VisionHelper {
       Transform3d pose = getLoggedTransform3d(translation, rotation);
       Transform3d altPose = getLoggedTransform3d(altTranslation, altRotation);
       return (new PhotonTrackedTarget(
-          table.get("yaw " + name, -1),
-          table.get("pitch " + name, -1),
-          table.get("area " + name, -1),
-          table.get("skew " + name, -1),
-          (int) (table.get("fiducial id " + name, -1)),
+          table.get("Tags/Yaw " + name, -1),
+          table.get("Tags/Pitch " + name, -1),
+          table.get("Tags/Area " + name, -1),
+          table.get("Tags/Skew " + name, -1),
+          (int) (table.get("Tags/Fiducial ID " + name, -1)),
           pose,
           altPose,
-          table.get("pose ambiguity " + name, -1),
+          table.get("Tags/Pose Ambiguity " + name, -1),
           minAreaRectCorners,
           detectedCorners));
     }
