@@ -25,8 +25,8 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -55,8 +55,8 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
-import java.util.ArrayList;
 import frc.robot.utils.autoaim.AutoAim;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -252,6 +252,7 @@ public class SwerveSubsystem extends SubsystemBase {
       new ModuleIOSim("BackRight")
     };
   }
+
   /**
    * Constructs an array of vision IOs corresponding to the real robot.
    *

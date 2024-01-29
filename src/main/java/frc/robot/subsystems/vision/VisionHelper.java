@@ -390,6 +390,7 @@ public class VisionHelper {
       return Math.max(minimum, eulerMultiplier * Math.exp(averageDistance * distanceMultiplier));
     }
   }
+
   /*** 5026 - to be tuned if necessary*/
   public static record TagCountDeviation(
       UnitDeviationParams xParams, UnitDeviationParams yParams, UnitDeviationParams thetaParams) {
@@ -409,6 +410,7 @@ public class VisionHelper {
 
   public static record VisionMeasurement(
       EstimatedRobotPose estimation, Matrix<N3, N1> confidence) {}
+
   /*** 5026 - to be tuned if necessary*/
   public static Matrix<N3, N1> findVisionMeasurementStdDevs(EstimatedRobotPose estimation) {
     double sumDistance = 0;
