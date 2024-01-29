@@ -17,7 +17,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -44,7 +44,7 @@ import java.util.Queue;
  */
 public class ModuleIOTalonFX implements ModuleIO {
   // Constants
-  private static final boolean IS_TURN_MOTOR_INVERTED = true;
+  private static final boolean IS_TURN_MOTOR_INVERTED = false;
 
   private final String name;
 
@@ -73,8 +73,7 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityVoltage drivePIDF = new VelocityVoltage(0.0).withEnableFOC(true);
-  private final MotionMagicExpoVoltage turnMotionMagic =
-      new MotionMagicExpoVoltage(0.0).withEnableFOC(true);
+  private final PositionVoltage turnPID = new PositionVoltage(0.0).withEnableFOC(true);
 
   public ModuleIOTalonFX(ModuleConstants constants) {
     name = constants.prefix();
@@ -89,19 +88,19 @@ public class ModuleIOTalonFX implements ModuleIO {
     driveConfig.CurrentLimits.StatorCurrentLimit = Module.DRIVE_STATOR_CURRENT_LIMIT;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
-    driveConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    driveConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     // Sensor
     // Meters per second
     driveConfig.Feedback.SensorToMechanismRatio =
-        (1.0 / Module.DRIVE_GEAR_RATIO) * Module.WHEEL_RADIUS * 2 * Math.PI;
+        (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
     // Controls Gains
-    driveConfig.Slot0.kV =
-        (5800.0 * (1.0 / Module.DRIVE_GEAR_RATIO) * Module.WHEEL_RADIUS * 2 * Math.PI)
-            / 12.0; // Hypothetical based on free speed
+    driveConfig.Slot0.kV = 2.5;
+    // (5800.0 * (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI)))
+    //     / 12.0; // Hypothetical based on free speed
     driveConfig.Slot0.kA = 0.0; // TODO: Find using sysid or hand tuning
     driveConfig.Slot0.kS = 0.0;
-    driveConfig.Slot0.kP = 0.0;
+    driveConfig.Slot0.kP = 0.25; // Guess
     driveConfig.Slot0.kD = 0.0;
 
     driveTalon.getConfigurator().apply(driveConfig);
@@ -124,18 +123,18 @@ public class ModuleIOTalonFX implements ModuleIO {
     turnConfig.Feedback.FeedbackRotorOffset =
         0.0; // Is this correct? Cancoder config should handle it
     // Controls Gains
-    turnConfig.Slot0.kV =
-        (5800.0 / Module.TURN_GEAR_RATIO)
-            / 12.0; // Free speed over voltage, should find empirically
-    turnConfig.Slot0.kA =
-        Module.TURN_GEAR_RATIO
-            * (9.37 / 483.0)
-            / (0.004 * (12.0 / 483.0)); // Based on motor dynamics math, should find in real life
+    turnConfig.Slot0.kV = 0.0;
+    // (5800.0 / Module.TURN_GEAR_RATIO)
+    //     / 12.0; // Free speed over voltage, should find empirically
+    turnConfig.Slot0.kA = 0.0;
+    // Module.TURN_GEAR_RATIO
+    //     * (9.37 / 483.0)
+    //     / (0.004 * (12.0 / 483.0)); // Based on motor dynamics math, should find in real life
     // gearing * Kt (torque per amp) / (intertia * resistance (nominal voltage / stall current))
     // Yeah its messy and should be found using sysid later but its worth trying as a first guess
     // If this works we can use a similar technique on future mechanisms
     turnConfig.Slot0.kS = 0.0; // TODO: Find empirically
-    turnConfig.Slot0.kP = 0.0;
+    turnConfig.Slot0.kP = 50.0;
     turnConfig.Slot0.kD = 0.0;
     turnConfig.ClosedLoopGeneral.ContinuousWrap = true;
 
@@ -191,8 +190,8 @@ public class ModuleIOTalonFX implements ModuleIO {
         turnAppliedVolts,
         turnCurrent);
 
-    inputs.drivePositionMeters = Units.rotationsToRadians(drivePosition.getValueAsDouble());
-    inputs.driveVelocityMetersPerSec = Units.rotationsToRadians(driveVelocity.getValueAsDouble());
+    inputs.drivePositionMeters = drivePosition.getValueAsDouble();
+    inputs.driveVelocityMetersPerSec = driveVelocity.getValueAsDouble();
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 
@@ -232,7 +231,7 @@ public class ModuleIOTalonFX implements ModuleIO {
 
   @Override
   public void setTurnSetpoint(final Rotation2d rotation) {
-    turnTalon.setControl(turnMotionMagic.withPosition(rotation.getRotations()));
+    turnTalon.setControl(turnPID.withPosition(rotation.getRotations()));
   }
 
   @Override

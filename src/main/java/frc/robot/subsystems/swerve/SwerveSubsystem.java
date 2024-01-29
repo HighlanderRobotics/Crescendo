@@ -26,6 +26,7 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -34,15 +35,19 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
@@ -51,11 +56,13 @@ import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import java.util.ArrayList;
+import frc.robot.utils.autoaim.AutoAim;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -65,22 +72,22 @@ import org.photonvision.targeting.PhotonPipelineResult;
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
   public static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
-  public static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
-  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
+  public static final double TRACK_WIDTH_X = Units.inchesToMeters(20.5);
+  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(20.5);
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
   // Hardware constants
-  public static final int PigeonID = 0;
+  public static final int PIGEON_ID = 0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Front Left", 6, 5, 21, Rotation2d.fromRotations(0.125732));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Front Right", 8, 7, 23, Rotation2d.fromRotations(0.461426));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Back Left", 4, 3, 20, Rotation2d.fromRotations(0.152344));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.0));
+      new ModuleConstants("Back Right", 2, 1, 22, Rotation2d.fromRotations(-0.238281));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -164,10 +171,12 @@ public class SwerveSubsystem extends SubsystemBase {
           new VisionSystemSim("Right Camera Sim System"),
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT); // TODO find transforms
+  private SwerveDriveOdometry odometry;
 
   public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
     this.gyroIO = gyroIO;
     cameras = new Vision[visionIOs.length];
+    new AutoAim();
     modules = new Module[moduleIOs.length];
 
     for (int i = 0; i < moduleIOs.length; i++) {
@@ -190,16 +199,30 @@ public class SwerveSubsystem extends SubsystemBase {
             // your Constants class
             new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
             new PIDConstants(5.0, 0.0, 0.0), // Rotation PID constants
-            4.5, // Max module speed, in m/s
-            0.4, // Drive base radius in meters. Distance from robot center to furthest module.
-            new ReplanningConfig() // Default path replanning config. See the API for the options
+            MAX_LINEAR_SPEED, // Max module speed, in m/s
+            DRIVE_BASE_RADIUS, // Drive base radius in meters. Distance from robot center to
+            // furthest module.
+            new ReplanningConfig(
+                false, false) // Default path replanning config. See the API for the options
             // here
             ),
-        () -> true,
+        () -> false,
         this // Reference to this subsystem to set requirements
         );
+
     PathPlannerLogging.setLogTargetPoseCallback(
-        (pose) -> Logger.recordOutput("PathPlanner/Target", pose));
+        (pose) -> {
+          Logger.recordOutput("PathPlanner/Target", pose);
+          Logger.recordOutput(
+              "PathPlanner/Absolute Translation Error",
+              pose.minus(getPose()).getTranslation().getNorm());
+        });
+    PathPlannerLogging.setLogActivePathCallback(
+        (path) -> Logger.recordOutput("PathPlanner/Active Path", path.toArray(Pose2d[]::new)));
+    Logger.recordOutput("PathPlanner/Target", new Pose2d());
+    Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
+
+    odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
   }
 
   /**
@@ -339,6 +362,9 @@ public class SwerveSubsystem extends SubsystemBase {
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
+    Logger.recordOutput("Swerve/Target Speeds", discreteSpeeds);
+    Logger.recordOutput("Swerve/Speed Error", discreteSpeeds.minus(getVelocity()));
+
     // Send setpoints to modules
     SwerveModuleState[] optimizedSetpointStates =
         Streams.zip(
@@ -399,6 +425,16 @@ public class SwerveSubsystem extends SubsystemBase {
     return driveVelocityAverage / 4.0;
   }
 
+  private SwerveModulePosition[] getModulePositions() {
+
+    SwerveModulePosition[] positions = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      positions[i] = modules[i].getPosition();
+    }
+
+    return positions;
+  }
+
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
@@ -448,6 +484,12 @@ public class SwerveSubsystem extends SubsystemBase {
       estimator.resetPosition(pose.getRotation(), lastModulePositions, pose);
     } catch (Exception e) {
     }
+    odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
+  }
+
+  public void setYaw(Rotation2d yaw) {
+    gyroIO.setYaw(yaw);
+    setPose(new Pose2d(getPose().getTranslation(), yaw));
   }
 
   /** Returns an array of module translations. */
@@ -472,5 +514,38 @@ public class SwerveSubsystem extends SubsystemBase {
       states[i] = modules[i].getPosition();
     }
     return states;
+  }
+
+  public Rotation2d getRotationToTranslation(Translation2d translation) {
+
+    double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
+    return Rotation2d.fromRadians(angle);
+  }
+
+  public Command pointTowardsTranslation(DoubleSupplier x, DoubleSupplier y) {
+    ProfiledPIDController headingController =
+        // assume we can accelerate to max in 0.5 seconds
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return this.runVelocityFieldRelative(
+            () -> {
+              double calculated =
+                  headingController.calculate(
+                      getPose().getRotation().getRadians(),
+                      getRotationToTranslation(FieldConstants.getSpeaker()).getRadians());
+
+              return new ChassisSpeeds(
+                  x.getAsDouble(),
+                  y.getAsDouble(),
+                  calculated + headingController.getSetpoint().velocity);
+            })
+        .beforeStarting(
+            () ->
+                headingController.reset(
+                    new State(
+                        getPose().getRotation().getRadians(),
+                        getVelocity().omegaRadiansPerSecond)));
   }
 }

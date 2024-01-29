@@ -2,8 +2,8 @@
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
-      "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
-      "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d"
+      "/SmartDashboard/reset Kicker value": "Command",
+      "/SmartDashboard/reset Pivot value": "Command"
     }
   },
   "NetworkTables": {

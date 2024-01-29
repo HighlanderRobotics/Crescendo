@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -67,7 +68,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -96,16 +97,19 @@ public class Robot extends LoggedRobot {
                 new ChassisSpeeds(
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
-    // Auto Bindings here
-    NamedCommands.registerCommand(
-        "fender",
-        Commands.deadline(
-            Commands.sequence(
-                Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
-            swerve.stopCmd()));
-    NamedCommands.registerCommand("intake", Commands.print("intake"));
+    // Controller bindings here
+    controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
+
+    // Test binding for autoaim
+    controller
+        .a()
+        .whileTrue(
+            swerve.pointTowardsTranslation(
+                () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
+
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -115,13 +119,7 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void disabledInit() {}
-
-  @Override
   public void disabledPeriodic() {}
-
-  @Override
-  public void disabledExit() {}
 
   @Override
   public void autonomousInit() {
@@ -131,12 +129,6 @@ public class Robot extends LoggedRobot {
       autonomousCommand.schedule();
     }
   }
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void autonomousExit() {}
 
   @Override
   public void teleopInit() {
@@ -149,16 +141,7 @@ public class Robot extends LoggedRobot {
   public void teleopPeriodic() {}
 
   @Override
-  public void teleopExit() {}
-
-  @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
   }
-
-  @Override
-  public void testPeriodic() {}
-
-  @Override
-  public void testExit() {}
 }
