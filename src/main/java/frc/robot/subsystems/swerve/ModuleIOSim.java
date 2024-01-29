@@ -46,8 +46,8 @@ public class ModuleIOSim implements ModuleIO {
   private double turnAppliedVolts = 0.0;
 
   private final PIDController turnController = new PIDController(100.0, 0.0, 0.0);
-  private final PIDController driveController = new PIDController(1.0, 0.0, 0.0);
-  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 2.6);
+  private final PIDController driveController = new PIDController(0.3, 0.0, 0.0);
+  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 3.2);
 
   public ModuleIOSim(final String name) {
     this.name = name;

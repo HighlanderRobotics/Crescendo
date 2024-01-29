@@ -6,11 +6,12 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -102,6 +103,8 @@ public class Robot extends LoggedRobot {
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
+    controller.x().toggleOnTrue(backAndForth());
+
     // Test binding for autoaim
     controller
         .a()
@@ -112,12 +115,46 @@ public class Robot extends LoggedRobot {
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
 
-    controller.b().whileTrue(autoAimDemo(() -> swerve.getVelocity()));
+    controller
+        .b()
+        .whileTrue(
+            autoAimDemo(
+                () -> {
+                  swerve.polarDistance =
+                      Math.sqrt(
+                          Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
+                              + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
+                  swerve.polarRadians =
+                      Math.atan2(
+                          swerve.getVelocity().vyMetersPerSecond,
+                          swerve.getVelocity().vxMetersPerSecond);
+                  
+                  swerve.polarDistance =
+                      MathUtil.clamp(
+                          swerve.polarDistance,
+                          -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
+                          SwerveSubsystem.MAX_LINEAR_SPEED / 2);
+                  Logger.recordOutput("AutoAim/Polar Sppeeds", new ChassisSpeeds(
+                      swerve.polarDistance * Math.cos(swerve.polarRadians),
+                      swerve.polarDistance * Math.sin(swerve.polarRadians),
+                      swerve.getVelocity().omegaRadiansPerSecond));
+                  return new ChassisSpeeds(
+                      swerve.polarDistance * Math.cos(swerve.polarRadians),
+                      swerve.polarDistance * Math.sin(swerve.polarRadians),
+                      swerve.getVelocity().omegaRadiansPerSecond);
+                }));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+  }
+
+  public Command backAndForth() {
+    return Commands.sequence(
+        Commands.sequence(
+            swerve.runVelocityCmd(() -> new ChassisSpeeds(3, 0, 0)).withTimeout(0.333),
+            swerve.runVelocityCmd(() -> new ChassisSpeeds(-3, 0, 0)).withTimeout(0.333)));
   }
 
   /**
@@ -130,34 +167,47 @@ public class Robot extends LoggedRobot {
   public Command autoAimDemo(Supplier<ChassisSpeeds> speeds) {
 
     return Commands.sequence(
-        Commands.runOnce(
-            () -> {
-              swerve.curShotSpeeds = speeds.get();
-              swerve.curShotData =
-                  AutoAim.shotMap.get(
-                      swerve
-                          .getFuturePose(AutoAim.LOOKAHEAD_TIME)
-                          .minus(FieldConstants.getSpeaker())
-                          .getTranslation()
-                          .getNorm());
-              System.out.println(swerve.curShotSpeeds.toString());
-            },
-            swerve),
-        Commands.deadline(
-            Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME),
-            Commands.sequence(
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
-                Commands.print("Spin Up Shooter")),
-            Commands.sequence(
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7), Commands.print("Aim Shooter")),
-            Commands.sequence(
-                (swerve.pointTowardsTranslationCmd(
-                    () -> swerve.curShotSpeeds.vxMetersPerSecond,
-                    () -> swerve.curShotSpeeds.vyMetersPerSecond))),
-            Commands.sequence(
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
-                Commands.print("Rotate Robot"))),
-        Commands.print("Whoosh!")).andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
+            Commands.runOnce(
+                () -> {
+                  swerve.curShotSpeeds = speeds.get();
+                  swerve.curShotData =
+                      AutoAim.shotMap.get(
+                          swerve
+                              .getFuturePose(AutoAim.LOOKAHEAD_TIME, swerve.curShotSpeeds)
+                              .minus(FieldConstants.getSpeaker())
+                              .getTranslation()
+                              .getNorm());
+                },
+                swerve),
+            Commands.deadline(
+                    Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME),
+                    Commands.sequence(
+                        Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
+                        Commands.print("Spin Up Shooter")),
+                    Commands.sequence(
+                        Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7),
+                        Commands.print("Aim Shooter")),
+                    Commands.sequence(
+                        (swerve.pointTowardsTranslationCmd(
+                            () -> swerve.curShotSpeeds.vxMetersPerSecond,
+                            () -> swerve.curShotSpeeds.vyMetersPerSecond))),
+                    Commands.sequence(
+                        Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
+                        Commands.print("Rotate Robot")))
+                .finallyDo(
+                    () -> {
+                      Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
+                    }),
+            Commands.print("Whoosh!"),
+            swerve
+                .runVelocityFieldRelative(
+                    () ->
+                        new ChassisSpeeds(
+                            swerve.curShotSpeeds.vxMetersPerSecond,
+                            swerve.curShotSpeeds.vyMetersPerSecond,
+                            0))
+                .withTimeout(0.25))
+        .andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
   }
 
   @Override
