@@ -8,7 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public class Shooterreal implements ShooterIO {
   private final TalonFX motor = new TalonFX(0);
   private double pivotAppliedVolts;
-
+   public void setPivotAngle(double targetAngle) {}
   @Override
   public ShooterIOInputs updateInputs() {
     ShooterIOInputs inputs = new ShooterIOInputs();
