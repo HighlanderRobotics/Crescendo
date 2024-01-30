@@ -26,9 +26,27 @@ public class Shooterreal implements ShooterIO {
   }
 
   public void setFlywheelVelocity(final Rotation2d rotation) {
-    setFlywheelVelocity(pivotAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0));
+    double volts = calculateVoltsFromRotation(rotation);
+    double pivotAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    
+    setFlywheelVoltage(pivotAppliedVolts);
     motor.setVoltage(pivotAppliedVolts);
-  }
+}
+
+private double calculateVoltsFromRotation(Rotation2d rotation) {
+    inputs.FlywheelVoltage = motor.getSupplyVoltage().getValue();
+    return calculatedVolts;
+}
+
+
+private void setFlywheelVoltage(double volts) {
+    motor.setVoltage(volts);
+}
+
+}
+
+
+
 
   private final PIDController pivotController = new PIDController(100.0, 0.0, 0.0);
-}
+
