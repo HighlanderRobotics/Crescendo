@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose3d;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +22,7 @@ public interface VisionIO {
         new ArrayList<>(); // TODO make protobuf work whenever that happens
     public double numTags = 0; // TODO why isn't this just targets.size()?
     public Pose3d coprocPNPPose = new Pose3d();
+    public Pose3d[] targetPose3ds;
   }
 
   public default void updateInputs(VisionIOInputs inputs) {}
@@ -35,7 +35,7 @@ public interface VisionIO {
   }
 
   public default Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult result, AprilTagFieldLayout fieldTags) {
+      PhotonPipelineResult result) {
     return Optional.empty();
   }
 }

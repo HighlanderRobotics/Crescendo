@@ -20,6 +20,8 @@ import edu.wpi.first.math.numbers.N5;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,7 +60,6 @@ public class VisionHelper {
   public class Logging {
     public static void logPhotonTrackedTarget(
         PhotonTrackedTarget target, LogTable table, String name) {
-
       logTransform3d(target.getBestCameraToTarget(), table, name);
       logTransform3d(target.getAlternateCameraToTarget(), table, "Alt " + name);
       logCorners(target, table, name);
@@ -179,12 +180,11 @@ public class VisionHelper {
       Matrix<N3, N3> cameraMatrix,
       Matrix<N5, N1> distCoeffs,
       PoseStrategy strat,
-      AprilTagFieldLayout fieldTags,
       Transform3d robotToCamera) {
     Optional<EstimatedRobotPose> estimatedPose;
     switch (strat) {
       case LOWEST_AMBIGUITY:
-        estimatedPose = lowestAmbiguityStrategy(cameraResult, fieldTags, robotToCamera);
+        estimatedPose = lowestAmbiguityStrategy(cameraResult, robotToCamera);
         break;
       case MULTI_TAG_PNP_ON_RIO:
         estimatedPose =
@@ -192,7 +192,7 @@ public class VisionHelper {
                 cameraResult,
                 Optional.of(cameraMatrix),
                 Optional.of(distCoeffs),
-                fieldTags,
+                SwerveSubsystem.fieldTags,
                 PoseStrategy.LOWEST_AMBIGUITY,
                 robotToCamera);
         break;
@@ -202,7 +202,6 @@ public class VisionHelper {
                 cameraResult,
                 Optional.of(cameraMatrix),
                 Optional.of(distCoeffs),
-                fieldTags,
                 robotToCamera,
                 PoseStrategy.MULTI_TAG_PNP_ON_RIO);
         break;
@@ -247,7 +246,6 @@ public class VisionHelper {
           cameraMatrix.get(),
           distCoeffs.get(),
           multiTagFallbackStrategy,
-          fieldTags,
           robotToCamera);
     }
 
@@ -256,7 +254,7 @@ public class VisionHelper {
             cameraMatrix.get(),
             distCoeffs.get(),
             result.getTargets(),
-            fieldTags,
+            SwerveSubsystem.fieldTags,
             TargetModel.kAprilTag36h11);
     // try fallback strategy if solvePNP fails for some reason
     if (!pnpResult.isPresent)
@@ -265,7 +263,6 @@ public class VisionHelper {
           cameraMatrix.get(),
           distCoeffs.get(),
           multiTagFallbackStrategy,
-          fieldTags,
           robotToCamera);
     var best =
         new Pose3d()
@@ -301,7 +298,6 @@ public class VisionHelper {
       PhotonPipelineResult result,
       Optional<Matrix<N3, N3>> cameraMatrix,
       Optional<Matrix<N5, N1>> distCoeffs,
-      AprilTagFieldLayout fieldTags,
       Transform3d robotToCamera,
       PoseStrategy multiTagFallbackStrategy) {
     if (result.getMultiTagResult().estimatedPose.isPresent) {
@@ -309,7 +305,7 @@ public class VisionHelper {
       var best =
           new Pose3d()
               .plus(best_tf) // field-to-camera
-              .relativeTo(fieldTags.getOrigin())
+              .relativeTo(SwerveSubsystem.fieldTags.getOrigin())
               .plus(robotToCamera.inverse()); // field-to-robot
       return Optional.of(
           new EstimatedRobotPose(
@@ -323,7 +319,6 @@ public class VisionHelper {
           cameraMatrix.get(),
           distCoeffs.get(),
           multiTagFallbackStrategy,
-          fieldTags,
           robotToCamera);
     }
   }
@@ -337,7 +332,7 @@ public class VisionHelper {
    *     estimation.
    */
   private static Optional<EstimatedRobotPose> lowestAmbiguityStrategy(
-      PhotonPipelineResult result, AprilTagFieldLayout fieldTags, Transform3d robotToCamera) {
+      PhotonPipelineResult result, Transform3d robotToCamera) {
     PhotonTrackedTarget lowestAmbiguityTarget = null;
 
     double lowestAmbiguityScore = 10;
@@ -364,7 +359,7 @@ public class VisionHelper {
 
     int targetFiducialId = lowestAmbiguityTarget.getFiducialId();
 
-    Optional<Pose3d> targetPosition = fieldTags.getTagPose(targetFiducialId);
+    Optional<Pose3d> targetPosition = SwerveSubsystem.fieldTags.getTagPose(targetFiducialId);
 
     if (targetPosition.isEmpty()) {
       DriverStation.reportError(

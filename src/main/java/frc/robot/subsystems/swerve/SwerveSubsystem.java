@@ -20,6 +20,7 @@ import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -30,8 +31,10 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -104,9 +107,10 @@ public class SwerveSubsystem extends SubsystemBase {
         new SwerveModulePosition()
       };
   private Rotation2d rawGyroRotation = new Rotation2d();
+  private Rotation2d lastGyroRotation = new Rotation2d();
 
   private final Vision[] cameras;
-  private AprilTagFieldLayout fieldTags;
+  public static final AprilTagFieldLayout fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
@@ -160,10 +164,14 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left Camera",
-          new Transform3d(),
+          new Transform3d(
+              new Translation3d(
+                  Units.inchesToMeters(14.4), Units.inchesToMeters(0), Units.inchesToMeters(29.75)),
+              new Rotation3d(0, 0, 0)),
           new VisionSystemSim("Left Camera Sim System"),
           LEFT_CAMERA_MATRIX,
-          LEFT_DIST_COEFFS); // TODO find transforms
+          LEFT_DIST_COEFFS); // TODO this *should* be the transform on the alpha bot but is probably
+  // wrong
   public static final VisionConstants rightCamConstants =
       new VisionConstants(
           "Right Camera",
@@ -309,6 +317,7 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] modulePositions = getModulePositions();
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         wheelDeltas[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
+        // wheelDeltas[moduleIndex] = modules[moduleIndex].getPositionDeltas()[deltaIndex];
         modulePositions[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
@@ -317,14 +326,17 @@ public class SwerveSubsystem extends SubsystemBase {
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
+      Twist2d twist = kinematics.toTwist2d(wheelDeltas);
       if (gyroInputs.connected) {
         rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
+        twist =
+            new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
       } else {
         // Use the angle delta from the kinematics and module deltas
-        Twist2d twist = kinematics.toTwist2d(wheelDeltas);
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
-        pose = pose.exp(twist);
       }
+      pose = pose.exp(twist);
+      lastGyroRotation = rawGyroRotation;
       // Apply update
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
     }
@@ -336,7 +348,7 @@ public class SwerveSubsystem extends SubsystemBase {
       result.setTimestampSeconds(camera.inputs.timestamp);
       boolean newResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
       try {
-        var estPose = camera.update(result, fieldTags);
+        var estPose = camera.update(result);
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);

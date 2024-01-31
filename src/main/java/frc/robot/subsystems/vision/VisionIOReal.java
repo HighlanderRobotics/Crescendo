@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
@@ -56,14 +55,13 @@ public class VisionIOReal implements VisionIO {
 
   @Override
   public Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult result, AprilTagFieldLayout fieldTags) {
+      PhotonPipelineResult result) {
     var estPose =
         VisionHelper.update(
             result,
             cameraMatrix,
             distCoeffs,
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            fieldTags,
             robotToCamera);
     return estPose;
   }

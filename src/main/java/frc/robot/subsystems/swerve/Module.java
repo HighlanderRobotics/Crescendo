@@ -65,9 +65,9 @@ public class Module {
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
       final double positionMeters = inputs.odometryDrivePositionsMeters[i];
-      final Rotation2d angle =
-          inputs.odometryTurnPositions[i]; // im going to assume the offset is alr taken care of
-      odometryPositions[i] = new SwerveModulePosition(positionMeters, angle);
+      final Rotation2d angle = inputs.odometryTurnPositions[i];
+      odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
+      lastPositionMeters = positionMeters;
     }
   }
 

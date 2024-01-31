@@ -1,5 +1,8 @@
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
+
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
@@ -13,12 +16,15 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
   public void toLog(LogTable table) {
     table.put("Timestamp", timestamp);
     table.put("Latency", latency);
+
+    targetPose3ds = new Pose3d[targets.size()];
     for (int i = 0; i < targets.size(); i++) {
       VisionHelper.Logging.logPhotonTrackedTarget(targets.get(i), table, String.valueOf(i));
-      numTags += 1;
+      targetPose3ds[i] = SwerveSubsystem.fieldTags.getTagPose(targets.get(i).getFiducialId()).get();
     }
-    table.put("NumTags", numTags);
+    table.put("NumTags", targets.size());
     table.put("Pose", coprocPNPPose);
+    table.put("Target Pose3ds", targetPose3ds);
   }
 
   @Override
@@ -30,6 +36,7 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     }
     numTags = table.get("NumTags", numTags);
     coprocPNPPose = table.get("Pose", coprocPNPPose);
+    targetPose3ds = table.get("Target Pose3ds", targetPose3ds);
   }
 
   public VisionIOInputsLogged clone() {
@@ -39,6 +46,7 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     copy.targets = this.targets;
     copy.numTags = this.numTags;
     copy.coprocPNPPose = this.coprocPNPPose;
+    copy.targetPose3ds = this.targetPose3ds;
     return copy;
   }
 }

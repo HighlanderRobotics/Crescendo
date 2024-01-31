@@ -4,12 +4,12 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+
 import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
@@ -45,8 +45,8 @@ public class Vision {
   }
 
   public Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult result, AprilTagFieldLayout fieldTags) {
-    var estPose = io.update(result, fieldTags);
+      PhotonPipelineResult result) {
+    var estPose = io.update(result);
     return estPose;
   }
 
