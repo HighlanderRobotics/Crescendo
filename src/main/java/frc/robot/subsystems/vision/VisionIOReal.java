@@ -54,8 +54,7 @@ public class VisionIOReal implements VisionIO {
   }
 
   @Override
-  public Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult result) {
+  public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
     var estPose =
         VisionHelper.update(
             result,

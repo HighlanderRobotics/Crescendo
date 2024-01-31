@@ -110,7 +110,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
 
   private final Vision[] cameras;
-  public static final AprilTagFieldLayout fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+  public static final AprilTagFieldLayout fieldTags =
+      AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);

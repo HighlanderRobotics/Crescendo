@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -242,11 +241,7 @@ public class VisionHelper {
     // cannot run multitagPNP, use fallback strategy
     if (!hasCalibData || result.getTargets().size() < 2) {
       return update(
-          result,
-          cameraMatrix.get(),
-          distCoeffs.get(),
-          multiTagFallbackStrategy,
-          robotToCamera);
+          result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
     }
 
     PNPResult pnpResult =
@@ -259,11 +254,7 @@ public class VisionHelper {
     // try fallback strategy if solvePNP fails for some reason
     if (!pnpResult.isPresent)
       return update(
-          result,
-          cameraMatrix.get(),
-          distCoeffs.get(),
-          multiTagFallbackStrategy,
-          robotToCamera);
+          result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
     var best =
         new Pose3d()
             .plus(pnpResult.best) // field-to-camera
@@ -315,11 +306,7 @@ public class VisionHelper {
               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
     } else {
       return update(
-          result,
-          cameraMatrix.get(),
-          distCoeffs.get(),
-          multiTagFallbackStrategy,
-          robotToCamera);
+          result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
     }
   }
 

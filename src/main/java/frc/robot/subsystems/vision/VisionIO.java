@@ -34,8 +34,7 @@ public interface VisionIO {
     return "Default";
   }
 
-  public default Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult result) {
+  public default Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
     return Optional.empty();
   }
 }
