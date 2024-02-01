@@ -28,7 +28,7 @@ public interface ShooterIO {
      public double pivotAppliedVolts = 0.0;
   
      }
-     public default void setFlywheelVelocity(final double volts) {} //set voltage
+     public default void setFlywheelVoltage(final double volts) {} //set voltage
      public default void setPivotVoltage(final double metersPerSecond) {} //set speed
      public default void setPivotSetpoint(final Rotation2d rotation) {} //set specfic rotation
      public abstract ShooterIOInputs updateInputs();
