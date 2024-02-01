@@ -3,8 +3,10 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot.subsystems.shooter;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
+
 /** Add your docs here. */
 public interface ShooterIO {
     @AutoLog
@@ -31,14 +33,9 @@ public interface ShooterIO {
      public default void setFlywheelVoltage(final double volts) {} //set voltage
      public default void setPivotVoltage(final double metersPerSecond) {} //set speed
      public default void setPivotSetpoint(final Rotation2d rotation) {} //set specfic rotation
-     public abstract ShooterIOInputs updateInputs();
 
+
+
+ 
+  public abstract ShooterIOInputs updateInputs();
 }
-
-
-
-
-
-
-
-

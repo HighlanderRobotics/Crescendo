@@ -1,10 +1,8 @@
 package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.hardware.TalonFX;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
-
 public class Shooterreal implements ShooterIO{
 private final TalonFX motor = new TalonFX(0);
 private double pivotAppliedVolts;
@@ -25,20 +23,12 @@ public ShooterIOInputs updateInputs() {
   return inputs;
 }
 
-public void setFlywheelVoltage(final Rotation2d rotation) {
+public void setFlywheelVelocity(final Rotation2d rotation) {
   setFlywheelVoltage(
     pivotAppliedVolts = MathUtil.clamp(pivotAppliedVolts, -12.0, 12.0));
     motor.setVoltage(pivotAppliedVolts);
   }
  
-public void setPivotRotation(){
-
-
-
-
-
-}
-
 
 private final PIDController pivotController = new PIDController(100.0, 0.0, 0.0);
 
