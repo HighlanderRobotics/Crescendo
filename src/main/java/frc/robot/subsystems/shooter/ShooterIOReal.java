@@ -9,7 +9,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class ShooterIOReal implements ShooterIO {
@@ -28,7 +27,8 @@ public class ShooterIOReal implements ShooterIO {
   private final StatusSignal<Double> flywheelTempC = flywheelLeaderMotor.getDeviceTemp();
   private final StatusSignal<Double> flywheelVelocity = flywheelLeaderMotor.getVelocity();
 
-  private final StatusSignal<Double> flywheelFollowerAmps = flywheelFollowerMotor.getStatorCurrent();
+  private final StatusSignal<Double> flywheelFollowerAmps =
+      flywheelFollowerMotor.getStatorCurrent();
   private final StatusSignal<Double> flywheelFollowerTempC = flywheelFollowerMotor.getDeviceTemp();
 
   private final VoltageOut pivotVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
@@ -96,8 +96,9 @@ public class ShooterIOReal implements ShooterIO {
 
     inputs.flywheelVelocityRotationsPerSecond = flywheelVelocity.getValue();
     inputs.flywheelVoltage = flywheelvoltage.getValue();
-    inputs.flywheelAmps = new double[]{ flywheelAmps.getValue(), flywheelFollowerAmps.getValue() };
-    inputs.flywheelTempC = new double[]{ flywheelTempC.getValue(), flywheelFollowerTempC.getValue() };
+    inputs.flywheelAmps = new double[] {flywheelAmps.getValue(), flywheelFollowerAmps.getValue()};
+    inputs.flywheelTempC =
+        new double[] {flywheelTempC.getValue(), flywheelFollowerTempC.getValue()};
 
     return inputs;
   }
