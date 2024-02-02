@@ -11,30 +11,27 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ShooterIO {
   @AutoLog
   public static class ShooterIOInputs {
-    public double drivePositionMeters = 0.0;
-    public double driveVelocityMetersPerSec = 0.0;
-    public double PivotAmps = 0;
-    public double PivotMeters = 0.0;
-    public double PivotVoltage = 0.0;
-    public double PivotAmp = 0.0;
-    public double PivotTempc = 0.0;
-    public double PivotVelocity = 0.0;
-    public Rotation2d turnAbsolutePosition = new Rotation2d();
-    public Rotation2d turnPosition = new Rotation2d();
-    public double turnVelocityRadPerSec = 0.0;
-    public double FlywheelAmps = 0;
-    public double FlywheelVoltage = 0.0;
-    public double FlywheelAmp = 0.0;
-    public double FlywheelTempc = 0.0;
-    public double FlywheelVelocity = 0.0;
-    public double pivotAppliedVolts = 0.0;
+    public Rotation2d pivotRotation = new Rotation2d();
+    public double pivotVelocityRotationsPerSecond = 0.0;
+    public double pivotVoltage = 0.0;
+    public double pivotAmps = 0.0;
+    public double pivotTempC = 0.0;
+
+    public double flywheelAmps = 0.0;
+    public double flywheelVoltage = 0.0;
+    public double flywheelTempC = 0.0;
+    public double flywheelVelocity = 0.0;
   }
 
-  public default void setFlywheelVoltage(final double volts) {} // set voltage
+  public abstract ShooterIOInputsAutoLogged updateInputs();
 
-  public default void setPivotVoltage(final double metersPerSecond) {} // set speed
+  public default void setFlywheelVoltage(final double voltage) {} // set voltage
+
+  public default void setFlywheelVelocity(final double rps) {} // set speed
+
+  public default void setPivotVoltage(final double voltage) {} // set speed
 
   public default void setPivotSetpoint(final Rotation2d rotation) {} // set specfic rotation
 
-  public abstract ShooterIOInputs updateInputs();
+  public default void resetPivotPostion(final Rotation2d rotation) {} // reset specfic rotation
 }
