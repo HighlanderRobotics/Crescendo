@@ -175,7 +175,7 @@ public class Robot extends LoggedRobot {
                   swerve.curShotData =
                       AutoAim.shotMap.get(
                           swerve
-                              .getFuturePose(AutoAim.LOOKAHEAD_TIME, swerve.curShotSpeeds)
+                              .getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, swerve.curShotSpeeds)
                               .minus(FieldConstants.getSpeaker())
                               .getTranslation()
                               .getNorm());

@@ -15,6 +15,9 @@ package frc.robot.subsystems.swerve;
 
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.PathPoint;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
@@ -41,7 +44,10 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
@@ -365,8 +371,8 @@ public class SwerveSubsystem extends SubsystemBase {
       Pose2d translation, ChassisSpeeds speedsRobotRelative) {
     double angle =
         Math.atan2(
-            translation.getY() - getFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getY(),
-            translation.getX() - getFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getX());
+            translation.getY() - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getY(),
+            translation.getX() - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -384,7 +390,7 @@ public class SwerveSubsystem extends SubsystemBase {
         ChassisSpeeds.fromFieldRelativeSpeeds(speedsFieldRelative, getRotation());
 
     double distance =
-        getFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative)
+        getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative)
             .minus(target)
             .getTranslation()
             .getNorm();
@@ -401,6 +407,23 @@ public class SwerveSubsystem extends SubsystemBase {
     return getVirtualTarget(getRobotRelativeSpeeds());
   }
 
+  public Pose2d getAutoPose(){
+    List<PathPlannerPath> paths = PathPlannerAuto.getPathGroupFromAutoFile("local 4");
+    List<PathPoint> points = new ArrayList<PathPoint>();
+    for(PathPlannerPath path : paths){
+      for(PathPoint point : path.getAllPathPoints()){
+        points.add(point);
+      }
+    }
+    
+
+    return new Pose2d();
+  }
+
+  public Pose2d getFuturePose(boolean isAuto, ChassisSpeeds speedsFieldRelative){
+    return isAuto ? getAutoPose() : getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative);
+  }
+
   /**
    * Gets the pose at some time in the future, assuming constant velocity
    *
@@ -408,7 +431,8 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param time time in seconds
    * @return The future pose
    */
-  public Pose2d getFuturePose(double time, ChassisSpeeds speedsFieldRelative) {
+  public Pose2d getLinearFuturePose(double time, ChassisSpeeds speedsFieldRelative) {
+
     ChassisSpeeds speedsRobotRelative =
         ChassisSpeeds.fromFieldRelativeSpeeds(speedsFieldRelative, getRotation());
     return getPose()
@@ -426,7 +450,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param time time in seconds
    * @return The future pose
    */
-  public Pose2d getFuturePose(double time) {
+  public Pose2d getLinearFuturePose(double time) {
 
     return getPose()
         .transformBy(
@@ -443,8 +467,8 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The future pose
    */
   @AutoLogOutput(key = "AutoAim/FuturePose")
-  public Pose2d getFuturePose() {
-    return getFuturePose(AutoAim.LOOKAHEAD_TIME);
+  public Pose2d getLinearFuturePose() {
+    return getLinearFuturePose(AutoAim.LOOKAHEAD_TIME);
   }
 
   /**
@@ -500,8 +524,8 @@ public class SwerveSubsystem extends SubsystemBase {
                 () -> {
                   endingPose =
                       new Pose2d(
-                          getFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getX(),
-                          getFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getY(),
+                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getX(),
+                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getY(),
                           this.rotationToTranslation);
                   Logger.recordOutput("AutoAim/Ending Pose", endingPose);
                   headingController.reset(
