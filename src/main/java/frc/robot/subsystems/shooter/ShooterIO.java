@@ -19,8 +19,8 @@ public interface ShooterIO {
 
     public double flywheelVoltage = 0.0;
     public double flywheelVelocityRotationsPerSecond = 0.0;
-    public double[] flywheelAmps = new double[]{ 0.0 };
-    public double[] flywheelTempC = new double[]{ 0.0 };
+    public double[] flywheelAmps = new double[] {0.0};
+    public double[] flywheelTempC = new double[] {0.0};
   }
 
   public abstract ShooterIOInputsAutoLogged updateInputs();

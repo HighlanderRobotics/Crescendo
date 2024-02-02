@@ -6,6 +6,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class ShooterSubystem extends SubsystemBase {
+  public static final double PIVOT_RATIO = 35.0 / 1.0;
+  public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
+
   ShooterIO io;
   ShooterIOInputsAutoLogged inputs;
 

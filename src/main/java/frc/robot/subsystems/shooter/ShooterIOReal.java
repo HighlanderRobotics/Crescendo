@@ -9,7 +9,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class ShooterIOReal implements ShooterIO {
@@ -28,7 +27,8 @@ public class ShooterIOReal implements ShooterIO {
   private final StatusSignal<Double> flywheelTempC = flywheelLeaderMotor.getDeviceTemp();
   private final StatusSignal<Double> flywheelVelocity = flywheelLeaderMotor.getVelocity();
 
-  private final StatusSignal<Double> flywheelFollowerAmps = flywheelFollowerMotor.getStatorCurrent();
+  private final StatusSignal<Double> flywheelFollowerAmps =
+      flywheelFollowerMotor.getStatorCurrent();
   private final StatusSignal<Double> flywheelFollowerTempC = flywheelFollowerMotor.getDeviceTemp();
 
   private final VoltageOut pivotVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
@@ -43,7 +43,8 @@ public class ShooterIOReal implements ShooterIO {
 
     pivotConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    pivotConfig.Feedback.SensorToMechanismRatio = 35.0 / 1.0; // TODO add in once cad is done
+    pivotConfig.Feedback.SensorToMechanismRatio =
+        ShooterSubystem.PIVOT_RATIO; // TODO add in once cad is done
 
     pivotConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     pivotConfig.CurrentLimits.StatorCurrentLimit = 40.0;
@@ -64,7 +65,8 @@ public class ShooterIOReal implements ShooterIO {
 
     flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    flywheelConfig.Feedback.SensorToMechanismRatio = 18.0 / 24.0; // TODO add in once cad is done
+    flywheelConfig.Feedback.SensorToMechanismRatio =
+        ShooterSubystem.FLYWHEEL_RATIO; // TODO add in once cad is done
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
@@ -96,8 +98,9 @@ public class ShooterIOReal implements ShooterIO {
 
     inputs.flywheelVelocityRotationsPerSecond = flywheelVelocity.getValue();
     inputs.flywheelVoltage = flywheelvoltage.getValue();
-    inputs.flywheelAmps = new double[]{ flywheelAmps.getValue(), flywheelFollowerAmps.getValue() };
-    inputs.flywheelTempC = new double[]{ flywheelTempC.getValue(), flywheelFollowerTempC.getValue() };
+    inputs.flywheelAmps = new double[] {flywheelAmps.getValue(), flywheelFollowerAmps.getValue()};
+    inputs.flywheelTempC =
+        new double[] {flywheelTempC.getValue(), flywheelFollowerTempC.getValue()};
 
     return inputs;
   }
