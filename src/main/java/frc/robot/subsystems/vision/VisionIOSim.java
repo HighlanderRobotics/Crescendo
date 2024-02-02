@@ -6,16 +6,22 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N5;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
 
 /** Add your docs here. */
 public class VisionIOSim implements VisionIO {
@@ -27,6 +33,9 @@ public class VisionIOSim implements VisionIO {
   Transform3d robotToCamera;
   public static Supplier<Pose3d> pose;
 
+  public Matrix<N3, N3> cameraMatrix;
+  public Matrix<N5, N1> distCoeffs;
+
   public VisionIOSim(VisionConstants constants) {
     this.simCameraName = constants.cameraName();
     this.sim = constants.simSystem();
@@ -34,6 +43,8 @@ public class VisionIOSim implements VisionIO {
     this.camera = new PhotonCamera(simCameraName);
     this.simCamera = new PhotonCameraSim(camera, cameraProp);
     this.robotToCamera = constants.robotToCamera();
+    this.cameraMatrix = constants.cameraMatrix();
+    this.distCoeffs = constants.distCoeffs();
     sim.addCamera(simCamera, robotToCamera);
 
     // TODO find
@@ -77,5 +88,17 @@ public class VisionIOSim implements VisionIO {
   @Override
   public String getName() {
     return simCameraName;
+  }
+
+  @Override
+  public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
+    var estPose =
+        VisionHelper.update(
+            result,
+            cameraMatrix,
+            distCoeffs,
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            robotToCamera);
+    return estPose;
   }
 }

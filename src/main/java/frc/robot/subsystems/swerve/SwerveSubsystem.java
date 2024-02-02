@@ -13,12 +13,27 @@
 
 package frc.robot.subsystems.swerve;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
+import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
+
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
@@ -54,23 +69,10 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
-import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
-import org.photonvision.simulation.VisionSystemSim;
-import org.photonvision.targeting.PhotonPipelineResult;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
@@ -314,20 +316,25 @@ public class SwerveSubsystem extends SubsystemBase {
     int sampleCount = sampleTimestamps.length;
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
-      SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
-      SwerveModulePosition[] modulePositions = getModulePositions();
+      SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
+      SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
+      SwerveModulePosition[] estPositions = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        wheelDeltas[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
-        // wheelDeltas[moduleIndex] = modules[moduleIndex].getPositionDeltas()[deltaIndex];
-        modulePositions[moduleIndex] =
+        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
+        moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
                     - lastModulePositions[moduleIndex].distanceMeters,
                 modulePositions[moduleIndex].angle);
+        estPositions[moduleIndex] = //TODO i don't know why this works but it does 
+            new SwerveModulePosition(
+                getModulePositions()[moduleIndex].distanceMeters //smth abt odo positions vs module positions
+                    - lastModulePositions[moduleIndex].distanceMeters,
+                getModulePositions()[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
-      Twist2d twist = kinematics.toTwist2d(wheelDeltas);
+      Twist2d twist = kinematics.toTwist2d(modulePositions);
       if (gyroInputs.connected) {
         rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
         twist =
@@ -339,7 +346,7 @@ public class SwerveSubsystem extends SubsystemBase {
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
-      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
+      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
     }
 
     List<Pose3d> visionPoses = new ArrayList<>();
@@ -355,10 +362,10 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         visionPoses.add(visionPose);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
-        estimator.addVisionMeasurement(
-            visionPose.toPose2d(),
-            camera.inputs.timestamp,
-            VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
+        // estimator.addVisionMeasurement(
+        //     visionPose.toPose2d(),
+        //     camera.inputs.timestamp,
+        //     VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
         if (newResult) lastEstTimestamp = camera.inputs.timestamp;
       } catch (NoSuchElementException e) {
       }
