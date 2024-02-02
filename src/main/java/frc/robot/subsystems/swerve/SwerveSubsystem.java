@@ -496,7 +496,8 @@ public class SwerveSubsystem extends SubsystemBase {
                       xMetersPerSecond.getAsDouble(),
                       yMetersPerSecond.getAsDouble(),
                       getVelocity().omegaRadiansPerSecond);
-              this.rotationToTranslation = getRotationToTranslation(this.virtualTarget, this.inputSpeeds);
+              this.rotationToTranslation =
+                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds);
             },
             this),
         this.runVelocityFieldRelative(
@@ -504,8 +505,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   double feedbackOutput =
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
-                          this.rotationToTranslation
-                              .getRadians());
+                          this.rotationToTranslation.getRadians());
                   Logger.recordOutput("AutoAim/Ending Pose", endingPose);
                   Logger.recordOutput(
                       "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
@@ -528,10 +528,7 @@ public class SwerveSubsystem extends SubsystemBase {
                           getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getY(),
                           this.rotationToTranslation);
                   Logger.recordOutput("AutoAim/Ending Pose", endingPose);
-                  headingController.reset(
-                      new State(
-                          getPose().getRotation().getRadians(),
-                          0));
+                  headingController.reset(new State(getPose().getRotation().getRadians(), 0));
                   Logger.recordOutput("AutoAim/Translated Target", this.virtualTarget);
                 }));
   }
