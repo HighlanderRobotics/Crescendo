@@ -44,7 +44,6 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -371,8 +370,10 @@ public class SwerveSubsystem extends SubsystemBase {
       Pose2d translation, ChassisSpeeds speedsRobotRelative) {
     double angle =
         Math.atan2(
-            translation.getY() - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getY(),
-            translation.getX() - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getX());
+            translation.getY()
+                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getY(),
+            translation.getX()
+                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -407,21 +408,22 @@ public class SwerveSubsystem extends SubsystemBase {
     return getVirtualTarget(getRobotRelativeSpeeds());
   }
 
-  public Pose2d getAutoPose(){
+  public Pose2d getAutoPose() {
     List<PathPlannerPath> paths = PathPlannerAuto.getPathGroupFromAutoFile("local 4");
     List<PathPoint> points = new ArrayList<PathPoint>();
-    for(PathPlannerPath path : paths){
-      for(PathPoint point : path.getAllPathPoints()){
+    for (PathPlannerPath path : paths) {
+      for (PathPoint point : path.getAllPathPoints()) {
         points.add(point);
       }
     }
-    
 
     return new Pose2d();
   }
 
-  public Pose2d getFuturePose(boolean isAuto, ChassisSpeeds speedsFieldRelative){
-    return isAuto ? getAutoPose() : getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative);
+  public Pose2d getFuturePose(boolean isAuto, ChassisSpeeds speedsFieldRelative) {
+    return isAuto
+        ? getAutoPose()
+        : getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative);
   }
 
   /**
