@@ -27,7 +27,6 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.estimator.KalmanFilterLatencyCompensator;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -176,7 +175,9 @@ public class SwerveSubsystem extends SubsystemBase {
           "Right Camera",
           new Transform3d(
               new Translation3d(
-                  Units.inchesToMeters(-14.4), Units.inchesToMeters(0), Units.inchesToMeters(29.75)),
+                  Units.inchesToMeters(-14.4),
+                  Units.inchesToMeters(0),
+                  Units.inchesToMeters(29.75)),
               new Rotation3d(0, 0, -1.0)),
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT); // TODO find transforms
