@@ -15,9 +15,6 @@ import frc.robot.utils.components.ReversibleDigitalInput;
 public class IntakeIOReal implements IntakeIO {
   TalonFX motor = new TalonFX(-1);
 
-  ReversibleDigitalInput firstBeambreak = new ReversibleDigitalInput(0, false);
-  ReversibleDigitalInput lastBeambreak = new ReversibleDigitalInput(0, false);
-
   VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
   StatusSignal<Double> velocity = motor.getVelocity();
@@ -39,9 +36,6 @@ public class IntakeIOReal implements IntakeIO {
     inputs.appliedVolts = voltage.getValueAsDouble();
     inputs.currentAmps = new double[] {amperage.getValueAsDouble()};
     inputs.temperatureCelsius = new double[] {temp.getValueAsDouble()};
-
-    inputs.firstBeambreak = firstBeambreak.get();
-    inputs.lastBeambreak = lastBeambreak.get();
   }
 
   /** Run the intake at a specified voltage */

@@ -13,9 +13,6 @@ public interface IntakeIO {
     public double appliedVolts = 0.0;
     public double[] currentAmps = new double[] {};
     public double[] temperatureCelsius = new double[] {};
-    // Not in cad as of 1/27 but requested
-    public boolean firstBeambreak = false;
-    public boolean lastBeambreak = true;
   }
 
   /** Updates the set of loggable inputs. */
