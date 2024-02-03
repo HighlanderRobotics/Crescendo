@@ -9,10 +9,15 @@ import org.littletonrobotics.junction.AutoLog;
 public interface IntakeIO {
   @AutoLog
   public static class IntakeIOInputs {
-    public double velocityRotationsPerSecond = 0.0;
-    public double appliedVolts = 0.0;
-    public double[] currentAmps = new double[] {};
-    public double[] temperatureCelsius = new double[] {};
+    public double intakeVelocityRotationsPerSecond = 0.0;
+    public double intakeAppliedVolts = 0.0;
+    public double intakeCurrentAmps = 0.0;
+    public double intakeTemperatureCelsius = 0.0;
+
+    public double centeringVelocityRotationsPerSecond = 0.0;
+    public double centeringAppliedVolts = 0.0;
+    public double centeringCurrentAmps = 0.0;
+    public double centeringTemperatureCelsius = 0.0;
   }
 
   /** Updates the set of loggable inputs. */
@@ -20,4 +25,7 @@ public interface IntakeIO {
 
   /** Run the intake at a specified voltage */
   public default void setIntakeVoltage(final double volts) {}
+
+  /** Run the centering wheels at a specified voltage */
+  public default void setCenteringVoltage(final double volts) {}
 }

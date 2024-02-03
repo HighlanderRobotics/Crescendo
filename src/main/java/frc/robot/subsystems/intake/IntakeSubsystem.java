@@ -24,6 +24,10 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public Command runVoltageCmd(double voltage) {
-    return this.run(() -> io.setIntakeVoltage(voltage));
+    return this.run(
+        () -> {
+          io.setIntakeVoltage(voltage);
+          io.setCenteringVoltage(voltage);
+        });
   }
 }
