@@ -39,20 +39,19 @@ public class VisionIOSim implements VisionIO {
   public VisionIOSim(VisionConstants constants) {
     this.simCameraName = constants.cameraName();
     this.sim = constants.simSystem();
-    this.cameraProp = new SimCameraProperties();
+    cameraProp = new SimCameraProperties();
+    // TODO Fix these constants
+    cameraProp.setCalibration(1080, 960, constants.cameraMatrix(), constants.distCoeffs());
+    cameraProp.setCalibError(0.0, 0.0);
+    cameraProp.setFPS(50.0);
+    cameraProp.setAvgLatencyMs(30.0);
+    cameraProp.setLatencyStdDevMs(5.0);
     this.camera = new PhotonCamera(simCameraName);
     this.simCamera = new PhotonCameraSim(camera, cameraProp);
     this.robotToCamera = constants.robotToCamera();
     this.cameraMatrix = constants.cameraMatrix();
     this.distCoeffs = constants.distCoeffs();
     sim.addCamera(simCamera, robotToCamera);
-
-    // TODO find
-    // cameraProp.setCalibration(kResolutionWidth, kResolutionHeight, kFOVDiag);
-    // cameraProp.setCalibError(kAvgErrorPx, kErrorStdDevPx);
-    // cameraProp.setFPS(kFPS);
-    // cameraProp.setAvgLatencyMs(kAvgLatencyMs);
-    // cameraProp.setLatencyStdDevMs(kLatencyStdDevMs);
 
     try {
       var field = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
