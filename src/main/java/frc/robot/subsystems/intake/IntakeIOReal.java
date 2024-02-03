@@ -9,7 +9,6 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import frc.robot.utils.components.ReversibleDigitalInput;
 
 /** Intake IO implementation for TalonFX motors. */
 public class IntakeIOReal implements IntakeIO {
@@ -32,6 +31,7 @@ public class IntakeIOReal implements IntakeIO {
 
   /** Updates the set of loggable inputs. */
   public void updateInputs(IntakeIOInputs inputs) {
+    BaseStatusSignal.refreshAll(velocity, voltage, amperage, temp);
     inputs.velocityRotationsPerSecond = velocity.getValueAsDouble();
     inputs.appliedVolts = voltage.getValueAsDouble();
     inputs.currentAmps = new double[] {amperage.getValueAsDouble()};
