@@ -1,7 +1,13 @@
 {
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo"
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
+      "/SmartDashboard/reset Kicker value": "Command",
+      "/SmartDashboard/reset Pivot value": "Command"
     }
   },
   "NetworkTables": {
@@ -24,11 +30,14 @@
       },
       "Subscribers": {
         "open": true
-      },
-      "open": true
+      }
     },
     "Clients": {
       "open": true
-    }
+    },
+    "visible": true
+  },
+  "NetworkTables View": {
+    "visible": false
   }
 }

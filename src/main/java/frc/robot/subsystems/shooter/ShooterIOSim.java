@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.shooter;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -32,14 +33,16 @@ public class ShooterIOSim implements ShooterIO {
       new DCMotorSim(DCMotor.getKrakenX60Foc(2), ShooterSubystem.FLYWHEEL_RATIO, 0.00203677199);
 
   ProfiledPIDController pivotController =
-      new ProfiledPIDController(0.0, 0.0, 0.0, new Constraints(0.0, 0.0));
-  ArmFeedforward pivotFF = new ArmFeedforward(0.0, 0.0, 0.0);
+      new ProfiledPIDController(1.0, 0.0, 1.0, new Constraints(10.0, 10.0));
+  ArmFeedforward pivotFF = new ArmFeedforward(0.0, 0.12, 0.8);
 
-  PIDController flywheelController = new PIDController(0.0, 0.0, 0.0);
-  SimpleMotorFeedforward flywheelFF = new SimpleMotorFeedforward(0.0, 0.0);
+  PIDController flywheelController = new PIDController(0.5, 0.0, 0.0);
+  SimpleMotorFeedforward flywheelFF = new SimpleMotorFeedforward(0.0, 0.0925);
 
   @Override
   public ShooterIOInputsAutoLogged updateInputs() {
+    flywheelSim.update(0.020);
+    pivotSim.update(0.020);
     ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRadians(pivotSim.getAngleRads());
@@ -58,7 +61,7 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   public void setPivotVoltage(final double voltage) {
-    pivotSim.setInput(voltage);
+    pivotSim.setInput(MathUtil.clamp(voltage, -12, 12));
   }
 
   public void setPivotSetpoint(final Rotation2d rotation) {
@@ -75,6 +78,6 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   public void setFlywheelVoltage(final double voltage) {
-    flywheelSim.setInput(voltage);
+    flywheelSim.setInput(MathUtil.clamp(voltage, -12, 12));
   }
 }
