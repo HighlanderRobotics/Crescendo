@@ -1,37 +1,9 @@
 {
-  "NTProvider": {
-    "types": {
-      "/FMSInfo": "FMSInfo",
-      "/SmartDashboard/reset Kicker value": "Command",
-      "/SmartDashboard/reset Pivot value": "Command"
-    }
-  },
   "NetworkTables": {
     "transitory": {
       "AdvantageKit": {
-        "RealOutputs": {
-          "Odometry": {
-            "open": true
-          },
-          "open": true
-        },
         "open": true
       }
     }
-  },
-  "NetworkTables Info": {
-    "AdvantageScope@1": {
-      "Publishers": {
-        "open": true
-      },
-      "Subscribers": {
-        "open": true
-      },
-      "open": true
-    },
-    "Clients": {
-      "open": true
-    },
-    "visible": true
   }
 }

@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
@@ -114,6 +115,8 @@ public class Robot extends LoggedRobot {
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+
+    controller.y().toggleOnTrue(new InstantCommand(() -> swerve.getAutoPose()));
 
     controller
         .b()

@@ -13,11 +13,10 @@
 
 package frc.robot.subsystems.swerve;
 
+import com.choreo.lib.Choreo;
+import com.choreo.lib.ChoreoTrajectory;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.PathPlannerAuto;
-import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.path.PathPoint;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
@@ -44,9 +43,7 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
@@ -409,13 +406,9 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Pose2d getAutoPose() {
-    List<PathPlannerPath> paths = PathPlannerAuto.getPathGroupFromAutoFile("local 4");
-    List<PathPoint> points = new ArrayList<PathPoint>();
-    for (PathPlannerPath path : paths) {
-      for (PathPoint point : path.getAllPathPoints()) {
-        points.add(point);
-      }
-    }
+    ChoreoTrajectory traj = Choreo.getTrajectory("amp 4 local");
+    System.out.println(traj.getTotalTime());
+    System.out.println(traj.getPoses().length);
 
     return new Pose2d();
   }
