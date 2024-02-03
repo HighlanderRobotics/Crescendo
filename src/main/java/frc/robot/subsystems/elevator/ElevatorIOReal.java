@@ -56,6 +56,7 @@ public class ElevatorIOReal implements ElevatorIO {
 
   @Override
   public void updateInputs(ElevatorIOInputsAutoLogged inputs) {
+    BaseStatusSignal.refreshAll(position, velocity, voltage, current, temp);
     inputs.elevatorPositionMeters = position.getValueAsDouble();
     inputs.elevatorVelocityMetersPerSec = velocity.getValueAsDouble();
     inputs.elevatorAppliedVolts = voltage.getValueAsDouble();
