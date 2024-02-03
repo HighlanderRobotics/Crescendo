@@ -11,7 +11,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.wpilibj.DigitalInput;
-
 /** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
   final TalonFX motor = new TalonFX(0);
