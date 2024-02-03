@@ -9,7 +9,6 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import frc.robot.utils.components.ReversibleDigitalInput;
 
 /** Intake IO implementation for TalonFX motors. */
 public class IntakeIOReal implements IntakeIO {
