@@ -104,18 +104,17 @@ public class ShooterIOReal implements ShooterIO {
   @Override
   public ShooterIOInputsAutoLogged updateInputs() {
     BaseStatusSignal.refreshAll(
-      pivotRotations,
-      pivotVelocity,
-      pivotVoltage,
-      pivotAmps,
-      pivotTempC,
-      flywheelVelocity,
-      flywheelVoltage,
-      flywheelAmps,
-      flywheelTempC,
-      flywheelFollowerAmps,
-      flywheelFollowerTempC
-    );
+        pivotRotations,
+        pivotVelocity,
+        pivotVoltage,
+        pivotAmps,
+        pivotTempC,
+        flywheelVelocity,
+        flywheelVoltage,
+        flywheelAmps,
+        flywheelTempC,
+        flywheelFollowerAmps,
+        flywheelFollowerTempC);
     ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
