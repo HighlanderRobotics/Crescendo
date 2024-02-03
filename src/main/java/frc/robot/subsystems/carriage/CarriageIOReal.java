@@ -10,23 +10,22 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-
 import frc.robot.utils.components.ReversibleDigitalInput;
 
 /** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
-    TalonFX motor = new TalonFX(0);
+  TalonFX motor = new TalonFX(0);
 
-    ReversibleDigitalInput beambreak = new ReversibleDigitalInput(0, false);
+  ReversibleDigitalInput beambreak = new ReversibleDigitalInput(0, false);
 
-    VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-    StatusSignal<Double> velocity = motor.getVelocity();
-    StatusSignal<Double> voltage = motor.getMotorVoltage();
-    StatusSignal<Double> amperage = motor.getStatorCurrent();
-    StatusSignal<Double> temp = motor.getDeviceTemp();
+  StatusSignal<Double> velocity = motor.getVelocity();
+  StatusSignal<Double> voltage = motor.getMotorVoltage();
+  StatusSignal<Double> amperage = motor.getStatorCurrent();
+  StatusSignal<Double> temp = motor.getDeviceTemp();
 
-    public CarriageIOReal() {
+  public CarriageIOReal() {
     var config = new TalonFXConfiguration();
 
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
