@@ -5,6 +5,7 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -17,6 +18,8 @@ import org.photonvision.targeting.PhotonPipelineResult;
 
 /** Add your docs here. */
 public class Vision {
+  public static final Matrix<N3, N1> visionPointBlankDevs = new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[]{0.25, 0.25, 1.0});
+  public static final double distanceFactor = 0.5;
   public record VisionConstants(
       String cameraName,
       Transform3d robotToCamera,
@@ -50,7 +53,8 @@ public class Vision {
             inputs.constants.distCoeffs(),
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             inputs.constants.robotToCamera());
-    return estPose;
+            // Skip if we only have 1 target
+    return result.getTargets().size() > 1 ? estPose : Optional.empty();
   }
 
   public String getName() {

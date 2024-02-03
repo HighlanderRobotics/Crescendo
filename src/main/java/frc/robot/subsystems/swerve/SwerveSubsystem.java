@@ -167,14 +167,17 @@ public class SwerveSubsystem extends SubsystemBase {
           new Transform3d(
               new Translation3d(
                   Units.inchesToMeters(14.4), Units.inchesToMeters(0), Units.inchesToMeters(29.75)),
-              new Rotation3d(0, 0, 0)),
+              new Rotation3d(0, 0, 1.0)),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS); // TODO this *should* be the transform on the alpha bot but is probably
   // wrong
   public static final VisionConstants rightCamConstants =
       new VisionConstants(
           "Right Camera",
-          new Transform3d(),
+          new Transform3d(
+              new Translation3d(
+                  Units.inchesToMeters(-14.4), Units.inchesToMeters(0), Units.inchesToMeters(29.75)),
+              new Rotation3d(0, 0, -1.0)),
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT); // TODO find transforms
   private SwerveDriveOdometry odometry;
@@ -367,7 +370,8 @@ public class SwerveSubsystem extends SubsystemBase {
       }
     }
     Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
-    Logger.recordOutput("Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+    Logger.recordOutput(
+        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {

@@ -46,16 +46,20 @@ public class VisionHelper {
           // 1 tag
           new TagCountDeviation(
               new UnitDeviationParams(.25, .4, .9),
-              new UnitDeviationParams(.35, .5, 1.2),
               new UnitDeviationParams(.5, .7, 1.5)),
 
           // 2 tags
           new TagCountDeviation(
-              new UnitDeviationParams(.35, .1, .4), new UnitDeviationParams(.5, .7, 1.5)),
+              new UnitDeviationParams(.35, .1, .4), 
+              new UnitDeviationParams(.5, .7, 1.5)
+              ),
 
           // 3+ tags
           new TagCountDeviation(
-              new UnitDeviationParams(.25, .07, .25), new UnitDeviationParams(.15, 1, 1.5)));
+              new UnitDeviationParams(.25, .07, .25), 
+              new UnitDeviationParams(.15, 1, 1.5)
+              )
+              );
 
   public class Logging {
     public static void logPhotonTrackedTarget(
@@ -426,12 +430,12 @@ public class VisionHelper {
     }
     double avgDistance = sumDistance / estimation.targetsUsed.size();
 
-    var deviation =
-        TAG_COUNT_DEVIATION_PARAMS
-            .get(
-                MathUtil.clamp(
-                    estimation.targetsUsed.size() - 1, 0, TAG_COUNT_DEVIATION_PARAMS.size() - 1))
-            .computeDeviation(avgDistance);
+    var deviation = Vision.visionPointBlankDevs.times(avgDistance * Vision.distanceFactor);
+        // TAG_COUNT_DEVIATION_PARAMS
+        //     .get(
+        //         MathUtil.clamp(
+        //             estimation.targetsUsed.size() - 1, 0, TAG_COUNT_DEVIATION_PARAMS.size() - 1))
+        //     .computeDeviation(avgDistance);
 
     return deviation;
   }
