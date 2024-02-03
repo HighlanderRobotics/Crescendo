@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -23,7 +24,7 @@ public class ShooterIOReal implements ShooterIO {
   private final StatusSignal<Double> pivotRotations = pivotMotor.getPosition();
 
   private final StatusSignal<Double> flywheelAmps = flywheelLeaderMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelvoltage = flywheelLeaderMotor.getMotorVoltage();
+  private final StatusSignal<Double> flywheelVoltage = flywheelLeaderMotor.getMotorVoltage();
   private final StatusSignal<Double> flywheelTempC = flywheelLeaderMotor.getDeviceTemp();
   private final StatusSignal<Double> flywheelVelocity = flywheelLeaderMotor.getVelocity();
 
@@ -60,6 +61,9 @@ public class ShooterIOReal implements ShooterIO {
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
+    pivotMotor.optimizeBusUtilization();
 
     var flywheelConfig = new TalonFXConfiguration();
 
@@ -84,10 +88,34 @@ public class ShooterIOReal implements ShooterIO {
     flywheelFollowerMotor.getConfigurator().apply(flywheelFollowerConfig);
 
     flywheelFollowerMotor.setControl(new Follower(flywheelLeaderMotor.getDeviceID(), true));
+
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50.0,
+        flywheelVelocity,
+        flywheelVoltage,
+        flywheelAmps,
+        flywheelTempC,
+        flywheelFollowerAmps,
+        flywheelFollowerTempC);
+    flywheelLeaderMotor.optimizeBusUtilization();
+    flywheelFollowerMotor.optimizeBusUtilization();
   }
 
   @Override
   public ShooterIOInputsAutoLogged updateInputs() {
+    BaseStatusSignal.refreshAll(
+      pivotRotations,
+      pivotVelocity,
+      pivotVoltage,
+      pivotAmps,
+      pivotTempC,
+      flywheelVelocity,
+      flywheelVoltage,
+      flywheelAmps,
+      flywheelTempC,
+      flywheelFollowerAmps,
+      flywheelFollowerTempC
+    );
     ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
@@ -97,7 +125,7 @@ public class ShooterIOReal implements ShooterIO {
     inputs.pivotTempC = pivotTempC.getValue();
 
     inputs.flywheelVelocityRotationsPerSecond = flywheelVelocity.getValue();
-    inputs.flywheelVoltage = flywheelvoltage.getValue();
+    inputs.flywheelVoltage = flywheelVoltage.getValue();
     inputs.flywheelAmps = new double[] {flywheelAmps.getValue(), flywheelFollowerAmps.getValue()};
     inputs.flywheelTempC =
         new double[] {flywheelTempC.getValue(), flywheelFollowerTempC.getValue()};
