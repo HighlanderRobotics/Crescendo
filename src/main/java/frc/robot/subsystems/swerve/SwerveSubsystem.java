@@ -27,6 +27,7 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.estimator.KalmanFilterLatencyCompensator;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -114,7 +115,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
-  Vector<N3> visStdDevs = VecBuilder.fill(0.3, 0.3, 3.3);
   private double lastEstTimestamp = 0;
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
