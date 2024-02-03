@@ -46,7 +46,13 @@ public class ElevatorSubsystem extends SubsystemBase {
     carriage.setLength(inputs.elevatorPositionMeters);
     Logger.recordOutput("Elevator/Mechanism2d", mech2d);
 
-    Logger.recordOutput("Elevator/Carriage Pose", new Pose3d(carriage.getLength() * Math.cos(Units.degreesToRadians(carriage.getAngle())), 0.0, carriage.getLength() * Math.sin(Units.degreesToRadians(carriage.getAngle())), new Rotation3d()));
+    Logger.recordOutput(
+        "Elevator/Carriage Pose",
+        new Pose3d(
+            carriage.getLength() * Math.cos(Units.degreesToRadians(carriage.getAngle())),
+            0.0,
+            carriage.getLength() * Math.sin(Units.degreesToRadians(carriage.getAngle())),
+            new Rotation3d()));
   }
 
   public Command setExtension(DoubleSupplier meters) {
