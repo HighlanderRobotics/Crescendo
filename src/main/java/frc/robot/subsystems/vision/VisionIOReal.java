@@ -10,11 +10,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
-import java.util.Optional;
-import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.targeting.PhotonPipelineResult;
 
 /** Add your docs here. */
 public class VisionIOReal implements VisionIO {
@@ -35,7 +31,7 @@ public class VisionIOReal implements VisionIO {
     cameraName = constants.cameraName();
     camera = new PhotonCamera(cameraName);
     robotToCamera = constants.robotToCamera();
-    cameraMatrix = constants.cameraMatrix();
+    cameraMatrix = constants.intrinsicsMatrix();
     distCoeffs = constants.distCoeffs();
   }
 
@@ -46,22 +42,5 @@ public class VisionIOReal implements VisionIO {
     inputs.latency = result.getLatencyMillis();
     inputs.targets = result.targets;
     inputs.numTags = result.targets.size();
-  }
-
-  @Override
-  public String getName() {
-    return cameraName;
-  }
-
-  @Override
-  public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
-    var estPose =
-        VisionHelper.update(
-            result,
-            cameraMatrix,
-            distCoeffs,
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            robotToCamera);
-    return estPose;
   }
 }

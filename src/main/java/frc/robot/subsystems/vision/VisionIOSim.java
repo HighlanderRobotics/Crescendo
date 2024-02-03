@@ -6,52 +6,37 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.numbers.N5;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
-import org.photonvision.targeting.PhotonPipelineResult;
 
 /** Add your docs here. */
 public class VisionIOSim implements VisionIO {
-  public String simCameraName;
-  VisionSystemSim sim;
-  PhotonCamera camera;
-  SimCameraProperties cameraProp;
-  PhotonCameraSim simCamera;
-  Transform3d robotToCamera;
+  private final VisionSystemSim sim;
+  private final PhotonCamera camera;
+  private final PhotonCameraSim simCamera;
+  private final VisionConstants constants;
   public static Supplier<Pose3d> pose;
 
-  public Matrix<N3, N3> cameraMatrix;
-  public Matrix<N5, N1> distCoeffs;
-
   public VisionIOSim(VisionConstants constants) {
-    this.simCameraName = constants.cameraName();
-    this.sim = constants.simSystem();
-    cameraProp = new SimCameraProperties();
+    this.sim = new VisionSystemSim(constants.cameraName());
+    var cameraProp = new SimCameraProperties();
     // TODO Fix these constants
-    cameraProp.setCalibration(1080, 960, constants.cameraMatrix(), constants.distCoeffs());
+    cameraProp.setCalibration(1080, 960, constants.intrinsicsMatrix(), constants.distCoeffs());
     cameraProp.setCalibError(0.0, 0.0);
     cameraProp.setFPS(50.0);
     cameraProp.setAvgLatencyMs(30.0);
     cameraProp.setLatencyStdDevMs(5.0);
-    this.camera = new PhotonCamera(simCameraName);
+    this.camera = new PhotonCamera(constants.cameraName());
     this.simCamera = new PhotonCameraSim(camera, cameraProp);
-    this.robotToCamera = constants.robotToCamera();
-    this.cameraMatrix = constants.cameraMatrix();
-    this.distCoeffs = constants.distCoeffs();
-    sim.addCamera(simCamera, robotToCamera);
+    this.constants = constants;
+    sim.addCamera(simCamera, constants.robotToCamera());
 
     try {
       var field = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
@@ -82,22 +67,6 @@ public class VisionIOSim implements VisionIO {
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
     inputs.targets = result.targets; // TODO aaaaaaa
-  }
-
-  @Override
-  public String getName() {
-    return simCameraName;
-  }
-
-  @Override
-  public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
-    var estPose =
-        VisionHelper.update(
-            result,
-            cameraMatrix,
-            distCoeffs,
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            robotToCamera);
-    return estPose;
+    inputs.constants = constants;
   }
 }

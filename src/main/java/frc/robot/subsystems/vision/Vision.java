@@ -12,7 +12,7 @@ import edu.wpi.first.math.numbers.N5;
 import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
-import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 
 /** Add your docs here. */
@@ -20,8 +20,7 @@ public class Vision {
   public record VisionConstants(
       String cameraName,
       Transform3d robotToCamera,
-      VisionSystemSim simSystem,
-      Matrix<N3, N3> cameraMatrix,
+      Matrix<N3, N3> intrinsicsMatrix,
       Matrix<N5, N1> distCoeffs) {}
 
   private final VisionIO io;
@@ -40,15 +39,21 @@ public class Vision {
   }
 
   public void processInputs() {
-    Logger.processInputs(io.getName(), inputs);
+    Logger.processInputs("Apriltag Vision/" + inputs.constants.cameraName(), inputs);
   }
 
   public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
-    var estPose = io.update(result);
+    var estPose =
+        VisionHelper.update(
+            result,
+            inputs.constants.intrinsicsMatrix(),
+            inputs.constants.distCoeffs(),
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            inputs.constants.robotToCamera());
     return estPose;
   }
 
   public String getName() {
-    return io.getName();
+    return inputs.constants.cameraName();
   }
 }

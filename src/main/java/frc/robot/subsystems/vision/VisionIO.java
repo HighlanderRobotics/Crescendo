@@ -5,11 +5,11 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
+import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
-import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Add your docs here. */
@@ -23,18 +23,11 @@ public interface VisionIO {
     public double numTags = 0; // TODO why isn't this just targets.size()?
     public Pose3d coprocPNPPose = new Pose3d();
     public Pose3d[] targetPose3ds;
+    public VisionConstants constants;
   }
 
   public default void updateInputs(VisionIOInputs inputs) {}
 
   public default void setSimPose(
       Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {}
-
-  public default String getName() {
-    return "Default";
-  }
-
-  public default Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
-    return Optional.empty();
-  }
 }

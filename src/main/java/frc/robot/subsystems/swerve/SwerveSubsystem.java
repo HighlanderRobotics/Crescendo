@@ -54,6 +54,7 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
@@ -68,7 +69,6 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
-import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 
 public class SwerveSubsystem extends SubsystemBase {
@@ -114,7 +114,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
-  Vector<N3> visStdDevs = VecBuilder.fill(1.3, 1.3, 3.3);
+  Vector<N3> visStdDevs = VecBuilder.fill(0.3, 0.3, 3.3);
   private double lastEstTimestamp = 0;
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
@@ -168,7 +168,6 @@ public class SwerveSubsystem extends SubsystemBase {
               new Translation3d(
                   Units.inchesToMeters(14.4), Units.inchesToMeters(0), Units.inchesToMeters(29.75)),
               new Rotation3d(0, 0, 0)),
-          new VisionSystemSim("Left Camera Sim System"),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS); // TODO this *should* be the transform on the alpha bot but is probably
   // wrong
@@ -176,7 +175,6 @@ public class SwerveSubsystem extends SubsystemBase {
       new VisionConstants(
           "Right Camera",
           new Transform3d(),
-          new VisionSystemSim("Right Camera Sim System"),
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT); // TODO find transforms
   private SwerveDriveOdometry odometry;
@@ -360,19 +358,16 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         visionPoses.add(visionPose);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
-        // estimator.addVisionMeasurement(
-        //     visionPose.toPose2d(),
-        //     camera.inputs.timestamp,
-        //     VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
+        estimator.addVisionMeasurement(
+            visionPose.toPose2d(),
+            camera.inputs.timestamp,
+            VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
         if (newResult) lastEstTimestamp = camera.inputs.timestamp;
       } catch (NoSuchElementException e) {
       }
     }
-    Logger.recordOutput(
-        "Kalman Pose",
-        new Pose2d(
-            estimator.getEstimatedPosition().getTranslation(),
-            Rotation2d.fromDegrees(estimator.getEstimatedPosition().getRotation().getDegrees())));
+    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
+    Logger.recordOutput("Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {

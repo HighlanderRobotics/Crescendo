@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -104,6 +105,13 @@ public class VisionHelper {
       table.put("Tags/Translation " + name, translation);
     }
 
+    public static void logVisionConstants(VisionConstants constants, LogTable table) {
+      table.put("Vision Constants Name ", constants.cameraName());
+      table.put("Vision Constants Transform ", constants.robotToCamera());
+      table.put("Vision Constants Intrinsics ", constants.intrinsicsMatrix().getData());
+      table.put("Vision Constants Distortion ", constants.distCoeffs().getData());
+    }
+
     public static Transform3d getLoggedTransform3d(double[] translation, double[] rotation) {
       Transform3d transform3d =
           new Transform3d(
@@ -149,6 +157,20 @@ public class VisionHelper {
           table.get("Tags/Pose Ambiguity " + name, -1),
           minAreaRectCorners,
           detectedCorners));
+    }
+
+    public static VisionConstants getLoggedVisionConstants(LogTable table) {
+      return new VisionConstants(
+          table.get("Vision Constants Name ", "Default"),
+          table.get("Vision Constants Transform ", new Transform3d()),
+          new Matrix<N3, N3>(
+              Nat.N3(),
+              Nat.N3(),
+              table.get("Vision Constants Intrinsics ", Matrix.eye(Nat.N3()).getData())),
+          new Matrix<N5, N1>(
+              Nat.N5(),
+              Nat.N1(),
+              table.get("Vision Constants Distortion ", new double[] {0.0, 0.0, 0.0, 0.0, 0.0})));
     }
   }
 

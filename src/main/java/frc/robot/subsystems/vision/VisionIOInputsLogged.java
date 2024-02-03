@@ -24,6 +24,7 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     table.put("NumTags", targets.size());
     table.put("Pose", coprocPNPPose);
     table.put("Target Pose3ds", targetPose3ds);
+    VisionHelper.Logging.logVisionConstants(constants, table);
   }
 
   @Override
@@ -36,6 +37,7 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     numTags = table.get("NumTags", numTags);
     coprocPNPPose = table.get("Pose", coprocPNPPose);
     targetPose3ds = table.get("Target Pose3ds", targetPose3ds);
+    constants = VisionHelper.Logging.getLoggedVisionConstants(table);
   }
 
   public VisionIOInputsLogged clone() {
