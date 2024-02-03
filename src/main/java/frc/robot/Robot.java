@@ -23,6 +23,9 @@ import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
+import frc.robot.subsystems.carriage.CarriageIO;
+import frc.robot.subsystems.carriage.CarriageIOReal;
+import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -65,6 +68,7 @@ public class Robot extends LoggedRobot {
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
 
   @Override
   public void robotInit() {
@@ -122,6 +126,7 @@ public class Robot extends LoggedRobot {
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
     shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
+    carriage.setDefaultCommand(carriage.index());
 
     // Controller bindings here
     controller
