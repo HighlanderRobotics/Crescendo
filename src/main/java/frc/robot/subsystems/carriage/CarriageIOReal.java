@@ -14,7 +14,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import frc.robot.utils.components.ReversibleDigitalInput;
 
 /** Add your docs here. */
-public class CarriageIOReal {
+public class CarriageIOReal implements CarriageIO {
     TalonFX motor = new TalonFX(0);
 
     ReversibleDigitalInput beambreak = new ReversibleDigitalInput(0, false);
@@ -38,6 +38,7 @@ public class CarriageIOReal {
 
   /** Updates the set of loggable inputs. */
   public void updateInputs(CarriageIOInputsAutoLogged inputs) {
+    BaseStatusSignal.refreshAll(velocity, voltage, amperage, temp);
     inputs.velocityRotationsPerSecond = velocity.getValueAsDouble();
     inputs.appliedVolts = voltage.getValueAsDouble();
     inputs.currentAmps = new double[] {amperage.getValueAsDouble()};
