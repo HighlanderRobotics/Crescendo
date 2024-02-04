@@ -8,11 +8,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
+/** Drainpipe style amp/trap mechanism on the elevator */
 public class CarriageSubsystem extends SubsystemBase {
   CarriageIO io;
   CarriageIOInputsAutoLogged inputs = new CarriageIOInputsAutoLogged();
 
-  /** Creates a new IntakeSubsystem. */
+  /** Creates a new CarriageSubsystem. */
   public CarriageSubsystem(CarriageIO io) {
     this.io = io;
   }
@@ -23,6 +24,7 @@ public class CarriageSubsystem extends SubsystemBase {
     Logger.processInputs("Intake", inputs);
   }
 
+  /** Run the carriage roller at the specified voltage */
   public Command runVoltageCmd(double voltage) {
     return this.run(() -> io.setVoltage(voltage));
   }

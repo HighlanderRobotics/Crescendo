@@ -13,7 +13,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 
 import frc.robot.utils.components.ReversibleDigitalInput;
 
-/** Add your docs here. */
+/** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
     TalonFX motor = new TalonFX(0);
 
