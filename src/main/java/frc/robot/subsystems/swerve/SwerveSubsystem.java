@@ -14,7 +14,6 @@
 package frc.robot.subsystems.swerve;
 
 import com.choreo.lib.Choreo;
-import com.choreo.lib.ChoreoTrajectory;
 import com.choreo.lib.ChoreoTrajectoryState;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -368,10 +367,8 @@ public class SwerveSubsystem extends SubsystemBase {
       Pose2d translation, ChassisSpeeds speedsRobotRelative, boolean isAuto) {
     double angle =
         Math.atan2(
-            translation.getY()
-                - getFuturePose(isAuto, speedsRobotRelative).getY(),
-            translation.getX()
-                - getFuturePose(isAuto, speedsRobotRelative).getX());
+            translation.getY() - getFuturePose(isAuto, speedsRobotRelative).getY(),
+            translation.getX() - getFuturePose(isAuto, speedsRobotRelative).getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -389,15 +386,14 @@ public class SwerveSubsystem extends SubsystemBase {
         ChassisSpeeds.fromFieldRelativeSpeeds(speedsFieldRelative, getRotation());
 
     double distance =
-        getFuturePose(isAuto, speedsRobotRelative)
-            .minus(target)
-            .getTranslation()
-            .getNorm();
+        getFuturePose(isAuto, speedsRobotRelative).minus(target).getTranslation().getNorm();
 
     return target.transformBy(
         new Transform2d(
-                speedsFieldRelative.vxMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
-                speedsFieldRelative.vyMetersPerSecond * AutoAim.shotMap.get(distance).getFlightTime(),
+                speedsFieldRelative.vxMetersPerSecond
+                    * AutoAim.shotMap.get(distance).getFlightTime(),
+                speedsFieldRelative.vyMetersPerSecond
+                    * AutoAim.shotMap.get(distance).getFlightTime(),
                 target.getRotation())
             .inverse());
   }
@@ -407,18 +403,20 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Pose2d getAutoPose() {
-    ChoreoTrajectoryState state = Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
+    ChoreoTrajectoryState state =
+        Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
 
     return new Pose2d(state.x, state.y, Rotation2d.fromRadians(state.heading));
   }
 
-  public ChassisSpeeds getAutoSpeeds(){
-    ChoreoTrajectoryState state = Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
+  public ChassisSpeeds getAutoSpeeds() {
+    ChoreoTrajectoryState state =
+        Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
 
     return new ChassisSpeeds(state.velocityX, state.velocityY, state.angularVelocity);
   }
 
-  public ChassisSpeeds getFutureSpeeds(boolean isAuto){
+  public ChassisSpeeds getFutureSpeeds(boolean isAuto) {
     return isAuto ? getAutoSpeeds() : getVelocity();
   }
 
@@ -484,7 +482,10 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return A command refrence that rotates the robot to a computed rotation
    */
   public Command pointTowardsTranslationCmd(
-      DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time, boolean isAuto) {
+      DoubleSupplier xMetersPerSecond,
+      DoubleSupplier yMetersPerSecond,
+      double time,
+      boolean isAuto) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 0.3 seconds
         new ProfiledPIDController(
@@ -547,6 +548,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public Command pointTowardsTranslationCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
-    return pointTowardsTranslationCmd(xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME, false);
+    return pointTowardsTranslationCmd(
+        xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME, false);
   }
 }
