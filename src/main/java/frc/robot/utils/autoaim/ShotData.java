@@ -12,12 +12,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public class ShotData {
 
   private Rotation2d angle;
-  private double rotationsPerSecond;
+  private double leftRotationsPerSecond;
+  private double rightRotationsPerSecond;
   private double flightTimeSeconds;
 
-  public ShotData(Rotation2d angle, double rotationsPerSecond, double flightTime) {
+  public ShotData(Rotation2d angle, double leftRotationsPerSecond, double rightRotationsPerSecond, double flightTime) {
     this.angle = angle;
-    this.rotationsPerSecond = rotationsPerSecond;
+    this.leftRotationsPerSecond = leftRotationsPerSecond;
     this.flightTimeSeconds = flightTime;
   }
 
@@ -25,8 +26,12 @@ public class ShotData {
     return angle;
   }
 
-  public double getRPM() {
-    return rotationsPerSecond;
+  public double getLeftRPM() {
+    return leftRotationsPerSecond;
+  }
+
+  public double getRightRPM() {
+    return rightRotationsPerSecond;
   }
 
   public double getFlightTime() {
@@ -34,6 +39,6 @@ public class ShotData {
   }
 
   public String toString() {
-    return "" + getAngle() + " " + getRPM() + " " + getFlightTime();
+    return "" + getAngle() + " " + getLeftRPM() + " " + getRightRPM() + " " + getFlightTime();
   }
 }

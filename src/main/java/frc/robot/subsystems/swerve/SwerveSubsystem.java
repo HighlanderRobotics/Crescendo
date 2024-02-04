@@ -82,7 +82,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
 
-  public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0);
+  public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0 , 0);
   public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
 
   public Pose2d endingPose = new Pose2d();
@@ -190,7 +190,8 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     Logger.recordOutput("ShotData/Angle", curShotData.getAngle());
-    Logger.recordOutput("ShotData/RPM", curShotData.getRPM());
+    Logger.recordOutput("ShotData/Left RPM", curShotData.getLeftRPM());
+    Logger.recordOutput("ShotData/Right RPM", curShotData.getRightRPM());
     Logger.recordOutput("ShotData/Flight Time", curShotData.getFlightTime());
     // Update odometry
     int deltaCount =

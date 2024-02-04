@@ -55,7 +55,8 @@ public class InterpolatingShotTree {
         Rotation2d.fromRadians(
             MathUtil.interpolate(
                 startValue.getAngle().getRadians(), endValue.getAngle().getRadians(), t)),
-        MathUtil.interpolate(startValue.getRPM(), endValue.getRPM(), t),
+        MathUtil.interpolate(startValue.getLeftRPM(), endValue.getLeftRPM(), t),
+        MathUtil.interpolate(startValue.getRightRPM(), endValue.getRightRPM(), t),
         MathUtil.interpolate(startValue.getFlightTime(), endValue.getFlightTime(), t));
   }
 
