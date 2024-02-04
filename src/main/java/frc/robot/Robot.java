@@ -6,7 +6,6 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -15,8 +14,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.subsystems.pivot.PivotIOReal;
-import frc.robot.subsystems.pivot.PivotSubsystem;
 import frc.robot.subsystems.routing.RoutingIOReal;
 import frc.robot.subsystems.routing.RoutingSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
@@ -47,10 +44,12 @@ public class Robot extends LoggedRobot {
       new SwerveSubsystem(
           mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
           mode == RobotMode.REAL
+              ? SwerveSubsystem.createRealCameras()
+              : SwerveSubsystem.createSimCameras(),
+          mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
   private final ShooterSubsystem shooter = new ShooterSubsystem(new ShooterIOReal());
-  private final PivotSubsystem pivot = new PivotSubsystem(new PivotIOReal());
   private final RoutingSubsystem routing = new RoutingSubsystem(new RoutingIOReal());
 
   @Override
@@ -107,13 +106,11 @@ public class Robot extends LoggedRobot {
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
 
     shooter.setDefaultCommand(shooter.run(0.0));
-    pivot.setDefaultCommand(pivot.run(-100.0));
     routing.setDefaultCommand(routing.stop());
 
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
-    controller.leftTrigger().whileTrue(intake());
     controller
         .rightTrigger()
         .whileTrue(Commands.parallel(shooter.runVelocity(80.0), routing.run(80.0)));
@@ -121,15 +118,14 @@ public class Robot extends LoggedRobot {
         .leftBumper()
         .whileTrue(
             Commands.parallel(
-                pivot.run(10.0),
-                shooter.run(-2.0),
-                Commands.waitSeconds(0.5).andThen(routing.run(-6.0 * 360))));
+                shooter.run(-2.0), Commands.waitSeconds(0.5).andThen(routing.run(-6.0 * 360))));
     controller
         .a()
-        .onTrue(swerve.runOnce(() -> swerve.setPose(new Pose2d(2.0, 2.0, new Rotation2d()))));
-    // Auto Bindings here
-    NamedCommands.registerCommand("fender", shootFender());
-    NamedCommands.registerCommand("intake", intake());
+        .whileTrue(
+            swerve.pointTowardsTranslation(
+                () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
+
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -163,19 +159,5 @@ public class Robot extends LoggedRobot {
   @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
-  }
-
-  private Command intake() {
-    return Commands.parallel(shooter.run(5.0), pivot.run(0.0));
-  }
-
-  private Command shootFender() {
-    return Commands.parallel(
-            swerve.stopCmd(),
-            pivot.run(-160.0),
-            Commands.waitSeconds(0.5).andThen(shooter.run(-40.0)),
-            Commands.waitSeconds(1.0).andThen(routing.run(-40.0).asProxy()))
-        .withTimeout(1.5)
-        .andThen(Commands.print("done shooting"));
   }
 }

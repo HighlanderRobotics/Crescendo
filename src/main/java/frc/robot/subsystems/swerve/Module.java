@@ -43,6 +43,7 @@ public class Module {
 
   private double lastPositionMeters = 0.0; // Used for delta calculation
   private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
+  private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
   public Module(final ModuleIO io) {
     this.io = io;
@@ -59,14 +60,13 @@ public class Module {
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
 
-    // Calculate position deltas for odometry
-    final int deltaCount =
-        Math.min(inputs.odometryDrivePositionsMeters.length, inputs.odometryTurnPositions.length);
-    positionDeltas = new SwerveModulePosition[deltaCount];
-    for (int i = 0; i < deltaCount; i++) {
+    // Calculate positions for odometry
+    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
+    odometryPositions = new SwerveModulePosition[sampleCount];
+    for (int i = 0; i < sampleCount; i++) {
       final double positionMeters = inputs.odometryDrivePositionsMeters[i];
       final Rotation2d angle = inputs.odometryTurnPositions[i];
-      positionDeltas[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
+      odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
       lastPositionMeters = positionMeters;
     }
   }
@@ -130,5 +130,15 @@ public class Module {
   /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
     return inputs.driveVelocityMetersPerSec;
+  }
+
+  /** Returns the timestamps of the samples received this cycle. */
+  public double[] getOdometryTimestamps() {
+    return inputs.odometryTimestamps;
+  }
+
+  /** Returns the module positions received this cycle. */
+  public SwerveModulePosition[] getOdometryPositions() {
+    return odometryPositions;
   }
 }
