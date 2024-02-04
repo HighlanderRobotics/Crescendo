@@ -16,9 +16,10 @@ public class ShooterSubystem extends SubsystemBase {
   private final ShooterIO io;
   private ShooterIOInputsAutoLogged inputs;
 
-  Mechanism2d mech2d = new Mechanism2d(Units.feetToMeters(5.0), Units.feetToMeters(4.0));
-  MechanismRoot2d root = mech2d.getRoot("Shooter Root", 0.0, 0.0);
-  MechanismLigament2d shooterLig = root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
+  Mechanism2d mech2d = new Mechanism2d(Units.feetToMeters(0.0), Units.feetToMeters(4.0));
+  MechanismRoot2d root = mech2d.getRoot("Shooter Root", Units.inchesToMeters(1.7), Units.inchesToMeters(10.8));
+  MechanismLigament2d shooterLig =
+      root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
   public ShooterSubystem(ShooterIO pivotIO) {
     this.io = pivotIO;
@@ -30,16 +31,17 @@ public class ShooterSubystem extends SubsystemBase {
     inputs = io.updateInputs();
     Logger.processInputs("Shooter", inputs);
 
-    shooterLig.setAngle(inputs.pivotRotation);
+    shooterLig.setAngle(inputs.pivotRotation.unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);
   }
 
-  public Command runStateCmd(Rotation2d rotation, double rps) {
+  public Command runStateCmd(Rotation2d rotation, double left, double right) {
     return this.run(
         () -> {
-          Logger.recordOutput("Shooter/Velocity Setpoint", rps);
+          Logger.recordOutput("Shooter/Left Velocity Setpoint", left);
+          Logger.recordOutput("Shooter/Right Velocity Setpoint", right);
           Logger.recordOutput("Shooter/Rotation Setpoint", rotation);
-          io.setFlywheelVelocity(rps);
+          io.setFlywheelVelocity(left, right);
           io.setPivotSetpoint(rotation);
         });
   }
@@ -47,7 +49,7 @@ public class ShooterSubystem extends SubsystemBase {
   public Command runFlywheelVoltageCmd(Rotation2d rotation, double voltage) {
     return this.run(
         () -> {
-          io.setFlywheelVoltage(voltage);
+          io.setFlywheelVoltage(voltage, voltage);
           io.setPivotSetpoint(new Rotation2d());
         });
   }

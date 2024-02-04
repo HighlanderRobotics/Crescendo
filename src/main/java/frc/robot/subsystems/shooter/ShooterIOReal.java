@@ -3,7 +3,6 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -14,8 +13,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 
 public class ShooterIOReal implements ShooterIO {
   private final TalonFX pivotMotor = new TalonFX(10); // TODO add right id
-  private final TalonFX flywheelLeaderMotor = new TalonFX(11); // TODO add right id
-  private final TalonFX flywheelFollowerMotor = new TalonFX(12); // TODO add right id
+  private final TalonFX flywheelLeftMotor = new TalonFX(11); // TODO add right id
+  private final TalonFX flywheelRightMotor = new TalonFX(12); // TODO add right id
 
   private final StatusSignal<Double> pivotVelocity = pivotMotor.getVelocity();
   private final StatusSignal<Double> pivotVoltage = pivotMotor.getMotorVoltage();
@@ -23,20 +22,25 @@ public class ShooterIOReal implements ShooterIO {
   private final StatusSignal<Double> pivotTempC = pivotMotor.getDeviceTemp();
   private final StatusSignal<Double> pivotRotations = pivotMotor.getPosition();
 
-  private final StatusSignal<Double> flywheelAmps = flywheelLeaderMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelVoltage = flywheelLeaderMotor.getMotorVoltage();
-  private final StatusSignal<Double> flywheelTempC = flywheelLeaderMotor.getDeviceTemp();
-  private final StatusSignal<Double> flywheelVelocity = flywheelLeaderMotor.getVelocity();
+  private final StatusSignal<Double> flywheelLeftAmps = flywheelLeftMotor.getStatorCurrent();
+  private final StatusSignal<Double> flywheelLeftVoltage = flywheelLeftMotor.getMotorVoltage();
+  private final StatusSignal<Double> flywheelLeftTempC = flywheelLeftMotor.getDeviceTemp();
+  private final StatusSignal<Double> flywheelLeftVelocity = flywheelLeftMotor.getVelocity();
 
-  private final StatusSignal<Double> flywheelFollowerAmps =
-      flywheelFollowerMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelFollowerTempC = flywheelFollowerMotor.getDeviceTemp();
+  private final StatusSignal<Double> flywheelRightAmps = flywheelRightMotor.getStatorCurrent();
+  private final StatusSignal<Double> flywheelRightVoltage = flywheelRightMotor.getMotorVoltage();
+  private final StatusSignal<Double> flywheelRightTempC = flywheelRightMotor.getDeviceTemp();
+  private final StatusSignal<Double> flywheelRightVelocity = flywheelRightMotor.getVelocity();
 
   private final VoltageOut pivotVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
-  private final VoltageOut flywheelVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut flywheelLeftVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut flywheelRightVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+
   private final MotionMagicVoltage pivotMotionMagic =
       new MotionMagicVoltage(0.0).withEnableFOC(true);
-  private final VelocityVoltage flywheelVelocityVoltage =
+  private final VelocityVoltage flywheelLeftVelocityVoltage =
+      new VelocityVoltage(0.0).withEnableFOC(true);
+  private final VelocityVoltage flywheelRightVelocityVoltage =
       new VelocityVoltage(0.0).withEnableFOC(true);
 
   public ShooterIOReal() {
@@ -82,23 +86,22 @@ public class ShooterIOReal implements ShooterIO {
     flywheelConfig.Slot0.kP = 0.0;
     flywheelConfig.Slot0.kD = 0.0;
 
-    flywheelLeaderMotor.getConfigurator().apply(pivotConfig);
-
-    var flywheelFollowerConfig = new TalonFXConfiguration();
-    flywheelFollowerMotor.getConfigurator().apply(flywheelFollowerConfig);
-
-    flywheelFollowerMotor.setControl(new Follower(flywheelLeaderMotor.getDeviceID(), true));
+    flywheelLeftMotor.getConfigurator().apply(flywheelConfig);
+    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    flywheelRightMotor.getConfigurator().apply(flywheelConfig);
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
-        flywheelVelocity,
-        flywheelVoltage,
-        flywheelAmps,
-        flywheelTempC,
-        flywheelFollowerAmps,
-        flywheelFollowerTempC);
-    flywheelLeaderMotor.optimizeBusUtilization();
-    flywheelFollowerMotor.optimizeBusUtilization();
+        flywheelLeftVelocity,
+        flywheelLeftVoltage,
+        flywheelLeftAmps,
+        flywheelLeftTempC,
+        flywheelRightVelocity,
+        flywheelRightVoltage,
+        flywheelRightAmps,
+        flywheelRightTempC);
+    flywheelLeftMotor.optimizeBusUtilization();
+    flywheelRightMotor.optimizeBusUtilization();
   }
 
   @Override
@@ -109,12 +112,14 @@ public class ShooterIOReal implements ShooterIO {
         pivotVoltage,
         pivotAmps,
         pivotTempC,
-        flywheelVelocity,
-        flywheelVoltage,
-        flywheelAmps,
-        flywheelTempC,
-        flywheelFollowerAmps,
-        flywheelFollowerTempC);
+        flywheelLeftVelocity,
+        flywheelLeftVoltage,
+        flywheelLeftAmps,
+        flywheelLeftTempC,
+        flywheelRightVelocity,
+        flywheelRightVoltage,
+        flywheelRightAmps,
+        flywheelRightTempC);
     ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
@@ -123,11 +128,15 @@ public class ShooterIOReal implements ShooterIO {
     inputs.pivotAmps = pivotAmps.getValue();
     inputs.pivotTempC = pivotTempC.getValue();
 
-    inputs.flywheelVelocityRotationsPerSecond = flywheelVelocity.getValue();
-    inputs.flywheelVoltage = flywheelVoltage.getValue();
-    inputs.flywheelAmps = new double[] {flywheelAmps.getValue(), flywheelFollowerAmps.getValue()};
-    inputs.flywheelTempC =
-        new double[] {flywheelTempC.getValue(), flywheelFollowerTempC.getValue()};
+    inputs.flywheelLeftVelocityRotationsPerSecond = flywheelLeftVelocity.getValue();
+    inputs.flywheelLeftVoltage = flywheelLeftVoltage.getValue();
+    inputs.flywheelLeftAmps = flywheelLeftAmps.getValue();
+    inputs.flywheelLeftTempC = flywheelLeftTempC.getValue();
+
+    inputs.flywheelRightVelocityRotationsPerSecond = flywheelRightVelocity.getValue();
+    inputs.flywheelRightVoltage = flywheelRightVoltage.getValue();
+    inputs.flywheelRightAmps = flywheelRightAmps.getValue();
+    inputs.flywheelRightTempC = flywheelRightTempC.getValue();
 
     return inputs;
   }
@@ -140,12 +149,14 @@ public class ShooterIOReal implements ShooterIO {
     pivotMotor.setControl(pivotMotionMagic.withPosition(rotation.getRotations()));
   }
 
-  public void setFlywheelVoltage(final double voltage) {
-    flywheelLeaderMotor.setControl(flywheelVoltageOut.withOutput(voltage));
+  public void setFlywheelVoltage(final double left, final double right) {
+    flywheelLeftMotor.setControl(flywheelLeftVoltageOut.withOutput(left));
+    flywheelRightMotor.setControl(flywheelRightVoltageOut.withOutput(right));
   }
 
-  public void setFlywheelVelocity(final double rps) {
-    flywheelLeaderMotor.setControl(flywheelVelocityVoltage.withVelocity(rps));
+  public void setFlywheelVelocity(final double left, final double right) {
+    flywheelLeftMotor.setControl(flywheelLeftVelocityVoltage.withVelocity(left));
+    flywheelRightMotor.setControl(flywheelRightVelocityVoltage.withVelocity(right));
   }
 
   public void resetPivotPostion(final Rotation2d rotation) {

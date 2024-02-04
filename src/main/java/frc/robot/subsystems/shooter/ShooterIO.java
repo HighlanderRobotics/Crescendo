@@ -17,17 +17,22 @@ public interface ShooterIO {
     public double pivotAmps = 0.0;
     public double pivotTempC = 0.0;
 
-    public double flywheelVoltage = 0.0;
-    public double flywheelVelocityRotationsPerSecond = 0.0;
-    public double[] flywheelAmps = new double[] {0.0};
-    public double[] flywheelTempC = new double[] {0.0};
+    public double flywheelLeftVoltage = 0.0;
+    public double flywheelLeftVelocityRotationsPerSecond = 0.0;
+    public double flywheelLeftAmps = 0.0;
+    public double flywheelLeftTempC = 0.0;
+
+    public double flywheelRightVoltage = 0.0;
+    public double flywheelRightVelocityRotationsPerSecond = 0.0;
+    public double flywheelRightAmps = 0.0;
+    public double flywheelRightTempC = 0.0;
   }
 
   public abstract ShooterIOInputsAutoLogged updateInputs();
 
-  public default void setFlywheelVoltage(final double voltage) {} // set voltage
+  public default void setFlywheelVoltage(final double left, final double right) {} // set voltage
 
-  public default void setFlywheelVelocity(final double rps) {} // set speed
+  public default void setFlywheelVelocity(final double left, final double right) {} // set speed
 
   public default void setPivotVoltage(final double voltage) {} // set speed
 

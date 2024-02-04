@@ -29,8 +29,10 @@ public class ShooterIOSim implements ShooterIO {
           true,
           0);
 
-  DCMotorSim flywheelSim =
-      new DCMotorSim(DCMotor.getKrakenX60Foc(2), ShooterSubystem.FLYWHEEL_RATIO, 0.00203677199);
+  DCMotorSim leftFlywheelSim =
+      new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubystem.FLYWHEEL_RATIO, 0.001);
+  DCMotorSim rightFlywheelSim =
+      new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubystem.FLYWHEEL_RATIO, 0.001);
 
   ProfiledPIDController pivotController =
       new ProfiledPIDController(1.0, 0.0, 1.0, new Constraints(10.0, 10.0));
@@ -41,7 +43,7 @@ public class ShooterIOSim implements ShooterIO {
 
   @Override
   public ShooterIOInputsAutoLogged updateInputs() {
-    flywheelSim.update(0.020);
+    leftFlywheelSim.update(0.020);
     pivotSim.update(0.020);
     ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
@@ -52,10 +54,16 @@ public class ShooterIOSim implements ShooterIO {
     inputs.pivotAmps = pivotSim.getCurrentDrawAmps();
     inputs.pivotTempC = 0.0;
 
-    inputs.flywheelVelocityRotationsPerSecond = flywheelSim.getAngularVelocityRPM() / 60.0;
-    inputs.flywheelVoltage = 0.0;
-    inputs.flywheelAmps = new double[] {flywheelSim.getCurrentDrawAmps()};
-    inputs.flywheelTempC = new double[] {0.0};
+    inputs.flywheelLeftVelocityRotationsPerSecond = leftFlywheelSim.getAngularVelocityRPM() / 60.0;
+    inputs.flywheelLeftVoltage = 0.0;
+    inputs.flywheelLeftAmps = leftFlywheelSim.getCurrentDrawAmps();
+    inputs.flywheelLeftTempC = 0.0;
+
+    inputs.flywheelRightVelocityRotationsPerSecond =
+        rightFlywheelSim.getAngularVelocityRPM() / 60.0;
+    inputs.flywheelRightVoltage = 0.0;
+    inputs.flywheelRightAmps = rightFlywheelSim.getCurrentDrawAmps();
+    inputs.flywheelRightTempC = 0.0;
 
     return inputs;
   }
@@ -71,13 +79,18 @@ public class ShooterIOSim implements ShooterIO {
                 pivotController.getSetpoint().position, pivotController.getSetpoint().velocity));
   }
 
-  public void setFlywheelVelocity(final double rps) {
+  public void setFlywheelVelocity(final double left, final double right) {
     setFlywheelVoltage(
-        flywheelController.calculate(flywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), rps)
-            + flywheelFF.calculate(rps));
+        flywheelController.calculate(
+                leftFlywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), left)
+            + flywheelFF.calculate(left),
+        flywheelController.calculate(
+                rightFlywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), right)
+            + flywheelFF.calculate(right));
   }
 
-  public void setFlywheelVoltage(final double voltage) {
-    flywheelSim.setInput(MathUtil.clamp(voltage, -12, 12));
+  public void setFlywheelVoltage(final double left, final double right) {
+    leftFlywheelSim.setInput(MathUtil.clamp(left, -12, 12));
+    rightFlywheelSim.setInput(MathUtil.clamp(right, -12, 12));
   }
 }
