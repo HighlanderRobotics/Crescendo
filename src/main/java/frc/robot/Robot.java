@@ -182,6 +182,7 @@ public class Robot extends LoggedRobot {
                               .minus(FieldConstants.getSpeaker())
                               .getTranslation()
                               .getNorm());
+                  System.out.println(Timer.getFPGATimestamp());
                 },
                 swerve),
             Commands.deadline(
@@ -195,17 +196,13 @@ public class Robot extends LoggedRobot {
                     Commands.sequence(
                         (swerve.pointTowardsTranslationCmd(
                             () -> swerve.getFutureSpeeds(true).vxMetersPerSecond,
-                            () -> swerve.getFutureSpeeds(true).vyMetersPerSecond,
-                            AutoAim.LOOKAHEAD_TIME,
-                            true))),
-                    Commands.sequence(
-                        Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
-                        Commands.print("Rotate Robot")))
+                            () -> swerve.getFutureSpeeds(true).vyMetersPerSecond, AutoAim.LOOKAHEAD_TIME, true))))
                 .finallyDo(
                     () -> {
                       Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
                     }),
             Commands.print("Whoosh!"),
+            // keeps moving to prevent the robot from stopping and changing the velocity of the note
             swerve
                 .runVelocityFieldRelative(
                     () ->

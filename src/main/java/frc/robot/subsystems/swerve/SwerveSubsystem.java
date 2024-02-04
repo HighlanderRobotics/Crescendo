@@ -488,7 +488,7 @@ public class SwerveSubsystem extends SubsystemBase {
       double time,
       boolean isAuto) {
     ProfiledPIDController headingController =
-        // assume we can accelerate to max in 0.3 seconds
+        // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
             40.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
