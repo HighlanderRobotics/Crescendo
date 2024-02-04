@@ -81,7 +81,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
 
-  public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0 , 0);
+  public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0, 0);
   public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
 
   public Pose2d endingPose = new Pose2d();

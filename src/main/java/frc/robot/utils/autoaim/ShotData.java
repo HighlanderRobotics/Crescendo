@@ -16,7 +16,11 @@ public class ShotData {
   private double rightRotationsPerSecond;
   private double flightTimeSeconds;
 
-  public ShotData(Rotation2d angle, double leftRotationsPerSecond, double rightRotationsPerSecond, double flightTime) {
+  public ShotData(
+      Rotation2d angle,
+      double leftRotationsPerSecond,
+      double rightRotationsPerSecond,
+      double flightTime) {
     this.angle = angle;
     this.leftRotationsPerSecond = leftRotationsPerSecond;
     this.flightTimeSeconds = flightTime;
