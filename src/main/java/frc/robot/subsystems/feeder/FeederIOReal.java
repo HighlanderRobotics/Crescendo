@@ -12,7 +12,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import frc.robot.utils.components.ReversibleDigitalInput;
 
-/** Add your docs here. */
+/** Feeder IO using a TalonFX. */
 public class FeederIOReal implements FeederIO {
   TalonFX motor = new TalonFX(22);
 

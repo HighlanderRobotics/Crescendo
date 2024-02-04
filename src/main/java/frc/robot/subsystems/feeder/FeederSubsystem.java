@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
+/** Feeder motor for shooter and associated beambreaks for indexing */
 public class FeederSubsystem extends SubsystemBase {
   final FeederIO io;
   final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
@@ -23,10 +24,12 @@ public class FeederSubsystem extends SubsystemBase {
     Logger.processInputs("Feeder", inputs);
   }
 
+  /** Run the feeder at a set voltage */
   public Command runVoltageCmd(double volts) {
     return this.run(() -> io.setVoltage(volts));
   }
 
+  /** Run the feeder to place the ring between the beambreaks. */
   public Command indexCmd() {
     return this.run(
         () -> {
