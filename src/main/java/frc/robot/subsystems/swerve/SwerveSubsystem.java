@@ -56,7 +56,6 @@ import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
-import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.ArrayList;
@@ -269,7 +268,10 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createRealCameras() {
-    return new VisionIO[] {new VisionIOReal(leftCamConstants), new VisionIOReal(rightCamConstants)};
+    return new VisionIO[] {
+      // new VisionIOReal(
+      //     new VisionConstants("opi", new Transform3d(), LEFT_CAMERA_MATRIX, LEFT_DIST_COEFFS))
+    };
   }
 
   /**
