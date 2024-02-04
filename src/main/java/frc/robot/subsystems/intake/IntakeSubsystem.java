@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
+/** 95 style utb intake */
 public class IntakeSubsystem extends SubsystemBase {
   IntakeIO io;
   IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
@@ -23,6 +24,7 @@ public class IntakeSubsystem extends SubsystemBase {
     Logger.processInputs("Intake", inputs);
   }
 
+  /** Run the intake and centering motors at the specified voltage */
   public Command runVoltageCmd(double voltage) {
     return this.run(
         () -> {
