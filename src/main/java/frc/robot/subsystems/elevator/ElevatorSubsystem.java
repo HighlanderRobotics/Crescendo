@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
+/** Slanted cascading elevator */
 public class ElevatorSubsystem extends SubsystemBase {
   // Constants
   // TODO find real values

@@ -12,7 +12,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 
-/** Add your docs here. */
+/** WPILib physics model based elevator sim. */
 public class ElevatorIOSim implements ElevatorIO {
   ElevatorSim physicsSim =
       new ElevatorSim(

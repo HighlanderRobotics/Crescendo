@@ -6,7 +6,6 @@ package frc.robot.subsystems.elevator;
 
 import org.littletonrobotics.junction.AutoLog;
 
-/** Add your docs here. */
 public interface ElevatorIO {
   @AutoLog
   public static class ElevatorIOInputs {

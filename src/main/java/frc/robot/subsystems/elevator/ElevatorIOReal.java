@@ -7,14 +7,16 @@ package frc.robot.subsystems.elevator;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
-/** Add your docs here. */
+/** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
-  TalonFX motor = new TalonFX(10);
+  TalonFX motor = new TalonFX(30);
+  TalonFX follower = new TalonFX(31);
 
   VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
   MotionMagicVoltage positionVoltage = new MotionMagicVoltage(0.0).withEnableFOC(true);
@@ -49,9 +51,12 @@ public class ElevatorIOReal implements ElevatorIO {
         ElevatorSubsystem.GEAR_RATIO * 2 * Math.PI * ElevatorSubsystem.DRUM_RADIUS_METERS;
 
     motor.getConfigurator().apply(config);
+    follower.getConfigurator().apply(new TalonFXConfiguration());
+    follower.setControl(new Follower(30, true));
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, current, temp);
     motor.optimizeBusUtilization();
+    follower.optimizeBusUtilization();
   }
 
   @Override
