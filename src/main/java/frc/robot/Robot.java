@@ -196,7 +196,9 @@ public class Robot extends LoggedRobot {
                     Commands.sequence(
                         (swerve.pointTowardsTranslationCmd(
                             () -> swerve.getFutureSpeeds(true).vxMetersPerSecond,
-                            () -> swerve.getFutureSpeeds(true).vyMetersPerSecond, AutoAim.LOOKAHEAD_TIME, true))))
+                            () -> swerve.getFutureSpeeds(true).vyMetersPerSecond,
+                            AutoAim.LOOKAHEAD_TIME,
+                            true))))
                 .finallyDo(
                     () -> {
                       Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
