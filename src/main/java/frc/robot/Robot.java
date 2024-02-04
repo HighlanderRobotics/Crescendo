@@ -194,8 +194,8 @@ public class Robot extends LoggedRobot {
                         Commands.print("Aim Shooter")),
                     Commands.sequence(
                         (swerve.pointTowardsTranslationCmd(
-                            () -> swerve.curShotSpeeds.vxMetersPerSecond,
-                            () -> swerve.curShotSpeeds.vyMetersPerSecond))),
+                            () -> swerve.getFutureSpeeds(true).vxMetersPerSecond,
+                            () -> swerve.getFutureSpeeds(true).vyMetersPerSecond, AutoAim.LOOKAHEAD_TIME, true))),
                     Commands.sequence(
                         Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.1),
                         Commands.print("Rotate Robot")))
