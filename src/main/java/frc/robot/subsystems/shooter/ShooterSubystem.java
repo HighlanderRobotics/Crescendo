@@ -1,6 +1,8 @@
 package frc.robot.subsystems.shooter;
 
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -17,7 +19,8 @@ public class ShooterSubystem extends SubsystemBase {
   private ShooterIOInputsAutoLogged inputs;
 
   Mechanism2d mech2d = new Mechanism2d(Units.feetToMeters(0.0), Units.feetToMeters(4.0));
-  MechanismRoot2d root = mech2d.getRoot("Shooter Root", Units.inchesToMeters(1.7), Units.inchesToMeters(10.8));
+  MechanismRoot2d root =
+      mech2d.getRoot("Shooter Root", Units.inchesToMeters(1.7), Units.inchesToMeters(10.8));
   MechanismLigament2d shooterLig =
       root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
@@ -33,6 +36,13 @@ public class ShooterSubystem extends SubsystemBase {
 
     shooterLig.setAngle(inputs.pivotRotation.unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);
+    Logger.recordOutput(
+        "Shooter/Root Pose",
+        new Pose3d(
+            0.0437896,
+            0.0,
+            0.3274568,
+            new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0)));
   }
 
   public Command runStateCmd(Rotation2d rotation, double left, double right) {
