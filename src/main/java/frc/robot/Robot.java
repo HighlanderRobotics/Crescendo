@@ -16,6 +16,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
+import frc.robot.subsystems.elevator.ElevatorIOSim;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -45,6 +47,7 @@ public class Robot extends LoggedRobot {
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
+  private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
 
   @Override
   public void robotInit() {
@@ -98,6 +101,7 @@ public class Robot extends LoggedRobot {
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+    elevator.setDefaultCommand(elevator.setExtension(() -> 0.0));
 
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
@@ -109,6 +113,8 @@ public class Robot extends LoggedRobot {
             swerve.pointTowardsTranslation(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
+    // Test binding for elevator
+    controller.b().whileTrue(elevator.setExtension(() -> 1.0));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
