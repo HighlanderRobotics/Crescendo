@@ -14,6 +14,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.elevator.ElevatorIOSim;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.feeder.FeederIOReal;
+import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
@@ -45,6 +49,8 @@ public class Robot extends LoggedRobot {
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
+  private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
+  private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
 
@@ -70,7 +76,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -99,22 +105,26 @@ public class Robot extends LoggedRobot {
                 new ChassisSpeeds(
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+    elevator.setDefaultCommand(elevator.setExtension(() -> 0.0));
     shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
 
-    // Trigger bindings here
+    // Controller bindings here
     controller
         .rightTrigger()
         .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(45.0), 50.0, 40.0));
+    controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
-    // Auto Bindings here
-    NamedCommands.registerCommand(
-        "fender",
-        Commands.deadline(
-            Commands.sequence(
-                Commands.print("fender shot"), Commands.waitSeconds(1.0), Commands.print("pew!")),
-            swerve.stopCmd()));
-    NamedCommands.registerCommand("intake", Commands.print("intake"));
+    // Test binding for autoaim
+    controller
+        .a()
+        .whileTrue(
+            swerve.pointTowardsTranslation(
+                () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
+    // Test binding for elevator
+    controller.b().whileTrue(elevator.setExtension(() -> 1.0));
+
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
@@ -124,13 +134,7 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void disabledInit() {}
-
-  @Override
   public void disabledPeriodic() {}
-
-  @Override
-  public void disabledExit() {}
 
   @Override
   public void autonomousInit() {
@@ -140,12 +144,6 @@ public class Robot extends LoggedRobot {
       autonomousCommand.schedule();
     }
   }
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void autonomousExit() {}
 
   @Override
   public void teleopInit() {
@@ -158,16 +156,7 @@ public class Robot extends LoggedRobot {
   public void teleopPeriodic() {}
 
   @Override
-  public void teleopExit() {}
-
-  @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
   }
-
-  @Override
-  public void testPeriodic() {}
-
-  @Override
-  public void testExit() {}
 }
