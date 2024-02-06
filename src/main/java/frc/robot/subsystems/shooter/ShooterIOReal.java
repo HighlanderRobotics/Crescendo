@@ -120,6 +120,7 @@ public class ShooterIOReal implements ShooterIO {
         flywheelRightVoltage,
         flywheelRightAmps,
         flywheelRightTempC);
+
     ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
