@@ -18,6 +18,9 @@ import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.ShooterSubystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -48,6 +51,8 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimModules());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
+  private final ShooterSubystem shooter =
+      new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
 
   @Override
   public void robotInit() {
@@ -102,8 +107,12 @@ public class Robot extends LoggedRobot {
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtension(() -> 0.0));
+    shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
 
     // Controller bindings here
+    controller
+        .rightTrigger()
+        .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(45.0), 50.0, 40.0));
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
     // Test binding for autoaim
