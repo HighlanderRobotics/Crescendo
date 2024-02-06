@@ -6,7 +6,6 @@ package frc.robot.subsystems.carriage;
 
 import org.littletonrobotics.junction.AutoLog;
 
-/** Add your docs here. */
 public interface CarriageIO {
   @AutoLog
   public static class CarriageIOInputs {
