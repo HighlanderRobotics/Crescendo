@@ -22,15 +22,15 @@ public class ElevatorSubsystem extends SubsystemBase {
   public static final double GEAR_RATIO = 6.0 / 1.0;
   public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(2.0);
 
-  ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
-  ElevatorIO io;
+  private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
+  private final ElevatorIO io;
 
   // For dashboard
-  Mechanism2d mech2d = new Mechanism2d(3.0, Units.feetToMeters(4.0));
-  MechanismRoot2d root = // CAD distance from origin to center of carriage at full retraction
+  private final Mechanism2d mech2d = new Mechanism2d(3.0, Units.feetToMeters(4.0));
+  private final MechanismRoot2d root = // CAD distance from origin to center of carriage at full retraction
       mech2d.getRoot(
           "Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
-  MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, 80);
+  private final MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, 80);
 
   /** Creates a new ElevatorSubsystem. */
   public ElevatorSubsystem(ElevatorIO io) {
@@ -56,7 +56,7 @@ public class ElevatorSubsystem extends SubsystemBase {
             new Rotation3d()));
   }
 
-  public Command setExtension(DoubleSupplier meters) {
+  public Command setExtensionCmd(DoubleSupplier meters) {
     return this.run(
         () -> {
           io.setTarget(meters.getAsDouble());

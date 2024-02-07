@@ -42,7 +42,14 @@ public class Robot extends LoggedRobot {
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
-          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
+          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {
+            // Blank implementation to mock gyro in sim
+            @Override
+            public void updateInputs(GyroIOInputs inputs) {}
+
+            @Override
+            public void setYaw(Rotation2d yaw) {}
+          },
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
@@ -101,7 +108,8 @@ public class Robot extends LoggedRobot {
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
-    elevator.setDefaultCommand(elevator.setExtension(() -> 0.0));
+    elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
+    feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
 
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
@@ -114,7 +122,7 @@ public class Robot extends LoggedRobot {
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
     // Test binding for elevator
-    controller.b().whileTrue(elevator.setExtension(() -> 1.0));
+    controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }

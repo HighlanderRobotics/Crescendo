@@ -29,7 +29,7 @@ public class ElevatorIOSim implements ElevatorIO {
   ElevatorFeedforward ff = new ElevatorFeedforward(0.0, 0.48, 2.5);
 
   @Override
-  public void updateInputs(ElevatorIOInputsAutoLogged inputs) {
+  public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
     if (DriverStation.isDisabled()) {
       stop();
     }
@@ -42,15 +42,20 @@ public class ElevatorIOSim implements ElevatorIO {
   }
 
   @Override
-  public void setTarget(double meters) {
+  public void setTarget(final double meters) {
     setVoltage(
         pid.calculate(physicsSim.getPositionMeters(), meters)
             + ff.calculate(pid.getSetpoint().velocity));
   }
 
   @Override
-  public void setVoltage(double voltage) {
+  public void setVoltage(final double voltage) {
     volts = voltage;
     physicsSim.setInput(voltage);
+  }
+
+  @Override
+  public void resetEncoder(final double position) {
+    physicsSim.setState(position, 0.0);
   }
 }

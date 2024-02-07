@@ -18,7 +18,7 @@ public interface FeederIO {
     public boolean lastBeambreak = false;
   }
 
-  public default void updateInputs(FeederIOInputsAutoLogged inputs) {}
+  public void updateInputs(final FeederIOInputsAutoLogged inputs);
 
-  public default void setVoltage(final double volts) {}
+  public void setVoltage(final double volts);
 }

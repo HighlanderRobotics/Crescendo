@@ -10,8 +10,8 @@ import org.littletonrobotics.junction.Logger;
 
 /** Feeder motor for shooter and associated beambreaks for indexing */
 public class FeederSubsystem extends SubsystemBase {
-  final FeederIO io;
-  final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
+  private final FeederIO io;
+  private final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
 
   /** Creates a new FeederSubsystem. */
   public FeederSubsystem(FeederIO io) {
