@@ -21,11 +21,11 @@ public interface IntakeIO {
   }
 
   /** Updates the set of loggable inputs. */
-  public default void updateInputs(IntakeIOInputs inputs) {}
+  public void updateInputs(final IntakeIOInputs inputs);
 
   /** Run the intake at a specified voltage */
-  public default void setIntakeVoltage(final double volts) {}
+  public void setIntakeVoltage(final double volts);
 
   /** Run the centering wheels at a specified voltage */
-  public default void setCenteringVoltage(final double volts) {}
+  public void setCenteringVoltage(final double volts);
 }

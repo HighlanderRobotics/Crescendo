@@ -13,21 +13,21 @@ import com.ctre.phoenix6.signals.InvertedValue;
 
 /** Intake IO implementation for TalonFX motors. */
 public class IntakeIOReal implements IntakeIO {
-  TalonFX intakeMotor = new TalonFX(20);
-  TalonFX centeringMotor = new TalonFX(21);
+  private final TalonFX intakeMotor = new TalonFX(20);
+  private final TalonFX centeringMotor = new TalonFX(21);
 
-  VoltageOut intakeVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
-  VoltageOut centeringVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut intakeVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut centeringVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-  StatusSignal<Double> intakeVelocity = intakeMotor.getVelocity();
-  StatusSignal<Double> intakeVoltage = intakeMotor.getMotorVoltage();
-  StatusSignal<Double> intakeAmperage = intakeMotor.getStatorCurrent();
-  StatusSignal<Double> intakeTemp = intakeMotor.getDeviceTemp();
+  private final StatusSignal<Double> intakeVelocity = intakeMotor.getVelocity();
+  private final StatusSignal<Double> intakeVoltage = intakeMotor.getMotorVoltage();
+  private final StatusSignal<Double> intakeAmperage = intakeMotor.getStatorCurrent();
+  private final StatusSignal<Double> intakeTemp = intakeMotor.getDeviceTemp();
 
-  StatusSignal<Double> centeringVelocity = centeringMotor.getVelocity();
-  StatusSignal<Double> centeringVoltage = centeringMotor.getMotorVoltage();
-  StatusSignal<Double> centeringAmperage = centeringMotor.getStatorCurrent();
-  StatusSignal<Double> centeringTemp = centeringMotor.getDeviceTemp();
+  private final StatusSignal<Double> centeringVelocity = centeringMotor.getVelocity();
+  private final StatusSignal<Double> centeringVoltage = centeringMotor.getMotorVoltage();
+  private final StatusSignal<Double> centeringAmperage = centeringMotor.getStatorCurrent();
+  private final StatusSignal<Double> centeringTemp = centeringMotor.getDeviceTemp();
 
   public IntakeIOReal() {
     var intakeConfig = new TalonFXConfiguration();
@@ -53,6 +53,7 @@ public class IntakeIOReal implements IntakeIO {
   }
 
   /** Updates the set of loggable inputs. */
+  @Override
   public void updateInputs(IntakeIOInputs inputs) {
     BaseStatusSignal.refreshAll(intakeVelocity, intakeVoltage, intakeAmperage, intakeTemp);
     inputs.intakeVelocityRotationsPerSecond = intakeVelocity.getValueAsDouble();
@@ -67,11 +68,13 @@ public class IntakeIOReal implements IntakeIO {
   }
 
   /** Run the intake at a specified voltage */
+  @Override
   public void setIntakeVoltage(final double volts) {
     intakeMotor.setControl(intakeVoltageOut.withOutput(volts));
   }
 
   /** Run the intake at a specified voltage */
+  @Override
   public void setCenteringVoltage(final double volts) {
     centeringMotor.setControl(centeringVoltageOut.withOutput(volts));
   }

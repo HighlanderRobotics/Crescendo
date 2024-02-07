@@ -10,8 +10,8 @@ import org.littletonrobotics.junction.Logger;
 
 /** 95 style utb intake */
 public class IntakeSubsystem extends SubsystemBase {
-  IntakeIO io;
-  IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+  private final IntakeIO io;
+  private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(IntakeIO io) {
