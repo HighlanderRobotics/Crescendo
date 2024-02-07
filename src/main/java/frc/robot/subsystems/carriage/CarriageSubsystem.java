@@ -10,8 +10,8 @@ import org.littletonrobotics.junction.Logger;
 
 /** Drainpipe style amp/trap mechanism on the elevator */
 public class CarriageSubsystem extends SubsystemBase {
-  CarriageIO io;
-  CarriageIOInputsAutoLogged inputs = new CarriageIOInputsAutoLogged();
+  final CarriageIO io;
+  final CarriageIOInputsAutoLogged inputs = new CarriageIOInputsAutoLogged();
 
   /** Creates a new CarriageSubsystem. */
   public CarriageSubsystem(CarriageIO io) {

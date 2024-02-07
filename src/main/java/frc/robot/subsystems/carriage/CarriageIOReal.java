@@ -10,20 +10,20 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import frc.robot.utils.components.ReversibleDigitalInput;
+import edu.wpi.first.wpilibj.DigitalInput;
 
 /** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
-  TalonFX motor = new TalonFX(0);
+  final TalonFX motor = new TalonFX(0);
 
-  ReversibleDigitalInput beambreak = new ReversibleDigitalInput(0, false);
+  final DigitalInput beambreak = new DigitalInput(0);
 
-  VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-  StatusSignal<Double> velocity = motor.getVelocity();
-  StatusSignal<Double> voltage = motor.getMotorVoltage();
-  StatusSignal<Double> amperage = motor.getStatorCurrent();
-  StatusSignal<Double> temp = motor.getDeviceTemp();
+  final StatusSignal<Double> velocity = motor.getVelocity();
+  final StatusSignal<Double> voltage = motor.getMotorVoltage();
+  final StatusSignal<Double> amperage = motor.getStatorCurrent();
+  final StatusSignal<Double> temp = motor.getDeviceTemp();
 
   public CarriageIOReal() {
     var config = new TalonFXConfiguration();
@@ -36,7 +36,8 @@ public class CarriageIOReal implements CarriageIO {
   }
 
   /** Updates the set of loggable inputs. */
-  public void updateInputs(CarriageIOInputsAutoLogged inputs) {
+  @Override
+  public void updateInputs(final CarriageIOInputsAutoLogged inputs) {
     BaseStatusSignal.refreshAll(velocity, voltage, amperage, temp);
     inputs.velocityRotationsPerSecond = velocity.getValueAsDouble();
     inputs.appliedVolts = voltage.getValueAsDouble();
@@ -47,7 +48,8 @@ public class CarriageIOReal implements CarriageIO {
   }
 
   /** Run the intake at a specified voltage */
-  public void setIntakeVoltage(final double volts) {
+  @Override
+  public void setVoltage(final double volts) {
     motor.setControl(voltageOut.withOutput(volts));
   }
 }
