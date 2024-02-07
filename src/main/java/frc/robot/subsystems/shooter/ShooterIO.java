@@ -7,7 +7,6 @@ package frc.robot.subsystems.shooter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
 
-/** Add your docs here. */
 public interface ShooterIO {
   @AutoLog
   public static class ShooterIOInputs {
@@ -28,15 +27,15 @@ public interface ShooterIO {
     public double flywheelRightTempC = 0.0;
   }
 
-  public abstract ShooterIOInputsAutoLogged updateInputs();
+  public void updateInputs(final ShooterIOInputsAutoLogged inputs);
 
-  public default void setFlywheelVoltage(final double left, final double right) {} // set voltage
+  public void setFlywheelVoltage(final double left, final double right);
 
-  public default void setFlywheelVelocity(final double left, final double right) {} // set speed
+  public void setFlywheelVelocity(final double left, final double right);
 
-  public default void setPivotVoltage(final double voltage) {} // set speed
+  public void setPivotVoltage(final double voltage);
 
-  public default void setPivotSetpoint(final Rotation2d rotation) {} // set specfic rotation
+  public void setPivotSetpoint(final Rotation2d rotation);
 
-  public default void resetPivotPostion(final Rotation2d rotation) {} // reset specfic rotation
+  public void resetPivotPostion(final Rotation2d rotation);
 }
