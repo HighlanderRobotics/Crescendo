@@ -17,7 +17,7 @@ public interface CarriageIO {
     public boolean beambreak = false;
   }
 
-  public default void updateInputs(final CarriageIOInputsAutoLogged inputs) {}
+  public void updateInputs(final CarriageIOInputsAutoLogged inputs);
 
-  public default void setVoltage(final double volts) {}
+  public void setVoltage(final double volts);
 }
