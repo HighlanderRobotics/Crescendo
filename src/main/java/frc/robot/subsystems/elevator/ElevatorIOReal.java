@@ -19,7 +19,8 @@ public class ElevatorIOReal implements ElevatorIO {
   private final TalonFX follower = new TalonFX(31);
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
-  private final MotionMagicVoltage positionVoltage = new MotionMagicVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicVoltage positionVoltage =
+      new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   private final StatusSignal<Double> position = motor.getPosition();
   private final StatusSignal<Double> velocity = motor.getVelocity();

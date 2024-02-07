@@ -45,14 +45,16 @@ public class Robot extends LoggedRobot {
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
-          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {
-            // Blank implementation to mock gyro in sim
-            @Override
-            public void updateInputs(GyroIOInputs inputs) {}
+          mode == RobotMode.REAL
+              ? new GyroIOPigeon2()
+              : new GyroIO() {
+                // Blank implementation to mock gyro in sim
+                @Override
+                public void updateInputs(GyroIOInputs inputs) {}
 
-            @Override
-            public void setYaw(Rotation2d yaw) {}
-          },
+                @Override
+                public void setYaw(Rotation2d yaw) {}
+              },
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());

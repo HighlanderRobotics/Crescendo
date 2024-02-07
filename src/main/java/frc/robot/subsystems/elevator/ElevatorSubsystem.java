@@ -27,9 +27,10 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   // For dashboard
   private final Mechanism2d mech2d = new Mechanism2d(3.0, Units.feetToMeters(4.0));
-  private final MechanismRoot2d root = // CAD distance from origin to center of carriage at full retraction
+  private final MechanismRoot2d
+      root = // CAD distance from origin to center of carriage at full retraction
       mech2d.getRoot(
-          "Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
+              "Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
   private final MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, 80);
 
   /** Creates a new ElevatorSubsystem. */

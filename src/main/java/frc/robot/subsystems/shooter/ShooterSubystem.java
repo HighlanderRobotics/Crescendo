@@ -18,7 +18,8 @@ public class ShooterSubystem extends SubsystemBase {
   private final ShooterIO io;
   private final ShooterIOInputsAutoLogged inputs;
 
-  private final Mechanism2d mech2d = new Mechanism2d(Units.feetToMeters(0.0), Units.feetToMeters(4.0));
+  private final Mechanism2d mech2d =
+      new Mechanism2d(Units.feetToMeters(0.0), Units.feetToMeters(4.0));
   private final MechanismRoot2d root =
       mech2d.getRoot("Shooter Root", Units.inchesToMeters(1.7), Units.inchesToMeters(10.8));
   private final MechanismLigament2d shooterLig =
