@@ -105,7 +105,7 @@ public class ShooterIOReal implements ShooterIO {
   }
 
   @Override
-  public ShooterIOInputsAutoLogged updateInputs() {
+  public void updateInputs(ShooterIOInputsAutoLogged inputs) {
     BaseStatusSignal.refreshAll(
         pivotRotations,
         pivotVelocity,
@@ -120,8 +120,6 @@ public class ShooterIOReal implements ShooterIO {
         flywheelRightVoltage,
         flywheelRightAmps,
         flywheelRightTempC);
-
-    ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
     inputs.pivotVelocityRotationsPerSecond = pivotVelocity.getValue();
@@ -138,8 +136,6 @@ public class ShooterIOReal implements ShooterIO {
     inputs.flywheelRightVoltage = flywheelRightVoltage.getValue();
     inputs.flywheelRightAmps = flywheelRightAmps.getValue();
     inputs.flywheelRightTempC = flywheelRightTempC.getValue();
-
-    return inputs;
   }
 
   public void setPivotVoltage(final double voltage) {

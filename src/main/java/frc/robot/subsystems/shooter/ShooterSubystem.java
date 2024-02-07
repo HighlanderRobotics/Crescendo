@@ -16,12 +16,12 @@ public class ShooterSubystem extends SubsystemBase {
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
   private final ShooterIO io;
-  private ShooterIOInputsAutoLogged inputs;
+  private final ShooterIOInputsAutoLogged inputs;
 
-  Mechanism2d mech2d = new Mechanism2d(Units.feetToMeters(0.0), Units.feetToMeters(4.0));
-  MechanismRoot2d root =
+  private final Mechanism2d mech2d = new Mechanism2d(Units.feetToMeters(0.0), Units.feetToMeters(4.0));
+  private final MechanismRoot2d root =
       mech2d.getRoot("Shooter Root", Units.inchesToMeters(1.7), Units.inchesToMeters(10.8));
-  MechanismLigament2d shooterLig =
+  private final MechanismLigament2d shooterLig =
       root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
   public ShooterSubystem(ShooterIO pivotIO) {
@@ -31,7 +31,7 @@ public class ShooterSubystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    inputs = io.updateInputs();
+    io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
 
     shooterLig.setAngle(inputs.pivotRotation.unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
