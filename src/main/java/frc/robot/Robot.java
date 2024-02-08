@@ -18,6 +18,8 @@ import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
+import frc.robot.subsystems.intake.IntakeIOReal;
+import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
@@ -58,6 +60,7 @@ public class Robot extends LoggedRobot {
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
+  private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
@@ -117,6 +120,7 @@ public class Robot extends LoggedRobot {
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
+    intake.setDefaultCommand(intake.runVoltageCmd(10.0));
     shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
 
     // Controller bindings here
