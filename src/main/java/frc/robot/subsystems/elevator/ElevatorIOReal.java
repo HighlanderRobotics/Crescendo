@@ -15,17 +15,18 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
-  TalonFX motor = new TalonFX(30);
-  TalonFX follower = new TalonFX(31);
+  private final TalonFX motor = new TalonFX(30);
+  private final TalonFX follower = new TalonFX(31);
 
-  VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
-  MotionMagicVoltage positionVoltage = new MotionMagicVoltage(0.0).withEnableFOC(true);
+  private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final MotionMagicVoltage positionVoltage =
+      new MotionMagicVoltage(0.0).withEnableFOC(true);
 
-  StatusSignal<Double> position = motor.getPosition();
-  StatusSignal<Double> velocity = motor.getVelocity();
-  StatusSignal<Double> voltage = motor.getMotorVoltage();
-  StatusSignal<Double> current = motor.getStatorCurrent();
-  StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final StatusSignal<Double> position = motor.getPosition();
+  private final StatusSignal<Double> velocity = motor.getVelocity();
+  private final StatusSignal<Double> voltage = motor.getMotorVoltage();
+  private final StatusSignal<Double> current = motor.getStatorCurrent();
+  private final StatusSignal<Double> temp = motor.getDeviceTemp();
 
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
@@ -60,7 +61,7 @@ public class ElevatorIOReal implements ElevatorIO {
   }
 
   @Override
-  public void updateInputs(ElevatorIOInputsAutoLogged inputs) {
+  public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
     BaseStatusSignal.refreshAll(position, velocity, voltage, current, temp);
     inputs.elevatorPositionMeters = position.getValueAsDouble();
     inputs.elevatorVelocityMetersPerSec = velocity.getValueAsDouble();
@@ -69,15 +70,18 @@ public class ElevatorIOReal implements ElevatorIO {
     inputs.elevatorTempCelsius = new double[] {temp.getValueAsDouble()};
   }
 
-  public void setTarget(double meters) {
+  @Override
+  public void setTarget(final double meters) {
     motor.setControl(positionVoltage.withPosition(meters));
   }
 
-  public void setVoltage(double voltage) {
+  @Override
+  public void setVoltage(final double voltage) {
     motor.setControl(voltageOut.withOutput(voltage));
   }
 
-  public void resetEncoder(double position) {
+  @Override
+  public void resetEncoder(final double position) {
     motor.setPosition(position);
   }
 }

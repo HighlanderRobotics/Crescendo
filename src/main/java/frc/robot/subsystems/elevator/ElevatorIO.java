@@ -16,17 +16,17 @@ public interface ElevatorIO {
     public double[] elevatorTempCelsius = new double[] {};
   }
 
-  public default void updateInputs(ElevatorIOInputsAutoLogged inputs) {}
+  public void updateInputs(final ElevatorIOInputsAutoLogged inputs);
 
-  public default void setTarget(double meters) {}
+  public void setTarget(final double meters);
 
-  public default void setVoltage(double voltage) {}
+  public void setVoltage(final double voltage);
 
   public default void stop() {
     setVoltage(0);
   }
 
-  public default void resetEncoder(double position) {}
+  public void resetEncoder(final double position);
 
   public default void resetEncoder() {
     resetEncoder(0.0);

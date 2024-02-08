@@ -42,10 +42,9 @@ public class ShooterIOSim implements ShooterIO {
   SimpleMotorFeedforward flywheelFF = new SimpleMotorFeedforward(0.0, 0.0925);
 
   @Override
-  public ShooterIOInputsAutoLogged updateInputs() {
+  public void updateInputs(ShooterIOInputsAutoLogged inputs) {
     leftFlywheelSim.update(0.020);
     pivotSim.update(0.020);
-    ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
     inputs.pivotRotation = Rotation2d.fromRadians(pivotSim.getAngleRads());
     inputs.pivotVelocityRotationsPerSecond =
@@ -64,8 +63,6 @@ public class ShooterIOSim implements ShooterIO {
     inputs.flywheelRightVoltage = 0.0;
     inputs.flywheelRightAmps = rightFlywheelSim.getCurrentDrawAmps();
     inputs.flywheelRightTempC = 0.0;
-
-    return inputs;
   }
 
   public void setPivotVoltage(final double voltage) {
@@ -92,5 +89,10 @@ public class ShooterIOSim implements ShooterIO {
   public void setFlywheelVoltage(final double left, final double right) {
     leftFlywheelSim.setInput(MathUtil.clamp(left, -12, 12));
     rightFlywheelSim.setInput(MathUtil.clamp(right, -12, 12));
+  }
+
+  @Override
+  public void resetPivotPostion(Rotation2d rotation) {
+    pivotSim.setState(rotation.getRadians(), 0.0);
   }
 }

@@ -14,17 +14,17 @@ import frc.robot.utils.components.ReversibleDigitalInput;
 
 /** Feeder IO using a TalonFX. */
 public class FeederIOReal implements FeederIO {
-  TalonFX motor = new TalonFX(22);
+  private final TalonFX motor = new TalonFX(22);
 
-  ReversibleDigitalInput firstBeambreak = new ReversibleDigitalInput(0, false);
-  ReversibleDigitalInput lastBeambreak = new ReversibleDigitalInput(1, false);
+  private final ReversibleDigitalInput firstBeambreak = new ReversibleDigitalInput(0, false);
+  private final ReversibleDigitalInput lastBeambreak = new ReversibleDigitalInput(1, false);
 
-  StatusSignal<Double> velocity = motor.getVelocity();
-  StatusSignal<Double> voltage = motor.getMotorVoltage();
-  StatusSignal<Double> current = motor.getStatorCurrent();
-  StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final StatusSignal<Double> velocity = motor.getVelocity();
+  private final StatusSignal<Double> voltage = motor.getMotorVoltage();
+  private final StatusSignal<Double> current = motor.getStatorCurrent();
+  private final StatusSignal<Double> temp = motor.getDeviceTemp();
 
-  VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
   public FeederIOReal() {
     var config = new TalonFXConfiguration();
@@ -41,7 +41,7 @@ public class FeederIOReal implements FeederIO {
   }
 
   @Override
-  public void updateInputs(FeederIOInputsAutoLogged inputs) {
+  public void updateInputs(final FeederIOInputsAutoLogged inputs) {
     BaseStatusSignal.refreshAll(velocity, voltage, current, temp);
 
     inputs.feederVelocityRotationsPerSec = velocity.getValue();
@@ -51,5 +51,10 @@ public class FeederIOReal implements FeederIO {
 
     inputs.firstBeambreak = firstBeambreak.get();
     inputs.lastBeambreak = lastBeambreak.get();
+  }
+
+  @Override
+  public void setVoltage(final double volts) {
+    motor.setControl(voltageOut.withOutput(volts));
   }
 }
