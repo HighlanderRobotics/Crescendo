@@ -91,6 +91,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public ChassisSpeeds inputSpeeds = new ChassisSpeeds(0, 0, 0);
   public Rotation2d rotationToTranslation = new Rotation2d();
 
+
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
     new AutoAim();
@@ -365,11 +366,11 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Rotation2d getRotationToTranslation(
-      Pose2d translation, ChassisSpeeds speedsRobotRelative, boolean isAuto) {
+      Pose2d translation, ChassisSpeeds speedsFieldRelative) {
     double angle =
         Math.atan2(
-            translation.getY() - getFuturePose(isAuto, speedsRobotRelative).getY(),
-            translation.getX() - getFuturePose(isAuto, speedsRobotRelative).getX());
+            translation.getY() - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative).getY(),
+            translation.getX() - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative).getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -379,53 +380,42 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The transformed pose
    */
   @AutoLogOutput(key = "Autoaim/Virtual Target")
-  public Pose2d getVirtualTarget(ChassisSpeeds speedsFieldRelative, boolean isAuto) {
+  public Pose2d getVirtualTarget(ChassisSpeeds speedsRobotRelative) {
 
     Pose2d target = FieldConstants.getSpeaker();
 
-    ChassisSpeeds speedsRobotRelative =
-        ChassisSpeeds.fromFieldRelativeSpeeds(speedsFieldRelative, getRotation());
 
-    double distance =
-        getFuturePose(isAuto, speedsRobotRelative).minus(target).getTranslation().getNorm();
+
+    double distance = getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative).minus(target).getTranslation().getNorm();
 
     return target.transformBy(
         new Transform2d(
-                speedsFieldRelative.vxMetersPerSecond
+                speedsRobotRelative.vxMetersPerSecond
                     * AutoAim.shotMap.get(distance).getFlightTime(),
-                speedsFieldRelative.vyMetersPerSecond
+                speedsRobotRelative.vyMetersPerSecond
                     * AutoAim.shotMap.get(distance).getFlightTime(),
                 target.getRotation())
             .inverse());
   }
 
   public Pose2d getVirtualTarget() {
-    return getVirtualTarget(getVelocity(), false);
+    return getVirtualTarget(getVelocity());
   }
 
-  public Pose2d getAutoPose() {
-    ChoreoTrajectoryState state =
-        Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
 
-    return new Pose2d(state.x, state.y, Rotation2d.fromRadians(state.heading));
+  public ChoreoTrajectoryState getAutoState(){
+    return Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
   }
 
-  public ChassisSpeeds getAutoSpeeds() {
-    ChoreoTrajectoryState state =
-        Choreo.getTrajectory("amp 4 local").sample(AutoAim.LOOKAHEAD_TIME);
+  // public ChassisSpeeds getFutureVelocity() {
+  //   return isAuto ? getAutoVelocity() : getVelocity();
+  // }
 
-    return new ChassisSpeeds(state.velocityX, state.velocityY, state.angularVelocity);
-  }
-
-  public ChassisSpeeds getFutureSpeeds(boolean isAuto) {
-    return isAuto ? getAutoSpeeds() : getVelocity();
-  }
-
-  public Pose2d getFuturePose(boolean isAuto, ChassisSpeeds speedsFieldRelative) {
-    return isAuto
-        ? getAutoPose()
-        : getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative);
-  }
+  // public Pose2d getFuturePose(ChassisSpeeds speedsFieldRelative) {
+  //   return isAuto
+  //       ? getAutoPose()
+  //       : getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative);
+  // }
 
   /**
    * Gets the pose at some time in the future, assuming constant velocity
@@ -454,13 +444,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The future pose
    */
   public Pose2d getLinearFuturePose(double time) {
-
-    return getPose()
-        .transformBy(
-            new Transform2d(
-                getRobotRelativeSpeeds().vxMetersPerSecond * time,
-                getRobotRelativeSpeeds().vyMetersPerSecond * time,
-                Rotation2d.fromRadians(getRobotRelativeSpeeds().omegaRadiansPerSecond * time)));
+    return getLinearFuturePose(time, getVelocity());
   }
 
   /**
@@ -476,17 +460,15 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Faces the robot towards a translation on the field
+   * Keeps the robot in a linear drive motion for time seconds while rotating
    *
    * @param xMetersPerSecond Requested X velocity
    * @param yMetersPerSecond Requested Y velocity
    * @param time Time in the future to point from
    * @return A command refrence that rotates the robot to a computed rotation
    */
-  public Command pointTowardsTranslationCmd(
-      DoubleSupplier xMetersPerSecond,
-      DoubleSupplier yMetersPerSecond,
-      double time,
-      boolean isAuto) {
+  public Command teleopPointTowardsTranslationCmd(
+      DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
@@ -496,14 +478,14 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         Commands.runOnce(
             () -> {
-              this.virtualTarget = getVirtualTarget(this.inputSpeeds, isAuto);
+              this.virtualTarget = getVirtualTarget(ChassisSpeeds.fromFieldRelativeSpeeds(this.inputSpeeds, getRotation()));
               this.inputSpeeds =
                   new ChassisSpeeds(
                       xMetersPerSecond.getAsDouble(),
                       yMetersPerSecond.getAsDouble(),
                       getVelocity().omegaRadiansPerSecond);
               this.rotationToTranslation =
-                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds, isAuto);
+                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds);
             },
             this),
         this.runVelocityFieldRelative(
@@ -530,8 +512,8 @@ public class SwerveSubsystem extends SubsystemBase {
                 () -> {
                   endingPose =
                       new Pose2d(
-                          getFuturePose(isAuto, this.inputSpeeds).getX(),
-                          getFuturePose(isAuto, this.inputSpeeds).getY(),
+                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getX(),
+                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getY(),
                           this.rotationToTranslation);
                   Logger.recordOutput("AutoAim/Ending Pose", endingPose);
                   headingController.reset(new State(getPose().getRotation().getRadians(), 0));
@@ -539,6 +521,75 @@ public class SwerveSubsystem extends SubsystemBase {
                 }));
   }
 
+    /**
+   * Faces the robot towards a translation on the field
+   * Keeps the robot in a linear drive motion for time seconds while rotating
+   *
+   * @param xMetersPerSecond Requested X velocity
+   * @param yMetersPerSecond Requested Y velocity
+   * @param time Time in the future to point from
+   * @return A command refrence that rotates the robot to a computed rotation
+   */
+  public Command autonomousPointTowardsTranslationCmd(
+      DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
+    ProfiledPIDController headingController =
+        // assume we can accelerate to max in 2/3 of a second
+        new ProfiledPIDController(
+            40.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return Commands.sequence(
+        Commands.runOnce(
+            () -> {
+              this.virtualTarget = getVirtualTarget(ChassisSpeeds.fromFieldRelativeSpeeds(this.inputSpeeds, getRotation()));
+              this.inputSpeeds =
+                  new ChassisSpeeds(
+                      xMetersPerSecond.getAsDouble(),
+                      yMetersPerSecond.getAsDouble(),
+                      getVelocity().omegaRadiansPerSecond);
+              this.rotationToTranslation =
+                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds);
+            },
+            this),
+        this.runVelocityFieldRelative(
+                () -> {
+                  double feedbackOutput =
+                      headingController.calculate(
+                          getPose().getRotation().getRadians(),
+                          this.rotationToTranslation.getRadians());
+                  ChoreoTrajectoryState state = getAutoState();
+                  this.inputSpeeds =
+                  new ChassisSpeeds(
+                      state.velocityX,
+                      state.velocityY,
+                      getVelocity().omegaRadiansPerSecond);
+                  Logger.recordOutput("AutoAim/Ending Pose", endingPose);
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint Velocity", headingController.getSetpoint().velocity);
+                  Logger.recordOutput(
+                      "AutoAim/Goal Rotation", headingController.getGoal().position);
+                  Logger.recordOutput(
+                      "AutoAim/Goal Velocity", headingController.getGoal().velocity);
+                  return new ChassisSpeeds(
+                      xMetersPerSecond.getAsDouble(),
+                      yMetersPerSecond.getAsDouble(),
+                      feedbackOutput + headingController.getSetpoint().velocity);
+                })
+            .beforeStarting(
+                () -> {
+                  endingPose =
+                      new Pose2d(
+                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getX(),
+                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getY(),
+                          this.rotationToTranslation);
+                  Logger.recordOutput("AutoAim/Ending Pose", endingPose);
+                  headingController.reset(new State(getPose().getRotation().getRadians(), 0));
+                  Logger.recordOutput("AutoAim/Translated Target", this.virtualTarget);
+                }));
+  }
+ 
   /**
    * Faces the robot towards a translation on the field Uses a constant lookahead time specified in
    * AutoAim.java
@@ -547,9 +598,8 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param yMetersPerSecond Requested Y velocity
    * @return A command refrence that rotates the robot to a computed rotation
    */
-  public Command pointTowardsTranslationCmd(
+  public Command teleopPointTowardsTranslationCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
-    return pointTowardsTranslationCmd(
-        xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME, false);
+    return teleopPointTowardsTranslationCmd(xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME);
   }
 }

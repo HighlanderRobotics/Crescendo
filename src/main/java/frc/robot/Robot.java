@@ -104,62 +104,51 @@ public class Robot extends LoggedRobot {
     // Controller bindings here
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
-    controller.x().toggleOnTrue(backAndForth());
-
     // Test binding for autoaim
     controller
         .a()
         .whileTrue(
-            swerve.pointTowardsTranslationCmd(
+            swerve.teleopPointTowardsTranslationCmd(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
 
-    controller.y().toggleOnTrue(new InstantCommand(() -> swerve.getAutoPose()));
+    controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
     controller
         .b()
         .whileTrue(
             autoAimDemo(
                 () -> {
-                  swerve.polarDistance =
-                      Math.sqrt(
-                          Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
-                              + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
-                  swerve.polarRadians =
-                      Math.atan2(
-                          swerve.getVelocity().vyMetersPerSecond,
-                          swerve.getVelocity().vxMetersPerSecond);
+                  double vx = swerve.getVelocity().vxMetersPerSecond;
+                  double vy = swerve.getVelocity().vyMetersPerSecond;
+                  double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
 
                   swerve.polarDistance =
                       MathUtil.clamp(
-                          swerve.polarDistance,
+                          Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
                           -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
                           SwerveSubsystem.MAX_LINEAR_SPEED / 2);
+                  swerve.polarRadians = Math.atan2(vy, vx);
+
                   Logger.recordOutput(
                       "AutoAim/Polar Sppeeds",
                       new ChassisSpeeds(
                           swerve.polarDistance * Math.cos(swerve.polarRadians),
                           swerve.polarDistance * Math.sin(swerve.polarRadians),
-                          swerve.getVelocity().omegaRadiansPerSecond));
+                          vTheta));
                   return new ChassisSpeeds(
                       swerve.polarDistance * Math.cos(swerve.polarRadians),
                       swerve.polarDistance * Math.sin(swerve.polarRadians),
-                      swerve.getVelocity().omegaRadiansPerSecond);
+                      vTheta);
+
                 }));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
-  }
-
-  public Command backAndForth() {
-    return Commands.sequence(
-        Commands.sequence(
-            swerve.runVelocityCmd(() -> new ChassisSpeeds(3, 0, 0)).withTimeout(0.333),
-            swerve.runVelocityCmd(() -> new ChassisSpeeds(-3, 0, 0)).withTimeout(0.333)));
   }
 
   /**
@@ -175,6 +164,7 @@ public class Robot extends LoggedRobot {
             Commands.runOnce(
                 () -> {
                   swerve.curShotSpeeds = speeds.get();
+                  Logger.recordOutput("AutoAim/cur shot speedd", swerve.curShotSpeeds);
                   swerve.curShotData =
                       AutoAim.shotMap.get(
                           swerve
@@ -194,11 +184,10 @@ public class Robot extends LoggedRobot {
                         Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7),
                         Commands.print("Aim Shooter")),
                     Commands.sequence(
-                        (swerve.pointTowardsTranslationCmd(
-                            () -> swerve.getFutureSpeeds(true).vxMetersPerSecond,
-                            () -> swerve.getFutureSpeeds(true).vyMetersPerSecond,
-                            AutoAim.LOOKAHEAD_TIME,
-                            true))))
+                        (swerve.teleopPointTowardsTranslationCmd(
+                            () -> swerve.curShotSpeeds.vxMetersPerSecond,
+                            () -> swerve.curShotSpeeds.vyMetersPerSecond,
+                            AutoAim.LOOKAHEAD_TIME))))
                 .finallyDo(
                     () -> {
                       Logger.recordOutput("AutoAim/End Pose", swerve.getPose());

@@ -11,10 +11,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
  */
 public class ShotData {
 
-  private Rotation2d angle;
-  private double leftRotationsPerSecond;
-  private double rightRotationsPerSecond;
-  private double flightTimeSeconds;
+  private final Rotation2d angle;
+  private final double leftRotationsPerSecond;
+  private final double rightRotationsPerSecond;
+  private final double flightTimeSeconds;
 
   public ShotData(
       Rotation2d angle,
@@ -23,6 +23,7 @@ public class ShotData {
       double flightTime) {
     this.angle = angle;
     this.leftRotationsPerSecond = leftRotationsPerSecond;
+    this.rightRotationsPerSecond = rightRotationsPerSecond;
     this.flightTimeSeconds = flightTime;
   }
 
