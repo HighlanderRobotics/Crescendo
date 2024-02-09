@@ -170,6 +170,8 @@ out/
 
 # Simulation GUI and other tools window save file
 *-window.json
+*-ds.json
+simgui.json
 
 # Build Constants
 src/main/java/frc/robot/BuildConstants.java
