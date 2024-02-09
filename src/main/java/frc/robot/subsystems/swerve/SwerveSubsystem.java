@@ -128,7 +128,6 @@ public class SwerveSubsystem extends SubsystemBase {
     PathPlannerLogging.setLogActivePathCallback(
         (path) -> Logger.recordOutput("PathPlanner/Active Path", path.toArray(Pose2d[]::new)));
     Logger.recordOutput("PathPlanner/Target", new Pose2d());
-    Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
 
     odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
 

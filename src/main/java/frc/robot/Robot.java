@@ -4,15 +4,11 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -43,7 +39,6 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  private Command autonomousCommand;
 
   private final CommandXboxController controller = new CommandXboxController(0);
 
@@ -67,6 +62,9 @@ public class Robot extends LoggedRobot {
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+
+  private final AutoManager autoManager =
+      new AutoManager(swerve, intake, elevator, shooter, feeder);
 
   @Override
   public void robotInit() {
@@ -143,10 +141,6 @@ public class Robot extends LoggedRobot {
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-
-    // Auto Chooser
-
-    SmartDashboard.putData("Auto Chooser", AutoBuilder.buildAutoChooser());
   }
 
   @Override
@@ -159,18 +153,12 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("local 4");
-
-    if (autonomousCommand != null) {
-      autonomousCommand.schedule();
-    }
+    autoManager.chooser.getSelected().schedule();
   }
 
   @Override
   public void teleopInit() {
-    if (autonomousCommand != null) {
-      autonomousCommand.cancel();
-    }
+    autoManager.chooser.getSelected().cancel();
   }
 
   @Override

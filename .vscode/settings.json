@@ -27,5 +27,6 @@
   ],
   "java.test.defaultConfig": "WPIlibUnitTests",
   "java.compile.nullAnalysis.mode": "automatic",
-  "wpilib.autoStartRioLog": true
+  "wpilib.autoStartRioLog": true,
+  "java.debug.settings.onBuildFailureProceed": true
 }

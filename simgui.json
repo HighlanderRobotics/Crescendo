@@ -5,6 +5,7 @@
       "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/Auto Chooser": "String Chooser",
+      "/SmartDashboard/SendableChooser[0]": "String Chooser",
       "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
@@ -13,7 +14,7 @@
       "/SmartDashboard/reset Pivot value": "Command"
     },
     "windows": {
-      "/SmartDashboard/Auto Chooser": {
+      "/SmartDashboard/SendableChooser[0]": {
         "window": {
           "visible": true
         }
