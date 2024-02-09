@@ -1,14 +1,23 @@
 {
   "NTProvider": {
     "types": {
+      "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
       "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
       "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Auto Chooser": "String Chooser",
       "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
       "/SmartDashboard/reset Kicker value": "Command",
       "/SmartDashboard/reset Pivot value": "Command"
+    },
+    "windows": {
+      "/SmartDashboard/Auto Chooser": {
+        "window": {
+          "visible": true
+        }
+      }
     }
   },
   "NetworkTables": {
