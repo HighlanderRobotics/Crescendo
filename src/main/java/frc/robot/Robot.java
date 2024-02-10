@@ -20,6 +20,8 @@ import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseIOReal;
+import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
@@ -65,6 +67,7 @@ public class Robot extends LoggedRobot {
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final ReactionBarReleaseSubsystem reactionBarRelease = new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
 
   @Override
   public void robotInit() {
@@ -122,6 +125,7 @@ public class Robot extends LoggedRobot {
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
     shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
+    reactionBarRelease.setDefaultCommand(reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
 
     // Controller bindings here
     controller
