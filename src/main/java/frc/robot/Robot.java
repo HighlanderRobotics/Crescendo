@@ -6,14 +6,18 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.carriage.CarriageIOReal;
+import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
@@ -67,6 +71,7 @@ public class Robot extends LoggedRobot {
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final ReactionBarReleaseSubsystem reactionBarRelease = new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
 
   @Override
@@ -141,7 +146,8 @@ public class Robot extends LoggedRobot {
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
     // Test binding for elevator
-    controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
+    controller.b().whileTrue(elevator.setExtensionCmd(() -> 0.5));
+    controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
@@ -149,6 +155,12 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    // Update ascope mechanism visualization
+    Logger.recordOutput(
+        "Mechanism Poses",
+        new Pose3d[] {
+          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+        });
   }
 
   @Override

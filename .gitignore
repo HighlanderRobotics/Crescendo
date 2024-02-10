@@ -170,6 +170,11 @@ out/
 
 # Simulation GUI and other tools window save file
 *-window.json
+*-ds.json
+simgui.json
+
+# CTRE sim files
+ctre_sim/*
 
 # Build Constants
 src/main/java/frc/robot/BuildConstants.java

@@ -66,7 +66,7 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   public void setPivotVoltage(final double voltage) {
-    pivotSim.setInput(MathUtil.clamp(voltage, -12, 12));
+    pivotSim.setInputVoltage(MathUtil.clamp(voltage, -12, 12));
   }
 
   public void setPivotSetpoint(final Rotation2d rotation) {
@@ -87,8 +87,8 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   public void setFlywheelVoltage(final double left, final double right) {
-    leftFlywheelSim.setInput(MathUtil.clamp(left, -12, 12));
-    rightFlywheelSim.setInput(MathUtil.clamp(right, -12, 12));
+    leftFlywheelSim.setInputVoltage(MathUtil.clamp(left, -12, 12));
+    rightFlywheelSim.setInputVoltage(MathUtil.clamp(right, -12, 12));
   }
 
   @Override
