@@ -4,15 +4,16 @@
 
 package frc.robot.subsystems.reaction_bar_release;
 
-import org.littletonrobotics.junction.Logger;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
 
 public class ReactionBarReleaseSubsystem extends SubsystemBase {
   private final ReactionBarReleaseIO io;
-  private final ReactionBarReleaseIOInputsAutoLogged inputs = new ReactionBarReleaseIOInputsAutoLogged();
+  private final ReactionBarReleaseIOInputsAutoLogged inputs =
+      new ReactionBarReleaseIOInputsAutoLogged();
+
   /** Creates a new ReactionBarReleaseSubsystem. */
   public ReactionBarReleaseSubsystem(ReactionBarReleaseIO io) {
     this.io = io;

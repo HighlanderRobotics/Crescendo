@@ -9,15 +9,15 @@ import edu.wpi.first.wpilibj.Servo;
 
 /** Reaction Bar IO with a real servo. */
 public class ReactionBarReleaseIOReal implements ReactionBarReleaseIO {
-    Servo servo = new Servo(0);
-    @Override
-    public void updateInputs(ReactionBarReleaseIOInputs inputs) {
-        // no-op bc inputs is empty
-    }
+  Servo servo = new Servo(0);
 
-    @Override
-    public void setRotation(Rotation2d rotation) {
-        servo.set(rotation.getRotations());
-    }
-    
+  @Override
+  public void updateInputs(ReactionBarReleaseIOInputs inputs) {
+    // no-op bc inputs is empty
+  }
+
+  @Override
+  public void setRotation(Rotation2d rotation) {
+    servo.set(rotation.getRotations());
+  }
 }

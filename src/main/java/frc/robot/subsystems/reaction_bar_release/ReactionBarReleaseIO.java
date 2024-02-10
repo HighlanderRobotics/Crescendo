@@ -4,17 +4,16 @@
 
 package frc.robot.subsystems.reaction_bar_release;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-
 public interface ReactionBarReleaseIO {
-    @AutoLog
-    public static class ReactionBarReleaseIOInputs {
-        // Nothing here since no sensors
-    }
+  @AutoLog
+  public static class ReactionBarReleaseIOInputs {
+    // Nothing here since no sensors
+  }
 
-    public void updateInputs(final ReactionBarReleaseIOInputs inputs);
+  public void updateInputs(final ReactionBarReleaseIOInputs inputs);
 
-    public void setRotation(final Rotation2d rotation);
+  public void setRotation(final Rotation2d rotation);
 }
