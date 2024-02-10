@@ -153,11 +153,10 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     // Update ascope mechanism visualization
     Logger.recordOutput(
-        "Mechanism Poses", new Pose3d[] {
-          shooter.getMechanismPose(),
-          elevator.getCarriagePose(),
-          elevator.getFirstStagePose()
-          });
+        "Mechanism Poses",
+        new Pose3d[] {
+          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+        });
   }
 
   @Override

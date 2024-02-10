@@ -33,7 +33,8 @@ public class ElevatorSubsystem extends SubsystemBase {
       root = // CAD distance from origin to center of carriage at full retraction
       mech2d.getRoot(
               "Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
-  private final MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, ELEVATOR_ANGLE.getDegrees());
+  private final MechanismLigament2d carriage =
+      new MechanismLigament2d("Carriage", 0, ELEVATOR_ANGLE.getDegrees());
 
   /** Creates a new ElevatorSubsystem. */
   public ElevatorSubsystem(ElevatorIO io) {
@@ -55,11 +56,9 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public Pose3d getCarriagePose() {
     return new Pose3d(
-        Units.inchesToMeters(4.5)
-            + carriage.getLength() * Math.cos(ELEVATOR_ANGLE.getRadians()),
+        Units.inchesToMeters(4.5) + carriage.getLength() * Math.cos(ELEVATOR_ANGLE.getRadians()),
         0.0,
-        Units.inchesToMeters(7.0)
-            + carriage.getLength() * Math.sin(ELEVATOR_ANGLE.getRadians()),
+        Units.inchesToMeters(7.0) + carriage.getLength() * Math.sin(ELEVATOR_ANGLE.getRadians()),
         new Rotation3d());
   }
 
