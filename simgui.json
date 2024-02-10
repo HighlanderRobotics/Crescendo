@@ -1,11 +1,7 @@
 {
   "NTProvider": {
     "types": {
-<<<<<<< HEAD
-      "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
-=======
       "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
->>>>>>> 8b4f963 (added amp/trap mech)
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
