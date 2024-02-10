@@ -5,6 +5,7 @@
 package frc.robot.subsystems.elevator;
 
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
@@ -21,6 +22,7 @@ public class ElevatorSubsystem extends SubsystemBase {
   // TODO find real values
   public static final double GEAR_RATIO = 12.5 / 1.0;
   public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(1.751 / 2.0);
+  public static Rotation2d ELEVATOR_ANGLE = Rotation2d.fromDegrees(65.0);
 
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   private final ElevatorIO io;
@@ -31,7 +33,7 @@ public class ElevatorSubsystem extends SubsystemBase {
       root = // CAD distance from origin to center of carriage at full retraction
       mech2d.getRoot(
               "Elevator", (3.0 / 2.0) + Units.inchesToMeters(9.053), Units.inchesToMeters(12.689));
-  private final MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, 80);
+  private final MechanismLigament2d carriage = new MechanismLigament2d("Carriage", 0, ELEVATOR_ANGLE.getDegrees());
 
   /** Creates a new ElevatorSubsystem. */
   public ElevatorSubsystem(ElevatorIO io) {
@@ -53,11 +55,21 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public Pose3d getCarriagePose() {
     return new Pose3d(
-        Units.inchesToMeters(9.053)
-            + carriage.getLength() * Math.cos(Units.degreesToRadians(carriage.getAngle())),
+        Units.inchesToMeters(4.5)
+            + carriage.getLength() * Math.cos(ELEVATOR_ANGLE.getRadians()),
         0.0,
-        Units.inchesToMeters(12.689)
-            + carriage.getLength() * Math.sin(Units.degreesToRadians(carriage.getAngle())),
+        Units.inchesToMeters(7.0)
+            + carriage.getLength() * Math.sin(ELEVATOR_ANGLE.getRadians()),
+        new Rotation3d());
+  }
+
+  public Pose3d getFirstStagePose() {
+    return new Pose3d(
+        Units.inchesToMeters(2.25)
+            + (carriage.getLength() / 2.0) * Math.cos(ELEVATOR_ANGLE.getRadians()),
+        0.0,
+        Units.inchesToMeters(4.25)
+            + (carriage.getLength() / 2.0) * Math.sin(ELEVATOR_ANGLE.getRadians()),
         new Rotation3d());
   }
 

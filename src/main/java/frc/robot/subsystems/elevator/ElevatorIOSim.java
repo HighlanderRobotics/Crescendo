@@ -23,7 +23,7 @@ public class ElevatorIOSim implements ElevatorIO {
           Units.lbsToKilograms(10.8 + (2.5 / 2)),
           ElevatorSubsystem.DRUM_RADIUS_METERS,
           0.0,
-          Units.inchesToMeters(26.0),
+          Units.inchesToMeters(32.0),
           true,
           0.0);
   double volts = 0.0;
