@@ -6,8 +6,10 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -140,7 +142,8 @@ public class Robot extends LoggedRobot {
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
     // Test binding for elevator
-    controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
+    controller.b().whileTrue(elevator.setExtensionCmd(() -> 0.5));
+    controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
@@ -148,6 +151,12 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    // Update ascope mechanism visualization
+    Logger.recordOutput(
+        "Mechanism Poses",
+        new Pose3d[] {
+          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+        });
   }
 
   @Override

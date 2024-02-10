@@ -28,12 +28,11 @@ public class Module {
   public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
   public static final double ODOMETRY_FREQUENCY_HZ = 250.0;
 
-  // Gear ratios for SDS MK3 Fast, adjust as necessary
+  // Gear ratios for SDS MK4i L3.5, adjust as necessary
   // These numbers are taken from SDS's website
   // They are the gear tooth counts for each stage of the modules' gearboxes
-  public static final double DRIVE_GEAR_RATIO =
-      8.16; // (48.0 / 16.0) * (16.0 / 28.0) * (60.0 / 15.0);
-  public static final double TURN_GEAR_RATIO = 12.8 / 1.0;
+  public static final double DRIVE_GEAR_RATIO = (50.0 / 16.0) * (16.0 / 28.0) * (45.0 / 15.0);
+  public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   public static final double DRIVE_STATOR_CURRENT_LIMIT = 50.0; // TODO bump as needed
   public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;

@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class ShooterSubystem extends SubsystemBase {
-  public static final double PIVOT_RATIO = 35.0 / 1.0;
+  public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
   private final ShooterIO io;
@@ -37,13 +37,12 @@ public class ShooterSubystem extends SubsystemBase {
 
     shooterLig.setAngle(inputs.pivotRotation.unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);
-    Logger.recordOutput(
-        "Shooter/Root Pose",
-        new Pose3d(
-            0.0437896,
-            0.0,
-            0.3274568,
-            new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0)));
+    Logger.recordOutput("Shooter/Root Pose", getMechanismPose());
+  }
+
+  public Pose3d getMechanismPose() {
+    return new Pose3d(
+        0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
 
   public Command runStateCmd(Rotation2d rotation, double left, double right) {
