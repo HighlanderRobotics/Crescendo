@@ -442,5 +442,16 @@ public class SwerveSubsystem extends SubsystemBase {
         Commands.waitSeconds(1.0),
         driveRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
+
+  public Command PoseLockDriveCmd(){
+   new ProfiledPIDController(1.0, 0.0, 0.0,);
+   new ProfiledPIDController(1.0, 0.0, 0.0,); 
+   new ProfiledPIDController(1.0, 0.0, 0.0,);        
+    
+   
+
+  }
+
+
   }
 }
