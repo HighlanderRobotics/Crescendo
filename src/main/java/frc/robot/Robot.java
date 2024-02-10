@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.carriage.CarriageIOReal;
+import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
@@ -65,6 +67,7 @@ public class Robot extends LoggedRobot {
   private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
 
   @Override
   public void robotInit() {
