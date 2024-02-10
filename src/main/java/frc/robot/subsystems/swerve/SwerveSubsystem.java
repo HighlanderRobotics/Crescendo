@@ -57,7 +57,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
-  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(18.0); // 18.9 fps free speed
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(18.9) * 0.9; // 18.9 fps free speed, assume 90% efficient
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
   public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
