@@ -174,7 +174,7 @@ out/
 simgui.json
 
 # CTRE sim files
-/ctre_sim/*
+ctre_sim/*
 
 # Build Constants
 src/main/java/frc/robot/BuildConstants.java
