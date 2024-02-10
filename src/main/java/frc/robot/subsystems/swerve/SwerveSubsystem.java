@@ -444,14 +444,21 @@ public class SwerveSubsystem extends SubsystemBase {
         this.runOnce(() -> SignalLogger.stop()));
 
   public Command PoseLockDriveCmd(){
+   Profilded ProfiledPIDControllers =
    new ProfiledPIDController(1.0, 0.0, 0.0,);
    new ProfiledPIDController(1.0, 0.0, 0.0,); 
    new ProfiledPIDController(1.0, 0.0, 0.0,);        
-    
    
+   this.run (
+    controllers.calculate(runVelocity)
+    )
+   
+   
+   this.runOnce(() -> ProfiledPIDControllers.reset(
+    new State(
+        setPose( new Pose2d().getPose()))))
+
 
   }
-
-
-  }
+}
 }
