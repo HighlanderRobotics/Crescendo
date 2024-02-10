@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 public class CarriageIOReal implements CarriageIO {
   final TalonFX motor = new TalonFX(0);
 
-  final DigitalInput beambreak = new DigitalInput(0);
+  final DigitalInput beambreak = new DigitalInput(10);
 
   final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 

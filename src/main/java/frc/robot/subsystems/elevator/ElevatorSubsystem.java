@@ -19,8 +19,8 @@ import org.littletonrobotics.junction.Logger;
 public class ElevatorSubsystem extends SubsystemBase {
   // Constants
   // TODO find real values
-  public static final double GEAR_RATIO = 6.0 / 1.0;
-  public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(2.0);
+  public static final double GEAR_RATIO = 12.5 / 1.0;
+  public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(1.751 / 2.0);
 
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   private final ElevatorIO io;
@@ -48,13 +48,17 @@ public class ElevatorSubsystem extends SubsystemBase {
     carriage.setLength(inputs.elevatorPositionMeters);
     Logger.recordOutput("Elevator/Mechanism2d", mech2d);
 
-    Logger.recordOutput(
-        "Elevator/Carriage Pose",
-        new Pose3d(
-            carriage.getLength() * Math.cos(Units.degreesToRadians(carriage.getAngle())),
-            0.0,
-            carriage.getLength() * Math.sin(Units.degreesToRadians(carriage.getAngle())),
-            new Rotation3d()));
+    Logger.recordOutput("Elevator/Carriage Pose", getCarriagePose());
+  }
+
+  public Pose3d getCarriagePose() {
+    return new Pose3d(
+        Units.inchesToMeters(9.053)
+            + carriage.getLength() * Math.cos(Units.degreesToRadians(carriage.getAngle())),
+        0.0,
+        Units.inchesToMeters(12.689)
+            + carriage.getLength() * Math.sin(Units.degreesToRadians(carriage.getAngle())),
+        new Rotation3d());
   }
 
   public Command setExtensionCmd(DoubleSupplier meters) {

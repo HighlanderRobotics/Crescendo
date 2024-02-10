@@ -19,15 +19,16 @@ public class ElevatorIOSim implements ElevatorIO {
       new ElevatorSim(
           DCMotor.getKrakenX60Foc(2),
           ElevatorSubsystem.GEAR_RATIO,
-          Units.lbsToKilograms(20.0),
+          // Add half of first stage mass bc its on a 2:1 ratio compared to carriage
+          Units.lbsToKilograms(10.8 + (2.5 / 2)),
           ElevatorSubsystem.DRUM_RADIUS_METERS,
           0.0,
-          1.0,
+          Units.inchesToMeters(26.0),
           true,
-          1.0);
+          0.0);
   double volts = 0.0;
-  ProfiledPIDController pid = new ProfiledPIDController(1.0, 0.0, 0.0, new Constraints(1.0, 1.0));
-  ElevatorFeedforward ff = new ElevatorFeedforward(0.0, 0.48, 2.5);
+  ProfiledPIDController pid = new ProfiledPIDController(40.0, 0.0, 0.0, new Constraints(10.0, 5.0));
+  ElevatorFeedforward ff = new ElevatorFeedforward(0.0, 0.06, 12.6);
 
   @Override
   public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
