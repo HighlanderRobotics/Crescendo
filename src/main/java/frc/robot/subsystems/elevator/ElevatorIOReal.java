@@ -12,11 +12,12 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
-  private final TalonFX motor = new TalonFX(30);
-  private final TalonFX follower = new TalonFX(31);
+  private final TalonFX motor = new TalonFX(16);
+  private final TalonFX follower = new TalonFX(17);
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final MotionMagicVoltage positionVoltage =
@@ -30,6 +31,8 @@ public class ElevatorIOReal implements ElevatorIO {
 
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
+
+    config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
     config.Slot0.GravityType = GravityTypeValue.Elevator_Static;
     config.Slot0.kG = 0.0;
@@ -53,7 +56,7 @@ public class ElevatorIOReal implements ElevatorIO {
 
     motor.getConfigurator().apply(config);
     follower.getConfigurator().apply(new TalonFXConfiguration());
-    follower.setControl(new Follower(30, true));
+    follower.setControl(new Follower(motor.getDeviceID(), true));
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, current, temp);
     motor.optimizeBusUtilization();
