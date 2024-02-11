@@ -165,8 +165,10 @@ public class SwerveSubsystem extends SubsystemBase {
           "Left Camera",
           new Transform3d(
               new Translation3d(
-                  Units.inchesToMeters(14.4), Units.inchesToMeters(0), Units.inchesToMeters(29.75)),
-              new Rotation3d(0, 0, 1.0)),
+                  Units.inchesToMeters(0),
+                  Units.inchesToMeters(-14.4),
+                  Units.inchesToMeters(29.75)),
+              new Rotation3d(0, Math.PI / 2, 0)),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS); // TODO maybe wrong
   // public static final VisionConstants rightCamConstants =
@@ -361,6 +363,7 @@ public class SwerveSubsystem extends SubsystemBase {
         // camera.setSimPose(estPose, camera, newResult);
         visionPoses.add(visionPose);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
+        Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
