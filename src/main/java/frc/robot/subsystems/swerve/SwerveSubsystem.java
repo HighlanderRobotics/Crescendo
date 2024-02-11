@@ -68,13 +68,13 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final int PIGEON_ID = 0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 6, 5, 21, Rotation2d.fromRotations(0.125732));
+      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.0));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 8, 7, 23, Rotation2d.fromRotations(0.461426));
+      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(0.0));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 3, 20, Rotation2d.fromRotations(0.152344));
+      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.0));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 2, 1, 22, Rotation2d.fromRotations(-0.238281));
+      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.0));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
