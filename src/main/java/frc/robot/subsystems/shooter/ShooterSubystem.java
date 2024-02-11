@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.google.common.base.Supplier;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -9,6 +10,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class ShooterSubystem extends SubsystemBase {
@@ -45,15 +47,20 @@ public class ShooterSubystem extends SubsystemBase {
         0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
 
-  public Command runStateCmd(Rotation2d rotation, double left, double right) {
+  public Command runStateCmd(
+      Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
-          Logger.recordOutput("Shooter/Left Velocity Setpoint", left);
-          Logger.recordOutput("Shooter/Right Velocity Setpoint", right);
-          Logger.recordOutput("Shooter/Rotation Setpoint", rotation);
-          io.setFlywheelVelocity(left, right);
-          io.setPivotSetpoint(rotation);
+          Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
+          Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
+          Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get());
+          io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
+          io.setPivotSetpoint(rotation.get());
         });
+  }
+
+  public Command runStateCmd(Rotation2d rotation, double left, double right) {
+    return runStateCmd(() -> rotation, () -> left, () -> right);
   }
 
   public Command runFlywheelVoltageCmd(Rotation2d rotation, double voltage) {
