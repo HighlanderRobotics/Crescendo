@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.leds;
 
+import com.google.common.base.Supplier;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -17,8 +18,8 @@ public class LEDSubsystem extends SubsystemBase {
 
   Color[] colors = new Color[LED_LENGTH];
 
-  int rainbowStart = 0;
-  int dashStart = 0;
+  double rainbowStart = 0;
+  double dashStart = 0;
 
   /** Creates a new LEDSubsystem. */
   public LEDSubsystem(LEDIO io) {
@@ -46,7 +47,7 @@ public class LEDSubsystem extends SubsystemBase {
   public Command setBlinkingCmd(Color onColor, Color offColor, double frequency) {
     return Commands.repeatingSequence(
         setSolidCmd(onColor).withTimeout(1.0 / frequency),
-        setSolidCmd(onColor).withTimeout(1.0 / frequency));
+        setSolidCmd(offColor).withTimeout(1.0 / frequency));
   }
 
   public void setProgress(Color color, double progress) {
@@ -63,19 +64,23 @@ public class LEDSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           for (int i = 0; i < LED_LENGTH; i++) {
-            setIndex(i, Color.fromHSV(rainbowStart % 180 + i, 255, 255));
+            setIndex(i, Color.fromHSV((int) rainbowStart % 180 + i, 255, 255));
           }
           rainbowStart += 6;
         });
   }
 
-  public void runColorAlong(Color colorDash, Color colorBg, int dashLength, double frequency) {
-    setSolid(colorBg);
-    for (int i = dashStart; i < dashStart + dashLength; i++) {
-      setIndex(i % LED_LENGTH, colorDash);
-    }
+  public Command setRunAlongCmd(
+      Supplier<Color> colorDash, Supplier<Color> colorBg, int dashLength, double frequency) {
+    return this.run(
+        () -> {
+          setSolid(colorBg.get());
+          for (int i = (int) dashStart; i < dashStart + dashLength; i++) {
+            setIndex(i % LED_LENGTH, colorDash.get());
+          }
 
-    dashStart += (int) (LED_LENGTH / frequency);
-    dashStart %= LED_LENGTH;
+          dashStart += LED_LENGTH * frequency * 0.020;
+          dashStart %= LED_LENGTH;
+        });
   }
 }

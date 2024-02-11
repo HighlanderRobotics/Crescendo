@@ -10,6 +10,8 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.util.Color;
@@ -152,7 +154,29 @@ public class Robot extends LoggedRobot {
             () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     reactionBarRelease.setDefaultCommand(
         reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
-    leds.setDefaultCommand(leds.setSolidCmd(new Color("#350868")));
+    leds.setDefaultCommand(
+        Commands.either(
+                leds.setBlinkingCmd(new Color("#00ff00"), new Color("#000000"), 10.0)
+                    .withInterruptBehavior(InterruptionBehavior.kCancelSelf),
+                leds.setRunAlongCmd(
+                    // Set color to be purple with a moving dash corresponding to alliance color
+                    () -> {
+                      if (DriverStation.getAlliance().isEmpty()) {
+                        return new Color("#e0e0e0");
+                      } else if (DriverStation.getAlliance().get() == Alliance.Red) {
+                        return new Color("#ff0000");
+                      } else { // Blue
+                        return new Color("#0000ff");
+                      }
+                    },
+                    () -> new Color("#350868"),
+                    10,
+                    1.0),
+                () -> DriverStation.isEnabled())
+            .until(() -> true)
+            .repeatedly()
+            .ignoringDisable(true)
+            .withInterruptBehavior(InterruptionBehavior.kCancelSelf));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -163,9 +187,13 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             Commands.parallel(
                 intake.runVoltageCmd(0.0).withInterruptBehavior(InterruptionBehavior.kCancelSelf),
-                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25)));
+                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25),
+                leds.setBlinkingCmd(new Color("#ff8000"), new Color("#000000"), 25.0)));
     new Trigger(() -> currentTarget == Target.SPEAKER)
-        .whileTrue(Commands.parallel(carriage.runVoltageCmd(5.0), feeder.indexCmd()));
+        .whileTrue(
+            Commands.parallel(
+                carriage.runVoltageCmd(5.0),
+                feeder.indexCmd()));
     new Trigger(() -> currentTarget == Target.AMP)
         .whileTrue(
             Commands.either(
