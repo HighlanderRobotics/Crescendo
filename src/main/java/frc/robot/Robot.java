@@ -157,9 +157,9 @@ public class Robot extends LoggedRobot {
     controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
     controller
-        .b()
+        .leftBumper()
         .whileTrue(
-            autoAimDemo(
+            teleopAutoAim(
                 () -> {
                   double vx = swerve.getVelocity().vxMetersPerSecond;
                   double vy = swerve.getVelocity().vyMetersPerSecond;
@@ -232,7 +232,7 @@ public class Robot extends LoggedRobot {
    * @param speeds
    * @return A command that takes the robot through an auto aim sequence
    */
-  public Command autoAimDemo(Supplier<ChassisSpeeds> speeds) {
+  public Command teleopAutoAim(Supplier<ChassisSpeeds> speeds) {
 
     return Commands.sequence(
             Commands.runOnce(
@@ -251,22 +251,23 @@ public class Robot extends LoggedRobot {
                 swerve),
             Commands.deadline(
                     Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME),
-                    Commands.sequence(
-                        Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
-                        Commands.print("Spin Up Shooter")),
-                    Commands.sequence(
-                        Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7),
-                        Commands.print("Aim Shooter")),
-                    Commands.sequence(
-                        (swerve.teleopPointTowardsTranslationCmd(
+                    Commands.parallel(
+                        shooter.runStateCmd(
+                            () -> swerve.curShotData.getAngle(),
+                            () -> swerve.curShotData.getLeftRPM(),
+                            () -> swerve.curShotData.getRightRPM()),
+                        swerve.teleopPointTowardsTranslationCmd(
                             () -> swerve.curShotSpeeds.vxMetersPerSecond,
                             () -> swerve.curShotSpeeds.vyMetersPerSecond,
-                            AutoAim.LOOKAHEAD_TIME))))
+                            AutoAim.LOOKAHEAD_TIME)))
                 .finallyDo(
                     () -> {
                       Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
                     }),
-            Commands.print("Whoosh!"),
+           Commands.runOnce(
+                            () -> {
+                              System.out.println("Shoot note");
+                            }),
             // keeps moving to prevent the robot from stopping and changing the velocity of the note
             swerve
                 .runVelocityFieldRelative(
@@ -284,13 +285,11 @@ public class Robot extends LoggedRobot {
     return Commands.sequence(
         Commands.deadline(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME),
-                Commands.sequence(
-                    Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
-                    Commands.print("Spin Up Shooter")),
-                Commands.sequence(
-                    Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7),
-                    Commands.print("Aim Shooter")),
-                Commands.sequence((swerve.autonomousPointTowardsTranslationCmd())))
+                Commands.parallel(
+                        shooter.runStateCmd(
+                            () -> swerve.curShotData.getAngle(),
+                            () -> swerve.curShotData.getLeftRPM(),
+                            () -> swerve.curShotData.getRightRPM()),swerve.autonomousPointTowardsTranslationCmd()))
             .andThen(
                 () -> {
                   Logger.recordOutput("AutoAim/End Pose", swerve.getPose());

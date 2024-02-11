@@ -62,8 +62,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
-  public static final double MAX_LINEAR_SPEED =
-      Units.feetToMeters(18.9) * 0.9; // 18.9 fps free speed, assume 90% efficient
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(12.5);
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
   public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
@@ -426,7 +425,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The transformed pose
    */
-  @AutoLogOutput(key = "Autoaim/Virtual Target")
+  
   public Pose2d getVirtualTarget(ChassisSpeeds speedsRobotRelative) {
 
     Pose2d target = FieldConstants.getSpeaker();
@@ -446,7 +445,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 target.getRotation())
             .inverse());
   }
-
+  @AutoLogOutput(key = "AutoAim/Virtual Target")
   public Pose2d getVirtualTarget() {
     return getVirtualTarget(getVelocity());
   }
@@ -454,16 +453,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public ChoreoTrajectoryState getAutoState(double timestamp) {
     return Choreo.getTrajectory("amp 4 local sgmt 1").sample(timestamp);
   }
-
-  // public ChassisSpeeds getFutureVelocity() {
-  //   return isAuto ? getAutoVelocity() : getVelocity();
-  // }
-
-  // public Pose2d getFuturePose(ChassisSpeeds speedsFieldRelative) {
-  //   return isAuto
-  //       ? getAutoPose()
-  //       : getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative);
-  // }
 
   /**
    * Gets the pose at some time in the future, assuming constant velocity
@@ -526,16 +515,18 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         Commands.runOnce(
             () -> {
-              this.virtualTarget =
-                  getVirtualTarget(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(this.inputSpeeds, getRotation()));
+              
               this.inputSpeeds =
                   new ChassisSpeeds(
                       xMetersPerSecond.getAsDouble(),
                       yMetersPerSecond.getAsDouble(),
                       getVelocity().omegaRadiansPerSecond);
+              this.virtualTarget =
+                  getVirtualTarget(
+                      ChassisSpeeds.fromFieldRelativeSpeeds(this.inputSpeeds, getRotation()));
               this.rotationToTranslation =
-                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds);
+                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds)
+                      .minus(Rotation2d.fromDegrees(180));
             },
             this),
         this.runVelocityFieldRelative(
