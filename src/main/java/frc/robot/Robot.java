@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -25,6 +26,8 @@ import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.leds.LEDIOReal;
+import frc.robot.subsystems.leds.LEDSubsystem;
 import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseIOReal;
 import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
@@ -85,6 +88,7 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final ReactionBarReleaseSubsystem reactionBarRelease =
       new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
+  private final LEDSubsystem leds = new LEDSubsystem(new LEDIOReal());
 
   @Override
   public void robotInit() {
@@ -143,9 +147,12 @@ public class Robot extends LoggedRobot {
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     carriage.setDefaultCommand(carriage.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
-    shooter.setDefaultCommand(shooter.runStateCmd(() -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+    shooter.setDefaultCommand(
+        shooter.runStateCmd(
+            () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     reactionBarRelease.setDefaultCommand(
         reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
+    leds.setDefaultCommand(leds.setSolidCmd(new Color("#350868")));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));

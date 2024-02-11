@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.google.common.base.Supplier;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -9,12 +10,8 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 import java.util.function.DoubleSupplier;
-
 import org.littletonrobotics.junction.Logger;
-
-import com.google.common.base.Supplier;
 
 public class ShooterSubystem extends SubsystemBase {
   public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
@@ -50,7 +47,8 @@ public class ShooterSubystem extends SubsystemBase {
         0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
 
-  public Command runStateCmd(Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
+  public Command runStateCmd(
+      Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
           Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());

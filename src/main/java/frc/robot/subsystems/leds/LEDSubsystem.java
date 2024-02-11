@@ -1,0 +1,81 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.subsystems.leds;
+
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
+
+public class LEDSubsystem extends SubsystemBase {
+  public static final int LED_LENGTH = 80;
+  LEDIO io;
+  LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
+
+  Color[] colors = new Color[LED_LENGTH];
+
+  int rainbowStart = 0;
+  int dashStart = 0;
+
+  /** Creates a new LEDSubsystem. */
+  public LEDSubsystem(LEDIO io) {
+    this.io = io;
+  }
+
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    Logger.processInputs("LED", inputs);
+  }
+
+  private void setIndex(int i, Color color) {
+    io.set(i, color);
+  }
+
+  private void setSolid(Color color) {
+    io.solid(color);
+  }
+
+  public Command setSolidCmd(Color color) {
+    return this.run(() -> setSolid(color));
+  }
+
+  public Command setBlinkingCmd(Color onColor, Color offColor, double frequency) {
+    return Commands.repeatingSequence(
+        setSolidCmd(onColor).withTimeout(1.0 / frequency),
+        setSolidCmd(onColor).withTimeout(1.0 / frequency));
+  }
+
+  public void setProgress(Color color, double progress) {
+    for (int i = 0; i < LED_LENGTH; i++) {
+      if (i < progress) {
+        setIndex(i, color);
+      } else {
+        setIndex(i, Color.kBlack);
+      }
+    }
+  }
+
+  public Command setRainbowCmd() {
+    return this.run(
+        () -> {
+          for (int i = 0; i < LED_LENGTH; i++) {
+            setIndex(i, Color.fromHSV(rainbowStart % 180 + i, 255, 255));
+          }
+          rainbowStart += 6;
+        });
+  }
+
+  public void runColorAlong(Color colorDash, Color colorBg, int dashLength, double frequency) {
+    setSolid(colorBg);
+    for (int i = dashStart; i < dashStart + dashLength; i++) {
+      setIndex(i % LED_LENGTH, colorDash);
+    }
+
+    dashStart += (int) (LED_LENGTH / frequency);
+    dashStart %= LED_LENGTH;
+  }
+}
