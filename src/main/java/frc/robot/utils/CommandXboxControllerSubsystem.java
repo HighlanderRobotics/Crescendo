@@ -17,11 +17,17 @@ public class CommandXboxControllerSubsystem extends CommandXboxController implem
     super(port);
   }
 
-  public Command rumble(DoubleSupplier left, DoubleSupplier right) {
+  /** Rumble the controller at the specified power. */
+  public Command rumbleCmd(DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
           super.getHID().setRumble(RumbleType.kLeftRumble, left.getAsDouble());
           super.getHID().setRumble(RumbleType.kRightRumble, right.getAsDouble());
         });
+  }
+
+  /** Rumble the controller at the specified power. */
+  public Command rumbleCmd(double left, double right) {
+    return rumbleCmd(() -> left, () -> right);
   }
 }

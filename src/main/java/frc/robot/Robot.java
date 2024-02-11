@@ -140,10 +140,16 @@ public class Robot extends LoggedRobot {
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
     shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
 
-    // Robot State management bindings
+    controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
+    operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
+
+    // Robot state management bindings
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+        .debounce(0.25)
         .whileTrue(
-            intake.runVoltageCmd(0.0).withInterruptBehavior(InterruptionBehavior.kCancelSelf));
+            Commands.parallel(
+                intake.runVoltageCmd(0.0).withInterruptBehavior(InterruptionBehavior.kCancelSelf),
+                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25)));
     new Trigger(() -> currentTarget == Target.SPEAKER)
         .whileTrue(Commands.parallel(carriage.runVoltageCmd(5.0), feeder.indexCmd()));
     new Trigger(() -> currentTarget == Target.AMP)
@@ -165,13 +171,12 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
-        .whileTrue(
-            elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS)
-            )
-        .onFalse(Commands.parallel(
-          carriage.runVoltageCmd(-3.0),
-          elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS)
-        ).withTimeout(0.5));
+        .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
+        .onFalse(
+            Commands.parallel(
+                    carriage.runVoltageCmd(-3.0),
+                    elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
+                .withTimeout(0.5));
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
     // Heading reset
     controller
@@ -197,7 +202,10 @@ public class Robot extends LoggedRobot {
                     .until(() -> elevator.getExtensionMeters() < 0.05),
                 Commands.parallel(
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
-                    Commands.waitUntil(() -> elevator.getExtensionMeters() > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS)
+                    Commands.waitUntil(
+                            () ->
+                                elevator.getExtensionMeters()
+                                    > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS)
                         .andThen(carriage.runVoltageCmd(-3.0)))));
 
     // Prep climb
