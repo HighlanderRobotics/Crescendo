@@ -8,8 +8,10 @@ import com.choreo.lib.Choreo;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
@@ -17,8 +19,18 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.carriage.CarriageIOReal;
+import frc.robot.subsystems.carriage.CarriageSubsystem;
+import frc.robot.subsystems.elevator.ElevatorIOSim;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.feeder.FeederIOReal;
+import frc.robot.subsystems.feeder.FeederSubsystem;
+import frc.robot.subsystems.intake.IntakeIOReal;
+import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.ShooterSubystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -45,10 +57,25 @@ public class Robot extends LoggedRobot {
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
-          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIO() {},
+          mode == RobotMode.REAL
+              ? new GyroIOPigeon2()
+              : new GyroIO() {
+                // Blank implementation to mock gyro in sim
+                @Override
+                public void updateInputs(GyroIOInputs inputs) {}
+
+                @Override
+                public void setYaw(Rotation2d yaw) {}
+              },
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
+  private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
+  private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
+  private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
+  private final ShooterSubystem shooter =
+      new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
 
   @Override
   public void robotInit() {
@@ -102,8 +129,15 @@ public class Robot extends LoggedRobot {
                     -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+    elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
+    feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
+    intake.setDefaultCommand(intake.runVoltageCmd(10.0));
+    shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
 
     // Controller bindings here
+    controller
+        .rightTrigger()
+        .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(45.0), 50.0, 40.0));
     controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
 
     // Test binding for autoaim
@@ -113,9 +147,12 @@ public class Robot extends LoggedRobot {
             swerve.teleopPointTowardsTranslationCmd(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
+    // Test binding for elevator
+    controller.b().whileTrue(elevator.setExtensionCmd(() -> 0.5));
+    controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand("auto aim", autoAimDemo(() -> new ChassisSpeeds()));
+    NamedCommands.registerCommand("auto aim", autonomousAutoAim());
 
     controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
@@ -151,26 +188,38 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    // Update ascope mechanism visualization
+    Logger.recordOutput(
+        "Mechanism Poses",
+        new Pose3d[] {
+          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+        });
   }
 
   public Command drivePath() {
-    return Commands.sequence(swerve
-        .runVelocityFieldRelative(
+    return Commands.sequence(
+        swerve
+            .runVelocityFieldRelative(
+                () -> {
+                  System.out.println(
+                      "total teim" + Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime());
+                  System.out.println(swerve.elapsedAutonomousTime);
+                  swerve.curState = swerve.getAutoState(swerve.elapsedAutonomousTime);
+                  swerve.elapsedAutonomousTime +=
+                      Timer.getFPGATimestamp()
+                          - swerve.elapsedAutonomousTime
+                          - swerve.startingAutonomousTime;
+                  return new ChassisSpeeds(
+                      swerve.curState.velocityX,
+                      swerve.curState.velocityY,
+                      swerve.curState.angularVelocity);
+                })
+            .until(
+                () ->
+                    swerve.elapsedAutonomousTime
+                        >= Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime()),
+        Commands.runOnce(
             () -> {
-              System.out.println(
-                  "total teim" + Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime());
-              System.out.println(swerve.elapsedAutonomousTime);
-              swerve.curState = swerve.getAutoState(swerve.elapsedAutonomousTime);
-              swerve.elapsedAutonomousTime +=
-                  Timer.getFPGATimestamp()
-                      - swerve.elapsedAutonomousTime
-                      - swerve.startingAutonomousTime;
-              return new ChassisSpeeds(
-                  swerve.curState.velocityX,
-                  swerve.curState.velocityY,
-                  swerve.curState.angularVelocity);
-            }).until(() -> swerve.elapsedAutonomousTime >= Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime()),
-            Commands.runOnce(() -> {
               swerve.startingAutonomousTime = Timer.getFPGATimestamp();
             },
             swerve));
@@ -230,7 +279,6 @@ public class Robot extends LoggedRobot {
         .andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
   }
 
-
   public Command autonomousAutoAim() {
 
     return Commands.sequence(
@@ -247,7 +295,8 @@ public class Robot extends LoggedRobot {
                 () -> {
                   Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
                 }),
-        Commands.print("Whoosh!"), drivePath());
+        Commands.print("Whoosh!"),
+        drivePath());
     // keeps moving to prevent the robot from stopping and changing the velocity of the note
 
   }

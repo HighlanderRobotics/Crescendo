@@ -13,8 +13,12 @@
 
 package frc.robot.subsystems.swerve;
 
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
+
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectoryState;
+import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -35,11 +39,15 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
@@ -54,9 +62,10 @@ import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
-  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(12.5);
-  public static final double TRACK_WIDTH_X = Units.inchesToMeters(20.5);
-  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(20.5);
+  public static final double MAX_LINEAR_SPEED =
+      Units.feetToMeters(18.9) * 0.9; // 18.9 fps free speed, assume 90% efficient
+  public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
+  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
@@ -81,8 +90,11 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDriveOdometry odometry;
-  
-  // values used in autoAim 
+
+  private final SysIdRoutine moduleSteerRoutine;
+  private final SysIdRoutine driveRoutine;
+
+  // values used in autoAim
   public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0, 0);
   public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
   public Pose2d endingPose = new Pose2d();
@@ -138,6 +150,31 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
 
     odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
+
+    moduleSteerRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null, // Default ramp rate is acceptable
+                Volts.of(8),
+                null, // Default timeout is acceptable
+                // Log state with Phoenix SignalLogger class
+                (state) -> SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts) -> modules[0].runSteerCharacterization(volts.in(Volts)),
+                null,
+                this));
+    driveRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null, // Default ramp rate is acceptable
+                Volts.of(4), // Reduce dynamic voltage to 4 to prevent motor brownout
+                Seconds.of(5),
+                // Log state with Phoenix SignalLogger class
+                (state) -> SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts) -> runDriveCharacterizationVolts(volts.in(Volts)),
+                null,
+                this));
   }
 
   /**
@@ -286,8 +323,8 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /** Runs forwards at the commanded voltage. */
-  public Command runCharacterizationVoltsCmd(double volts) {
-    return this.run(() -> Arrays.stream(modules).forEach((mod) -> mod.runCharacterization(volts)));
+  private void runDriveCharacterizationVolts(double volts) {
+    Arrays.stream(modules).forEach((mod) -> mod.runDriveCharacterization(volts));
   }
 
   /** Returns the average drive velocity in radians/sec. */
@@ -614,5 +651,37 @@ public class SwerveSubsystem extends SubsystemBase {
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
     return teleopPointTowardsTranslationCmd(
         xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME);
+  }
+
+  public Command runModuleSteerCharacterizationCmd() {
+    return Commands.sequence(
+        this.runOnce(() -> SignalLogger.start()),
+        moduleSteerRoutine.quasistatic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        moduleSteerRoutine.quasistatic(Direction.kReverse),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        moduleSteerRoutine.dynamic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        moduleSteerRoutine.dynamic(Direction.kReverse),
+        this.runOnce(() -> SignalLogger.stop()));
+  }
+
+  public Command runDriveCharacterizationCmd() {
+    return Commands.sequence(
+        this.runOnce(() -> SignalLogger.start()),
+        driveRoutine.quasistatic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        driveRoutine.quasistatic(Direction.kReverse),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        driveRoutine.dynamic(Direction.kForward),
+        this.stopCmd(),
+        Commands.waitSeconds(1.0),
+        driveRoutine.dynamic(Direction.kReverse),
+        this.runOnce(() -> SignalLogger.stop()));
   }
 }
