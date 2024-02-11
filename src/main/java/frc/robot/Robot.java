@@ -143,7 +143,9 @@ public class Robot extends LoggedRobot {
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     carriage.setDefaultCommand(carriage.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
-    shooter.setDefaultCommand(shooter.runStateCmd(() -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+    shooter.setDefaultCommand(
+        shooter.runStateCmd(
+            () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     reactionBarRelease.setDefaultCommand(
         reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
 
