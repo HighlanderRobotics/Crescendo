@@ -58,6 +58,7 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   private Target currentTarget = Target.SPEAKER;
+  private double flywheelIdleSpeed = 1.0;
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -138,7 +139,7 @@ public class Robot extends LoggedRobot {
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     carriage.setDefaultCommand(carriage.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
-    shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
+    shooter.setDefaultCommand(shooter.runStateCmd(() -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -217,6 +218,10 @@ public class Robot extends LoggedRobot {
                 elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS)));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
+    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 1.0));
+    operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
+    operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
+    operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
