@@ -19,6 +19,7 @@ public class VisionIOReal implements VisionIO {
   public PhotonCamera camera;
   public Matrix<N3, N3> cameraMatrix;
   public Matrix<N5, N1> distCoeffs;
+  private final VisionConstants constants;
 
   /*** Transform3d from the center of the robot to the camera mount position (ie,
    *     robot ➔ camera) in the <a href=
@@ -33,6 +34,7 @@ public class VisionIOReal implements VisionIO {
     robotToCamera = constants.robotToCamera();
     cameraMatrix = constants.intrinsicsMatrix();
     distCoeffs = constants.distCoeffs();
+    this.constants = constants;
   }
 
   @Override
@@ -42,5 +44,11 @@ public class VisionIOReal implements VisionIO {
     inputs.latency = result.getLatencyMillis();
     inputs.targets = result.targets;
     inputs.numTags = result.targets.size();
+    inputs.constants = constants;
+  }
+
+  @Override
+  public String getName() {
+    return cameraName;
   }
 }

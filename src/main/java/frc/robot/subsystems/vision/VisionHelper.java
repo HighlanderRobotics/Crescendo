@@ -103,10 +103,10 @@ public class VisionHelper {
     }
 
     public static void logVisionConstants(VisionConstants constants, LogTable table) {
-      table.put("Vision Constants Name ", constants.cameraName());
-      table.put("Vision Constants Transform ", constants.robotToCamera());
-      table.put("Vision Constants Intrinsics ", constants.intrinsicsMatrix().getData());
-      table.put("Vision Constants Distortion ", constants.distCoeffs().getData());
+      table.put("Vision Constants/Name ", constants.cameraName());
+      table.put("Vision Constants/Transform ", constants.robotToCamera());
+      table.put("Vision Constants/Intrinsics ", constants.intrinsicsMatrix().getData());
+      table.put("Vision Constants/Distortion ", constants.distCoeffs().getData());
     }
 
     public static Transform3d getLoggedTransform3d(double[] translation, double[] rotation) {
@@ -346,7 +346,7 @@ public class VisionHelper {
     for (PhotonTrackedTarget target : result.targets) {
       double targetPoseAmbiguity = target.getPoseAmbiguity();
 
-      if (target.getFiducialId() < 1 || target.getFiducialId() > 8) continue;
+      if (target.getFiducialId() < 1 || target.getFiducialId() > 16) continue;
 
       if (target.getBestCameraToTarget().getTranslation().getNorm() > 3) {
         continue;
@@ -362,7 +362,6 @@ public class VisionHelper {
     // Although there are confirmed to be targets, none of them may be fiducial
     // targets.
     if (lowestAmbiguityTarget == null) return Optional.empty();
-
     int targetFiducialId = lowestAmbiguityTarget.getFiducialId();
 
     Optional<Pose3d> targetPosition = SwerveSubsystem.fieldTags.getTagPose(targetFiducialId);

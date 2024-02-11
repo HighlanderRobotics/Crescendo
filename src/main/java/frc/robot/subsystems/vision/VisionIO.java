@@ -30,4 +30,8 @@ public interface VisionIO {
 
   public default void setSimPose(
       Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {}
+
+  public default String getName() {
+    return "Default";
+  }
 }

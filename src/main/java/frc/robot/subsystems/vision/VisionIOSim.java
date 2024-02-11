@@ -71,4 +71,9 @@ public class VisionIOSim implements VisionIO {
     inputs.targets = result.targets; // TODO aaaaaaa
     inputs.constants = constants;
   }
+
+  @Override
+  public String getName() {
+    return constants.cameraName();
+  }
 }
