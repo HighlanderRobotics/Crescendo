@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -63,8 +62,8 @@ public class Robot extends LoggedRobot {
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
 
-  private final AutoManager autoManager =
-      new AutoManager(swerve, intake, elevator, shooter, feeder);
+  private AutoManager autoManager = new AutoManager(swerve, intake, elevator, shooter, feeder);
+  ;
 
   @Override
   public void robotInit() {
@@ -139,8 +138,6 @@ public class Robot extends LoggedRobot {
 
     // Test binding for elevator
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
-
-    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
   }
 
   @Override
@@ -153,12 +150,12 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autoManager.chooser.getSelected().schedule();
+    autoManager.chooser.get().schedule();
   }
 
   @Override
   public void teleopInit() {
-    autoManager.chooser.getSelected().cancel();
+    autoManager.chooser.get().cancel();
   }
 
   @Override
