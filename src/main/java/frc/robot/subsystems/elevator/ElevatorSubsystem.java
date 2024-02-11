@@ -22,7 +22,11 @@ public class ElevatorSubsystem extends SubsystemBase {
   // TODO find real values
   public static final double GEAR_RATIO = 12.5 / 1.0;
   public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(1.751 / 2.0);
-  public static Rotation2d ELEVATOR_ANGLE = Rotation2d.fromDegrees(65.0);
+  public static final Rotation2d ELEVATOR_ANGLE = Rotation2d.fromDegrees(65.0);
+
+  public static final double CLIMB_EXTENSION_METERS = 0.6;
+  public static final double TRAP_EXTENSION_METERS = 0.9;
+  public static final double AMP_EXTENSION_METERS = 0.6;
 
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   private final ElevatorIO io;
@@ -54,6 +58,14 @@ public class ElevatorSubsystem extends SubsystemBase {
     Logger.recordOutput("Elevator/Carriage Pose", getCarriagePose());
   }
 
+  public Command setExtensionCmd(DoubleSupplier meters) {
+    return this.run(
+        () -> {
+          io.setTarget(meters.getAsDouble());
+          Logger.recordOutput("Elevator/Setpoint", meters.getAsDouble());
+        });
+  }
+
   public Pose3d getCarriagePose() {
     return new Pose3d(
         Units.inchesToMeters(4.5) + carriage.getLength() * Math.cos(ELEVATOR_ANGLE.getRadians()),
@@ -72,11 +84,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         new Rotation3d());
   }
 
-  public Command setExtensionCmd(DoubleSupplier meters) {
-    return this.run(
-        () -> {
-          io.setTarget(meters.getAsDouble());
-          Logger.recordOutput("Elevator/Setpoint", meters.getAsDouble());
-        });
+  public double getExtensionMeters() {
+    return inputs.elevatorPositionMeters;
   }
 }
