@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import com.choreo.lib.Choreo;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
@@ -16,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
@@ -113,6 +115,7 @@ public class Robot extends LoggedRobot {
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+    NamedCommands.registerCommand("auto aim", autoAimDemo(() -> new ChassisSpeeds()));
 
     controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
@@ -125,30 +128,52 @@ public class Robot extends LoggedRobot {
                   double vy = swerve.getVelocity().vyMetersPerSecond;
                   double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
 
-                  swerve.polarDistance =
+                  double polarDistance =
                       MathUtil.clamp(
                           Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
                           -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
                           SwerveSubsystem.MAX_LINEAR_SPEED / 2);
-                  swerve.polarRadians = Math.atan2(vy, vx);
+                  double polarRadians = Math.atan2(vy, vx);
 
                   Logger.recordOutput(
                       "AutoAim/Polar Sppeeds",
                       new ChassisSpeeds(
-                          swerve.polarDistance * Math.cos(swerve.polarRadians),
-                          swerve.polarDistance * Math.sin(swerve.polarRadians),
+                          polarDistance * Math.cos(polarRadians),
+                          polarDistance * Math.sin(polarRadians),
                           vTheta));
                   return new ChassisSpeeds(
-                      swerve.polarDistance * Math.cos(swerve.polarRadians),
-                      swerve.polarDistance * Math.sin(swerve.polarRadians),
+                      polarDistance * Math.cos(polarRadians),
+                      polarDistance * Math.sin(polarRadians),
                       vTheta);
-
                 }));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+  }
+
+  public Command drivePath() {
+    return Commands.sequence(swerve
+        .runVelocityFieldRelative(
+            () -> {
+              System.out.println(
+                  "total teim" + Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime());
+              System.out.println(swerve.elapsedAutonomousTime);
+              swerve.curState = swerve.getAutoState(swerve.elapsedAutonomousTime);
+              swerve.elapsedAutonomousTime +=
+                  Timer.getFPGATimestamp()
+                      - swerve.elapsedAutonomousTime
+                      - swerve.startingAutonomousTime;
+              return new ChassisSpeeds(
+                  swerve.curState.velocityX,
+                  swerve.curState.velocityY,
+                  swerve.curState.angularVelocity);
+            }).until(() -> swerve.elapsedAutonomousTime >= Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime()),
+            Commands.runOnce(() -> {
+              swerve.startingAutonomousTime = Timer.getFPGATimestamp();
+            },
+            swerve));
   }
 
   /**
@@ -205,13 +230,36 @@ public class Robot extends LoggedRobot {
         .andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
   }
 
+
+  public Command autonomousAutoAim() {
+
+    return Commands.sequence(
+        Commands.deadline(
+                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME),
+                Commands.sequence(
+                    Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.4),
+                    Commands.print("Spin Up Shooter")),
+                Commands.sequence(
+                    Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME - 0.7),
+                    Commands.print("Aim Shooter")),
+                Commands.sequence((swerve.autonomousPointTowardsTranslationCmd())))
+            .andThen(
+                () -> {
+                  Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
+                }),
+        Commands.print("Whoosh!"), drivePath());
+    // keeps moving to prevent the robot from stopping and changing the velocity of the note
+
+  }
+
   @Override
   public void disabledPeriodic() {}
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("local 4");
-
+    autonomousCommand = new PathPlannerAuto("New Auto");
+    swerve.startingAutonomousTime = Timer.getFPGATimestamp();
+    System.out.println("ngoeasinaoif");
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
     }
