@@ -209,13 +209,15 @@ public class Robot extends LoggedRobot {
                 elevator
                     .setExtensionCmd(() -> 0.0)
                     .until(() -> elevator.getExtensionMeters() < 0.05),
+                Commands.waitUntil(() -> controller.y().getAsBoolean()),
                 Commands.parallel(
+                    carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.25),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
                     Commands.waitUntil(
                             () ->
                                 elevator.getExtensionMeters()
                                     > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS)
-                        .andThen(carriage.runVoltageCmd(-3.0)))));
+                        .andThen(carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)))));
 
     // Prep climb
     operator
