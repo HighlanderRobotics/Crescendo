@@ -61,6 +61,22 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
+
+  public class AutoAimStates {
+
+    public static ShotData curShotData = new ShotData(new Rotation2d(), 0, 0, 0);
+    public static ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
+    public static Pose2d endingPose = new Pose2d();
+    public static double polarVelocity = 0.0;
+    public static Pose2d virtualTarget = new Pose2d();
+    public static double polarRadians = 0.0;
+    public static ChassisSpeeds inputSpeeds = new ChassisSpeeds(0, 0, 0);
+    public static Rotation2d rotationsToTranslation = new Rotation2d();
+    public static ChoreoTrajectoryState curState = null;
+    public static double elapsedAutonomousSeconds = 0;
+    public static double startingAutonomousSeconds = 0;
+  }
+
   // Drivebase constants
   public static final double MAX_LINEAR_SPEED = Units.feetToMeters(12.5);
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
@@ -92,19 +108,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
-
-  // values used in autoAim
-  public ShotData curShotData = new ShotData(new Rotation2d(), 0, 0, 0);
-  public ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
-  public Pose2d endingPose = new Pose2d();
-  public Pose2d virtualTarget = new Pose2d();
-  public double polarDistance = 0.0;
-  public double polarRadians = 0.0;
-  public ChassisSpeeds inputSpeeds = new ChassisSpeeds(0, 0, 0);
-  public Rotation2d rotationToTranslation = new Rotation2d();
-  public ChoreoTrajectoryState curState = getAutoState(AutoAim.LOOKAHEAD_TIME);
-  public double elapsedAutonomousTime = 0;
-  public double startingAutonomousTime = 0;
 
   public SwerveSubsystem(GyroIO gyroIO, ModuleIO... moduleIOs) {
     this.gyroIO = gyroIO;
@@ -228,10 +231,10 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
-    Logger.recordOutput("ShotData/Angle", curShotData.getAngle());
-    Logger.recordOutput("ShotData/Left RPM", curShotData.getLeftRPM());
-    Logger.recordOutput("ShotData/Right RPM", curShotData.getRightRPM());
-    Logger.recordOutput("ShotData/Flight Time", curShotData.getFlightTime());
+    Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
+    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPM());
+    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPM());
+    Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
     // Update odometry
     int deltaCount =
         Math.min(
@@ -414,9 +417,9 @@ public class SwerveSubsystem extends SubsystemBase {
     double angle =
         Math.atan2(
             translation.getY()
-                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative).getY(),
+                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS, speedsFieldRelative).getY(),
             translation.getX()
-                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsFieldRelative).getX());
+                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS, speedsFieldRelative).getX());
     return Rotation2d.fromRadians(angle);
   }
 
@@ -425,13 +428,12 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The transformed pose
    */
-  
   public Pose2d getVirtualTarget(ChassisSpeeds speedsRobotRelative) {
 
     Pose2d target = FieldConstants.getSpeaker();
 
     double distance =
-        getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, speedsRobotRelative)
+        getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS, speedsRobotRelative)
             .minus(target)
             .getTranslation()
             .getNorm();
@@ -439,12 +441,13 @@ public class SwerveSubsystem extends SubsystemBase {
     return target.transformBy(
         new Transform2d(
                 speedsRobotRelative.vxMetersPerSecond
-                    * AutoAim.shotMap.get(distance).getFlightTime(),
+                    * AutoAim.shotMap.get(distance).getFlightTimeSeconds(),
                 speedsRobotRelative.vyMetersPerSecond
-                    * AutoAim.shotMap.get(distance).getFlightTime(),
+                    * AutoAim.shotMap.get(distance).getFlightTimeSeconds(),
                 target.getRotation())
             .inverse());
   }
+
   @AutoLogOutput(key = "AutoAim/Virtual Target")
   public Pose2d getVirtualTarget() {
     return getVirtualTarget(getVelocity());
@@ -492,7 +495,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   @AutoLogOutput(key = "AutoAim/FuturePose")
   public Pose2d getLinearFuturePose() {
-    return getLinearFuturePose(AutoAim.LOOKAHEAD_TIME);
+    return getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS);
   }
 
   /**
@@ -502,7 +505,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param xMetersPerSecond Requested X velocity
    * @param yMetersPerSecond Requested Y velocity
    * @param time Time in the future to point from
-   * @return A command refrence that rotates the robot to a computed rotation
+   * @return A command reference that rotates the robot to a computed rotation
    */
   public Command teleopPointTowardsTranslationCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
@@ -515,17 +518,17 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         Commands.runOnce(
             () -> {
-              
-              this.inputSpeeds =
+              AutoAimStates.inputSpeeds =
                   new ChassisSpeeds(
                       xMetersPerSecond.getAsDouble(),
                       yMetersPerSecond.getAsDouble(),
                       getVelocity().omegaRadiansPerSecond);
-              this.virtualTarget =
+              AutoAimStates.virtualTarget =
                   getVirtualTarget(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(this.inputSpeeds, getRotation()));
-              this.rotationToTranslation =
-                  getRotationToTranslation(this.virtualTarget, this.inputSpeeds)
+                      ChassisSpeeds.fromFieldRelativeSpeeds(
+                          AutoAimStates.inputSpeeds, getRotation()));
+              AutoAimStates.rotationsToTranslation =
+                  getRotationToTranslation(AutoAimStates.virtualTarget, AutoAimStates.inputSpeeds)
                       .minus(Rotation2d.fromDegrees(180));
             },
             this),
@@ -534,8 +537,8 @@ public class SwerveSubsystem extends SubsystemBase {
                   double feedbackOutput =
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
-                          this.rotationToTranslation.getRadians());
-                  Logger.recordOutput("AutoAim/Ending Pose", endingPose);
+                          AutoAimStates.rotationsToTranslation.getRadians());
+                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
                   Logger.recordOutput(
                       "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
                   Logger.recordOutput(
@@ -551,14 +554,18 @@ public class SwerveSubsystem extends SubsystemBase {
                 })
             .beforeStarting(
                 () -> {
-                  endingPose =
+                  AutoAimStates.endingPose =
                       new Pose2d(
-                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getX(),
-                          getLinearFuturePose(AutoAim.LOOKAHEAD_TIME, this.inputSpeeds).getY(),
-                          this.rotationToTranslation);
-                  Logger.recordOutput("AutoAim/Ending Pose", endingPose);
+                          getLinearFuturePose(
+                                  AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.inputSpeeds)
+                              .getX(),
+                          getLinearFuturePose(
+                                  AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.inputSpeeds)
+                              .getY(),
+                          AutoAimStates.rotationsToTranslation);
+                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
                   headingController.reset(new State(getPose().getRotation().getRadians(), 0));
-                  Logger.recordOutput("AutoAim/Translated Target", this.virtualTarget);
+                  Logger.recordOutput("AutoAim/Translated Target", AutoAimStates.virtualTarget);
                 }));
   }
 
@@ -581,18 +588,22 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         Commands.runOnce(
             () -> {
-              startingAutonomousTime = Timer.getFPGATimestamp();
+              AutoAimStates.startingAutonomousSeconds = Timer.getFPGATimestamp();
 
-              curState = getAutoState(AutoAim.LOOKAHEAD_TIME);
-              this.inputSpeeds =
+              AutoAimStates.curState = getAutoState(AutoAim.LOOKAHEAD_TIME_SECONDS);
+              AutoAimStates.inputSpeeds =
                   new ChassisSpeeds(
-                      curState.velocityX, curState.velocityY, getVelocity().omegaRadiansPerSecond);
-              this.virtualTarget =
+                      AutoAimStates.curState.velocityX,
+                      AutoAimStates.curState.velocityY,
+                      getVelocity().omegaRadiansPerSecond);
+              AutoAimStates.virtualTarget =
                   getVirtualTarget(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(this.inputSpeeds, getRotation()));
+                      ChassisSpeeds.fromFieldRelativeSpeeds(
+                          AutoAimStates.inputSpeeds, getRotation()));
 
-              this.rotationToTranslation =
-                  getFutureRotationToTranslation(this.virtualTarget, curState.getPose());
+              AutoAimStates.rotationsToTranslation =
+                  getFutureRotationToTranslation(
+                      AutoAimStates.virtualTarget, AutoAimStates.curState.getPose());
             },
             this),
         this.runVelocityFieldRelative(
@@ -600,14 +611,16 @@ public class SwerveSubsystem extends SubsystemBase {
                   double feedbackOutput =
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
-                          this.rotationToTranslation.getRadians());
+                          AutoAimStates.rotationsToTranslation.getRadians());
 
-                  curState = getAutoState(elapsedAutonomousTime);
-                  elapsedAutonomousTime +=
-                      Timer.getFPGATimestamp() - elapsedAutonomousTime - startingAutonomousTime;
-                  System.out.println(elapsedAutonomousTime);
-                  Logger.recordOutput("AutoAim/Ending Pose", endingPose);
-                  Logger.recordOutput("AutoAim/Virtual Target", this.virtualTarget);
+                  AutoAimStates.curState = getAutoState(AutoAimStates.elapsedAutonomousSeconds);
+                  AutoAimStates.elapsedAutonomousSeconds +=
+                      Timer.getFPGATimestamp()
+                          - AutoAimStates.elapsedAutonomousSeconds
+                          - AutoAimStates.startingAutonomousSeconds;
+                  System.out.println(AutoAimStates.elapsedAutonomousSeconds);
+                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
+                  Logger.recordOutput("AutoAim/Virtual Target", AutoAimStates.virtualTarget);
                   Logger.recordOutput(
                       "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
                   Logger.recordOutput(
@@ -617,16 +630,20 @@ public class SwerveSubsystem extends SubsystemBase {
                   Logger.recordOutput(
                       "AutoAim/Goal Velocity", headingController.getGoal().velocity);
                   return new ChassisSpeeds(
-                      curState.velocityX,
-                      curState.velocityY,
+                      AutoAimStates.curState.velocityX,
+                      AutoAimStates.curState.velocityY,
                       feedbackOutput + headingController.getSetpoint().velocity);
                 })
             .beforeStarting(
                 () -> {
-                  endingPose = new Pose2d(curState.x, curState.y, this.rotationToTranslation);
-                  Logger.recordOutput("AutoAim/Ending Pose", endingPose);
+                  AutoAimStates.endingPose =
+                      new Pose2d(
+                          AutoAimStates.curState.x,
+                          AutoAimStates.curState.y,
+                          AutoAimStates.rotationsToTranslation);
+                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
                   headingController.reset(new State(getPose().getRotation().getRadians(), 0));
-                  Logger.recordOutput("AutoAim/Translated Target", this.virtualTarget);
+                  Logger.recordOutput("AutoAim/Translated Target", AutoAimStates.virtualTarget);
                 }));
   }
 
@@ -641,7 +658,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command teleopPointTowardsTranslationCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
     return teleopPointTowardsTranslationCmd(
-        xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME);
+        xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME_SECONDS);
   }
 
   public Command runModuleSteerCharacterizationCmd() {

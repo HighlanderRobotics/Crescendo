@@ -11,7 +11,7 @@ public class AutoAim {
 
   public static final InterpolatingShotTree shotMap = new InterpolatingShotTree();
 
-  public static final double LOOKAHEAD_TIME = 1.0;
+  public static final double LOOKAHEAD_TIME_SECONDS = 1.0;
 
   static {
 

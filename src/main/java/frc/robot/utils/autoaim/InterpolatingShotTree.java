@@ -54,10 +54,11 @@ public class InterpolatingShotTree {
     return new ShotData(
         Rotation2d.fromRadians(
             MathUtil.interpolate(
-                startValue.getAngle().getRadians(), endValue.getAngle().getRadians(), t)),
+                startValue.getRotation().getRadians(), endValue.getRotation().getRadians(), t)),
         MathUtil.interpolate(startValue.getLeftRPM(), endValue.getLeftRPM(), t),
         MathUtil.interpolate(startValue.getRightRPM(), endValue.getRightRPM(), t),
-        MathUtil.interpolate(startValue.getFlightTime(), endValue.getFlightTime(), t));
+        MathUtil.interpolate(
+            startValue.getFlightTimeSeconds(), endValue.getFlightTimeSeconds(), t));
   }
 
   private double inverseInterpolate(Double up, Double q, Double down) {
