@@ -5,10 +5,15 @@
 package frc.robot.subsystems.leds;
 
 import com.google.common.base.Supplier;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class LEDSubsystem extends SubsystemBase {
@@ -50,14 +55,18 @@ public class LEDSubsystem extends SubsystemBase {
         setSolidCmd(offColor).withTimeout(1.0 / frequency));
   }
 
-  public void setProgress(Color color, double progress) {
-    for (int i = 0; i < LED_LENGTH; i++) {
-      if (i < progress) {
-        setIndex(i, color);
-      } else {
-        setIndex(i, Color.kBlack);
-      }
-    }
+  /** Sets the first portion of the leds to a color, and the rest off */
+  public Command setProgressCmd(Color color, DoubleSupplier progress) {
+    return this.run(
+        () -> {
+          for (int i = 0; i < LED_LENGTH; i++) {
+            if (i < progress.getAsDouble() * LED_LENGTH) {
+              setIndex(i, color);
+            } else {
+              setIndex(i, Color.kBlack);
+            }
+          }
+        });
   }
 
   public Command setRainbowCmd() {
@@ -82,5 +91,34 @@ public class LEDSubsystem extends SubsystemBase {
           dashStart += LED_LENGTH * frequency * 0.020;
           dashStart %= LED_LENGTH;
         });
+  }
+
+  public Command defaultStateDisplay(BooleanSupplier enabled, BooleanSupplier targetIsSpeaker) {
+    return Commands.either(
+            Commands.either(
+                this.setBlinkingCmd(new Color("#ffff00"), new Color(), 10.0)
+                    .until(() -> !targetIsSpeaker.getAsBoolean() || !enabled.getAsBoolean()),
+                this.setBlinkingCmd(new Color("#ff7777"), new Color(), 10.0)
+                    .until(() -> targetIsSpeaker.getAsBoolean() || !enabled.getAsBoolean()),
+                targetIsSpeaker),
+            this.setRunAlongCmd(
+                    // Set color to be purple with a moving dash corresponding to alliance color
+                    () -> {
+                      if (DriverStation.getAlliance().isEmpty()) {
+                        return new Color("#350868");
+                      } else if (DriverStation.getAlliance().get() == Alliance.Red) {
+                        return new Color("#ff0000");
+                      } else { // Blue
+                        return new Color("#0000ff");
+                      }
+                    },
+                    () -> new Color("#b59aff"),
+                    10,
+                    1.0)
+                .until(enabled),
+            enabled)
+        .ignoringDisable(true)
+        .withInterruptBehavior(InterruptionBehavior.kCancelSelf)
+        .repeatedly();
   }
 }
