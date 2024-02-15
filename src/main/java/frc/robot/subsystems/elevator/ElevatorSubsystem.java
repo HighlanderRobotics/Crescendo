@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems.elevator;
 
+import static edu.wpi.first.units.Units.Volts;
+
+import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -18,13 +21,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
-import static edu.wpi.first.units.Units.Volts;
-
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
-
-import com.ctre.phoenix6.SignalLogger;
 
 /** Slanted cascading elevator */
 public class ElevatorSubsystem extends SubsystemBase {
@@ -42,7 +40,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
   private final ElevatorIO io;
-  
+
   private final SysIdRoutine elevatorRoutine;
 
   // For dashboard
@@ -92,7 +90,9 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   public Command runCurrentZeroing() {
-    return this.run(() -> io.setVoltage(-1.0)).until(() -> inputs.elevatorCurrentAmps[0] > 40.0).finallyDo(() -> io.resetEncoder(0.0));
+    return this.run(() -> io.setVoltage(-1.0))
+        .until(() -> inputs.elevatorCurrentAmps[0] > 40.0)
+        .finallyDo(() -> io.resetEncoder(0.0));
   }
 
   public Command runSysidCmd() {
@@ -100,19 +100,27 @@ public class ElevatorSubsystem extends SubsystemBase {
         runCurrentZeroing(),
         this.runOnce(() -> SignalLogger.start()),
         // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine.quasistatic(Direction.kForward).until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
+        elevatorRoutine
+            .quasistatic(Direction.kForward)
+            .until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
         this.runOnce(() -> io.setVoltage(0.0)),
         Commands.waitSeconds(1.0),
         // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine.quasistatic(Direction.kReverse).until(() -> inputs.elevatorPositionMeters < 0.2),
+        elevatorRoutine
+            .quasistatic(Direction.kReverse)
+            .until(() -> inputs.elevatorPositionMeters < 0.2),
         this.runOnce(() -> io.setVoltage(0.0)),
         Commands.waitSeconds(1.0),
         // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine.dynamic(Direction.kForward).until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
+        elevatorRoutine
+            .dynamic(Direction.kForward)
+            .until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
         this.runOnce(() -> io.setVoltage(0.0)),
         Commands.waitSeconds(1.0),
         // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine.dynamic(Direction.kReverse).until(() -> inputs.elevatorPositionMeters < 0.2),
+        elevatorRoutine
+            .dynamic(Direction.kReverse)
+            .until(() -> inputs.elevatorPositionMeters < 0.2),
         this.runOnce(() -> SignalLogger.stop()));
   }
 

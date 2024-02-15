@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -110,7 +109,9 @@ public class ShooterSubystem extends SubsystemBase {
   }
 
   public Command runPivotCurrentZeroing() {
-    return this.run(() -> io.setPivotVoltage(-1.0)).until(() -> inputs.pivotAmps > 40.0).finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
+    return this.run(() -> io.setPivotVoltage(-1.0))
+        .until(() -> inputs.pivotAmps > 40.0)
+        .finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
   }
 
   public Command runFlywheelSysidCmd() {
@@ -134,19 +135,27 @@ public class ShooterSubystem extends SubsystemBase {
     return Commands.sequence(
         this.runOnce(() -> SignalLogger.start()),
         // Stop when we get close to vertical so it falls back
-        pivotRoutine.quasistatic(Direction.kForward).until(() -> inputs.pivotRotation.getDegrees() > 80.0),
+        pivotRoutine
+            .quasistatic(Direction.kForward)
+            .until(() -> inputs.pivotRotation.getDegrees() > 80.0),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
         Commands.waitSeconds(1.0),
         // Stop when near horizontal so we avoid hard stop
-        pivotRoutine.quasistatic(Direction.kReverse).until(() -> inputs.pivotRotation.getDegrees() < 10.0),
+        pivotRoutine
+            .quasistatic(Direction.kReverse)
+            .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
         Commands.waitSeconds(1.0),
         // Stop when we get close to vertical so it falls back
-        pivotRoutine.dynamic(Direction.kForward).until(() -> inputs.pivotRotation.getDegrees() > 80.0),
+        pivotRoutine
+            .dynamic(Direction.kForward)
+            .until(() -> inputs.pivotRotation.getDegrees() > 80.0),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
         Commands.waitSeconds(1.0),
         // Stop when near horizontal so we avoid hard stop
-        pivotRoutine.dynamic(Direction.kReverse).until(() -> inputs.pivotRotation.getDegrees() < 10.0),
+        pivotRoutine
+            .dynamic(Direction.kReverse)
+            .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
         this.runOnce(() -> SignalLogger.stop()));
   }
 }
