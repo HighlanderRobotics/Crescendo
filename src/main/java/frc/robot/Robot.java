@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -232,6 +233,12 @@ public class Robot extends LoggedRobot {
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+    // Dashboard command buttons
+    SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
+    SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
+    SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
+    SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
+    SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
   }
 
   @Override
