@@ -55,6 +55,7 @@ public class ElevatorIOReal implements ElevatorIO {
         ElevatorSubsystem.GEAR_RATIO * 2 * Math.PI * ElevatorSubsystem.DRUM_RADIUS_METERS;
 
     motor.getConfigurator().apply(config);
+    motor.setPosition(0.0); // Assume we boot 0ed
     follower.getConfigurator().apply(new TalonFXConfiguration());
     follower.setControl(new Follower(motor.getDeviceID(), true));
 

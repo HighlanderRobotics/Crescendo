@@ -109,8 +109,13 @@ public class ShooterSubystem extends SubsystemBase {
         });
   }
 
+  public Command runPivotCurrentZeroing() {
+    return this.run(() -> io.setPivotVoltage(-1.0)).until(() -> inputs.pivotAmps > 40.0).finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
+  }
+
   public Command runFlywheelSysidCmd() {
     return Commands.sequence(
+        runPivotCurrentZeroing(),
         this.runOnce(() -> SignalLogger.start()),
         flywheelRoutine.quasistatic(Direction.kForward),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),

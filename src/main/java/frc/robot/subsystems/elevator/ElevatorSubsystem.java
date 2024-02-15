@@ -91,8 +91,13 @@ public class ElevatorSubsystem extends SubsystemBase {
         });
   }
 
+  public Command runCurrentZeroing() {
+    return this.run(() -> io.setVoltage(-1.0)).until(() -> inputs.elevatorCurrentAmps[0] > 40.0).finallyDo(() -> io.resetEncoder(0.0));
+  }
+
   public Command runSysidCmd() {
     return Commands.sequence(
+        runCurrentZeroing(),
         this.runOnce(() -> SignalLogger.start()),
         // Stop when we get close to max to avoid hitting hard stop
         elevatorRoutine.quasistatic(Direction.kForward).until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
@@ -113,9 +118,9 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public Pose3d getCarriagePose() {
     return new Pose3d(
-        Units.inchesToMeters(4.5) + carriage.getLength() * Math.cos(ELEVATOR_ANGLE.getRadians()),
+        Units.inchesToMeters(4.5) + carriage.getLength() * ELEVATOR_ANGLE.getCos(),
         0.0,
-        Units.inchesToMeters(7.0) + carriage.getLength() * Math.sin(ELEVATOR_ANGLE.getRadians()),
+        Units.inchesToMeters(7.0) + carriage.getLength() * ELEVATOR_ANGLE.getSin(),
         new Rotation3d());
   }
 
