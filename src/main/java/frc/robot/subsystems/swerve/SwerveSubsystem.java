@@ -234,8 +234,8 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
-    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPM());
-    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPM());
+    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
+    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
     // Update odometry
     int deltaCount =

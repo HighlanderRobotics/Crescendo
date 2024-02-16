@@ -50,13 +50,17 @@ public class InterpolatingShotTree {
     map.clear();
   }
 
+  public void remove(double key) {
+    map.remove(key);
+  }
+
   private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
     return new ShotData(
         Rotation2d.fromRadians(
             MathUtil.interpolate(
                 startValue.getRotation().getRadians(), endValue.getRotation().getRadians(), t)),
-        MathUtil.interpolate(startValue.getLeftRPM(), endValue.getLeftRPM(), t),
-        MathUtil.interpolate(startValue.getRightRPM(), endValue.getRightRPM(), t),
+        MathUtil.interpolate(startValue.getLeftRPS(), endValue.getLeftRPS(), t),
+        MathUtil.interpolate(startValue.getRightRPS(), endValue.getRightRPS(), t),
         MathUtil.interpolate(
             startValue.getFlightTimeSeconds(), endValue.getFlightTimeSeconds(), t));
   }

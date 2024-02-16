@@ -15,6 +15,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -40,6 +41,7 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
@@ -152,9 +154,11 @@ public class Robot extends LoggedRobot {
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 0.5));
     controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
 
-    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand("auto aim", autonomousAutoAim("amp 4 local sgmt 1"));
+    SmartDashboard.putData("Shooter shoot", shootWithDashboard());
 
+    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+    NamedCommands.registerCommand(
+        "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
     controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
     controller
@@ -191,6 +195,17 @@ public class Robot extends LoggedRobot {
         new Pose3d[] {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
+  }
+
+  private LoggedDashboardNumber rotation = new LoggedDashboardNumber("Rotation (Rotations)");
+  private LoggedDashboardNumber leftRPS =
+      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
+  private LoggedDashboardNumber rightRPS =
+      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)");
+
+  public Command shootWithDashboard() {
+    return shooter.runStateCmd(
+        () -> Rotation2d.fromRotations(rotation.get()), () -> leftRPS.get(), () -> rightRPS.get());
   }
 
   public Command drivePath() {
@@ -246,8 +261,8 @@ public class Robot extends LoggedRobot {
         Commands.parallel(
             shooter.runStateCmd(
                 () -> AutoAimStates.curShotData.getRotation(),
-                () -> AutoAimStates.curShotData.getLeftRPM(),
-                () -> AutoAimStates.curShotData.getRightRPM()),
+                () -> AutoAimStates.curShotData.getLeftRPS(),
+                () -> AutoAimStates.curShotData.getRightRPS()),
             swerve.teleopPointTowardsTranslationCmd(
                 () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
                 () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
@@ -279,8 +294,8 @@ public class Robot extends LoggedRobot {
                 Commands.parallel(
                     shooter.runStateCmd(
                         () -> AutoAimStates.curShotData.getRotation(),
-                        () -> AutoAimStates.curShotData.getLeftRPM(),
-                        () -> AutoAimStates.curShotData.getRightRPM()),
+                        () -> AutoAimStates.curShotData.getLeftRPS(),
+                        () -> AutoAimStates.curShotData.getRightRPS()),
                     swerve.autonomousPointTowardsTranslationCmd()))
             .beforeStarting(
                 () -> {

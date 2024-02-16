@@ -31,11 +31,11 @@ public class ShotData {
     return rotation;
   }
 
-  public double getLeftRPM() {
+  public double getLeftRPS() {
     return leftRotationsPerSecond;
   }
 
-  public double getRightRPM() {
+  public double getRightRPS() {
     return rightRotationsPerSecond;
   }
 
@@ -47,9 +47,9 @@ public class ShotData {
     return ""
         + getRotation()
         + " "
-        + getLeftRPM()
+        + getLeftRPS()
         + " "
-        + getRightRPM()
+        + getRightRPS()
         + " "
         + getFlightTimeSeconds();
   }

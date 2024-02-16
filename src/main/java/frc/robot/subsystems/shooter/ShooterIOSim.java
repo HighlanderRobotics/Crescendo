@@ -38,12 +38,14 @@ public class ShooterIOSim implements ShooterIO {
       new ProfiledPIDController(1.0, 0.0, 1.0, new Constraints(10.0, 10.0));
   ArmFeedforward pivotFF = new ArmFeedforward(0.0, 0.12, 0.8);
 
-  PIDController flywheelController = new PIDController(0.5, 0.0, 0.0);
+  PIDController leftFlywheelController = new PIDController(0.5, 0.0, 0.0);
+  PIDController rightFlywheelController = new PIDController(0.5, 0.0, 0.0);
   SimpleMotorFeedforward flywheelFF = new SimpleMotorFeedforward(0.0, 0.0925);
 
   @Override
   public void updateInputs(ShooterIOInputsAutoLogged inputs) {
     leftFlywheelSim.update(0.020);
+    rightFlywheelSim.update(0.020);
     pivotSim.update(0.020);
 
     inputs.pivotRotation = Rotation2d.fromRadians(pivotSim.getAngleRads());
@@ -78,10 +80,10 @@ public class ShooterIOSim implements ShooterIO {
 
   public void setFlywheelVelocity(final double left, final double right) {
     setFlywheelVoltage(
-        flywheelController.calculate(
+        leftFlywheelController.calculate(
                 leftFlywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), left)
             + flywheelFF.calculate(left),
-        flywheelController.calculate(
+        rightFlywheelController.calculate(
                 rightFlywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), right)
             + flywheelFF.calculate(right));
   }
