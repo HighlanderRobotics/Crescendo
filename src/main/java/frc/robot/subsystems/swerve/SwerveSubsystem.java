@@ -75,6 +75,8 @@ public class SwerveSubsystem extends SubsystemBase {
     public static ChoreoTrajectoryState curState = null;
     public static double elapsedAutonomousSeconds = 0;
     public static double startingAutonomousSeconds = 0;
+    public static double pathTotalTime = 0;
+    public static String pathName = "";
   }
 
   // Drivebase constants
@@ -454,7 +456,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public ChoreoTrajectoryState getAutoState(double timestamp) {
-    return Choreo.getTrajectory("amp 4 local sgmt 1").sample(timestamp);
+    return Choreo.getTrajectory(AutoAimStates.pathName).sample(timestamp);
   }
 
   /**

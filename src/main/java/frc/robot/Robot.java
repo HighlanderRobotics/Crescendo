@@ -153,7 +153,7 @@ public class Robot extends LoggedRobot {
     controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand("auto aim", autonomousAutoAim());
+    NamedCommands.registerCommand("auto aim", autonomousAutoAim("amp 4 local sgmt 1"));
 
     controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
@@ -194,31 +194,29 @@ public class Robot extends LoggedRobot {
   }
 
   public Command drivePath() {
-    return Commands.sequence(
-        swerve
-            .runVelocityFieldRelative(
-                () -> {
-                  System.out.println(AutoAimStates.elapsedAutonomousSeconds);
-                  AutoAimStates.curState =
-                      swerve.getAutoState(AutoAimStates.elapsedAutonomousSeconds);
-                  AutoAimStates.elapsedAutonomousSeconds +=
-                      Timer.getFPGATimestamp()
-                          - AutoAimStates.elapsedAutonomousSeconds
-                          - AutoAimStates.startingAutonomousSeconds;
-                  return new ChassisSpeeds(
-                      AutoAimStates.curState.velocityX,
-                      AutoAimStates.curState.velocityY,
-                      AutoAimStates.curState.angularVelocity);
-                })
-            .until(
-                () ->
-                    AutoAimStates.elapsedAutonomousSeconds
-                        >= Choreo.getTrajectory("amp 4 local sgmt 1").getTotalTime()),
-        Commands.runOnce(
+    return swerve
+        .runVelocityFieldRelative(
+            () -> {
+              System.out.println(AutoAimStates.elapsedAutonomousSeconds);
+              AutoAimStates.curState = swerve.getAutoState(AutoAimStates.elapsedAutonomousSeconds);
+              AutoAimStates.elapsedAutonomousSeconds +=
+                  Timer.getFPGATimestamp()
+                      - AutoAimStates.elapsedAutonomousSeconds
+                      - AutoAimStates.startingAutonomousSeconds;
+              return new ChassisSpeeds(
+                  AutoAimStates.curState.velocityX,
+                  AutoAimStates.curState.velocityY,
+                  AutoAimStates.curState.angularVelocity);
+            })
+        .until(
+            () -> {
+              return AutoAimStates.elapsedAutonomousSeconds >= AutoAimStates.pathTotalTime;
+            })
+        .andThen(
             () -> {
               AutoAimStates.startingAutonomousSeconds = Timer.getFPGATimestamp();
             },
-            swerve));
+            swerve);
   }
 
   /**
@@ -229,42 +227,38 @@ public class Robot extends LoggedRobot {
    * @return A command that takes the robot through an auto aim sequence
    */
   public Command teleopAutoAim(Supplier<ChassisSpeeds> speeds) {
-
+    Command getInitialValues =
+        Commands.runOnce(
+            () -> {
+              AutoAimStates.curShotSpeeds = speeds.get();
+              Logger.recordOutput("AutoAim/cur shot speedd", AutoAimStates.curShotSpeeds);
+              AutoAimStates.curShotData =
+                  AutoAim.shotMap.get(
+                      swerve
+                          .getLinearFuturePose(
+                              AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
+                          .minus(FieldConstants.getSpeaker())
+                          .getTranslation()
+                          .getNorm());
+              System.out.println(Timer.getFPGATimestamp());
+            });
+    Command runRobot =
+        Commands.parallel(
+            shooter.runStateCmd(
+                () -> AutoAimStates.curShotData.getRotation(),
+                () -> AutoAimStates.curShotData.getLeftRPM(),
+                () -> AutoAimStates.curShotData.getRightRPM()),
+            swerve.teleopPointTowardsTranslationCmd(
+                () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
+                () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
+                AutoAim.LOOKAHEAD_TIME_SECONDS));
     return Commands.sequence(
-            Commands.runOnce(
-                () -> {
-                  AutoAimStates.curShotSpeeds = speeds.get();
-                  Logger.recordOutput("AutoAim/cur shot speedd", AutoAimStates.curShotSpeeds);
-                  AutoAimStates.curShotData =
-                      AutoAim.shotMap.get(
-                          swerve
-                              .getLinearFuturePose(
-                                  AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
-                              .minus(FieldConstants.getSpeaker())
-                              .getTranslation()
-                              .getNorm());
-                  System.out.println(Timer.getFPGATimestamp());
-                },
-                swerve),
-            Commands.deadline(
-                    Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
-                    Commands.parallel(
-                        shooter.runStateCmd(
-                            () -> AutoAimStates.curShotData.getRotation(),
-                            () -> AutoAimStates.curShotData.getLeftRPM(),
-                            () -> AutoAimStates.curShotData.getRightRPM()),
-                        swerve.teleopPointTowardsTranslationCmd(
-                            () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                            () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                            AutoAim.LOOKAHEAD_TIME_SECONDS)))
+            getInitialValues,
+            Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot)
                 .finallyDo(
                     () -> {
-                      Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
+                      System.out.println("Shoot note");
                     }),
-            Commands.runOnce(
-                () -> {
-                  System.out.println("Shoot note");
-                }),
             // keeps moving to prevent the robot from stopping and changing the velocity of the note
             swerve
                 .runVelocityFieldRelative(
@@ -277,7 +271,7 @@ public class Robot extends LoggedRobot {
         .andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
   }
 
-  public Command autonomousAutoAim() {
+  public Command autonomousAutoAim(String pathName) {
 
     return Commands.sequence(
         Commands.deadline(
@@ -288,10 +282,12 @@ public class Robot extends LoggedRobot {
                         () -> AutoAimStates.curShotData.getLeftRPM(),
                         () -> AutoAimStates.curShotData.getRightRPM()),
                     swerve.autonomousPointTowardsTranslationCmd()))
-            .andThen(
+            .beforeStarting(
                 () -> {
-                  Logger.recordOutput("AutoAim/End Pose", swerve.getPose());
-                }),
+                  AutoAimStates.pathName = pathName;
+                  AutoAimStates.pathTotalTime = Choreo.getTrajectory(pathName).getTotalTime();
+                },
+                swerve),
         Commands.print("Whoosh!"),
         drivePath());
     // keeps moving to prevent the robot from stopping and changing the velocity of the note
