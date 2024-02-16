@@ -166,10 +166,10 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static ModuleIO[] createTalonFXModules() {
     return new ModuleIO[] {
-      new ModuleIOTalonFX(frontLeft),
-      new ModuleIOTalonFX(frontRight),
-      new ModuleIOTalonFX(backLeft),
-      new ModuleIOTalonFX(backRight)
+      new ModuleIOReal(frontLeft),
+      new ModuleIOReal(frontRight),
+      new ModuleIOReal(backLeft),
+      new ModuleIOReal(backRight)
     };
   }
 
