@@ -11,6 +11,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
@@ -20,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
@@ -39,9 +39,9 @@ import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
+import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
-import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -184,7 +184,26 @@ public class Robot extends LoggedRobot {
         .and(() -> currentTarget == Target.SPEAKER)
         .whileTrue(
             Commands.parallel(
-                shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
+                teleopAutoAim(
+                () -> {
+                  double vx = swerve.getVelocity().vxMetersPerSecond;
+                  double vy = swerve.getVelocity().vyMetersPerSecond;
+                  double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
+
+                  double polarVelocity =
+                      MathUtil.clamp(
+                          Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
+                          -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
+                          SwerveSubsystem.MAX_LINEAR_SPEED / 2);
+                  double polarRadians = Math.atan2(vy, vx);
+                  ChassisSpeeds polarSpeeds =
+                      new ChassisSpeeds(
+                          polarVelocity * Math.cos(polarRadians),
+                          polarVelocity * Math.sin(polarRadians),
+                          vTheta);
+                  Logger.recordOutput("AutoAim/Polar Sppeeds", polarSpeeds);
+                  return polarSpeeds;
+                }),
                 Commands.waitSeconds(0.5).andThen(feeder.runVoltageCmd(3.0))));
     controller
         .rightTrigger()
@@ -221,13 +240,16 @@ public class Robot extends LoggedRobot {
                     .until(() -> elevator.getExtensionMeters() < 0.05),
                 Commands.waitUntil(() -> controller.y().getAsBoolean()),
                 Commands.parallel(
-                    carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.25),
-                    elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
-                    Commands.waitUntil(
-                            () ->
-                                elevator.getExtensionMeters()
-                                    > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS)
-                        .andThen(carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)))));
+                    carriage
+                        .runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)
+                        .withTimeout(0.25)
+                        .andThen(
+                            Commands.waitUntil(
+                                () ->
+                                    elevator.getExtensionMeters()
+                                        > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS),
+                            carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)),
+                    elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS))));
 
     // Prep climb
     operator
@@ -243,13 +265,11 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
-
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
         "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
-    controller.y().onTrue(new InstantCommand(swerve::getLinearFuturePose));
 
     controller
         .leftBumper()
@@ -288,8 +308,7 @@ public class Robot extends LoggedRobot {
   }
 
   private LoggedDashboardNumber rotation = new LoggedDashboardNumber("Rotation (Rotations)");
-  private LoggedDashboardNumber leftRPS =
-      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
+  private LoggedDashboardNumber leftRPS = new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
   private LoggedDashboardNumber rightRPS =
       new LoggedDashboardNumber("Right RPS (Rotations Per Sec)");
 
