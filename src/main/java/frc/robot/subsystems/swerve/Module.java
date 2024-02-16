@@ -64,8 +64,8 @@ public class Module {
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
-      final double positionMeters = inputs.odometryDrivePositionsMeters[i];
-      final Rotation2d angle = inputs.odometryTurnPositions[i];
+      double positionMeters = inputs.odometryDrivePositionsMeters[i];
+      Rotation2d angle = inputs.odometryTurnPositions[i];
       odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
       lastPositionMeters = positionMeters;
     }

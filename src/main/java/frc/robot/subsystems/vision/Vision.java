@@ -49,6 +49,7 @@ public class Vision {
 
   public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
     // Skip if we only have 1 target
+    // TODO change
     if (result.getTargets().size() < 1) {
       return Optional.empty();
     }
@@ -60,10 +61,9 @@ public class Vision {
             PoseStrategy.LOWEST_AMBIGUITY,
             inputs.constants.robotToCamera());
     // Reject if estimated pose is in the air or ground
-    // TODO current testing setup needs it to be in the air lol
-    // if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {
-    //   return Optional.empty();
-    // }
+    if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {
+      return Optional.empty();
+    }
     return estPose;
   }
 

@@ -167,8 +167,8 @@ public class SwerveSubsystem extends SubsystemBase {
               new Translation3d(
                   Units.inchesToMeters(0),
                   Units.inchesToMeters(-14.4),
-                  Units.inchesToMeters(29.75)),
-              new Rotation3d(0, Math.PI / 2, 0)),
+                  Units.inchesToMeters(-29.75)),
+              new Rotation3d(0, 0, 0)),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS); // TODO maybe wrong
   // public static final VisionConstants rightCamConstants =
@@ -193,6 +193,7 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int i = 0; i < moduleIOs.length; i++) {
       modules[i] = new Module(moduleIOs[i]);
     }
+    PhoenixOdometryThread.getInstance().start();
     for (int i = 0; i < visionIOs.length; i++) {
       cameras[i] = new Vision(visionIOs[i]);
     }
