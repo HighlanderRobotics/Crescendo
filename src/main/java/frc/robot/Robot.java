@@ -11,16 +11,17 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
@@ -29,6 +30,8 @@ import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseIOReal;
+import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
@@ -38,6 +41,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
+import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -53,10 +57,19 @@ public class Robot extends LoggedRobot {
     REAL
   }
 
+  public static enum Target {
+    AMP,
+    SPEAKER
+  }
+
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   private Command autonomousCommand;
 
-  private final CommandXboxController controller = new CommandXboxController(0);
+  private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
+  private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
+
+  private Target currentTarget = Target.SPEAKER;
+  private double flywheelIdleSpeed = 1.0;
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -79,6 +92,8 @@ public class Robot extends LoggedRobot {
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
+  private final ReactionBarReleaseSubsystem reactionBarRelease =
+      new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
 
   @Override
   public void robotInit() {
@@ -129,21 +144,63 @@ public class Robot extends LoggedRobot {
         swerve.runVelocityFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -controller.getRightX() * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getRightX())
+                        * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
+    carriage.setDefaultCommand(carriage.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
-    shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
+    shooter.setDefaultCommand(
+        shooter.runStateCmd(
+            () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+    reactionBarRelease.setDefaultCommand(
+        reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
 
-    // Controller bindings here
+    controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
+    operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
+
+    // Robot state management bindings
+    new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+        .debounce(0.25)
+        .whileTrue(
+            Commands.parallel(
+                intake.runVoltageCmd(0.0).withInterruptBehavior(InterruptionBehavior.kCancelSelf),
+                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25)));
+    new Trigger(() -> currentTarget == Target.SPEAKER)
+        .whileTrue(Commands.parallel(carriage.runVoltageCmd(5.0), feeder.indexCmd()));
+    new Trigger(() -> currentTarget == Target.AMP)
+        .whileTrue(
+            Commands.either(
+                Commands.parallel(carriage.indexBackwardsCmd(), feeder.runVoltageCmd(-5.0)),
+                Commands.parallel(carriage.indexForwardsCmd(), feeder.runVoltageCmd(0.0)),
+                () -> feeder.getFirstBeambreak()));
+
+    // ---- Controller bindings here ----
+    controller.leftTrigger().whileTrue(intake.runVoltageCmd(10.0));
     controller
         .rightTrigger()
-        .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(45.0), 50.0, 40.0));
-    controller.start().onTrue(Commands.runOnce(() -> swerve.setYaw(Rotation2d.fromDegrees(0))));
-
-    // Test binding for autoaim
+        .and(() -> currentTarget == Target.SPEAKER)
+        .whileTrue(
+            Commands.parallel(
+                shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
+                Commands.waitSeconds(0.5).andThen(feeder.runVoltageCmd(3.0))));
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.AMP)
+        .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
+        .onFalse(
+            Commands.parallel(
+                    carriage.runVoltageCmd(-3.0),
+                    elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
+                .withTimeout(0.5));
+    controller.rightBumper().whileTrue(swerve.stopWithXCmd());
+    // Heading reset
+    controller
+        .leftStick()
+        .and(controller.rightStick())
+        .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
     controller
         .a()
         .whileTrue(
@@ -153,6 +210,39 @@ public class Robot extends LoggedRobot {
     // Test binding for elevator
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 0.5));
     controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
+
+    controller
+        .y()
+        .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+        .onTrue(
+            Commands.sequence(
+                elevator
+                    .setExtensionCmd(() -> 0.0)
+                    .until(() -> elevator.getExtensionMeters() < 0.05),
+                Commands.waitUntil(() -> controller.y().getAsBoolean()),
+                Commands.parallel(
+                    carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.25),
+                    elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
+                    Commands.waitUntil(
+                            () ->
+                                elevator.getExtensionMeters()
+                                    > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS)
+                        .andThen(carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)))));
+
+    // Prep climb
+    operator
+        .rightTrigger(0.5)
+        .and(operator.rightBumper())
+        .toggleOnFalse(
+            Commands.parallel(
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS)));
+    operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
+    operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
+    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 1.0));
+    operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
+    operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
+    operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
+
 
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
 
@@ -334,5 +424,10 @@ public class Robot extends LoggedRobot {
   @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
+  }
+
+  /** Modifies the given joystick axis value to make teleop driving smoother. */
+  private static double teleopAxisAdjustment(double x) {
+    return MathUtil.applyDeadband(Math.abs(Math.pow(x, 2)) * Math.signum(x), 0.02);
   }
 }
