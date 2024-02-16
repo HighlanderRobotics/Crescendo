@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
@@ -39,9 +38,9 @@ import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
+import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
-import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -243,7 +242,6 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
-
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
@@ -288,8 +286,7 @@ public class Robot extends LoggedRobot {
   }
 
   private LoggedDashboardNumber rotation = new LoggedDashboardNumber("Rotation (Rotations)");
-  private LoggedDashboardNumber leftRPS =
-      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
+  private LoggedDashboardNumber leftRPS = new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
   private LoggedDashboardNumber rightRPS =
       new LoggedDashboardNumber("Right RPS (Rotations Per Sec)");
 
