@@ -70,7 +70,8 @@ public class ModuleIOTalonFX implements ModuleIO {
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final MotionMagicVelocityVoltage drivePIDF = new MotionMagicVelocityVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicVelocityVoltage drivePIDF =
+      new MotionMagicVelocityVoltage(0.0).withEnableFOC(true);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   public ModuleIOTalonFX(ModuleConstants constants) {
