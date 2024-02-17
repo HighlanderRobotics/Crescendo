@@ -11,6 +11,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -31,6 +32,7 @@ import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.leds.LEDIOReal;
+import frc.robot.subsystems.leds.LEDIOSim;
 import frc.robot.subsystems.leds.LEDSubsystem;
 import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseIOReal;
 import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseSubsystem;
@@ -44,7 +46,6 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
-import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -97,7 +98,8 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final ReactionBarReleaseSubsystem reactionBarRelease =
       new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
-  private final LEDSubsystem leds = new LEDSubsystem(new LEDIOReal());
+  private final LEDSubsystem leds =
+      new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
 
   @Override
   public void robotInit() {
