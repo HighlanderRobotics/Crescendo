@@ -187,7 +187,7 @@ public class Robot extends LoggedRobot {
                     () -> {
                       double vx = swerve.getVelocity().vxMetersPerSecond;
                       double vy = swerve.getVelocity().vyMetersPerSecond;
-                      double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
+                      double omega = swerve.getVelocity().omegaRadiansPerSecond;
 
                       double polarVelocity =
                           MathUtil.clamp(
@@ -199,7 +199,7 @@ public class Robot extends LoggedRobot {
                           new ChassisSpeeds(
                               polarVelocity * Math.cos(polarRadians),
                               polarVelocity * Math.sin(polarRadians),
-                              vTheta);
+                              omega);
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
                       return polarSpeeds;
                     }),
@@ -264,37 +264,13 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
-    SmartDashboard.putData("Shooter shoot", shootWithDashboard());
-
+    
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
         "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
 
-    controller
-        .leftBumper()
-        .whileTrue(
-            teleopAutoAim(
-                () -> {
-                  double vx = swerve.getVelocity().vxMetersPerSecond;
-                  double vy = swerve.getVelocity().vyMetersPerSecond;
-                  double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
-
-                  double polarVelocity =
-                      MathUtil.clamp(
-                          Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
-                          -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
-                          SwerveSubsystem.MAX_LINEAR_SPEED / 2);
-                  double polarRadians = Math.atan2(vy, vx);
-                  ChassisSpeeds polarSpeeds =
-                      new ChassisSpeeds(
-                          polarVelocity * Math.cos(polarRadians),
-                          polarVelocity * Math.sin(polarRadians),
-                          vTheta);
-                  Logger.recordOutput("AutoAim/Polar Sppeeds", polarSpeeds);
-                  return polarSpeeds;
-                }));
-
     // Dashboard command buttons
+    SmartDashboard.putData("Shooter shoot", shootWithDashboard());
     SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
     SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
