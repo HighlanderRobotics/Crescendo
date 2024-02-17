@@ -12,10 +12,12 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -29,6 +31,9 @@ import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.leds.LEDIOReal;
+import frc.robot.subsystems.leds.LEDIOSim;
+import frc.robot.subsystems.leds.LEDSubsystem;
 import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseIOReal;
 import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
@@ -93,6 +98,8 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final ReactionBarReleaseSubsystem reactionBarRelease =
       new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
+  private final LEDSubsystem leds =
+      new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
 
   @Override
   public void robotInit() {
@@ -156,6 +163,9 @@ public class Robot extends LoggedRobot {
             () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     reactionBarRelease.setDefaultCommand(
         reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
+    leds.setDefaultCommand(
+        leds.defaultStateDisplay(
+            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -166,7 +176,8 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             Commands.parallel(
                 intake.runVoltageCmd(0.0).withInterruptBehavior(InterruptionBehavior.kCancelSelf),
-                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25)));
+                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25),
+                leds.setBlinkingCmd(new Color("#ff8000"), new Color("#000000"), 25.0)));
     new Trigger(() -> currentTarget == Target.SPEAKER)
         .whileTrue(Commands.parallel(carriage.runVoltageCmd(5.0), feeder.indexCmd()));
     new Trigger(() -> currentTarget == Target.AMP)
@@ -264,7 +275,6 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
-    
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
         "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
