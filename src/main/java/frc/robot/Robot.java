@@ -44,7 +44,6 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
-import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
