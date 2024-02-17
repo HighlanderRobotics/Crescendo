@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
@@ -185,25 +184,25 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             Commands.parallel(
                 teleopAutoAim(
-                () -> {
-                  double vx = swerve.getVelocity().vxMetersPerSecond;
-                  double vy = swerve.getVelocity().vyMetersPerSecond;
-                  double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
+                    () -> {
+                      double vx = swerve.getVelocity().vxMetersPerSecond;
+                      double vy = swerve.getVelocity().vyMetersPerSecond;
+                      double vTheta = swerve.getVelocity().omegaRadiansPerSecond;
 
-                  double polarVelocity =
-                      MathUtil.clamp(
-                          Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
-                          -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
-                          SwerveSubsystem.MAX_LINEAR_SPEED / 2);
-                  double polarRadians = Math.atan2(vy, vx);
-                  ChassisSpeeds polarSpeeds =
-                      new ChassisSpeeds(
-                          polarVelocity * Math.cos(polarRadians),
-                          polarVelocity * Math.sin(polarRadians),
-                          vTheta);
-                  Logger.recordOutput("AutoAim/Polar Sppeeds", polarSpeeds);
-                  return polarSpeeds;
-                }),
+                      double polarVelocity =
+                          MathUtil.clamp(
+                              Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
+                              -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
+                              SwerveSubsystem.MAX_LINEAR_SPEED / 2);
+                      double polarRadians = Math.atan2(vy, vx);
+                      ChassisSpeeds polarSpeeds =
+                          new ChassisSpeeds(
+                              polarVelocity * Math.cos(polarRadians),
+                              polarVelocity * Math.sin(polarRadians),
+                              vTheta);
+                      Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
+                      return polarSpeeds;
+                    }),
                 Commands.waitSeconds(0.5).andThen(feeder.runVoltageCmd(3.0))));
     controller
         .rightTrigger()
@@ -378,11 +377,7 @@ public class Robot extends LoggedRobot {
                 AutoAim.LOOKAHEAD_TIME_SECONDS));
     return Commands.sequence(
             getInitialValues,
-            Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot)
-                .finallyDo(
-                    () -> {
-                      System.out.println("Shoot note");
-                    }),
+            Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot),
             // keeps moving to prevent the robot from stopping and changing the velocity of the note
             swerve
                 .runVelocityFieldRelative(
@@ -391,8 +386,7 @@ public class Robot extends LoggedRobot {
                             AutoAimStates.curShotSpeeds.vxMetersPerSecond,
                             AutoAimStates.curShotSpeeds.vyMetersPerSecond,
                             0))
-                .withTimeout(0.25))
-        .andThen(() -> System.out.println(Timer.getFPGATimestamp()), swerve);
+                .withTimeout(0.25));
   }
 
   public Command autonomousAutoAim(String pathName) {
@@ -400,11 +394,11 @@ public class Robot extends LoggedRobot {
     return Commands.sequence(
         Commands.deadline(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
-                Commands.parallel(
+                Commands.parallel( 
                     shooter.runStateCmd(
-                        () -> AutoAimStates.curShotData.getRotation(),
-                        () -> AutoAimStates.curShotData.getLeftRPS(),
-                        () -> AutoAimStates.curShotData.getRightRPS()),
+                    AutoAimStates.curShotData::getRotation,
+                        AutoAimStates.curShotData::getLeftRPS,
+                        AutoAimStates.curShotData::getRightRPS),
                     swerve.autonomousPointTowardsTranslationCmd()))
             .beforeStarting(
                 () -> {

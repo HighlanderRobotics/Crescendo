@@ -3,7 +3,8 @@
     "types": {
       "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
       "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
-      "/FMSInfo": "FMSInfo"
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Shooter shoot": "Command"
     }
   },
   "NetworkTables": {

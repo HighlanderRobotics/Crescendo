@@ -38,8 +38,8 @@ public class ShooterIOSim implements ShooterIO {
       new ProfiledPIDController(1.0, 0.0, 1.0, new Constraints(10.0, 10.0));
   ArmFeedforward pivotFF = new ArmFeedforward(0.0, 0.12, 0.8);
 
-  PIDController leftFlywheelController = new PIDController(0.5, 0.0, 0.0);
-  PIDController rightFlywheelController = new PIDController(0.5, 0.0, 0.0);
+  private final PIDController leftFlywheelController = new PIDController(0.5, 0.0, 0.0);
+  private final PIDController rightFlywheelController = new PIDController(0.5, 0.0, 0.0);
   SimpleMotorFeedforward flywheelFF = new SimpleMotorFeedforward(0.0, 0.0925);
 
   @Override
