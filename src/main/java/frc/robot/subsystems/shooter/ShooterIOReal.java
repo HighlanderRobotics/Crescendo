@@ -65,6 +65,8 @@ public class ShooterIOReal implements ShooterIO {
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
+    pivotMotor.setPosition(
+        ShooterSubystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
     pivotMotor.optimizeBusUtilization();

@@ -4,37 +4,53 @@
 
 package frc.robot.utils.autoaim;
 
-import edu.wpi.first.math.interpolation.Interpolatable;
+import edu.wpi.first.math.geometry.Rotation2d;
 
 /*
  * Holds data about each shot in which we interpolate with
  */
-public class ShotData implements Interpolatable<ShotData> {
+public class ShotData {
 
-  private double angle;
-  private double rotationsPerSecond;
+  private final Rotation2d rotation;
+  private final double leftRotationsPerSecond;
+  private final double rightRotationsPerSecond;
+  private final double flightTimeSeconds;
 
-  public ShotData(double angle, double rotationsPerSecond) {
-    this.angle = angle;
-    this.rotationsPerSecond = rotationsPerSecond;
+  public ShotData(
+      Rotation2d angle,
+      double leftRotationsPerSecond,
+      double rightRotationsPerSecond,
+      double flightTime) {
+    this.rotation = angle;
+    this.leftRotationsPerSecond = leftRotationsPerSecond;
+    this.rightRotationsPerSecond = rightRotationsPerSecond;
+    this.flightTimeSeconds = flightTime;
   }
 
-  public double getAngle() {
-    return angle;
+  public Rotation2d getRotation() {
+    return rotation;
   }
 
-  public double getRPM() {
-    return rotationsPerSecond;
+  public double getLeftRPS() {
+    return leftRotationsPerSecond;
   }
 
-  @Override
-  public ShotData interpolate(ShotData endValue, double t) {
-    return new ShotData(
-        ((endValue.getAngle() - angle) * t) + angle,
-        ((endValue.getRPM() - rotationsPerSecond) * t) + rotationsPerSecond);
+  public double getRightRPS() {
+    return rightRotationsPerSecond;
+  }
+
+  public double getFlightTimeSeconds() {
+    return flightTimeSeconds;
   }
 
   public String toString() {
-    return "" + getAngle() + " " + getRPM();
+    return ""
+        + getRotation()
+        + " "
+        + getLeftRPS()
+        + " "
+        + getRightRPS()
+        + " "
+        + getFlightTimeSeconds();
   }
 }
