@@ -63,7 +63,6 @@ public class Robot extends LoggedRobot {
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
 
   private AutoManager autoManager = new AutoManager(swerve, intake, elevator, shooter, feeder);
-  ;
 
   @Override
   public void robotInit() {
@@ -121,6 +120,8 @@ public class Robot extends LoggedRobot {
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     intake.setDefaultCommand(intake.runVoltageCmd(10.0));
     shooter.setDefaultCommand(shooter.runStateCmd(Rotation2d.fromDegrees(0.0), 0.0, 0.0));
+
+    autoManager.setUpChooser("commandless");
 
     // Controller bindings here
     controller
