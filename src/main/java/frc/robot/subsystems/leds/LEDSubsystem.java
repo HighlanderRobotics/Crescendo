@@ -17,7 +17,7 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class LEDSubsystem extends SubsystemBase {
-  public static final int LED_LENGTH = 80;
+  public static final int LED_LENGTH = 36;
   LEDIO io;
   LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
 
