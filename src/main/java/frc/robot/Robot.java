@@ -164,7 +164,7 @@ public class Robot extends LoggedRobot {
     reactionBarRelease.setDefaultCommand(
         reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
     leds.setDefaultCommand(
-        leds.defaultStateDisplay(
+        leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));

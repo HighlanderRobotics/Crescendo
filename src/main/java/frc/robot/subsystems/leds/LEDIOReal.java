@@ -9,8 +9,8 @@ import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.util.Color;
 
 public class LEDIOReal implements LEDIO {
-  AddressableLED led;
-  AddressableLEDBuffer buffer;
+  private final AddressableLED led;
+  private final AddressableLEDBuffer buffer;
 
   public LEDIOReal() {
     led = new AddressableLED(3);
