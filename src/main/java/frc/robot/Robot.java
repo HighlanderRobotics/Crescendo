@@ -300,7 +300,6 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
-
   }
 
   @Override
@@ -384,17 +383,17 @@ public class Robot extends LoggedRobot {
                 () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
                 AutoAim.LOOKAHEAD_TIME_SECONDS));
     return Commands.sequence(
-            getInitialValues,
-            Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot),
-            // keeps moving to prevent the robot from stopping and changing the velocity of the note
-            swerve
-                .runVelocityFieldRelative(
-                    () ->
-                        new ChassisSpeeds(
-                            AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                            AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                            0))
-                .withTimeout(0.25));
+        getInitialValues,
+        Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot),
+        // keeps moving to prevent the robot from stopping and changing the velocity of the note
+        swerve
+            .runVelocityFieldRelative(
+                () ->
+                    new ChassisSpeeds(
+                        AutoAimStates.curShotSpeeds.vxMetersPerSecond,
+                        AutoAimStates.curShotSpeeds.vyMetersPerSecond,
+                        0))
+            .withTimeout(0.25));
   }
 
   public Command autonomousAutoAim(String pathName) {
@@ -402,9 +401,9 @@ public class Robot extends LoggedRobot {
     return Commands.sequence(
         Commands.deadline(
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
-                Commands.parallel( 
+                Commands.parallel(
                     shooter.runStateCmd(
-                    AutoAimStates.curShotData::getRotation,
+                        AutoAimStates.curShotData::getRotation,
                         AutoAimStates.curShotData::getLeftRPS,
                         AutoAimStates.curShotData::getRightRPS),
                     swerve.autonomousPointTowardsTranslationCmd()))
