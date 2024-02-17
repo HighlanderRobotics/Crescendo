@@ -9,25 +9,20 @@ import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.util.Color;
 
 public class LEDIOReal implements LEDIO {
-  AddressableLED leftLed;
-  AddressableLED rightLed;
+  AddressableLED led;
   AddressableLEDBuffer buffer;
 
   public LEDIOReal() {
-    leftLed = new AddressableLED(3);
-    rightLed = new AddressableLED(4);
+    led = new AddressableLED(3);
     buffer = new AddressableLEDBuffer(LEDSubsystem.LED_LENGTH);
-    leftLed.setLength(buffer.getLength());
-    leftLed.start();
-    rightLed.setLength(buffer.getLength());
-    rightLed.start();
+    led.setLength(buffer.getLength());
+    led.start();
   }
 
   /** Write data from buffer to leds */
   @Override
   public void updateInputs(LEDIOInputs inputs) {
-    leftLed.setData(buffer);
-    rightLed.setData(buffer);
+    led.setData(buffer);
   }
 
   @Override
