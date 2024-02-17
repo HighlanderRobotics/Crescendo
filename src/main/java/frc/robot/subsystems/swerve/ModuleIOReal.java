@@ -42,7 +42,7 @@ import java.util.Queue;
  * absolute encoders using AdvantageScope. These values are logged under
  * "/Swerve/ModuleX/TurnAbsolutePositionRad"
  */
-public class ModuleIOTalonFX implements ModuleIO {
+public class ModuleIOReal implements ModuleIO {
   // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = false;
 
@@ -74,7 +74,7 @@ public class ModuleIOTalonFX implements ModuleIO {
       new MotionMagicVelocityVoltage(0.0).withEnableFOC(true);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
-  public ModuleIOTalonFX(ModuleConstants constants) {
+  public ModuleIOReal(ModuleConstants constants) {
     name = constants.prefix();
 
     driveTalon = new TalonFX(constants.driveID());
