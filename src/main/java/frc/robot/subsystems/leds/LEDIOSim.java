@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.util.Color;
 
+// This is a copy of LEDIOReal right now, but if we move leds to separate ports sim breaks w ledioreal
 public class LEDIOSim implements LEDIO {
   AddressableLED led;
   AddressableLEDBuffer buffer;
