@@ -160,7 +160,7 @@ public class SwerveSubsystem extends SubsystemBase {
             new SysIdRoutine.Config(
                 null, // Default ramp rate is acceptable
                 Volts.of(8),
-                null, // Default timeout is acceptable
+                Seconds.of(6.0), // Default timeout is acceptable
                 // Log state with Phoenix SignalLogger class
                 (state) -> SignalLogger.writeString("state", state.toString())),
             new SysIdRoutine.Mechanism(
@@ -188,10 +188,10 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static ModuleIO[] createTalonFXModules() {
     return new ModuleIO[] {
-      new ModuleIOTalonFX(frontLeft),
-      new ModuleIOTalonFX(frontRight),
-      new ModuleIOTalonFX(backLeft),
-      new ModuleIOTalonFX(backRight)
+      new ModuleIOReal(frontLeft),
+      new ModuleIOReal(frontRight),
+      new ModuleIOReal(backLeft),
+      new ModuleIOReal(backRight)
     };
   }
 
@@ -667,14 +667,11 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         this.runOnce(() -> SignalLogger.start()),
         moduleSteerRoutine.quasistatic(Direction.kForward),
-        this.stopCmd(),
-        Commands.waitSeconds(1.0),
+        this.stopCmd().withTimeout(1.0),
         moduleSteerRoutine.quasistatic(Direction.kReverse),
-        this.stopCmd(),
-        Commands.waitSeconds(1.0),
+        this.stopCmd().withTimeout(1.0),
         moduleSteerRoutine.dynamic(Direction.kForward),
-        this.stopCmd(),
-        Commands.waitSeconds(1.0),
+        this.stopCmd().withTimeout(1.0),
         moduleSteerRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
   }
@@ -683,14 +680,11 @@ public class SwerveSubsystem extends SubsystemBase {
     return Commands.sequence(
         this.runOnce(() -> SignalLogger.start()),
         driveRoutine.quasistatic(Direction.kForward),
-        this.stopCmd(),
-        Commands.waitSeconds(1.0),
+        this.stopCmd().withTimeout(1.0),
         driveRoutine.quasistatic(Direction.kReverse),
-        this.stopCmd(),
-        Commands.waitSeconds(1.0),
+        this.stopCmd().withTimeout(1.0),
         driveRoutine.dynamic(Direction.kForward),
-        this.stopCmd(),
-        Commands.waitSeconds(1.0),
+        this.stopCmd().withTimeout(1.0),
         driveRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
   }

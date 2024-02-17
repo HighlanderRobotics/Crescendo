@@ -293,6 +293,14 @@ public class Robot extends LoggedRobot {
                   Logger.recordOutput("AutoAim/Polar Sppeeds", polarSpeeds);
                   return polarSpeeds;
                 }));
+
+    // Dashboard command buttons
+    SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
+    SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
+    SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
+    SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
+    SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
+
   }
 
   @Override
