@@ -104,6 +104,7 @@ public class Robot extends LoggedRobot {
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
     Logger.recordMetadata("RuntimeType", getRuntimeType().toString());
+    Logger.recordMetadata("Robot Mode", mode.toString());
     Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
     Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
     Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
@@ -155,7 +156,7 @@ public class Robot extends LoggedRobot {
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
     carriage.setDefaultCommand(carriage.runVoltageCmd(0.0));
-    intake.setDefaultCommand(intake.runVoltageCmd(10.0));
+    intake.setDefaultCommand(intake.runVoltageCmd(0.0));
     shooter.setDefaultCommand(
         shooter.runStateCmd(
             () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));

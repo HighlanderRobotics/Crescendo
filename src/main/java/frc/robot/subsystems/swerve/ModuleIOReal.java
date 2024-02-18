@@ -25,6 +25,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
@@ -79,7 +80,7 @@ public class ModuleIOReal implements ModuleIO {
 
     driveTalon = new TalonFX(constants.driveID(), "canivore");
     turnTalon = new TalonFX(constants.turnID(), "canivore");
-    cancoder = new CANcoder(constants.cancoderID());
+    cancoder = new CANcoder(constants.cancoderID(), "canivore");
 
     var driveConfig = new TalonFXConfiguration();
     // Current limits
@@ -101,6 +102,8 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Slot0.kS = 0.0;
     driveConfig.Slot0.kP = 0.25; // Guess
     driveConfig.Slot0.kD = 0.0;
+    driveConfig.MotionMagic.MotionMagicCruiseVelocity = 40.0;
+    driveConfig.MotionMagic.MotionMagicAcceleration = 100.0;
 
     driveTalon.getConfigurator().apply(driveConfig);
 
@@ -135,12 +138,15 @@ public class ModuleIOReal implements ModuleIO {
     turnConfig.Slot0.kS = 0.0; // TODO: Find empirically
     turnConfig.Slot0.kP = 50.0;
     turnConfig.Slot0.kD = 0.0;
+    turnConfig.MotionMagic.MotionMagicCruiseVelocity = 40.0;
+    turnConfig.MotionMagic.MotionMagicAcceleration = 100.0;
     turnConfig.ClosedLoopGeneral.ContinuousWrap = true;
 
     turnTalon.getConfigurator().apply(turnConfig);
 
     var cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = constants.cancoderOffset().getRotations();
+    cancoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
     cancoder.getConfigurator().apply(cancoderConfig);
 
     drivePosition = driveTalon.getPosition();
