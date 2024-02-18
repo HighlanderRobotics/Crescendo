@@ -34,8 +34,6 @@ import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.leds.LEDIOReal;
 import frc.robot.subsystems.leds.LEDIOSim;
 import frc.robot.subsystems.leds.LEDSubsystem;
-import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseIOReal;
-import frc.robot.subsystems.reaction_bar_release.ReactionBarReleaseSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
@@ -96,8 +94,8 @@ public class Robot extends LoggedRobot {
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
-  private final ReactionBarReleaseSubsystem reactionBarRelease =
-      new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
+  // private final ReactionBarReleaseSubsystem reactionBarRelease =
+  //     new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
 
@@ -123,7 +121,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -161,8 +159,8 @@ public class Robot extends LoggedRobot {
     shooter.setDefaultCommand(
         shooter.runStateCmd(
             () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
-    reactionBarRelease.setDefaultCommand(
-        reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
+    // reactionBarRelease.setDefaultCommand(
+    //     reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
     leds.setDefaultCommand(
         leds.defaultStateDisplay(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));

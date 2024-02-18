@@ -450,7 +450,6 @@ public class SwerveSubsystem extends SubsystemBase {
             .inverse());
   }
 
-  @AutoLogOutput(key = "AutoAim/Virtual Target")
   public Pose2d getVirtualTarget() {
     return getVirtualTarget(getVelocity());
   }
