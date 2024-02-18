@@ -23,6 +23,7 @@ import frc.robot.subsystems.shooter.ShooterSubystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.utils.dynamicauto.DynamicAuto;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -143,6 +144,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    Logger.recordOutput(
+        "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve.getPose()).getPose());
   }
 
   @Override
