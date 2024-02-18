@@ -31,11 +31,15 @@ public class IntakeIOReal implements IntakeIO {
 
   public IntakeIOReal() {
     var intakeConfig = new TalonFXConfiguration();
+    intakeConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
+    intakeConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     intakeConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     intakeMotor.getConfigurator().apply(intakeConfig);
 
     var centeringConfig = new TalonFXConfiguration();
-    centeringConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    centeringConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
+    centeringConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    centeringConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     centeringMotor.getConfigurator().apply(centeringConfig);
 
     BaseStatusSignal.setUpdateFrequencyForAll(

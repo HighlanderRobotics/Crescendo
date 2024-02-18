@@ -5,7 +5,6 @@
 package frc.robot;
 
 import com.choreo.lib.Choreo;
-import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
@@ -157,8 +156,13 @@ public class Robot extends LoggedRobot {
                     -teleopAxisAdjustment(controller.getRightX())
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
-    feeder.setDefaultCommand(feeder.runVoltageCmd(0.0));
-    carriage.setDefaultCommand(carriage.runVoltageCmd(0.0));
+    feeder.setDefaultCommand(
+        Commands.either(
+            feeder.indexCmd(), feeder.runVoltageCmd(0.0), () -> currentTarget == Target.SPEAKER));
+    carriage.setDefaultCommand(
+        carriage
+            .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
+            .withInterruptBehavior(InterruptionBehavior.kCancelSelf));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0));
     shooter.setDefaultCommand(
         shooter.runStateCmd(
@@ -177,23 +181,28 @@ public class Robot extends LoggedRobot {
         .debounce(0.25)
         .whileTrue(
             Commands.parallel(
-                intake.runVoltageCmd(0.0).withInterruptBehavior(InterruptionBehavior.kCancelSelf),
-                controller.rumbleCmd(1.0, 1.0).withTimeout(0.25),
-                leds.setBlinkingCmd(new Color("#ff8000"), new Color("#000000"), 25.0)));
-    new Trigger(() -> currentTarget == Target.SPEAKER)
-        .whileTrue(Commands.parallel(carriage.runVoltageCmd(5.0), feeder.indexCmd()));
+                    controller.rumbleCmd(1.0, 1.0),
+                    leds.setBlinkingCmd(new Color("#ff8000"), new Color("#000000"), 25.0))
+                .withTimeout(0.5));
+    // Handled by default commands
+    // new Trigger(() -> currentTarget == Target.SPEAKER)
+    //     .whileTrue(feeder.indexCmd())
+    //     .whileTrue(carriage.runVoltageCmd(5.0));
     new Trigger(() -> currentTarget == Target.AMP)
         .whileTrue(
             Commands.either(
-                Commands.parallel(carriage.indexBackwardsCmd(), feeder.runVoltageCmd(-5.0)),
+                Commands.parallel(
+                    carriage.indexBackwardsCmd(),
+                    feeder.runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE).withTimeout(1.0)),
                 Commands.parallel(carriage.indexForwardsCmd(), feeder.runVoltageCmd(0.0)),
                 () -> feeder.getFirstBeambreak()));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVoltageCmd(10.0));
+    controller.leftTrigger().whileTrue(intake.runVoltageCmd(8.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
+        .and(() -> false)
         .whileTrue(
             Commands.parallel(
                 teleopAutoAim(
@@ -216,7 +225,17 @@ public class Robot extends LoggedRobot {
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
                       return polarSpeeds;
                     }),
-                Commands.waitSeconds(0.5).andThen(feeder.runVoltageCmd(3.0))));
+                Commands.waitSeconds(0.5)
+                    .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SPEAKER)
+        .and(() -> true)
+        .whileTrue(
+            Commands.parallel(
+                shooter.runStateCmd(Rotation2d.fromDegrees(75.0), 80.0, 60.0),
+                Commands.waitSeconds(1.0)
+                    .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
@@ -299,7 +318,7 @@ public class Robot extends LoggedRobot {
         new Pose3d[] {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
-    Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
+    // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
   private LoggedDashboardNumber rotation = new LoggedDashboardNumber("Rotation (Rotations)");

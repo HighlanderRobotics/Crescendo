@@ -35,7 +35,7 @@ public class Module {
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   public static final double DRIVE_STATOR_CURRENT_LIMIT = 80.0; // TODO bump as needed
-  public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;
+  public static final double TURN_STATOR_CURRENT_LIMIT = 20.0;
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
