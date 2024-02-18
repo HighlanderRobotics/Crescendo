@@ -168,20 +168,20 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(10.386),
                   Units.inchesToMeters(-10.380),
                   Units.inchesToMeters(-7.381)),
-              new Rotation3d(0, -0.490, -Math.PI * 7 / 6)), //TODO check
+              new Rotation3d(0, -0.490, -Math.PI * 7 / 6)), // TODO check
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS);
-  // public static final VisionConstants rightCamConstants =
-  //     new VisionConstants(
-  //         "Right Camera",
-  //         new Transform3d(
-  //             new Translation3d(
-  //                 Units.inchesToMeters(-10.597),
-  //                 Units.inchesToMeters(-10.143),
-  //                 Units.inchesToMeters(-7.384)),
-  //             new Rotation3d(0, 0.490, Math.PI / 6)), // TODO check
-  //         RIGHT_CAMERA_MATRIX_OPT,
-  //         RIGHT_DIST_COEFFS_OPT);
+  public static final VisionConstants rightCamConstants =
+      new VisionConstants(
+          "Right Camera",
+          new Transform3d(
+              new Translation3d(
+                  Units.inchesToMeters(-10.597),
+                  Units.inchesToMeters(-10.143),
+                  Units.inchesToMeters(-7.384)),
+              new Rotation3d(0, -0.490, Math.PI * 2 / 3)), // TODO check
+          RIGHT_CAMERA_MATRIX_OPT,
+          RIGHT_DIST_COEFFS_OPT);
   private SwerveDriveOdometry odometry;
 
   public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
@@ -271,7 +271,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createRealCameras() {
-    return new VisionIO[] {new VisionIOReal(leftCamConstants)};
+    return new VisionIO[] {new VisionIOReal(leftCamConstants), new VisionIOReal(rightCamConstants)};
   }
 
   /**
@@ -280,7 +280,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createSimCameras() {
-    return new VisionIO[] {new VisionIOSim(leftCamConstants)};
+    return new VisionIO[] {new VisionIOSim(leftCamConstants), new VisionIOSim(rightCamConstants)};
   }
 
   public void periodic() {
@@ -515,7 +515,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {leftCamConstants};
+    return new VisionConstants[] {leftCamConstants, rightCamConstants};
   }
 
   /** Returns the module positions (turn angles and drive velocities) for all of the modules. */
