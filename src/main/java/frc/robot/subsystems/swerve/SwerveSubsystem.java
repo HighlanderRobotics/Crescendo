@@ -80,7 +80,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   // Drivebase constants
-  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(12.5);
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(18.9);
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
   public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
@@ -171,8 +171,8 @@ public class SwerveSubsystem extends SubsystemBase {
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null, // Default ramp rate is acceptable
-                Volts.of(4), // Reduce dynamic voltage to 4 to prevent motor brownout
-                Seconds.of(5),
+                Volts.of(3.5),
+                Seconds.of(3.5),
                 // Log state with Phoenix SignalLogger class
                 (state) -> SignalLogger.writeString("state", state.toString())),
             new SysIdRoutine.Mechanism(
@@ -307,7 +307,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
     return this.runVelocityCmd(
-        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getRotation()));
+        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), gyroInputs.yawPosition));
   }
 
   /**

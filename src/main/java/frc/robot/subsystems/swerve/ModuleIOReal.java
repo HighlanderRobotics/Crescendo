@@ -45,7 +45,7 @@ import java.util.Queue;
  */
 public class ModuleIOReal implements ModuleIO {
   // Constants
-  private static final boolean IS_TURN_MOTOR_INVERTED = false;
+  private static final boolean IS_TURN_MOTOR_INVERTED = true;
 
   private final String name;
 
@@ -95,15 +95,14 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Feedback.SensorToMechanismRatio =
         (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
     // Controls Gains
-    driveConfig.Slot0.kV = 2.5;
-    // (5800.0 * (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI)))
-    //     / 12.0; // Hypothetical based on free speed
-    driveConfig.Slot0.kA = 0.0; // TODO: Find using sysid or hand tuning
-    driveConfig.Slot0.kS = 0.0;
-    driveConfig.Slot0.kP = 0.25; // Guess
+    driveConfig.Slot0.kV = 2.0733;
+    driveConfig.Slot0.kA = 0.6;
+    driveConfig.Slot0.kS = 0.052218;
+    driveConfig.Slot0.kP = 1.9855;
     driveConfig.Slot0.kD = 0.0;
-    driveConfig.MotionMagic.MotionMagicCruiseVelocity = 40.0;
-    driveConfig.MotionMagic.MotionMagicAcceleration = 100.0;
+
+    driveConfig.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
+    driveConfig.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_SPEED / 0.75;
 
     driveTalon.getConfigurator().apply(driveConfig);
 
@@ -125,28 +124,23 @@ public class ModuleIOReal implements ModuleIO {
     turnConfig.Feedback.FeedbackRotorOffset =
         0.0; // Is this correct? Cancoder config should handle it
     // Controls Gains
-    turnConfig.Slot0.kV = 0.0;
-    // (5800.0 / Module.TURN_GEAR_RATIO)
-    //     / 12.0; // Free speed over voltage, should find empirically
-    turnConfig.Slot0.kA = 0.0;
-    // Module.TURN_GEAR_RATIO
-    //     * (9.37 / 483.0)
-    //     / (0.004 * (12.0 / 483.0)); // Based on motor dynamics math, should find in real life
-    // gearing * Kt (torque per amp) / (intertia * resistance (nominal voltage / stall current))
-    // Yeah its messy and should be found using sysid later but its worth trying as a first guess
-    // If this works we can use a similar technique on future mechanisms
-    turnConfig.Slot0.kS = 0.0; // TODO: Find empirically
-    turnConfig.Slot0.kP = 50.0;
-    turnConfig.Slot0.kD = 0.0;
-    turnConfig.MotionMagic.MotionMagicCruiseVelocity = 40.0;
-    turnConfig.MotionMagic.MotionMagicAcceleration = 100.0;
+    turnConfig.Slot0.kV = 2.7935;
+    turnConfig.Slot0.kA = 0.031543;
+    turnConfig.Slot0.kS = 0.34822;
+    turnConfig.Slot0.kP = 28.579;
+    turnConfig.Slot0.kD = 0.68275;
+    turnConfig.MotionMagic.MotionMagicCruiseVelocity = 5500 / Module.TURN_GEAR_RATIO;
+    turnConfig.MotionMagic.MotionMagicAcceleration = (5500 * 0.1) / Module.TURN_GEAR_RATIO;
     turnConfig.ClosedLoopGeneral.ContinuousWrap = true;
 
     turnTalon.getConfigurator().apply(turnConfig);
 
     var cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = constants.cancoderOffset().getRotations();
-    cancoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+    cancoderConfig.MagnetSensor.SensorDirection =
+        IS_TURN_MOTOR_INVERTED
+            ? SensorDirectionValue.CounterClockwise_Positive
+            : SensorDirectionValue.Clockwise_Positive;
     cancoder.getConfigurator().apply(cancoderConfig);
 
     drivePosition = driveTalon.getPosition();

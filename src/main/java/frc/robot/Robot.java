@@ -5,6 +5,8 @@
 package frc.robot;
 
 import com.choreo.lib.Choreo;
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
@@ -143,6 +145,7 @@ public class Robot extends LoggedRobot {
 
     Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may
     // be added.
+    SignalLogger.setPath("/media/sda1/");
 
     // Default Commands here
     swerve.setDefaultCommand(
@@ -296,6 +299,7 @@ public class Robot extends LoggedRobot {
         new Pose3d[] {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
+    Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
   private LoggedDashboardNumber rotation = new LoggedDashboardNumber("Rotation (Rotations)");
