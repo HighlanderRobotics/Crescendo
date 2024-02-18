@@ -1,0 +1,117 @@
+import json
+
+# Assuming locations is a list of dictionaries where each dictionary represents a location
+# L,M, and R were change to S1, S2, and S4 with an S3 being added.
+locations = [
+    {"name": "Amp Side", "x": 0.71, "y": 6.72, "angle": -2.10, "allowed_destinations": ["W1", "W2", "C1", "C2", "C3"]},
+    {"name": "Center", "x": 1.35, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "Stage Side", "x": 0.71, "y": 4.36, "angle": 2.10, "allowed_destinations": ["W2", "W3", "C3", "C4", "C5"]},
+    {"name": "W1", "x": 2.3, "y": 6.757, "angle": -2.75, "allowed_destinations": ["W2", "C1", "C2", "C3"]},
+    {"name": "W2", "x": 2.25, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W3", "C1", "C2", "C3", "C4"]},
+    {"name": "W3", "x": 2.3, "y": 4.36, "angle": 2.75, "allowed_destinations": ["W2", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S1", "x": 5.176, "y": 6.63, "angle": -2.88, "allowed_destinations": ["W1", "W2", "C1", "C2", "C3"]},
+    {"name": "S2", "x": 4.263, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3"]},
+    {"name": "S3", "x": 4.263, "y": 3, "angle": 2.574, "allowed_destinations": ["W2", "W3", "C3", "C4", "C5"]},
+    {"name": "S4", "x": 5.176, "y": 1.62, "angle": 2.5, "allowed_destinations": ["W3", "C3", "C4", "C5"]},
+]
+
+
+midPoints = [
+    {"name": "C1", "x": 7.68, "y": 7.467, "angle": 3.14, "allowed_destinations": ["S1", "S2"]},
+    {"name": "C2", "x": 7.68, "y": 5.797, "angle": 3.14, "allowed_destinations": ["S1", "S2"]},
+    {"name": "C3", "x": 7.68, "y": 4.127, "angle": 3.14, "allowed_destinations": ["S1", "S2", "S3", "S4"]},
+    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 3.14, "allowed_destinations": ["S3", "S4"]},
+    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 3.14, "allowed_destinations": ["S3", "S4"]},
+]
+
+def create_waypoint(point):
+    return {
+        "x": point["x"],
+        "y": point["y"],
+        "heading": point["angle"],
+        "isInitialGuess": False,
+        "translationConstrained": True,
+        "headingConstrained": True,
+        "controlIntervalCount": 40
+    }
+
+def create_path(allPoints):
+    return {
+        "waypoints": [create_waypoint(point) for point in allPoints],
+        "trajectory": [],
+        "constraints": [
+            {
+                    "scope": [
+                        "first"
+                    ],
+                    "type": "StopPoint"
+                },
+                {
+                    "scope": [
+                        "last"
+                    ],
+                    "type": "StopPoint"
+                }
+        ],
+        "usesControlIntervalGuessing": True,
+        "defaultControlIntervalCount": 40,
+        "usesDefaultFieldObstacles": True,
+        "circleObstacles": []
+    }
+
+
+paths = {}
+def find_path(start, end_name, newPath, path_name):
+    end = next((loc for loc in locations if loc["name"] == end_name), None)
+    if end:
+        newPath.append(end)
+        path_name += f" To {end['name']}"
+        paths[path_name] = create_path(newPath)
+        return
+    else:
+        midPoint = next((mid for mid in midPoints if mid["name"] == end_name), None)
+        if midPoint:
+            newPath.append(midPoint)
+            path_name += f" To {midPoint['name']}"
+            for end_name in midPoint["allowed_destinations"]:
+                find_path(midPoint, end_name, newPath.copy(), path_name)
+        else:
+            print("No midpoint found")
+
+for start in locations:
+    newPath = [start]
+    for end_name in start["allowed_destinations"]:
+        path_name = start['name']
+        find_path(start, end_name, newPath.copy(), path_name)
+
+# Wrap the paths in another dictionary with the specified format
+data = {
+    "version": "v0.2.1",
+    "robotConfiguration": {
+        "mass": 74.08797700309194,
+        "rotationalInertia": 6,
+        "motorMaxTorque": 1.162295081967213,
+        "motorMaxVelocity": 4800,
+        "gearing": 6.75,
+        "wheelbase": 0.5778496879611685,
+        "trackWidth": 0.5778496879611685,
+        "bumperLength": 0.8762995267982555,
+        "bumperWidth": 0.8762995267982555,
+        "wheelRadius": 0.050799972568014815
+    },
+    "paths": paths,
+    "splitTrajectoriesAtStopPoints": False
+}
+
+#Prints names of all paths
+#for i in paths:
+#print(i)
+print(paths["Amp Side To C3 To S4"])
+print(len(paths["Amp Side To C3 To S4"]['waypoints']))
+
+#Total Number of paths
+print(len(paths))
+
+# Write the data to a JSON file
+with open('C:\\Users\\Robotics\\Desktop\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\data.chor', 'w') as f:
+    json.dump(data, f, indent=4)

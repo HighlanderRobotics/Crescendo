@@ -139,6 +139,12 @@ public class Robot extends LoggedRobot {
 
     // Test binding for elevator
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
+
+    controller
+        .x()
+        .toggleOnTrue(
+            Commands.run(
+                () -> swerve.runChoreoTraj(DynamicAuto.makePath(swerve::getPose)), swerve));
   }
 
   @Override
@@ -146,10 +152,9 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     Logger.recordOutput(
         "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve.getPose()).getPose());
-
     Logger.recordOutput(
         "DynamicAuto/Closest Shooting Location",
-        DynamicAuto.closestShootingLocation(swerve.getPose()));
+        DynamicAuto.closestShootingLocation(() -> swerve.getPose()).getPose());
   }
 
   @Override

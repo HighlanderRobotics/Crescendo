@@ -16,6 +16,8 @@ package frc.robot.subsystems.swerve;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import com.choreo.lib.Choreo;
+import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -23,6 +25,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -39,6 +42,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -48,6 +52,7 @@ import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
@@ -409,6 +414,22 @@ public class SwerveSubsystem extends SubsystemBase {
                     new State(
                         getPose().getRotation().getRadians(),
                         getVelocity().omegaRadiansPerSecond)));
+  }
+
+  public Command runChoreoTraj(ChoreoTrajectory traj) {
+    return Choreo.choreoSwerveCommand(
+        traj,
+        this::getPose,
+        new PIDController(5.0, 0.0, 0.0),
+        new PIDController(5.0, 0.0, 0.0),
+        new PIDController(5.0, 0.0, 0.0),
+        (ChassisSpeeds speeds) -> //
+        this.runVelocity(speeds),
+        () -> {
+          Optional<Alliance> alliance = DriverStation.getAlliance();
+          return alliance.isPresent() && alliance.get() == Alliance.Red;
+        },
+        this);
   }
 
   public Command runModuleSteerCharacterizationCmd() {

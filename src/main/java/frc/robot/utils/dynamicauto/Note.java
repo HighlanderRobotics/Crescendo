@@ -12,17 +12,20 @@ public class Note {
   private boolean blacklisted;
   private int priority;
   private final Pose2d pose;
+  private final String name;
 
-  public Note(Pose2d pose, boolean blacklisted, int priority) {
+  public Note(Pose2d pose, boolean blacklisted, int priority, String name) {
     this.pose = pose;
     this.blacklisted = blacklisted;
     this.priority = priority;
+    this.name = name;
   }
 
   public Note() {
     this.pose = new Pose2d();
     this.blacklisted = true;
     this.priority = -1;
+    this.name = "Uninitialized";
   }
 
   public void setBlacklist(boolean blacklist) {
@@ -43,5 +46,9 @@ public class Note {
 
   public Pose2d getPose() {
     return pose;
+  }
+
+  public String getName() {
+    return name;
   }
 }
