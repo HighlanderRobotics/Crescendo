@@ -1,7 +1,10 @@
 package frc.robot.utils.dynamicauto;
 
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import java.util.List;
 
 public class DynamicAuto {
 
@@ -16,11 +19,28 @@ public class DynamicAuto {
     new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(-Math.PI)), true, 3), // c5
   };
 
-  ///  public static final Pose2d
+  public static final Pose2d[] shootingLocations = {
+    new Pose2d(5.639, 6.463, Rotation2d.fromRadians(0.1)), // Left
+    new Pose2d(4.216, 5.216, Rotation2d.fromRadians(0)), // Middle
+    new Pose2d(6.048, 1.746, Rotation2d.fromRadians(-0.179)) // Right
+  };
 
-  //  public static PathPlannerPath makePath(){
-  ///    List<Translation2d> fgishf = PathPlannerPath.bezierFromPoses();
-  ///  }
+  public static Pose2d closestShootingLocation(Pose2d curPose) {
+    Pose2d closestPosition = new Pose2d();
+    double shortestDistance = 9999999;
+    for (Pose2d location : shootingLocations) {
+      if (shortestDistance > curPose.minus(location).getTranslation().getNorm()) {
+        closestPosition = location;
+        shortestDistance = curPose.minus(location).getTranslation().getNorm();
+      }
+    }
+    return closestPosition;
+  }
+
+  public static PathPlannerPath makePath() {
+    List<Translation2d> fgishf = PathPlannerPath.bezierFromPoses();
+    return new PathPlannerPath(fgishf, null, null, null, null, null, false, null);
+  }
 
   public static Note getClosestNote(Pose2d curPose) {
     Note closestNote = new Note();

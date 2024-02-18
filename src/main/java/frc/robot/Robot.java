@@ -146,6 +146,10 @@ public class Robot extends LoggedRobot {
     CommandScheduler.getInstance().run();
     Logger.recordOutput(
         "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve.getPose()).getPose());
+
+    Logger.recordOutput(
+        "DynamicAuto/Closest Shooting Location",
+        DynamicAuto.closestShootingLocation(swerve.getPose()));
   }
 
   @Override
