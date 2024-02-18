@@ -55,25 +55,26 @@ public class ShooterIOReal implements ShooterIO {
     pivotConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
     pivotConfig.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
-    pivotConfig.Slot0.kG = 0.0; // TODO: Find using sysid or hand tuning
-    pivotConfig.Slot0.kA = 0.0;
+    pivotConfig.Slot0.kG = 0.47195; // TODO: Find using sysid or hand tuning
+    pivotConfig.Slot0.kV = 7.8333;
+    pivotConfig.Slot0.kA = 0.098325;
     pivotConfig.Slot0.kS = 0.0;
-    pivotConfig.Slot0.kP = 0.0;
-    pivotConfig.Slot0.kD = 0.0;
+    pivotConfig.Slot0.kP = 69.562;
+    pivotConfig.Slot0.kD = 12.212;
 
-    pivotConfig.MotionMagic.MotionMagicAcceleration = 1.0;
+    pivotConfig.MotionMagic.MotionMagicAcceleration = 10.0;
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
     pivotMotor.setPosition(
         ShooterSubystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
+        250.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
     pivotMotor.optimizeBusUtilization();
 
     var flywheelConfig = new TalonFXConfiguration();
 
-    flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     flywheelConfig.Feedback.SensorToMechanismRatio =
         ShooterSubystem.FLYWHEEL_RATIO; // TODO add in once cad is done
@@ -81,15 +82,14 @@ public class ShooterIOReal implements ShooterIO {
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
-    flywheelConfig.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
-    flywheelConfig.Slot0.kG = 0.0; // TODO: Find using sysid or hand tuning
-    flywheelConfig.Slot0.kA = 0.0;
-    flywheelConfig.Slot0.kS = 0.0;
-    flywheelConfig.Slot0.kP = 0.0;
+    flywheelConfig.Slot0.kA = 0.0051316;
+    flywheelConfig.Slot0.kV = 0.096766;
+    flywheelConfig.Slot0.kS = 0.23777;
+    flywheelConfig.Slot0.kP = 0.057995;
     flywheelConfig.Slot0.kD = 0.0;
 
     flywheelLeftMotor.getConfigurator().apply(flywheelConfig);
-    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     flywheelRightMotor.getConfigurator().apply(flywheelConfig);
 
     BaseStatusSignal.setUpdateFrequencyForAll(

@@ -72,7 +72,7 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   private Target currentTarget = Target.SPEAKER;
-  private double flywheelIdleSpeed = 1.0;
+  private double flywheelIdleSpeed = -0.1;
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -233,7 +233,7 @@ public class Robot extends LoggedRobot {
         .and(() -> true)
         .whileTrue(
             Commands.parallel(
-                shooter.runStateCmd(Rotation2d.fromDegrees(75.0), 80.0, 60.0),
+                shooter.runStateCmd(Rotation2d.fromDegrees(60.0), 80.0, 60.0),
                 Commands.waitSeconds(1.0)
                     .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
     controller
@@ -291,7 +291,7 @@ public class Robot extends LoggedRobot {
                 elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS)));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
-    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 1.0));
+    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
     operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
