@@ -450,7 +450,6 @@ public class SwerveSubsystem extends SubsystemBase {
             .inverse());
   }
 
-  @AutoLogOutput(key = "AutoAim/Virtual Target")
   public Pose2d getVirtualTarget() {
     return getVirtualTarget(getVelocity());
   }
@@ -495,7 +494,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The future pose
    */
-  @AutoLogOutput(key = "AutoAim/FuturePose")
+
   public Pose2d getLinearFuturePose() {
     return getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS);
   }
