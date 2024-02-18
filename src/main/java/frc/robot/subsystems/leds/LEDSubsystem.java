@@ -105,14 +105,14 @@ public class LEDSubsystem extends SubsystemBase {
                     // Set color to be purple with a moving dash corresponding to alliance color
                     () -> {
                       if (DriverStation.getAlliance().isEmpty()) {
-                        return new Color("#350868");
+                        return new Color("#b59aff");
                       } else if (DriverStation.getAlliance().get() == Alliance.Red) {
                         return new Color("#ff0000");
                       } else { // Blue
                         return new Color("#0000ff");
                       }
                     },
-                    () -> new Color("#b59aff"),
+                    () -> new Color("#350868"),
                     10,
                     1.0)
                 .until(enabled),

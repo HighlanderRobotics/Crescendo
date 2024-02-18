@@ -12,9 +12,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class ShooterIOReal implements ShooterIO {
-  private final TalonFX pivotMotor = new TalonFX(10);
-  private final TalonFX flywheelLeftMotor = new TalonFX(11);
-  private final TalonFX flywheelRightMotor = new TalonFX(12);
+  private final TalonFX pivotMotor = new TalonFX(10, "canivore");
+  private final TalonFX flywheelLeftMotor = new TalonFX(11, "canivore");
+  private final TalonFX flywheelRightMotor = new TalonFX(12, "canivore");
 
   private final StatusSignal<Double> pivotVelocity = pivotMotor.getVelocity();
   private final StatusSignal<Double> pivotVoltage = pivotMotor.getMotorVoltage();

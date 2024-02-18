@@ -13,8 +13,8 @@ import com.ctre.phoenix6.signals.InvertedValue;
 
 /** Intake IO implementation for TalonFX motors. */
 public class IntakeIOReal implements IntakeIO {
-  private final TalonFX intakeMotor = new TalonFX(14);
-  private final TalonFX centeringMotor = new TalonFX(15);
+  private final TalonFX intakeMotor = new TalonFX(14, "canivore");
+  private final TalonFX centeringMotor = new TalonFX(15, "canivore");
 
   private final VoltageOut intakeVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut centeringVoltageOut = new VoltageOut(0.0).withEnableFOC(true);

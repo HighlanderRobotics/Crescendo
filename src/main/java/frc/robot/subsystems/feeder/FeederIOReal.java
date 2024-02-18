@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 
 /** Feeder IO using a TalonFX. */
 public class FeederIOReal implements FeederIO {
-  private final TalonFX motor = new TalonFX(13);
+  private final TalonFX motor = new TalonFX(13, "canivore");
 
   DigitalInput firstBeambreak = new DigitalInput(0);
   DigitalInput lastBeambreak = new DigitalInput(1);

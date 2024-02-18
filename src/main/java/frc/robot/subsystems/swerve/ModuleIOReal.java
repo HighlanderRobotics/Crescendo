@@ -77,8 +77,8 @@ public class ModuleIOReal implements ModuleIO {
   public ModuleIOReal(ModuleConstants constants) {
     name = constants.prefix();
 
-    driveTalon = new TalonFX(constants.driveID());
-    turnTalon = new TalonFX(constants.turnID());
+    driveTalon = new TalonFX(constants.driveID(), "canivore");
+    turnTalon = new TalonFX(constants.turnID(), "canivore");
     cancoder = new CANcoder(constants.cancoderID());
 
     var driveConfig = new TalonFXConfiguration();

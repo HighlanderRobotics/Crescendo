@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 
 /** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
-  final TalonFX motor = new TalonFX(18);
+  final TalonFX motor = new TalonFX(18, "canivore");
 
   final DigitalInput beambreak = new DigitalInput(2);
 

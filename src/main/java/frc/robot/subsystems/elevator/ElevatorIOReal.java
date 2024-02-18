@@ -16,8 +16,8 @@ import com.ctre.phoenix6.signals.InvertedValue;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
-  private final TalonFX motor = new TalonFX(16);
-  private final TalonFX follower = new TalonFX(17);
+  private final TalonFX motor = new TalonFX(16, "canivore");
+  private final TalonFX follower = new TalonFX(17, "canivore");
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final MotionMagicVoltage positionVoltage =
