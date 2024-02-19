@@ -3,22 +3,22 @@ import json
 # Assuming locations is a list of dictionaries where each dictionary represents a location
 # L,M, and R were change to S1, S2, and S4 with an S3 being added.
 locations = [
-    {"name": "Amp Side", "x": 0.71, "y": 6.72, "angle": -2.10, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "Center", "x": 1.35, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "Stage Side", "x": 0.71, "y": 4.36, "angle": 2.10, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "W1", "x": 2.3, "y": 6.757, "angle": -2.75, "allowed_destinations": [ "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "W2", "x": 2.25, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "W3", "x": 2.3, "y": 4.36, "angle": 2.75, "allowed_destinations": ["W1", "W2", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "S1", "x": 5.176, "y": 6.63, "angle": -2.88, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "S2", "x": 4.263, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "S3", "x": 4.263, "y": 3, "angle": 2.574, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "S4", "x": 5.176, "y": 1.62, "angle": 2.5, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "Amp Side", "x": 0.71, "y": 6.72, "angle": 1.04, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "Center", "x": 1.35, "y": 5.56, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "Stage Side", "x": 0.71, "y": 4.36, "angle": -1.04, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "W1", "x": 2.3, "y": 6.757, "angle": 0.39, "allowed_destinations": [ "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "W2", "x": 2.25, "y": 5.56, "angle": 0, "allowed_destinations": ["W1", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "W3", "x": 2.3, "y": 4.36, "angle": -0.39, "allowed_destinations": ["W1", "W2", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S1", "x": 5.176, "y": 6.63, "angle": 0.26, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S2", "x": 4.263, "y": 5.56, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S3", "x": 4.263, "y": 3, "angle": -0.544, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S4", "x": 5.176, "y": 1.62, "angle": -2.89, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
 
-    {"name": "C1", "x": 7.68, "y": 7.467, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C2", "C3", "C4", "C5"]},
-    {"name": "C2", "x": 7.68, "y": 5.797, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1",  "C3", "C4", "C5"]},
-    {"name": "C3", "x": 7.68, "y": 4.127, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2",  "C4", "C5"]},
-    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3",  "C5"]},
-    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3", "C4"]},
+    {"name": "C1", "x": 7.68, "y": 7.467, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C2", "C3", "C4", "C5"]},
+    {"name": "C2", "x": 7.68, "y": 5.797, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1",  "C3", "C4", "C5"]},
+    {"name": "C3", "x": 7.68, "y": 4.127, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2",  "C4", "C5"]},
+    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3",  "C5"]},
+    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3", "C4"]},
 ]
 
 obastacles = [
