@@ -3,27 +3,30 @@ import json
 # Assuming locations is a list of dictionaries where each dictionary represents a location
 # L,M, and R were change to S1, S2, and S4 with an S3 being added.
 locations = [
-    {"name": "Amp Side", "x": 0.71, "y": 6.72, "angle": -2.10, "allowed_destinations": ["W1", "W2", "C1", "C2", "C3"]},
+    {"name": "Amp Side", "x": 0.71, "y": 6.72, "angle": -2.10, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
     {"name": "Center", "x": 1.35, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "Stage Side", "x": 0.71, "y": 4.36, "angle": 2.10, "allowed_destinations": ["W2", "W3", "C3", "C4", "C5"]},
-    {"name": "W1", "x": 2.3, "y": 6.757, "angle": -2.75, "allowed_destinations": ["W2", "C1", "C2", "C3"]},
-    {"name": "W2", "x": 2.25, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W3", "C1", "C2", "C3", "C4"]},
-    {"name": "W3", "x": 2.3, "y": 4.36, "angle": 2.75, "allowed_destinations": ["W2", "C1", "C2", "C3", "C4", "C5"]},
-    {"name": "S1", "x": 5.176, "y": 6.63, "angle": -2.88, "allowed_destinations": ["W1", "W2", "C1", "C2", "C3"]},
-    {"name": "S2", "x": 4.263, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3"]},
-    {"name": "S3", "x": 4.263, "y": 3, "angle": 2.574, "allowed_destinations": ["W2", "W3", "C3", "C4", "C5"]},
-    {"name": "S4", "x": 5.176, "y": 1.62, "angle": 2.5, "allowed_destinations": ["W3", "C3", "C4", "C5"]},
+    {"name": "Stage Side", "x": 0.71, "y": 4.36, "angle": 2.10, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "W1", "x": 2.3, "y": 6.757, "angle": -2.75, "allowed_destinations": [ "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "W2", "x": 2.25, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "W3", "x": 2.3, "y": 4.36, "angle": 2.75, "allowed_destinations": ["W1", "W2", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S1", "x": 5.176, "y": 6.63, "angle": -2.88, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S2", "x": 4.263, "y": 5.56, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S3", "x": 4.263, "y": 3, "angle": 2.574, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+    {"name": "S4", "x": 5.176, "y": 1.62, "angle": 2.5, "allowed_destinations": ["W1", "W2", "W3", "C1", "C2", "C3", "C4", "C5"]},
+
+    {"name": "C1", "x": 7.68, "y": 7.467, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C2", "C3", "C4", "C5"]},
+    {"name": "C2", "x": 7.68, "y": 5.797, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1",  "C3", "C4", "C5"]},
+    {"name": "C3", "x": 7.68, "y": 4.127, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2",  "C4", "C5"]},
+    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3",  "C5"]},
+    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3", "C4"]},
 ]
-
-
-midPoints = [
-    {"name": "C1", "x": 7.68, "y": 7.467, "angle": 3.14, "allowed_destinations": ["S1", "S2"]},
-    {"name": "C2", "x": 7.68, "y": 5.797, "angle": 3.14, "allowed_destinations": ["S1", "S2"]},
-    {"name": "C3", "x": 7.68, "y": 4.127, "angle": 3.14, "allowed_destinations": ["S1", "S2", "S3", "S4"]},
-    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 3.14, "allowed_destinations": ["S3", "S4"]},
-    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 3.14, "allowed_destinations": ["S3", "S4"]},
+'''
+obastacles = [
+    {"x": , "y": , "radius": },
+    {"x": , "y": , "radius": },
+    {"x": , "y": , "radius": }
 ]
-
+'''
 def create_waypoint(point):
     return {
         "x": point["x"],
@@ -68,16 +71,16 @@ def find_path(start, end_name, newPath, path_name):
         path_name += f" To {end['name']}"
         paths[path_name] = create_path(newPath)
         return
-    else:
-        midPoint = next((mid for mid in midPoints if mid["name"] == end_name), None)
-        if midPoint:
-            newPath.append(midPoint)
-            path_name += f" To {midPoint['name']}"
-            for end_name in midPoint["allowed_destinations"]:
-                find_path(midPoint, end_name, newPath.copy(), path_name)
-        else:
-            print("No midpoint found")
-
+    #else:
+    #    midPoint = next((mid for mid in midPoints if mid["name"] == end_name), None)
+    #    if midPoint:
+    #        newPath.append(midPoint)
+    #        path_name += f" To {midPoint['name']}"
+   #         for end_name in midPoint["allowed_destinations"]:
+   #             find_path(midPoint, end_name, newPath.copy(), path_name)
+   #     else:
+   #         break
+#
 for start in locations:
     newPath = [start]
     for end_name in start["allowed_destinations"]:
@@ -105,12 +108,7 @@ data = {
 
 #Prints names of all paths
 #for i in paths:
-#print(i)
-print(paths["Amp Side To C3 To S4"])
-print(len(paths["Amp Side To C3 To S4"]['waypoints']))
 
-#Total Number of paths
-print(len(paths))
 
 # Write the data to a JSON file
 with open('C:\\Users\\Robotics\\Desktop\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\data.chor', 'w') as f:
