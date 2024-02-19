@@ -51,7 +51,7 @@ public class IntakeIOReal implements IntakeIO {
     centeringConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
     centeringConfig.Slot0.kV = (12.0 * 60.0) / 5800;
-    centeringConfig.Slot0.kP = 1.0;
+    centeringConfig.Slot0.kP = 0.1;
 
     centeringMotor.getConfigurator().apply(centeringConfig);
 

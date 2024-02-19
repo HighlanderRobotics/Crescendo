@@ -25,19 +25,19 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /** Run the intake and centering motors at the specified voltage */
-  public Command runVoltageCmd(double voltage) {
+  public Command runVoltageCmd(double intakeVoltage, double centeringVoltage) {
     return this.run(
         () -> {
-          io.setIntakeVoltage(voltage);
-          io.setCenteringVoltage(voltage);
+          io.setIntakeVoltage(intakeVoltage);
+          io.setCenteringVoltage(centeringVoltage);
         });
   }
 
-  public Command runVelocityCmd(double velocity) {
+  public Command runVelocityCmd(double intakeVelocity, double centeringVelocity) {
     return this.run(
         () -> {
-          io.setIntakeSpeed(velocity);
-          io.setCenteringSpeed(velocity);
+          io.setIntakeSpeed(intakeVelocity);
+          io.setCenteringSpeed(centeringVelocity);
         });
   }
 }

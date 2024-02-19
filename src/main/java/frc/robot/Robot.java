@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
+import frc.robot.subsystems.elevator.ElevatorIOReal;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
@@ -91,7 +92,8 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimModules());
   private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
-  private final ElevatorSubsystem elevator = new ElevatorSubsystem(new ElevatorIOSim());
+  private final ElevatorSubsystem elevator =
+      new ElevatorSubsystem(mode == RobotMode.REAL ? new ElevatorIOReal() : new ElevatorIOSim());
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
@@ -163,10 +165,10 @@ public class Robot extends LoggedRobot {
         carriage
             .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
             .withInterruptBehavior(InterruptionBehavior.kCancelSelf));
-    intake.setDefaultCommand(intake.runVoltageCmd(0.0));
+    intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
         shooter.runStateCmd(
-            () -> Rotation2d.fromDegrees(0.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+            () -> Rotation2d.fromDegrees(5.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     // reactionBarRelease.setDefaultCommand(
     //     reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
     leds.setDefaultCommand(
@@ -198,7 +200,7 @@ public class Robot extends LoggedRobot {
                 () -> feeder.getFirstBeambreak()));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0));
+    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
