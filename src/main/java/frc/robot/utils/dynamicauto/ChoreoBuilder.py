@@ -20,13 +20,13 @@ locations = [
     {"name": "C4", "x": 7.68, "y": 2.457, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3",  "C5"]},
     {"name": "C5", "x": 7.68, "y": 0.787, "angle": 3.14, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3", "C4"]},
 ]
-'''
+
 obastacles = [
-    {"x": , "y": , "radius": },
-    {"x": , "y": , "radius": },
-    {"x": , "y": , "radius": }
+    {"x": 3.42, "y": 4.04, "radius": 0.50},
+    {"x": 5.61, "y": 2.81, "radius": 0.50},
+    {"x": 5.61, "y": 5.44, "radius": 0.50}
 ]
-'''
+
 def create_waypoint(point):
     return {
         "x": point["x"],
@@ -59,7 +59,7 @@ def create_path(allPoints):
         "usesControlIntervalGuessing": True,
         "defaultControlIntervalCount": 40,
         "usesDefaultFieldObstacles": True,
-        "circleObstacles": []
+        "circleObstacles": obastacles
     }
 
 
