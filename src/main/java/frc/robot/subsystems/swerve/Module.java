@@ -34,7 +34,9 @@ public class Module {
   public static final double DRIVE_GEAR_RATIO = (50.0 / 16.0) * (16.0 / 28.0) * (45.0 / 15.0);
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
-  public static final double DRIVE_STATOR_CURRENT_LIMIT = 80.0; // TODO bump as needed
+  public static final double DRIVE_STATOR_CURRENT_LIMIT = 60.0;
+  public static final double DRIVE_SUPPLY_TIME_CURRENT_LIMIT = 40.0;
+  public static final double DRIVE_SUPPLY_TIME_CUTOFF = 0.5;
   public static final double TURN_STATOR_CURRENT_LIMIT = 20.0;
 
   private final ModuleIO io;
@@ -73,10 +75,12 @@ public class Module {
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
     // Optimize state based on current angle
-    final var optimizedState = state; // SwerveModuleState.optimize(state, getAngle());
+    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
 
     io.setTurnSetpoint(optimizedState.angle);
-    io.setDriveSetpoint(optimizedState.speedMetersPerSecond);
+    io.setDriveSetpoint(
+        optimizedState.speedMetersPerSecond
+            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
 
     return optimizedState;
   }

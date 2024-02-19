@@ -7,6 +7,7 @@ package frc.robot.subsystems.intake;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -17,7 +18,11 @@ public class IntakeIOReal implements IntakeIO {
   private final TalonFX centeringMotor = new TalonFX(15, "canivore");
 
   private final VoltageOut intakeVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VelocityVoltage intakeVelocityVoltage =
+      new VelocityVoltage(0.0).withEnableFOC(true);
   private final VoltageOut centeringVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VelocityVoltage centeringVelocityVoltage =
+      new VelocityVoltage(0.0).withEnableFOC(true);
 
   private final StatusSignal<Double> intakeVelocity = intakeMotor.getVelocity();
   private final StatusSignal<Double> intakeVoltage = intakeMotor.getMotorVoltage();
@@ -34,12 +39,20 @@ public class IntakeIOReal implements IntakeIO {
     intakeConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
     intakeConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     intakeConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+    intakeConfig.Slot0.kV = (12.0 * 60.0) / 5800;
+    intakeConfig.Slot0.kP = 1.0;
+
     intakeMotor.getConfigurator().apply(intakeConfig);
 
     var centeringConfig = new TalonFXConfiguration();
     centeringConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
     centeringConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     centeringConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+    centeringConfig.Slot0.kV = (12.0 * 60.0) / 5800;
+    centeringConfig.Slot0.kP = 1.0;
+
     centeringMotor.getConfigurator().apply(centeringConfig);
 
     BaseStatusSignal.setUpdateFrequencyForAll(
@@ -81,5 +94,15 @@ public class IntakeIOReal implements IntakeIO {
   @Override
   public void setCenteringVoltage(final double volts) {
     centeringMotor.setControl(centeringVoltageOut.withOutput(volts));
+  }
+
+  @Override
+  public void setIntakeSpeed(final double rps) {
+    intakeMotor.setControl(intakeVelocityVoltage.withVelocity(rps));
+  }
+
+  @Override
+  public void setCenteringSpeed(final double rps) {
+    centeringMotor.setControl(centeringVelocityVoltage.withVelocity(rps));
   }
 }

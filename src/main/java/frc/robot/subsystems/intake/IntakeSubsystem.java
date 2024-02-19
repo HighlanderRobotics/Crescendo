@@ -32,4 +32,12 @@ public class IntakeSubsystem extends SubsystemBase {
           io.setCenteringVoltage(voltage);
         });
   }
+
+  public Command runVelocityCmd(double velocity) {
+    return this.run(
+        () -> {
+          io.setIntakeSpeed(velocity);
+          io.setCenteringSpeed(velocity);
+        });
+  }
 }

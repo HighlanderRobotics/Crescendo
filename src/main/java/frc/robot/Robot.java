@@ -198,7 +198,7 @@ public class Robot extends LoggedRobot {
                 () -> feeder.getFirstBeambreak()));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVoltageCmd(8.0));
+    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -295,6 +295,11 @@ public class Robot extends LoggedRobot {
     operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
+
+    operator
+        .start()
+        .whileTrue(shooter.runPivotCurrentZeroing())
+        .whileTrue(elevator.runCurrentZeroing());
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
