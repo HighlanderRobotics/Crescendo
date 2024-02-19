@@ -111,5 +111,7 @@ data = {
 
 
 # Write the data to a JSON file
-with open('C:\\Users\\Robotics\\Desktop\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\data.chor', 'w') as f:
+# C:\\Users\\Robotics\\Desktop\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\data.chor
+with open('C:\\Users\\stoopi_poopy\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\data.chor', 'w') as f:
     json.dump(data, f, indent=4)
+

@@ -9,14 +9,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), true, 0, "W1"), // w1
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 0, "W1"), // w1
     new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 1, "W2"), // w2
     new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 2, "W3"), // w3
-    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, 0, "C1"), // c1
+    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), false, 0, "C1"), // c1
     new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C2"), // c2
     new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), false, 1, "C3"), // c3
     new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), false, 2, "C4"), // c4
-    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), true, 3, "C5") // c5
+    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), false, 3, "C5") // c5
   };
 
   public static final ShootingLocation[] shootingLocations = {
