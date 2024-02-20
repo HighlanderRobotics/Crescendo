@@ -36,6 +36,8 @@ public class DynamicAuto {
         new Pose2d(0.71, 4.36, Rotation2d.fromRadians(-1.04)), "Stage Side") // Speaker (Stage Side)
   };
 
+  public static int notesLeft = notes.length;
+
   public static ShootingLocation closestShootingLocation(
       Supplier<Pose2d> curPose, ShootingLocation[] shootingLocations) {
 
@@ -59,6 +61,10 @@ public class DynamicAuto {
   public static ChoreoTrajectory makeNoteToShooting(Supplier<Pose2d> startingPose) {
     Note closestNote = getClosestNote(startingPose);
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+    if ("Uninitialized" == closestNote.getName()) {
+      closestNote = getAbsoluteClosestNote(startingPose);
+      System.out.println("No more avaliable notes!");
+    }
     return Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
   }
 
@@ -71,14 +77,14 @@ public class DynamicAuto {
   public static ChoreoTrajectory makeNoteToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getAbsoluteClosestNote(startingPose);
     Note nextClosest = new Note();
-    if(!closestNote.getBlacklist()){
-    closestNote.blacklist();
-    nextClosest = getClosestNote(startingPose);
-    closestNote.whitelist();  
-    } else{
+    if (!closestNote.getBlacklist()) {
+      closestNote.blacklist();
+      nextClosest = getClosestNote(startingPose);
+      closestNote.whitelist();
+    } else {
       nextClosest = getClosestNote(startingPose);
     }
-    
+
     Logger.recordOutput(
         "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
     return Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
@@ -99,7 +105,7 @@ public class DynamicAuto {
 
   public static Note getClosestNote(Supplier<Pose2d> curPose) {
     Note closestNote = new Note();
-    double shortestDistance = 99999999;
+    double shortestDistance = Double.POSITIVE_INFINITY;
     for (Note note : notes) {
       if (note.getBlacklist()) {
 

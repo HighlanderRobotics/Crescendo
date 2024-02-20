@@ -4,11 +4,13 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -25,6 +27,7 @@ import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.utils.dynamicauto.DynamicAuto;
+import frc.robot.utils.dynamicauto.Note;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -156,19 +159,46 @@ public class Robot extends LoggedRobot {
                 () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));
 
     SmartDashboard.putData(
-        "Start To Note", swerve.runChoreoTraj(() -> DynamicAuto.makeStartToNote(swerve::getPose)));
+        "Whitelist Note",
+        Commands.runOnce(
+            () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));
     SmartDashboard.putData(
-        "Note To Note", swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToNote(swerve::getPose)));
+        "Blacklist All",
+        Commands.runOnce(
+            () -> {
+              for (Note note : DynamicAuto.notes) {
+                note.blacklist();
+              }
+            },
+            swerve));
     SmartDashboard.putData(
-        "Shoot To Note",
-        swerve.runChoreoTraj(() -> DynamicAuto.makeShootingToNote(swerve::getPose)));
-    SmartDashboard.putData(
-        "Note To Shooting",
-        swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToShooting(swerve::getPose)));
-    SmartDashboard.putData("Blacklist Note", Commands.runOnce(
-                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist(), swerve));
-    SmartDashboard.putData("Whitelist Note", Commands.runOnce(
-                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));          
+        "Whitelist All",
+        Commands.runOnce(
+            () -> {
+              for (Note note : DynamicAuto.notes) {
+                note.whitelist();
+              }
+            },
+            swerve));
+    SmartDashboard.putData("Dynamic Demo", dynamicAutoDemo());
+  }
+
+  public Command dynamicAutoDemo() {
+    return Commands.sequence(
+            Commands.runOnce(
+                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),
+            startToNote(),
+            blacklistNote(),
+            noteToNote(),
+            blacklistNote(),
+            noteToShoot(),
+            shootToNote(),
+            blacklistNote(),
+            noteToShoot(),
+            shootToNote(),
+            blacklistNote(),
+            noteToNote())
+        .asProxy();
   }
 
   @Override
@@ -184,6 +214,71 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPose());
+  }
+
+  public Command startToNote() {
+    return swerve
+        .runChoreoTraj(() -> DynamicAuto.makeStartToNote(swerve::getPose))
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.notesLeft > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public Command noteToNote() {
+    return swerve
+        .runChoreoTraj(
+            () -> {
+              System.out.println(DynamicAuto.notesLeft);
+              return DynamicAuto.makeNoteToNote(swerve::getPose);
+            })
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.notesLeft > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public Command shootToNote() {
+    return swerve
+        .runChoreoTraj(() -> DynamicAuto.makeShootingToNote(swerve::getPose))
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.notesLeft > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public Command noteToShoot() {
+    return swerve
+        .runChoreoTraj(() -> DynamicAuto.makeNoteToShooting(swerve::getPose))
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.notesLeft > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public Command blacklistNote() {
+    return Commands.runOnce(
+        () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist(), swerve);
   }
 
   @Override
