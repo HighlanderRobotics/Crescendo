@@ -18,13 +18,12 @@ import org.littletonrobotics.junction.Logger;
 
 public class LEDSubsystem extends SubsystemBase {
   public static final int LED_LENGTH = 36;
-  LEDIO io;
-  LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
+  
+  private final LEDIO io;
+  private final LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
 
-  Color[] colors = new Color[LED_LENGTH];
-
-  double rainbowStart = 0;
-  double dashStart = 0;
+  private double rainbowStart = 0;
+  private double dashStart = 0;
 
   /** Creates a new LEDSubsystem. */
   public LEDSubsystem(LEDIO io) {
@@ -93,7 +92,7 @@ public class LEDSubsystem extends SubsystemBase {
         });
   }
 
-  public Command defaultStateDisplay(BooleanSupplier enabled, BooleanSupplier targetIsSpeaker) {
+  public Command defaultStateDisplayCmd(BooleanSupplier enabled, BooleanSupplier targetIsSpeaker) {
     return Commands.either(
             Commands.either(
                 this.setBlinkingCmd(new Color("#ffff00"), new Color(), 10.0)
