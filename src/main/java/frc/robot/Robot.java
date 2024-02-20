@@ -174,12 +174,12 @@ public class Robot extends LoggedRobot {
                     carriage.indexForwardsCmd(),
                     () -> feeder.getFirstBeambreak())
                 .until(() -> currentTarget != Target.AMP),
-            Commands.sequence(
+            Commands.repeatingSequence(
                     carriage
                         .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
                         .until(() -> feeder.getFirstBeambreak()),
                     carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    carriage.runVoltageCmd(-0.5))
+                    carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
@@ -199,7 +199,7 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
-                    leds.setBlinkingCmd(new Color("#ff8000"), new Color("#000000"), 25.0))
+                    leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
@@ -338,6 +338,7 @@ public class Robot extends LoggedRobot {
         new Pose3d[] {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
+    Logger.recordOutput("Target", currentTarget);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
