@@ -10,7 +10,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.utils.components.InvertedDigitalInput;
 
 /** Feeder IO using a TalonFX. */
@@ -18,7 +17,7 @@ public class FeederIOReal implements FeederIO {
   private final TalonFX motor = new TalonFX(13, "canivore");
 
   InvertedDigitalInput firstBeambreak = new InvertedDigitalInput(0);
-  DigitalInput lastBeambreak = new DigitalInput(1);
+  InvertedDigitalInput lastBeambreak = new InvertedDigitalInput(1);
 
   private final StatusSignal<Double> velocity = motor.getVelocity();
   private final StatusSignal<Double> voltage = motor.getMotorVoltage();

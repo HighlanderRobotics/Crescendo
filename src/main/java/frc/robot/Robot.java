@@ -124,7 +124,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -159,28 +159,31 @@ public class Robot extends LoggedRobot {
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
-            feeder.indexCmd().until(() -> currentTarget == Target.AMP),
+            feeder.indexCmd().until(() -> currentTarget != Target.SPEAKER),
             Commands.sequence(
                     feeder
                         .runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE)
                         .until(() -> carriage.getBeambreak()),
                     feeder.runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
                     feeder.runVoltageCmd(0.0))
-                .until(() -> currentTarget == Target.SPEAKER)));
+                .until(() -> currentTarget != Target.AMP)));
     carriage.setDefaultCommand(
         Commands.repeatingSequence(
-            carriage.indexBackwardsCmd().until(() -> currentTarget == Target.AMP),
+            Commands.either(
+                    carriage.indexBackwardsCmd(),
+                    carriage.indexForwardsCmd(),
+                    () -> feeder.getFirstBeambreak())
+                .until(() -> currentTarget != Target.AMP),
             Commands.sequence(
                     carriage
                         .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
                         .until(() -> feeder.getFirstBeambreak()),
                     carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    carriage.runVoltageCmd(0.0))
-                .until(() -> currentTarget == Target.SPEAKER)));
+                    carriage.runVoltageCmd(-0.5))
+                .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
-        shooter.runFlywheelsCmd(
-            () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+        shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     // reactionBarRelease.setDefaultCommand(
     //     reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
     leds.setDefaultCommand(
@@ -246,7 +249,7 @@ public class Robot extends LoggedRobot {
             Commands.parallel(
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
-                .withTimeout(0.5));
+                .withTimeout(0.75));
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
     // Heading reset
     controller
