@@ -33,12 +33,12 @@ public class ModuleIOSim implements ModuleIO {
 
   private final String name;
 
-  private DCMotorSim driveSim =
+  private final DCMotorSim driveSim =
       // Third param is the moment of inertia of the swerve wheel
       // Used to approximate the robot inertia, not perfect but fine for the
       // Fidelity of simulation we are targeting
       new DCMotorSim(DCMotor.getKrakenX60Foc(1), Module.DRIVE_GEAR_RATIO, 0.025);
-  private DCMotorSim turnSim =
+  private final DCMotorSim turnSim =
       // Third param is the moment of inertia of the swerve steer
       new DCMotorSim(DCMotor.getKrakenX60Foc(1), Module.TURN_GEAR_RATIO, 0.004);
 
@@ -47,15 +47,15 @@ public class ModuleIOSim implements ModuleIO {
   private double turnAppliedVolts = 0.0;
 
   private final PIDController turnController = new PIDController(100.0, 0.0, 0.0);
-  private final PIDController driveController = new PIDController(1.0, 0.0, 0.0);
-  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 2.6);
+  private final PIDController driveController = new PIDController(0.3, 0.0, 0.0);
+  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 3.2);
 
   public ModuleIOSim(final String name) {
     this.name = name;
   }
 
   @Override
-  public void updateInputs(ModuleIOInputs inputs) {
+  public void updateInputs(final ModuleIOInputs inputs) {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
 

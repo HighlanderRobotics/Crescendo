@@ -1,24 +1,31 @@
 {
+  "HALProvider": {
+    "Addressable LEDs": {
+      "window": {
+        "visible": true
+      }
+    }
+  },
   "NTProvider": {
     "types": {
+      "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
+      "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
-      "/SmartDashboard/reset Kicker value": "Command",
-      "/SmartDashboard/reset Pivot value": "Command"
+      "/SmartDashboard/Run Elevator Sysid": "Command",
+      "/SmartDashboard/Run Flywheel Sysid": "Command",
+      "/SmartDashboard/Run Pivot Sysid": "Command",
+      "/SmartDashboard/Run Swerve Azimuth Sysid": "Command",
+      "/SmartDashboard/Run Swerve Drive Sysid": "Command",
+      "/SmartDashboard/Shooter shoot": "Command"
     }
   },
   "NetworkTables": {
     "transitory": {
       "AdvantageKit": {
-        "RealOutputs": {
-          "Odometry": {
-            "open": true
-          },
-          "open": true
-        },
         "open": true
       }
     }
