@@ -140,18 +140,27 @@ public class Robot extends LoggedRobot {
     // Test binding for elevator
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
 
+    controller.x().toggleOnTrue(swerve.runChoreoTraj(DynamicAuto.makeNoteToNote(swerve::getPose)));
     controller
-        .x()
+        .leftBumper()
         .toggleOnTrue(
-            Commands.run(
-                () -> swerve.runChoreoTraj(DynamicAuto.makeNoteToNote(swerve::getPose)), swerve));
+            Commands.runOnce(
+                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist(), swerve));
+    controller
+        .rightBumper()
+        .toggleOnTrue(
+            Commands.runOnce(
+                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
     Logger.recordOutput(
-        "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve.getPose()).getPose());
+        "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve::getPose).getPose());
+
+    Logger.recordOutput(
+        "DynamicAuto/Absolute Closest Note", DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose());
     Logger.recordOutput(
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose()).getPose());

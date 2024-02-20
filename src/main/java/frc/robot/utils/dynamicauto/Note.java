@@ -28,11 +28,11 @@ public class Note {
     this.name = "Uninitialized";
   }
 
-  public void blacklist(){
+  public void blacklist() {
     this.blacklisted = true;
   }
 
-  public void whitelist(){
+  public void whitelist() {
     this.blacklisted = false;
   }
 
