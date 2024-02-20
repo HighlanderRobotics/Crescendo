@@ -252,21 +252,22 @@ public class Robot extends LoggedRobot {
         .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
         .onTrue(
             Commands.sequence(
-                elevator
-                    .setExtensionCmd(() -> 0.0)
-                    .until(() -> elevator.getExtensionMeters() < 0.05),
-                Commands.waitUntil(() -> controller.y().getAsBoolean()),
-                Commands.parallel(
-                    carriage
-                        .runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)
-                        .withTimeout(0.25)
-                        .andThen(
-                            Commands.waitUntil(
-                                () ->
-                                    elevator.getExtensionMeters()
-                                        > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS),
-                            carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)),
-                    elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS))));
+                    elevator
+                        .setExtensionCmd(() -> 0.0)
+                        .until(() -> elevator.getExtensionMeters() < 0.05),
+                    Commands.waitUntil(() -> controller.y().getAsBoolean()),
+                    Commands.parallel(
+                        carriage
+                            .runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)
+                            .withTimeout(0.25)
+                            .andThen(
+                                Commands.waitUntil(
+                                    () ->
+                                        elevator.getExtensionMeters()
+                                            > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS),
+                                carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)),
+                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)))
+                .alongWith(leds.setRainbowCmd()));
 
     // Prep climb
     operator
@@ -274,7 +275,13 @@ public class Robot extends LoggedRobot {
         .and(operator.rightBumper())
         .toggleOnFalse(
             Commands.parallel(
-                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS)));
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                leds.setProgressCmd(
+                    new Color("#00ff00"),
+                    () ->
+                        elevator.getExtensionMeters()
+                            * LEDSubsystem.LED_LENGTH
+                            / ElevatorSubsystem.CLIMB_EXTENSION_METERS)));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 1.0));

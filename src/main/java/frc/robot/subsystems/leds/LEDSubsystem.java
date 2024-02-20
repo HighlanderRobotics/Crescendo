@@ -18,10 +18,12 @@ import org.littletonrobotics.junction.Logger;
 
 public class LEDSubsystem extends SubsystemBase {
   public static final int LED_LENGTH = 36;
-  
+
   private final LEDIO io;
   private final LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
 
+  // Marks the start of rainbow or dash
+  // Used to keep persistent state between loops
   private double rainbowStart = 0;
   private double dashStart = 0;
 
@@ -59,11 +61,7 @@ public class LEDSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           for (int i = 0; i < LED_LENGTH; i++) {
-            if (i < progress.getAsDouble() * LED_LENGTH) {
-              setIndex(i, color);
-            } else {
-              setIndex(i, Color.kBlack);
-            }
+            setIndex(i, i < progress.getAsDouble() * LED_LENGTH ? color : Color.kBlack);
           }
         });
   }
