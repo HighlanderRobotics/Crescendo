@@ -53,6 +53,7 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
@@ -416,20 +417,24 @@ public class SwerveSubsystem extends SubsystemBase {
                         getVelocity().omegaRadiansPerSecond)));
   }
 
-  public Command runChoreoTraj(ChoreoTrajectory traj) {
-    return Choreo.choreoSwerveCommand(
-        traj,
-        this::getPose,
-        new PIDController(5.0, 0.0, 0.0),
-        new PIDController(5.0, 0.0, 0.0),
-        new PIDController(5.0, 0.0, 0.0),
-        (ChassisSpeeds speeds) -> //
-        this.runVelocity(speeds),
-        () -> {
-          Optional<Alliance> alliance = DriverStation.getAlliance();
-          return alliance.isPresent() && alliance.get() == Alliance.Red;
-        },
-        this);
+  public Command runChoreoTraj(Supplier<ChoreoTrajectory> traj) {
+
+    return Commands.defer(
+        () ->
+            Choreo.choreoSwerveCommand(
+                traj.get(),
+                this::getPose,
+                new PIDController(5.0, 0.0, 0.0),
+                new PIDController(5.0, 0.0, 0.0),
+                new PIDController(5.0, 0.0, 0.0),
+                (ChassisSpeeds speeds) -> //
+                this.runVelocity(speeds),
+                () -> {
+                  Optional<Alliance> alliance = DriverStation.getAlliance();
+                  return alliance.isPresent() && alliance.get() == Alliance.Red;
+                },
+                this),
+        Set.of(this));
   }
 
   public Command runModuleSteerCharacterizationCmd() {

@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -140,7 +141,9 @@ public class Robot extends LoggedRobot {
     // Test binding for elevator
     controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
 
-    controller.x().toggleOnTrue(swerve.runChoreoTraj(DynamicAuto.makeNoteToNote(swerve::getPose)));
+    controller
+        .x()
+        .toggleOnTrue(swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToNote(swerve::getPose)));
     controller
         .leftBumper()
         .toggleOnTrue(
@@ -151,6 +154,17 @@ public class Robot extends LoggedRobot {
         .toggleOnTrue(
             Commands.runOnce(
                 () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));
+
+    SmartDashboard.putData(
+        "Start To Note", swerve.runChoreoTraj(() -> DynamicAuto.makeStartToNote(swerve::getPose)));
+    SmartDashboard.putData(
+        "Note To Note", swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToNote(swerve::getPose)));
+    SmartDashboard.putData(
+        "Shoot To Note",
+        swerve.runChoreoTraj(() -> DynamicAuto.makeShootingToNote(swerve::getPose)));
+    SmartDashboard.putData(
+        "Note To Shooting",
+        swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToShooting(swerve::getPose)));
   }
 
   @Override
@@ -160,10 +174,12 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve::getPose).getPose());
 
     Logger.recordOutput(
-        "DynamicAuto/Absolute Closest Note", DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose());
+        "DynamicAuto/Absolute Closest Note",
+        DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose());
     Logger.recordOutput(
         "DynamicAuto/Closest Shooting Location",
-        DynamicAuto.closestShootingLocation(() -> swerve.getPose()).getPose());
+        DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
+            .getPose());
   }
 
   @Override

@@ -29,10 +29,12 @@ public class Note {
   }
 
   public void blacklist() {
+    System.out.println("Blacklisted " + name);
     this.blacklisted = true;
   }
 
   public void whitelist() {
+    System.out.println("Whitelisted " + name);
     this.blacklisted = false;
   }
 

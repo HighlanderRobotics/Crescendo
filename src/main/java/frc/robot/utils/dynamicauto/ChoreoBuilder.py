@@ -17,8 +17,8 @@ locations = [
     {"name": "C1", "x": 7.68, "y": 7.467, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C2", "C3", "C4", "C5"]},
     {"name": "C2", "x": 7.68, "y": 5.797, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1",  "C3", "C4", "C5"]},
     {"name": "C3", "x": 7.68, "y": 4.127, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2",  "C4", "C5"]},
-    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3",  "C5"]},
-    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S3", "S4", "S3", "S4", "C1", "C2", "C3", "C4"]},
+    {"name": "C4", "x": 7.68, "y": 2.457, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3",  "C5"]},
+    {"name": "C5", "x": 7.68, "y": 0.787, "angle": 0, "allowed_destinations": ["W1", "W2", "W3", "S1", "S2", "S3", "S4", "C1", "C2", "C3", "C4"]},
 ]
 
 obastacles = [
