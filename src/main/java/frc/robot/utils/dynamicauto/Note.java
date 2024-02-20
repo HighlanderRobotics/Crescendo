@@ -28,8 +28,12 @@ public class Note {
     this.name = "Uninitialized";
   }
 
-  public void setBlacklist(boolean blacklist) {
-    this.blacklisted = blacklist;
+  public void blacklist(){
+    this.blacklisted = true;
+  }
+
+  public void whitelist(){
+    this.blacklisted = false;
   }
 
   public void setPriority(Integer priority) {

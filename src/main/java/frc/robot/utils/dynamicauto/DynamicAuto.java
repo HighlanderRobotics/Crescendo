@@ -39,11 +39,13 @@ public class DynamicAuto {
     return closestLocation;
   }
 
-  public static ChoreoTrajectory makePath(Supplier<Pose2d> startingPose) {
-    return Choreo.getTrajectory(
-        getClosestNote(startingPose.get()).getName()
-            + " To "
-            + closestShootingLocation(startingPose).getName());
+  public static ChoreoTrajectory makeNoteToNote(Supplier<Pose2d> startingPose) {
+    Note closestNote = getClosestNote(startingPose.get());
+    closestNote.blacklist();
+    Note nextClosest = getClosestNote(startingPose.get());
+    closestNote.whitelist();
+    
+    return Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
   }
 
   public static Note getClosestNote(Pose2d curPose) {

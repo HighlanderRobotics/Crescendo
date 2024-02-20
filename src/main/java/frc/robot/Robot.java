@@ -144,7 +144,7 @@ public class Robot extends LoggedRobot {
         .x()
         .toggleOnTrue(
             Commands.run(
-                () -> swerve.runChoreoTraj(DynamicAuto.makePath(swerve::getPose)), swerve));
+                () -> swerve.runChoreoTraj(DynamicAuto.makeNoteToNote(swerve::getPose)), swerve));
   }
 
   @Override
