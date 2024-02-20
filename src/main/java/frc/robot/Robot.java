@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -159,12 +158,25 @@ public class Robot extends LoggedRobot {
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
-        Commands.either(
-            feeder.indexCmd(), feeder.runVoltageCmd(0.0), () -> currentTarget == Target.SPEAKER));
+        Commands.repeatingSequence(
+            feeder.indexCmd().until(() -> currentTarget == Target.AMP),
+            Commands.sequence(
+                    feeder
+                        .runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE)
+                        .until(() -> carriage.getBeambreak()),
+                    feeder.runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
+                    feeder.runVoltageCmd(0.0))
+                .until(() -> currentTarget == Target.SPEAKER)));
     carriage.setDefaultCommand(
-        carriage
-            .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
-            .withInterruptBehavior(InterruptionBehavior.kCancelSelf));
+        Commands.repeatingSequence(
+            carriage.indexBackwardsCmd().until(() -> currentTarget == Target.AMP),
+            Commands.sequence(
+                    carriage
+                        .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
+                        .until(() -> feeder.getFirstBeambreak()),
+                    carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
+                    carriage.runVoltageCmd(0.0))
+                .until(() -> currentTarget == Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
         shooter.runStateCmd(
@@ -186,18 +198,6 @@ public class Robot extends LoggedRobot {
                     controller.rumbleCmd(1.0, 1.0),
                     leds.setBlinkingCmd(new Color("#ff8000"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
-    // Handled by default commands
-    // new Trigger(() -> currentTarget == Target.SPEAKER)
-    //     .whileTrue(feeder.indexCmd())
-    //     .whileTrue(carriage.runVoltageCmd(5.0));
-    new Trigger(() -> currentTarget == Target.AMP)
-        .whileTrue(
-            Commands.either(
-                Commands.parallel(
-                    carriage.indexBackwardsCmd(),
-                    feeder.runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE).withTimeout(1.0)),
-                Commands.parallel(carriage.indexForwardsCmd(), feeder.runVoltageCmd(0.0)),
-                () -> feeder.getFirstBeambreak()));
 
     // ---- Controller bindings here ----
     controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
