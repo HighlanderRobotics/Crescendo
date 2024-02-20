@@ -111,6 +111,30 @@ public class ShooterSubystem extends SubsystemBase {
         });
   }
 
+  public Command runFlywheelsCmd(DoubleSupplier left, DoubleSupplier right) {
+    return this.run(
+        () -> {
+          Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
+          Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
+          Logger.recordOutput(
+              "Shooter/Left At Target",
+              MathUtil.isNear(
+                  left.getAsDouble(), inputs.flywheelLeftVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput(
+              "Shooter/Right At Target",
+              MathUtil.isNear(
+                  right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput(
+              "Shooter/Pivot At Target",
+              MathUtil.isNear(
+                  right.getAsDouble(),
+                  inputs.flywheelRightVelocityRotationsPerSecond,
+                  Units.degreesToRotations(0.5)));
+          io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
+          io.setPivotVoltage(0.0);
+        });
+  }
+
   public Command runStateCmd(Rotation2d rotation, double left, double right) {
     return runStateCmd(() -> rotation, () -> left, () -> right);
   }

@@ -179,8 +179,8 @@ public class Robot extends LoggedRobot {
                 .until(() -> currentTarget == Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
-        shooter.runStateCmd(
-            () -> Rotation2d.fromDegrees(5.0), () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+        shooter.runFlywheelsCmd(
+            () -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     // reactionBarRelease.setDefaultCommand(
     //     reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
     leds.setDefaultCommand(
