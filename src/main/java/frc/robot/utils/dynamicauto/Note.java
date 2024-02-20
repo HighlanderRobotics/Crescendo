@@ -21,6 +21,13 @@ public class Note {
     this.name = name;
   }
 
+  public Note(String name) {
+    this.pose = new Pose2d();
+    this.blacklisted = true;
+    this.priority = -1;
+    this.name = name;
+  }
+
   public Note() {
     this.pose = new Pose2d();
     this.blacklisted = true;

@@ -69,11 +69,16 @@ public class DynamicAuto {
   }
 
   public static ChoreoTrajectory makeNoteToNote(Supplier<Pose2d> startingPose) {
-    Note closestNote = getClosestNote(startingPose);
+    Note closestNote = getAbsoluteClosestNote(startingPose);
+    Note nextClosest = new Note();
+    if(!closestNote.getBlacklist()){
     closestNote.blacklist();
-    Note nextClosest = getClosestNote(startingPose);
-    Logger.recordOutput("DynamicAuto/FHFHH", nextClosest.getPose());
-    closestNote.whitelist();
+    nextClosest = getClosestNote(startingPose);
+    closestNote.whitelist();  
+    } else{
+      nextClosest = getClosestNote(startingPose);
+    }
+    
     Logger.recordOutput(
         "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
     return Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());

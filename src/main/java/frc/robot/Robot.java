@@ -165,6 +165,10 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData(
         "Note To Shooting",
         swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToShooting(swerve::getPose)));
+    SmartDashboard.putData("Blacklist Note", Commands.runOnce(
+                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist(), swerve));
+    SmartDashboard.putData("Whitelist Note", Commands.runOnce(
+                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));          
   }
 
   @Override
