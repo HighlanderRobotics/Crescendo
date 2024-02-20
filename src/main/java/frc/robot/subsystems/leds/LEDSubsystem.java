@@ -18,7 +18,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class LEDSubsystem extends SubsystemBase {
   public static final int LED_LENGTH = 36;
-  
+
   private final LEDIO io;
   private final LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
 
