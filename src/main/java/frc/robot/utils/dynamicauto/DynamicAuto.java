@@ -13,11 +13,11 @@ public class DynamicAuto {
     new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 0, "W1"), // w1
     new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 1, "W2"), // w2
     new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 2, "W3"), // w3
-    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), false, 0, "C1"), // c1
+    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), false, 3, "C1"), // c1
     new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C2"), // c2
     new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), false, 1, "C3"), // c3
     new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), false, 2, "C4"), // c4
-    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), false, 3, "C5") // c5
+    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C5") // c5
   };
 
   public static final ShootingLocation[] shootingLocations = {
@@ -36,12 +36,19 @@ public class DynamicAuto {
         new Pose2d(0.71, 4.36, Rotation2d.fromRadians(-1.04)), "Stage Side") // Speaker (Stage Side)
   };
 
-  public static int notesLeft = notes.length;
+  public static int whitelistCount = notes.length;
+
+  public static void updateWhitelistCount(){
+    whitelistCount = 0;
+    for(Note note : notes){
+      whitelistCount += note.getBlacklist() ? 1 : 0;
+    }
+  }
 
   public static ShootingLocation closestShootingLocation(
       Supplier<Pose2d> curPose, ShootingLocation[] shootingLocations) {
 
-    ShootingLocation closestLocation = new ShootingLocation();
+    ShootingLocation closestLocation = new ShootingLocation("shooting shooting");
     double shortestDistance = 9999999;
     for (ShootingLocation location : shootingLocations) {
       if (shortestDistance > curPose.get().minus(location.getPose()).getTranslation().getNorm()) {
@@ -55,6 +62,10 @@ public class DynamicAuto {
   public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
     Note closestNote = getClosestNote(startingPose);
+    if ("Uninitialized" == closestNote.getName()) {
+      closestNote = getAbsoluteClosestNote(startingPose);
+      System.out.println("No more avaliable notes!");
+    }
     return Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
   }
 
@@ -71,6 +82,10 @@ public class DynamicAuto {
   public static ChoreoTrajectory makeShootingToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getClosestNote(startingPose);
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+    if ("Uninitialized" == closestNote.getName()) {
+      closestNote = getAbsoluteClosestNote(startingPose);
+      System.out.println("No more avaliable notes!");
+    }
     return Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
   }
 

@@ -21,6 +21,10 @@ public class ShootingLocation {
     this.name = "Uninitialized";
   }
 
+  public ShootingLocation(String name) {
+    this.name = name;
+  }
+
   public Pose2d getPose() {
     return pose;
   }

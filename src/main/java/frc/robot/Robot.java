@@ -181,10 +181,23 @@ public class Robot extends LoggedRobot {
             },
             swerve));
     SmartDashboard.putData("Dynamic Demo", dynamicAutoDemo());
-    SmartDashboard.putData("gloob", Commands.sequence(Commands.runOnce(
-                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),startToNote(), blacklistNote(), noteToShoot(), noteToNote()));
-    SmartDashboard.putData("gleeb", Commands.sequence(Commands.runOnce(
-                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),startToNote(), blacklistNote(), noteToNote()));
+    SmartDashboard.putData(
+        "gloob",
+        Commands.sequence(
+            Commands.runOnce(
+                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),
+            startToNote(),
+            blacklistNote(),
+            noteToShoot(),
+            noteToNote()));
+    SmartDashboard.putData(
+        "gleeb",
+        Commands.sequence(
+            Commands.runOnce(
+                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),
+            startToNote(),
+            blacklistNote(),
+            noteToNote()));
   }
 
   public Command dynamicAutoDemo() {
@@ -192,6 +205,14 @@ public class Robot extends LoggedRobot {
             Commands.runOnce(
                 () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),
             startToNote(),
+            blacklistNote(),
+            noteToNote(),
+            blacklistNote(),
+            noteToNote(),
+            blacklistNote(),
+            noteToNote(),
+            blacklistNote(),
+            noteToNote(),
             blacklistNote(),
             noteToNote(),
             blacklistNote(),
@@ -225,7 +246,7 @@ public class Robot extends LoggedRobot {
         .runChoreoTraj(() -> DynamicAuto.makeStartToNote(swerve::getPose))
         .onlyIf(
             () -> {
-              if (DynamicAuto.notesLeft > 0) {
+              if (DynamicAuto.whitelistCount > 0) {
                 return true;
               } else {
                 System.out.println("No more avalible notes!!!!! >:(");
@@ -238,12 +259,12 @@ public class Robot extends LoggedRobot {
     return swerve
         .runChoreoTraj(
             () -> {
-              System.out.println(DynamicAuto.notesLeft);
+              System.out.println(DynamicAuto.whitelistCount);
               return DynamicAuto.makeNoteToNote(swerve::getPose);
             })
         .onlyIf(
             () -> {
-              if (DynamicAuto.notesLeft > 0) {
+              if (DynamicAuto.whitelistCount > 0) {
                 return true;
               } else {
                 System.out.println("No more avalible notes!!!!! >:(");
@@ -257,7 +278,7 @@ public class Robot extends LoggedRobot {
         .runChoreoTraj(() -> DynamicAuto.makeShootingToNote(swerve::getPose))
         .onlyIf(
             () -> {
-              if (DynamicAuto.notesLeft > 0) {
+              if (DynamicAuto.whitelistCount > 0) {
                 return true;
               } else {
                 System.out.println("No more avalible notes!!!!! >:(");
@@ -271,7 +292,7 @@ public class Robot extends LoggedRobot {
         .runChoreoTraj(() -> DynamicAuto.makeNoteToShooting(swerve::getPose))
         .onlyIf(
             () -> {
-              if (DynamicAuto.notesLeft > 0) {
+              if (DynamicAuto.whitelistCount > 0) {
                 return true;
               } else {
                 System.out.println("No more avalible notes!!!!! >:(");

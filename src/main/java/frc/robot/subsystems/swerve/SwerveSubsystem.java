@@ -424,9 +424,9 @@ public class SwerveSubsystem extends SubsystemBase {
             Choreo.choreoSwerveCommand(
                 traj.get(),
                 this::getPose,
-                new PIDController(5.0, 0.0, 0.0),
-                new PIDController(5.0, 0.0, 0.0),
-                new PIDController(5.0, 0.0, 0.0),
+                new PIDController(85.0, 0.0, 0.0),
+                new PIDController(85.0, 0.0, 0.0),
+                new PIDController(6.0, 0.0, 0.70),
                 (ChassisSpeeds speeds) -> //
                 this.runVelocity(speeds),
                 () -> {

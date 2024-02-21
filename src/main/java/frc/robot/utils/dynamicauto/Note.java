@@ -37,13 +37,13 @@ public class Note {
 
   public void blacklist() {
     System.out.println("Blacklisted " + name);
-    DynamicAuto.notesLeft -= 1;
+    DynamicAuto.whitelistCount -= 1;
     this.blacklisted = true;
   }
 
   public void whitelist() {
     System.out.println("Whitelisted " + name);
-    DynamicAuto.notesLeft += 1;
+    DynamicAuto.whitelistCount += 1;
     this.blacklisted = false;
   }
 
