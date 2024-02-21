@@ -347,7 +347,7 @@ public class Robot extends LoggedRobot {
                 () -> rightRPS.get()),
             feeder
                 .indexCmd()
-                .withTimeout(1.0)
+                .withTimeout(1.25)
                 .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))
         .withTimeout(3);
   }

@@ -61,7 +61,7 @@ public class ShooterIOReal implements ShooterIO {
     pivotConfig.Slot0.kP = 200.0;
     pivotConfig.Slot0.kD = 30.0;
 
-    pivotConfig.MotionMagic.MotionMagicAcceleration = 4.0;
+    pivotConfig.MotionMagic.MotionMagicAcceleration = 3.0;
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
