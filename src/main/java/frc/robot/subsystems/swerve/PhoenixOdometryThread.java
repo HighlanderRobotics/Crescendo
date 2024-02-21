@@ -40,7 +40,6 @@ public class PhoenixOdometryThread extends Thread {
   private BaseStatusSignal[] signals = new BaseStatusSignal[0];
   private final List<Queue<Double>> queues = new ArrayList<>();
   private final List<Queue<Double>> timestampQueues = new ArrayList<>();
-  private boolean isCANFD = false;
 
   private static PhoenixOdometryThread instance = null;
 
@@ -64,11 +63,12 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   public Queue<Double> registerSignal(ParentDevice device, StatusSignal<Double> signal) {
+    assert CANBus.isNetworkFD(device.getNetwork()) : "Only CAN FDs supported";
+
     Queue<Double> queue = new ArrayDeque<>(100);
     signalsLock.lock();
     SwerveSubsystem.odometryLock.lock();
     try {
-      isCANFD = CANBus.isNetworkFD(device.getNetwork());
       BaseStatusSignal[] newSignals = new BaseStatusSignal[signals.length + 1];
       System.arraycopy(signals, 0, newSignals, 0, signals.length);
       newSignals[signals.length] = signal;
@@ -98,18 +98,7 @@ public class PhoenixOdometryThread extends Thread {
       // Wait for updates from all signals
       signalsLock.lock();
       try {
-        if (isCANFD) {
-          BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals);
-        } else {
-          // "waitForAll" does not support blocking on multiple
-          // signals with a bus that is not CAN FD, regardless
-          // of Pro licensing. No reasoning for this behavior
-          // is provided by the documentation.
-          Thread.sleep((long) (1000.0 / Module.ODOMETRY_FREQUENCY_HZ));
-          if (signals.length > 0) BaseStatusSignal.refreshAll(signals);
-        }
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+        BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals);
       } finally {
         signalsLock.unlock();
       }
