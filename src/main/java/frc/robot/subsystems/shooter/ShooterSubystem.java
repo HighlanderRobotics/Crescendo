@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.base.Supplier;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -90,9 +91,45 @@ public class ShooterSubystem extends SubsystemBase {
         () -> {
           Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
           Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
-          Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get());
+          Logger.recordOutput(
+              "Shooter/Left At Target",
+              MathUtil.isNear(
+                  left.getAsDouble(), inputs.flywheelLeftVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput(
+              "Shooter/Right At Target",
+              MathUtil.isNear(
+                  right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get().getRadians());
+          Logger.recordOutput(
+              "Shooter/Pivot At Target",
+              MathUtil.isNear(rotation.get().getDegrees(), inputs.pivotRotation.getDegrees(), 0.5));
           io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
           io.setPivotSetpoint(rotation.get());
+        });
+  }
+
+  public Command runFlywheelsCmd(DoubleSupplier left, DoubleSupplier right) {
+    return this.run(
+        () -> {
+          Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
+          Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
+          Logger.recordOutput("Shooter/Rotation Setpoint", 0.0);
+          Logger.recordOutput(
+              "Shooter/Left At Target",
+              MathUtil.isNear(
+                  left.getAsDouble(), inputs.flywheelLeftVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput(
+              "Shooter/Right At Target",
+              MathUtil.isNear(
+                  right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput(
+              "Shooter/Pivot At Target",
+              MathUtil.isNear(
+                  right.getAsDouble(),
+                  inputs.flywheelRightVelocityRotationsPerSecond,
+                  Units.degreesToRotations(0.5)));
+          io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
+          io.setPivotVoltage(0.0);
         });
   }
 
@@ -139,19 +176,19 @@ public class ShooterSubystem extends SubsystemBase {
             .quasistatic(Direction.kForward)
             .until(() -> inputs.pivotRotation.getDegrees() > 80.0),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
-        Commands.waitSeconds(1.0),
+        Commands.waitSeconds(0.25),
         // Stop when near horizontal so we avoid hard stop
         pivotRoutine
             .quasistatic(Direction.kReverse)
             .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
-        Commands.waitSeconds(1.0),
+        Commands.waitSeconds(0.25),
         // Stop when we get close to vertical so it falls back
         pivotRoutine
             .dynamic(Direction.kForward)
             .until(() -> inputs.pivotRotation.getDegrees() > 80.0),
         this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
-        Commands.waitSeconds(1.0),
+        Commands.waitSeconds(0.25),
         // Stop when near horizontal so we avoid hard stop
         pivotRoutine
             .dynamic(Direction.kReverse)

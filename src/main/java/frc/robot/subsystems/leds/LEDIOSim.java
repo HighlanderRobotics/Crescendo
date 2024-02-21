@@ -17,7 +17,6 @@ public class LEDIOSim implements LEDIO {
   public LEDIOSim() {
     led = new AddressableLED(3);
     buffer = new AddressableLEDBuffer(LEDSubsystem.LED_LENGTH);
-
     led.setLength(buffer.getLength());
     led.start();
   }

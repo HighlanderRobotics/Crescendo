@@ -22,8 +22,6 @@ public class LEDSubsystem extends SubsystemBase {
   private final LEDIO io;
   private final LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
 
-  // Marks the start of rainbow or dash
-  // Used to keep persistent state between loops
   private double rainbowStart = 0;
   private double dashStart = 0;
 
@@ -61,7 +59,11 @@ public class LEDSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           for (int i = 0; i < LED_LENGTH; i++) {
-            setIndex(i, i < progress.getAsDouble() * LED_LENGTH ? color : Color.kBlack);
+            if (i < progress.getAsDouble() * LED_LENGTH) {
+              setIndex(i, color);
+            } else {
+              setIndex(i, Color.kBlack);
+            }
           }
         });
   }
@@ -102,14 +104,14 @@ public class LEDSubsystem extends SubsystemBase {
                     // Set color to be purple with a moving dash corresponding to alliance color
                     () -> {
                       if (DriverStation.getAlliance().isEmpty()) {
-                        return new Color("#350868");
+                        return new Color("#b59aff");
                       } else if (DriverStation.getAlliance().get() == Alliance.Red) {
                         return new Color("#ff0000");
                       } else { // Blue
                         return new Color("#0000ff");
                       }
                     },
-                    () -> new Color("#b59aff"),
+                    () -> new Color("#350868"),
                     10,
                     1.0)
                 .until(enabled),
