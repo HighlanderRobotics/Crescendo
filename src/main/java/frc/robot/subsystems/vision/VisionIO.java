@@ -28,8 +28,7 @@ public interface VisionIO {
 
   public void updateInputs(VisionIOInputs inputs);
 
-  public void setSimPose(
-      Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult);
+  public void setSimPose(Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult);
 
   public String getName();
 }

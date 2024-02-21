@@ -19,7 +19,6 @@ import static edu.wpi.first.units.Units.Volts;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -415,7 +414,7 @@ public class SwerveSubsystem extends SubsystemBase {
         // Use the angle delta from the kinematics and module deltas
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
-       // Apply the twist (change since last sample) to the current pose
+      // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
