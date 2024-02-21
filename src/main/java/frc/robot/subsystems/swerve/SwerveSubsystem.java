@@ -373,7 +373,7 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
     Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    
+
     updateOdometry();
     updateVision();
 
@@ -428,6 +428,7 @@ public class SwerveSubsystem extends SubsystemBase {
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
     }
   }
+
   private void updateVision() {
     for (var camera : cameras) {
       PhotonPipelineResult result =

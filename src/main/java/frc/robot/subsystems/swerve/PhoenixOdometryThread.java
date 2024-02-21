@@ -118,11 +118,12 @@ public class PhoenixOdometryThread extends Thread {
       SwerveSubsystem.odometryLock.lock();
       try {
         double timestamp = Logger.getRealTimestamp() / 1e6;
-        double totalLatency = Arrays.stream(signals).mapToDouble(s -> s.getTimestamp().getLatency()).sum();
+        double totalLatency =
+            Arrays.stream(signals).mapToDouble(s -> s.getTimestamp().getLatency()).sum();
         if (signals.length > 0) {
           timestamp -= totalLatency / signals.length;
         }
-        
+
         for (int i = 0; i < signals.length; i++) {
           queues.get(i).offer(signals[i].getValueAsDouble());
         }
