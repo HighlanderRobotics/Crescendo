@@ -19,6 +19,7 @@ import static edu.wpi.first.units.Units.Volts;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -400,8 +401,13 @@ public class SwerveSubsystem extends SubsystemBase {
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
+      // The twist represents the motion of the robot since the last
+      // sample in x, y, and theta based only on the modules, without
+      // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(modulePositions);
       if (gyroInputs.connected) {
+        // If the gyro is connected, replace the theta component of the twist
+        // with the change in angle since the last sample.
         rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
@@ -409,6 +415,7 @@ public class SwerveSubsystem extends SubsystemBase {
         // Use the angle delta from the kinematics and module deltas
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
+       // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
@@ -589,9 +596,7 @@ public class SwerveSubsystem extends SubsystemBase {
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModulePosition[] getModulePositions() {
     SwerveModulePosition[] states = new SwerveModulePosition[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = modules[i].getPosition();
-    }
+    Arrays.stream(modules).map(Module::getPosition).toArray();
     return states;
   }
 

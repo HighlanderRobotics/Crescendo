@@ -10,6 +10,10 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+
+import java.util.Optional;
+
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 
 /** Add your docs here. */
@@ -51,4 +55,7 @@ public class VisionIOReal implements VisionIO {
   public String getName() {
     return cameraName;
   }
+
+  @Override
+  public void setSimPose(Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {}
 }

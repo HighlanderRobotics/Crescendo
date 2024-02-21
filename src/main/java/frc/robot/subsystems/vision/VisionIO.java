@@ -26,12 +26,10 @@ public interface VisionIO {
     public VisionConstants constants;
   }
 
-  public default void updateInputs(VisionIOInputs inputs) {}
+  public void updateInputs(VisionIOInputs inputs);
 
-  public default void setSimPose(
-      Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult) {}
+  public void setSimPose(
+      Optional<EstimatedRobotPose> simEst, Vision camera, boolean newResult);
 
-  public default String getName() {
-    return "Default";
-  }
+  public String getName();
 }
