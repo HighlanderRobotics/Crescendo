@@ -19,6 +19,7 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
@@ -117,13 +118,11 @@ public class PhoenixOdometryThread extends Thread {
       SwerveSubsystem.odometryLock.lock();
       try {
         double timestamp = Logger.getRealTimestamp() / 1e6;
-        double totalLatency = 0.0;
-        for (BaseStatusSignal signal : signals) {
-          totalLatency += signal.getTimestamp().getLatency();
-        }
+        double totalLatency = Arrays.stream(signals).mapToDouble(s -> s.getTimestamp().getLatency()).sum();
         if (signals.length > 0) {
           timestamp -= totalLatency / signals.length;
         }
+        
         for (int i = 0; i < signals.length; i++) {
           queues.get(i).offer(signals[i].getValueAsDouble());
         }

@@ -73,9 +73,7 @@ import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -375,7 +373,16 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
     Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    // Update odometry
+    
+    updateOdometry();
+    updateVision();
+
+    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
+    Logger.recordOutput(
+        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+  }
+
+  private void updateOdometry() {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount = sampleTimestamps.length;
@@ -420,8 +427,8 @@ public class SwerveSubsystem extends SubsystemBase {
       // Apply update
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
     }
-
-    List<Pose3d> visionPoses = new ArrayList<>();
+  }
+  private void updateVision() {
     for (var camera : cameras) {
       PhotonPipelineResult result =
           new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
@@ -432,7 +439,6 @@ public class SwerveSubsystem extends SubsystemBase {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
-        visionPoses.add(visionPose);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
         estimator.addVisionMeasurement(
@@ -443,9 +449,6 @@ public class SwerveSubsystem extends SubsystemBase {
       } catch (NoSuchElementException e) {
       }
     }
-    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
-    Logger.recordOutput(
-        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {
