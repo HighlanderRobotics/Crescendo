@@ -31,6 +31,9 @@ import frc.robot.utils.dynamicauto.Note;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
@@ -69,6 +72,9 @@ public class Robot extends LoggedRobot {
 
   private AutoManager autoManager = new AutoManager(swerve, intake, elevator, shooter, feeder);
   ;
+
+  private LoggedDashboardChooser<Note> noteDropdown =
+      new LoggedDashboardChooser<Note>("Note Picker");
 
   @Override
   public void robotInit() {
@@ -113,6 +119,10 @@ public class Robot extends LoggedRobot {
 
     Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may
     // be added.
+
+    for (Note note : DynamicAuto.notes) {
+      noteDropdown.addOption(note.getName(), note);
+    }
 
     // Default Commands here
     swerve.setDefaultCommand(
@@ -198,6 +208,7 @@ public class Robot extends LoggedRobot {
             startToNote(),
             blacklistNote(),
             noteToNote()));
+    SmartDashboard.putData("Update Note", updateNote());
   }
 
   public Command dynamicAutoDemo() {
@@ -205,16 +216,6 @@ public class Robot extends LoggedRobot {
             Commands.runOnce(
                 () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),
             startToNote(),
-            blacklistNote(),
-            noteToNote(),
-            blacklistNote(),
-            noteToNote(),
-            blacklistNote(),
-            noteToNote(),
-            blacklistNote(),
-            noteToNote(),
-            blacklistNote(),
-            noteToNote(),
             blacklistNote(),
             noteToShoot(),
             shootToNote(),
@@ -235,10 +236,19 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "DynamicAuto/Absolute Closest Note",
         DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose());
+
     Logger.recordOutput(
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPose());
+  }
+
+  private LoggedDashboardNumber priority = new LoggedDashboardNumber("Note Priority");
+  private LoggedDashboardBoolean blacklist = new LoggedDashboardBoolean("Note Blacklisted");
+
+  public Command updateNote() {
+    return Commands.runOnce(
+        () -> DynamicAuto.updateNote(noteDropdown.get(), () -> blacklist.get(), () -> (int) priority.get()));
   }
 
   public Command startToNote() {

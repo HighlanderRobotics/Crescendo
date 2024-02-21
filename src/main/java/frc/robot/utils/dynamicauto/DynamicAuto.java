@@ -5,6 +5,10 @@ import com.choreo.lib.ChoreoTrajectory;
 import com.google.common.base.Supplier;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+
+import java.util.function.BooleanSupplier;
+import java.util.function.IntSupplier;
+
 import org.littletonrobotics.junction.Logger;
 
 public class DynamicAuto {
@@ -38,11 +42,20 @@ public class DynamicAuto {
 
   public static int whitelistCount = notes.length;
 
-  public static void updateWhitelistCount(){
+  public static void updateWhitelistCount() {
     whitelistCount = 0;
-    for(Note note : notes){
+    for (Note note : notes) {
       whitelistCount += note.getBlacklist() ? 1 : 0;
     }
+  }
+
+  public static void updateNote(Note note, BooleanSupplier blacklist, IntSupplier priority) {
+    if (blacklist.getAsBoolean()) {
+      note.blacklist();
+    } else {
+      note.whitelist();
+    }
+    note.setPriority(priority.getAsInt());
   }
 
   public static ShootingLocation closestShootingLocation(
