@@ -12,7 +12,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -236,11 +235,7 @@ public class Robot extends LoggedRobot {
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> true)
-        .whileTrue(
-            Commands.parallel(
-                shooter.runStateCmd(Rotation2d.fromDegrees(60.0), 80.0, 60.0),
-                Commands.waitSeconds(1.0)
-                    .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
+        .whileTrue(shootWithDashboard());
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
@@ -262,9 +257,6 @@ public class Robot extends LoggedRobot {
             swerve.teleopPointTowardsTranslationCmd(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
-    // Test binding for elevator
-    controller.b().whileTrue(elevator.setExtensionCmd(() -> 0.5));
-    controller.x().whileTrue(elevator.setExtensionCmd(() -> Units.inchesToMeters(30.0)));
 
     controller
         .y()
@@ -342,14 +334,22 @@ public class Robot extends LoggedRobot {
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
-  private LoggedDashboardNumber rotation = new LoggedDashboardNumber("Rotation (Rotations)");
+  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)");
   private LoggedDashboardNumber leftRPS = new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
   private LoggedDashboardNumber rightRPS =
       new LoggedDashboardNumber("Right RPS (Rotations Per Sec)");
 
   public Command shootWithDashboard() {
-    return shooter.runStateCmd(
-        () -> Rotation2d.fromRotations(rotation.get()), () -> leftRPS.get(), () -> rightRPS.get());
+    return Commands.parallel(
+            shooter.runStateCmd(
+                () -> Rotation2d.fromDegrees(degrees.get()),
+                () -> leftRPS.get(),
+                () -> rightRPS.get()),
+            feeder
+                .indexCmd()
+                .withTimeout(1.0)
+                .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))
+        .withTimeout(3);
   }
 
   public Command drivePath() {
