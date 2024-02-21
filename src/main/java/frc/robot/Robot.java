@@ -181,6 +181,10 @@ public class Robot extends LoggedRobot {
             },
             swerve));
     SmartDashboard.putData("Dynamic Demo", dynamicAutoDemo());
+    SmartDashboard.putData("gloob", Commands.sequence(Commands.runOnce(
+                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),startToNote(), blacklistNote(), noteToShoot(), noteToNote()));
+    SmartDashboard.putData("gleeb", Commands.sequence(Commands.runOnce(
+                () -> swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04))), swerve),startToNote(), blacklistNote(), noteToNote()));
   }
 
   public Command dynamicAutoDemo() {
