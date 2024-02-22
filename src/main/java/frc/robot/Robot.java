@@ -65,6 +65,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
+  public static final boolean USE_AUTO_AIM = false;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -208,7 +209,10 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
+    controller
+        .leftTrigger()
+        .and(() -> !(carriage.getBeambreak() || feeder.getFirstBeambreak()))
+        .whileTrue(intake.runVelocityCmd(80.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -219,7 +223,7 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> false)
+        .and(() -> USE_AUTO_AIM)
         .whileTrue(
             Commands.parallel(
                 teleopAutoAim(
@@ -247,8 +251,12 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> true)
-        .whileTrue(shootWithDashboard());
+        .and(() -> !USE_AUTO_AIM)
+        .whileTrue(shootWithDashboard())
+        .onFalse(
+            Commands.parallel(
+                    shooter.run(() -> {}), feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))
+                .withTimeout(0.5));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
@@ -354,15 +362,9 @@ public class Robot extends LoggedRobot {
 
   public Command shootWithDashboard() {
     return Commands.parallel(
-            shooter.runStateCmd(
-                () -> Rotation2d.fromDegrees(degrees.get()),
-                () -> leftRPS.get(),
-                () -> rightRPS.get()),
-            feeder
-                .indexCmd()
-                .withTimeout(1.25)
-                .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))
-        .withTimeout(3);
+        shooter.runStateCmd(
+            () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
+        feeder.indexCmd());
   }
 
   public Command drivePath() {
