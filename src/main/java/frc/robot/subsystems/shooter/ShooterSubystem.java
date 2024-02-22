@@ -101,8 +101,12 @@ public class ShooterSubystem extends SubsystemBase {
                   right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
           Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get().getRadians());
           Logger.recordOutput(
+              "Shooter/Pivot Error Degrees",
+              inputs.pivotRotation.getDegrees() - rotation.get().getDegrees());
+          Logger.recordOutput(
               "Shooter/Pivot At Target",
-              MathUtil.isNear(rotation.get().getDegrees(), inputs.pivotRotation.getDegrees(), 0.5));
+              MathUtil.isNear(
+                  rotation.get().getDegrees(), inputs.pivotRotation.getDegrees(), 0.25));
           io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
           io.setPivotSetpoint(rotation.get());
         });

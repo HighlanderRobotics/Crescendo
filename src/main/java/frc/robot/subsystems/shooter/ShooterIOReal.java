@@ -54,14 +54,14 @@ public class ShooterIOReal implements ShooterIO {
     pivotConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
     pivotConfig.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
-    pivotConfig.Slot0.kG = 0.47195;
-    pivotConfig.Slot0.kV = 8.0;
+    pivotConfig.Slot0.kG = 0.5;
+    pivotConfig.Slot0.kV = 7.2;
     pivotConfig.Slot0.kA = 0.1;
-    pivotConfig.Slot0.kS = 0.5;
-    pivotConfig.Slot0.kP = 100.0;
-    pivotConfig.Slot0.kD = 12.212;
+    pivotConfig.Slot0.kS = 0.0;
+    pivotConfig.Slot0.kP = 400.0;
+    pivotConfig.Slot0.kD = 0.0;
 
-    pivotConfig.MotionMagic.MotionMagicAcceleration = 4.0;
+    pivotConfig.MotionMagic.MotionMagicAcceleration = 1.0;
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
@@ -82,8 +82,8 @@ public class ShooterIOReal implements ShooterIO {
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
     flywheelConfig.Slot0.kA = 0.0051316;
-    flywheelConfig.Slot0.kV = 0.096766;
-    flywheelConfig.Slot0.kS = 0.23777;
+    flywheelConfig.Slot0.kV = 0.1;
+    flywheelConfig.Slot0.kS = 0.26;
     flywheelConfig.Slot0.kP = 0.057995;
     flywheelConfig.Slot0.kD = 0.0;
 
