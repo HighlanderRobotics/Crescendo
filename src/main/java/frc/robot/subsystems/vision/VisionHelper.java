@@ -37,6 +37,8 @@ import org.photonvision.targeting.TargetCorner;
 
 public class VisionHelper {
 
+  public static final boolean SKIP_RIO_MULTI = true;
+
   /***
    * To be added
    */
@@ -221,7 +223,7 @@ public class VisionHelper {
                 Optional.of(cameraMatrix),
                 Optional.of(distCoeffs),
                 robotToCamera,
-                PoseStrategy.MULTI_TAG_PNP_ON_RIO);
+                PoseStrategy.LOWEST_AMBIGUITY);
         break;
       default:
         DriverStation.reportError(
@@ -258,7 +260,7 @@ public class VisionHelper {
       Transform3d robotToCamera) {
     boolean hasCalibData = cameraMatrix.isPresent() && distCoeffs.isPresent();
     // cannot run multitagPNP, use fallback strategy
-    if (!hasCalibData || result.getTargets().size() < 2) {
+    if (!hasCalibData || result.getTargets().size() < 2 || SKIP_RIO_MULTI) {
       return update(
           result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
     }

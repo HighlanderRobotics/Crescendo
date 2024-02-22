@@ -115,13 +115,13 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final int PIGEON_ID = 0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.374023));
+      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.077148));
+      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.134277));
+      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.212646));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(0.511963));
+      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
 
   public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -150,17 +150,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(),
-          Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO find!!
+          Nat.N3(), Nat.N3(), 906.2602005, 0, 671.984679, 0, 902.128407, 388.5381523, 0, 0, 1);
   public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
@@ -169,7 +159,7 @@ public class SwerveSubsystem extends SubsystemBase {
           -0.04331612051891956,
           0.00176988756858703,
           -0.004530368741385627,
-          -0.040501622476628085); // TODO find!!
+          -0.040501622476628085);
   public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX_OPT =
       MatBuilder.fill(
           Nat.N3(),
@@ -450,6 +440,10 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
     Logger.recordOutput(
         "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+
+    Logger.recordOutput(
+        "Vision/Left Cam Pose",
+        getPose3d().transformBy(cameras[0].inputs.constants.robotToCamera()));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {
@@ -578,7 +572,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public void setYaw(Rotation2d yaw) {
     gyroIO.setYaw(yaw);
-    setPose(new Pose2d(getPose().getTranslation(), yaw));
+    // setPose(new Pose2d(getPose().getTranslation(), yaw));
   }
 
   /** Returns an array of module translations. */
