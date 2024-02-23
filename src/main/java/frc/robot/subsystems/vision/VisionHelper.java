@@ -326,7 +326,7 @@ public class VisionHelper {
       PoseStrategy multiTagFallbackStrategy,
       Transform3d bestTF) {
     if (!bestTF.equals(new Transform3d())) {
-      var best_tf = bestTF; 
+      var best_tf = bestTF;
       var best =
           new Pose3d()
               .plus(best_tf) // field-to-camera
