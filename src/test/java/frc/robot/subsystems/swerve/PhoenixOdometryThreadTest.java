@@ -4,8 +4,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Queues;
-import com.google.common.collect.Sets;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import java.util.Collections;
 import java.util.Map;
@@ -33,7 +33,7 @@ public class PhoenixOdometryThreadTest {
   @Test
   void samplesSinceReturnsNothingWhenNoSamples() {
     var thread = PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque());
-    var samples = thread.samplesSince(0, Sets.newHashSet(talon.getAcceleration()));
+    var samples = thread.samplesSince(0, ImmutableSet.of(talon.getAcceleration()));
     Assertions.assertEquals(Collections.emptyList(), samples);
   }
 
@@ -43,7 +43,7 @@ public class PhoenixOdometryThreadTest {
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
-    var samples = thread.samplesSince(0, Sets.newHashSet(talon.getAcceleration()));
+    var samples = thread.samplesSince(0, ImmutableSet.of(talon.getAcceleration()));
     Assertions.assertEquals(ImmutableList.of(sample), samples);
   }
 
@@ -53,7 +53,7 @@ public class PhoenixOdometryThreadTest {
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
-    var samples = thread.samplesSince(15, Sets.newHashSet(talon.getAcceleration()));
+    var samples = thread.samplesSince(15, ImmutableSet.of(talon.getAcceleration()));
     Assertions.assertEquals(Collections.emptyList(), samples);
   }
 
@@ -63,7 +63,20 @@ public class PhoenixOdometryThreadTest {
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
-    var samples = thread.samplesSince(10, Sets.newHashSet(talon.getAcceleration()));
+    var samples = thread.samplesSince(10, ImmutableSet.of(talon.getAcceleration()));
     Assertions.assertEquals(Collections.emptyList(), samples);
+  }
+
+  @Test
+  void samplesSinceOnlySelectsRequestedSignals() {
+    Map<BaseStatusSignal, Double> sampleValue =
+        ImmutableMap.of(talon.getAcceleration(), 42.0, talon.getPosition(), 1024.0);
+    var sample = new Samples(10, sampleValue);
+    var thread =
+        PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
+    var samples = thread.samplesSince(0, ImmutableSet.of(talon.getAcceleration()));
+
+    var filteredSample = new Samples(10, ImmutableMap.of(talon.getAcceleration(), 42.0));
+    Assertions.assertEquals(ImmutableList.of(filteredSample), samples);
   }
 }

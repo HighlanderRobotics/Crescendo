@@ -18,7 +18,7 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
@@ -38,7 +38,7 @@ public class GyroIOPigeon2 implements GyroIO {
     yawVelocity.setUpdateFrequency(100.0);
     pigeon.optimizeBusUtilization();
     PhoenixOdometryThread.getInstance()
-        .registerSignals(new Registration(pigeon, Sets.newHashSet(yaw)));
+        .registerSignals(new Registration(pigeon, ImmutableSet.of(yaw)));
   }
 
   @Override
@@ -48,7 +48,7 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(yawVelocity.getValueAsDouble());
 
     var samples =
-        PhoenixOdometryThread.getInstance().samplesSince(lastUpdate, Sets.newHashSet(yaw));
+        PhoenixOdometryThread.getInstance().samplesSince(lastUpdate, ImmutableSet.of(yaw));
     lastUpdate = samples.get(samples.size() - 1).timestamp();
 
     inputs.odometryYawPositions =

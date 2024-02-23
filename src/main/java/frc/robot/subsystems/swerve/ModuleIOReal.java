@@ -25,7 +25,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
@@ -157,8 +157,8 @@ public class ModuleIOReal implements ModuleIO {
 
     PhoenixOdometryThread.getInstance()
         .registerSignals(
-            new Registration(driveTalon, Sets.newHashSet(driveTalon.getPosition())),
-            new Registration(turnTalon, Sets.newHashSet(turnPosition)));
+            new Registration(driveTalon, ImmutableSet.of(drivePosition)),
+            new Registration(turnTalon, ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -202,7 +202,7 @@ public class ModuleIOReal implements ModuleIO {
 
     var samples =
         PhoenixOdometryThread.getInstance()
-            .samplesSince(lastUpdate, Sets.newHashSet(drivePosition, turnPosition));
+            .samplesSince(lastUpdate, ImmutableSet.of(drivePosition, turnPosition));
     lastUpdate = samples.get(samples.size() - 1).timestamp();
 
     inputs.odometryTimestamps = samples.stream().mapToDouble(s -> s.timestamp()).toArray();
