@@ -5,16 +5,15 @@
 package frc.robot;
 
 import com.choreo.lib.Choreo;
+import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
-
-import edu.wpi.first.math.geometry.Pose2d;
+import com.pathplanner.lib.pathfinding.Pathfinding;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -46,9 +45,11 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
-import java.util.function.Supplier;
 import frc.robot.utils.dynamicauto.DynamicAuto;
+import frc.robot.utils.dynamicauto.LocalADStarAK;
 import frc.robot.utils.dynamicauto.Note;
+import java.util.Map;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -71,6 +72,15 @@ public class Robot extends LoggedRobot {
     SPEAKER
   }
 
+  private static enum CommandSelector {
+    START_TO_NOTE,
+    NOTE_TO_SHOOT,
+    NOTE_TO_NOTE,
+    SHOOT_TO_NOTE,
+    DYNAMIC_TO_NOTE,
+    DYNAMIC_TO_SHOOT
+  }
+
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   private Command autonomousCommand;
 
@@ -79,6 +89,10 @@ public class Robot extends LoggedRobot {
 
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = -0.1;
+
+  private int dynamicAutoCounter = 0;
+  private boolean atShootingLocation = false;
+  private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -115,6 +129,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    Pathfinding.setPathfinder(new LocalADStarAK());
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
     Logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -333,7 +348,7 @@ public class Robot extends LoggedRobot {
             startToNote(),
             blacklistNote(),
             noteToNote()));
-    
+
     NamedCommands.registerCommand(
         "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
 
@@ -345,6 +360,8 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
     SmartDashboard.putData("Update Note", updateNote());
+
+    SmartDashboard.putData("Dynamic Auto", dynamicAuto());
   }
 
   public Command dynamicAutoDemo() {
@@ -372,7 +389,19 @@ public class Robot extends LoggedRobot {
         new Pose3d[] {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
-    
+    Logger.recordOutput(
+        "DynamicAuto/Closest Note Within Distance",
+        swerve
+                .getPose()
+                .minus(DynamicAuto.getClosestNote(swerve::getPose).getPose())
+                .getTranslation()
+                .getNorm()
+            < 1.5);
+    Logger.recordOutput("DynamicAuto/Current Path Ending Pose", curTrajectory.getFinalPose());
+    Logger.recordOutput("DynamicAuto/Current Path Initial Pose", curTrajectory.getInitialPose());
+    Logger.recordOutput(
+        "DynamicAuto/Closest Note Exists",
+        DynamicAuto.getClosestNote(swerve::getPose).getExistence());
     Logger.recordOutput(
         "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve::getPose).getPose());
 
@@ -498,12 +527,18 @@ public class Robot extends LoggedRobot {
 
   public Command updateNote() {
     return Commands.runOnce(
-        () -> DynamicAuto.updateNote(noteDropdown.get(), () -> blacklist.get(), () -> (int) priority.get()));
+        () ->
+            DynamicAuto.updateNote(
+                noteDropdown.get(), () -> blacklist.get(), () -> (int) priority.get()));
   }
 
   public Command startToNote() {
     return swerve
-        .runChoreoTraj(() -> DynamicAuto.makeStartToNote(swerve::getPose))
+        .runChoreoTraj(
+            () -> {
+              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose);
+              return DynamicAuto.makeStartToNote(swerve::getPose);
+            })
         .onlyIf(
             () -> {
               if (DynamicAuto.whitelistCount > 0) {
@@ -520,6 +555,7 @@ public class Robot extends LoggedRobot {
         .runChoreoTraj(
             () -> {
               System.out.println(DynamicAuto.whitelistCount);
+              curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose);
               return DynamicAuto.makeNoteToNote(swerve::getPose);
             })
         .onlyIf(
@@ -535,7 +571,11 @@ public class Robot extends LoggedRobot {
 
   public Command shootToNote() {
     return swerve
-        .runChoreoTraj(() -> DynamicAuto.makeShootingToNote(swerve::getPose))
+        .runChoreoTraj(
+            () -> {
+              curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose);
+              return DynamicAuto.makeShootingToNote(swerve::getPose);
+            })
         .onlyIf(
             () -> {
               if (DynamicAuto.whitelistCount > 0) {
@@ -549,7 +589,11 @@ public class Robot extends LoggedRobot {
 
   public Command noteToShoot() {
     return swerve
-        .runChoreoTraj(() -> DynamicAuto.makeNoteToShooting(swerve::getPose))
+        .runChoreoTraj(
+            () -> {
+              curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose);
+              return DynamicAuto.makeNoteToShooting(swerve::getPose);
+            })
         .onlyIf(
             () -> {
               if (DynamicAuto.whitelistCount > 0) {
@@ -562,8 +606,108 @@ public class Robot extends LoggedRobot {
   }
 
   public Command blacklistNote() {
-    return Commands.runOnce(
-        () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist(), swerve);
+    return Commands.runOnce(() -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist());
+  }
+
+  public CommandSelector selectAuto() {
+    if (dynamicAutoCounter == 0) {
+      swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04)));
+      System.out.println("start to note");
+      return CommandSelector.START_TO_NOTE;
+
+    } else if (atShootingLocation) {
+      atShootingLocation = false;
+      System.out.println("shoot to note");
+      return CommandSelector.SHOOT_TO_NOTE;
+    } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
+        || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
+            && swerve
+                    .getPose()
+                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose())
+                    .getTranslation()
+                    .getNorm()
+                < 1.5)) {
+      System.out.println("note to shoot");
+      atShootingLocation = true;
+      DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
+      return CommandSelector.NOTE_TO_SHOOT;
+    } else if (!(carriage.getBeambreak() || feeder.getFirstBeambreak())
+        || (!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
+            && swerve
+                    .getPose()
+                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose())
+                    .getTranslation()
+                    .getNorm()
+                < 1.5)) {
+
+      System.out.println("note to note 1");
+      DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
+      return CommandSelector.NOTE_TO_NOTE;
+    } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
+        || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
+            && swerve
+                    .getPose()
+                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose())
+                    .getTranslation()
+                    .getNorm()
+                > 1.5)) {
+      return CommandSelector.DYNAMIC_TO_NOTE;
+    } else {
+      atShootingLocation = true;
+      return CommandSelector.DYNAMIC_TO_SHOOT;
+    }
+  }
+
+  double distance = 0;
+
+  public Command dynamicAuto() {
+
+    return Commands.repeatingSequence(
+            Commands.select(
+                Map.ofEntries(
+                    Map.entry(
+                        CommandSelector.NOTE_TO_NOTE,
+                        Commands.race(noteToNote(), intake.runVelocityCmd(80.0, 30.0))),
+                    Map.entry(
+                        CommandSelector.NOTE_TO_SHOOT,
+                        Commands.race(
+                            noteToShoot(),
+                            shooter.runStateCmd(
+                                () -> AutoAim.shotMap.get(distance).getRotation(),
+                                () -> AutoAim.shotMap.get(distance).getLeftRPS(),
+                                () -> AutoAim.shotMap.get(distance).getRightRPS()))),
+                    Map.entry(
+                        CommandSelector.START_TO_NOTE,
+                        Commands.race(startToNote(), intake.runVelocityCmd(80.0, 30.0))),
+                    Map.entry(
+                        CommandSelector.SHOOT_TO_NOTE,
+                        Commands.race(shootToNote(), intake.runVelocityCmd(80.0, 30.0))),
+                    Map.entry(
+                        CommandSelector.DYNAMIC_TO_NOTE,
+                        Commands.race(
+                            DynamicAuto.DynamicToNote(swerve::getPose),
+                            intake.runVelocityCmd(80.0, 30.0))),
+                    Map.entry(
+                        CommandSelector.DYNAMIC_TO_SHOOT,
+                        Commands.race(
+                            DynamicAuto.DynamicToShoot(swerve::getPose),
+                            shooter.runStateCmd(
+                                () -> AutoAim.shotMap.get(distance).getRotation(),
+                                () -> AutoAim.shotMap.get(distance).getLeftRPS(),
+                                () -> AutoAim.shotMap.get(distance).getRightRPS())))),
+                this::selectAuto),
+            Commands.runOnce(
+                () -> {
+                  dynamicAutoCounter++;
+                  System.out.println(dynamicAutoCounter);
+                  distance =
+                      swerve
+                          .getPose()
+                          .minus(FieldConstants.getSpeaker())
+                          .getTranslation()
+                          .getNorm();
+                }))
+        .asProxy();
   }
 
   @Override
@@ -571,12 +715,16 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autoManager.chooser.get().schedule();
+    dynamicAutoCounter = 0;
+    for (Note note : DynamicAuto.notes) {
+      note.whitelist();
+    }
+    dynamicAuto().schedule();
   }
 
   @Override
   public void teleopInit() {
-    autoManager.chooser.get().cancel();
+    dynamicAuto().cancel();
   }
 
   @Override

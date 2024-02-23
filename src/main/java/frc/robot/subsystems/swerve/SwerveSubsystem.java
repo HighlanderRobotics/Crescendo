@@ -17,9 +17,8 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.choreo.lib.Choreo;
-import com.choreo.lib.ChoreoTrajectoryState;
-import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
+import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -45,8 +44,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -674,9 +673,9 @@ public class SwerveSubsystem extends SubsystemBase {
             Choreo.choreoSwerveCommand(
                 traj.get(),
                 this::getPose,
-                new PIDController(85.0, 0.0, 0.0),
-                new PIDController(85.0, 0.0, 0.0),
-                new PIDController(6.0, 0.0, 0.70),
+                new PIDController(6.0, 0.0, 0.0),
+                new PIDController(6.0, 0.0, 0.0),
+                new PIDController(1.0, 0.0, 0.0),
                 (ChassisSpeeds speeds) -> //
                 this.runVelocity(speeds),
                 () -> {

@@ -3,25 +3,27 @@ package frc.robot.utils.dynamicauto;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.google.common.base.Supplier;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
-
 import org.littletonrobotics.junction.Logger;
 
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 0, "W1"), // w1
-    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 1, "W2"), // w2
-    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 2, "W3"), // w3
-    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), false, 3, "C1"), // c1
-    new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C2"), // c2
-    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), false, 1, "C3"), // c3
-    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), false, 2, "C4"), // c4
-    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C5") // c5
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 0, "W1", true), // w1
+    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 1, "W2", true), // w2
+    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 2, "W3", true), // w3
+    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), false, 3, "C1", true), // c1
+    new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C2", true), // c2
+    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), false, 1, "C3", true), // c3
+    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), false, 2, "C4", true), // c4
+    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C5", true) // c5
   };
 
   public static final ShootingLocation[] shootingLocations = {
@@ -58,6 +60,18 @@ public class DynamicAuto {
     note.setPriority(priority.getAsInt());
   }
 
+  public static Command DynamicToNote(Supplier<Pose2d> curPose) {
+    return AutoBuilder.pathfindToPose(
+        getClosestNote(curPose).getPose(),
+        new PathConstraints(3.0, 4.0, Units.degreesToRadians(540), Units.degreesToRadians(720)));
+  }
+
+  public static Command DynamicToShoot(Supplier<Pose2d> curPose) {
+    return AutoBuilder.pathfindToPose(
+        closestShootingLocation(curPose, shootingLocations).getPose(),
+        new PathConstraints(3.0, 4.0, Units.degreesToRadians(540), Units.degreesToRadians(720)));
+  }
+
   public static ShootingLocation closestShootingLocation(
       Supplier<Pose2d> curPose, ShootingLocation[] shootingLocations) {
 
@@ -83,7 +97,7 @@ public class DynamicAuto {
   }
 
   public static ChoreoTrajectory makeNoteToShooting(Supplier<Pose2d> startingPose) {
-    Note closestNote = getClosestNote(startingPose);
+    Note closestNote = getAbsoluteClosestNote(startingPose);
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
     if ("Uninitialized" == closestNote.getName()) {
       closestNote = getAbsoluteClosestNote(startingPose);

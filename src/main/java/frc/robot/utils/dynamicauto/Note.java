@@ -13,6 +13,15 @@ public class Note {
   private int priority;
   private final Pose2d pose;
   private final String name;
+  private boolean isThere;
+
+  public Note(Pose2d pose, boolean blacklisted, int priority, String name, boolean isThere) {
+    this.pose = pose;
+    this.blacklisted = blacklisted;
+    this.priority = priority;
+    this.name = name;
+    this.isThere = isThere;
+  }
 
   public Note(Pose2d pose, boolean blacklisted, int priority, String name) {
     this.pose = pose;
@@ -51,6 +60,10 @@ public class Note {
 
   public boolean getBlacklist() {
     return blacklisted;
+  }
+
+  public boolean getExistence() {
+    return isThere;
   }
 
   public int getPriority() {
