@@ -181,10 +181,7 @@ public class SwerveSubsystem extends SubsystemBase {
           -0.05424391133,
           -0.00171161002,
           0.0007729068571,
-          0.001176848411,
-          -0.00165775855,
-          0.007210254573,
-          0.003117373506); //Last 3 are truncated
+          0.001176848411); //Last 3 are truncated
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left_Camera",
