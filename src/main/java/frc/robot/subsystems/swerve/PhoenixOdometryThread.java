@@ -17,13 +17,17 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -35,11 +39,13 @@ import org.littletonrobotics.junction.Logger;
  * time synchronization.
  */
 public class PhoenixOdometryThread extends Thread {
-  private final Lock signalsLock =
-      new ReentrantLock(); // Prevents conflicts when registering signals
-  private BaseStatusSignal[] signals = new BaseStatusSignal[0];
-  private final List<Queue<Double>> queues = new ArrayList<>();
-  private final List<Queue<Double>> timestampQueues = new ArrayList<>();
+  public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
+
+  public record Samples(double timestamp, Map<BaseStatusSignal, Double> values) {}
+
+  private final Lock journalLock = new ReentrantLock();
+  private final Set<BaseStatusSignal> signals = Sets.newHashSet();
+  private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
 
@@ -50,78 +56,84 @@ public class PhoenixOdometryThread extends Thread {
     return instance;
   }
 
-  private PhoenixOdometryThread() {
+  // Used for testing
+  public static PhoenixOdometryThread createWithJournal(final Queue<Samples> journal) {
+    return new PhoenixOdometryThread(journal);
+  }
+
+  private PhoenixOdometryThread(final Queue<Samples> journal) {
     setName("PhoenixOdometryThread");
     setDaemon(true);
+
+    this.journal = journal;
   }
 
-  @Override
-  public void start() {
-    if (timestampQueues.size() > 0) {
-      super.start();
-    }
+  private PhoenixOdometryThread() {
+    this(EvictingQueue.create(20));
   }
 
-  public Queue<Double> registerSignal(ParentDevice device, StatusSignal<Double> signal) {
-    assert CANBus.isNetworkFD(device.getNetwork()) : "Only CAN FDs supported";
+  public void registerSignals(Collection<Registration> registrations) {
+    registerSignals(registrations.toArray(new Registration[] {}));
+  }
 
-    Queue<Double> queue = new ArrayDeque<>(100);
-    signalsLock.lock();
-    SwerveSubsystem.odometryLock.lock();
+  // Returns a handle which can be used to collect the last 20 signal results
+  public void registerSignals(Registration... registrations) {
+    journalLock.lock();
     try {
-      BaseStatusSignal[] newSignals = new BaseStatusSignal[signals.length + 1];
-      System.arraycopy(signals, 0, newSignals, 0, signals.length);
-      newSignals[signals.length] = signal;
-      signals = newSignals;
-      queues.add(queue);
+      for (var registration : registrations) {
+        assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
+
+        signals.addAll(registration.signals);
+      }
     } finally {
-      signalsLock.unlock();
-      SwerveSubsystem.odometryLock.unlock();
+      journalLock.unlock();
     }
-    return queue;
   }
 
-  public Queue<Double> makeTimestampQueue() {
-    Queue<Double> queue = new ArrayDeque<>(100);
-    SwerveSubsystem.odometryLock.lock();
-    try {
-      timestampQueues.add(queue);
-    } finally {
-      SwerveSubsystem.odometryLock.unlock();
-    }
-    return queue;
+  public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
+    return journal.stream()
+        .filter(s -> s.timestamp > timestamp)
+        .map(
+            s -> {
+              var filteredValues =
+                  s.values.entrySet().stream()
+                      .filter(e -> signals.contains(e.getKey()))
+                      .collect(
+                          Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+              return new Samples(s.timestamp, filteredValues);
+            })
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
   public void run() {
     while (true) {
       // Wait for updates from all signals
-      signalsLock.lock();
+      journalLock.lock();
       try {
-        BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals);
+        // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
+        // but keeping up a symmetric array is too and it's probably negligible on latency.
+        BaseStatusSignal.waitForAll(
+            2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
+        journal.add(
+            new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
       } finally {
-        signalsLock.unlock();
-      }
-
-      // Save new data to queues
-      SwerveSubsystem.odometryLock.lock();
-      try {
-        double timestamp = Logger.getRealTimestamp() / 1e6;
-        double totalLatency =
-            Arrays.stream(signals).mapToDouble(s -> s.getTimestamp().getLatency()).sum();
-        if (signals.length > 0) {
-          timestamp -= totalLatency / signals.length;
-        }
-
-        for (int i = 0; i < signals.length; i++) {
-          queues.get(i).offer(signals[i].getValueAsDouble());
-        }
-        for (int i = 0; i < timestampQueues.size(); i++) {
-          timestampQueues.get(i).offer(timestamp);
-        }
-      } finally {
-        SwerveSubsystem.odometryLock.unlock();
+        journalLock.unlock();
       }
     }
+  }
+
+  private double timestampFor(Set<BaseStatusSignal> signals) {
+    double timestamp = Logger.getRealTimestamp() / 1e6;
+
+    final double totalLatency =
+        signals.stream().mapToDouble(s -> s.getTimestamp().getLatency()).sum();
+
+    // Account for mean latency for a "good enough" timestamp
+    if (!signals.isEmpty()) {
+      timestamp -= totalLatency / signals.size();
+    }
+
+    return timestamp;
   }
 }
