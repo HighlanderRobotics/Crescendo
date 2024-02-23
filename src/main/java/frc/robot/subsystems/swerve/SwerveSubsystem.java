@@ -155,33 +155,36 @@ public class SwerveSubsystem extends SubsystemBase {
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085);
+          0.04229355767,
+            -0.05532777359,
+            -0.002561333884,
+            0.001247279226,
+            0.01795026339); //Last 3 are truncated
   public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX_OPT =
       MatBuilder.fill(
           Nat.N3(),
           Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO find!!
+          911.3512229,
+            0,
+            613.8313639,
+            0,
+            907.3772729,
+            361.1892783,
+            0,
+            0,
+            1);
   public static final Matrix<N5, N1> RIGHT_DIST_COEFFS_OPT =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085); // TODO find!!
+          0.0475654581,
+          -0.05424391133,
+          -0.00171161002,
+          0.0007729068571,
+          0.001176848411,
+          -0.00165775855,
+          0.007210254573,
+          0.003117373506); //Last 3 are truncated
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left_Camera",
