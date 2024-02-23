@@ -211,7 +211,7 @@ public class Robot extends LoggedRobot {
     // ---- Controller bindings here ----
     controller
         .leftTrigger()
-        .and(() -> !(carriage.getBeambreak() || feeder.getFirstBeambreak()))
+        // .and(() -> !(carriage.getBeambreak() || feeder.getFirstBeambreak()))
         .whileTrue(intake.runVelocityCmd(80.0, 30.0));
     controller
         .rightTrigger()

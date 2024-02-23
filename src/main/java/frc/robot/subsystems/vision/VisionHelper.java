@@ -200,7 +200,8 @@ public class VisionHelper {
       Matrix<N3, N3> cameraMatrix,
       Matrix<N5, N1> distCoeffs,
       PoseStrategy strat,
-      Transform3d robotToCamera) {
+      Transform3d robotToCamera,
+      Transform3d bestTF) {
     Optional<EstimatedRobotPose> estimatedPose;
     switch (strat) {
       case LOWEST_AMBIGUITY:
@@ -223,7 +224,8 @@ public class VisionHelper {
                 Optional.of(cameraMatrix),
                 Optional.of(distCoeffs),
                 robotToCamera,
-                PoseStrategy.LOWEST_AMBIGUITY);
+                PoseStrategy.LOWEST_AMBIGUITY,
+                bestTF);
         break;
       default:
         DriverStation.reportError(
@@ -262,7 +264,12 @@ public class VisionHelper {
     // cannot run multitagPNP, use fallback strategy
     if (!hasCalibData || result.getTargets().size() < 2 || SKIP_RIO_MULTI) {
       return update(
-          result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          robotToCamera,
+          new Transform3d());
     }
 
     PNPResult pnpResult =
@@ -275,7 +282,12 @@ public class VisionHelper {
     // try fallback strategy if solvePNP fails for some reason
     if (!pnpResult.isPresent)
       return update(
-          result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          robotToCamera,
+          new Transform3d());
     var best =
         new Pose3d()
             .plus(pnpResult.best) // field-to-camera
@@ -311,9 +323,10 @@ public class VisionHelper {
       Optional<Matrix<N3, N3>> cameraMatrix,
       Optional<Matrix<N5, N1>> distCoeffs,
       Transform3d robotToCamera,
-      PoseStrategy multiTagFallbackStrategy) {
+      PoseStrategy multiTagFallbackStrategy,
+      Transform3d bestTF) {
     if (result.getMultiTagResult().estimatedPose.isPresent) {
-      var best_tf = result.getMultiTagResult().estimatedPose.best;
+      var best_tf = bestTF;
       var best =
           new Pose3d()
               .plus(best_tf) // field-to-camera
@@ -327,7 +340,12 @@ public class VisionHelper {
               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
     } else {
       return update(
-          result, cameraMatrix.get(), distCoeffs.get(), multiTagFallbackStrategy, robotToCamera);
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          robotToCamera,
+          new Transform3d());
     }
   }
 

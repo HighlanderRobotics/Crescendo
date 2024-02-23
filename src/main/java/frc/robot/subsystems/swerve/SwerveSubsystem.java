@@ -187,10 +187,11 @@ public class SwerveSubsystem extends SubsystemBase {
           "Left_Camera",
           new Transform3d(
               new Translation3d(
-                  Units.inchesToMeters(10.386),
+                  Units.inchesToMeters(-10.386),
                   Units.inchesToMeters(-10.380),
                   Units.inchesToMeters(-7.381)),
-              new Rotation3d(0, -0.490, -Math.PI * 7 / 6)), // TODO check
+              new Rotation3d(0, 0, Units.degreesToRadians(150 + 90))
+                  .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS);
   // public static final VisionConstants rightCamConstants =
@@ -443,7 +444,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     Logger.recordOutput(
         "Vision/Left Cam Pose",
-        getPose3d().transformBy(cameras[0].inputs.constants.robotToCamera()));
+        getPose3d().transformBy(cameras[0].inputs.constants.robotToCamera().inverse()));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {

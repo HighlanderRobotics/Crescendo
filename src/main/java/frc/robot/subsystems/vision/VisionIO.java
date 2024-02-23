@@ -5,6 +5,7 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ public interface VisionIO {
     public List<PhotonTrackedTarget> targets =
         new ArrayList<>(); // TODO make protobuf work whenever that happens
     public double numTags = 0; // TODO why isn't this just targets.size()?
-    public Pose3d coprocPNPPose = new Pose3d();
+    public Transform3d coprocPNPTransform = new Transform3d();
     public Pose3d[] targetPose3ds;
     public VisionConstants constants;
   }

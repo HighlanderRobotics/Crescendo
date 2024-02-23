@@ -50,20 +50,21 @@ public class Vision {
   public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
     // Skip if we only have 1 target
     // TODO change
-    if (result.getTargets().size() < 1) {
-      return Optional.empty();
-    }
+    // if (result.getTargets().size() < 1) {
+    //   return Optional.empty();
+    // }
     var estPose =
         VisionHelper.update(
             result,
             inputs.constants.intrinsicsMatrix(),
             inputs.constants.distCoeffs(),
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            inputs.constants.robotToCamera());
-    // Reject if estimated pose is in the air or ground
-    if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {
-      return Optional.empty();
-    }
+            inputs.constants.robotToCamera(),
+            inputs.coprocPNPTransform);
+    // // Reject if estimated pose is in the air or ground
+    // if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {
+    //   return Optional.empty();
+    // }
     return estPose;
   }
 
