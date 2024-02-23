@@ -190,8 +190,8 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(-10.386),
                   Units.inchesToMeters(-10.380),
                   Units.inchesToMeters(-7.381)),
-              new Rotation3d(0, Units.degreesToRadians(-28.125), 0)
-                  .rotateBy(new Rotation3d(0, 0, Units.degreesToRadians(105)))),
+              new Rotation3d(0, 0, Units.degreesToRadians(-105))
+                  .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS);
   public static final VisionConstants rightCamConstants =
@@ -200,10 +200,10 @@ public class SwerveSubsystem extends SubsystemBase {
           new Transform3d(
               new Translation3d(
                   Units.inchesToMeters(-10.597),
-                  Units.inchesToMeters(10.143),
+                  Units.inchesToMeters(-10.143),
                   Units.inchesToMeters(-7.384)),
-              new Rotation3d(0, Units.degreesToRadians(-28.125), 0)
-                  .rotateBy(new Rotation3d(0, 0, Units.degreesToRadians(195)))),
+              new Rotation3d(0, 0, Units.degreesToRadians(-195))
+                  .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT);
   private SwerveDriveOdometry odometry;

@@ -325,28 +325,28 @@ public class VisionHelper {
       Transform3d robotToCamera,
       PoseStrategy multiTagFallbackStrategy,
       Transform3d bestTF) {
-    if (!bestTF.equals(new Transform3d())) {
-      var best_tf = bestTF;
-      var best =
-          new Pose3d()
-              .plus(best_tf) // field-to-camera
-              .relativeTo(SwerveSubsystem.fieldTags.getOrigin())
-              .plus(robotToCamera.inverse()); // field-to-robot
-      return Optional.of(
-          new EstimatedRobotPose(
-              best,
-              result.getTimestampSeconds(),
-              result.getTargets(),
-              PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
-    } else {
-      return update(
-          result,
-          cameraMatrix.get(),
-          distCoeffs.get(),
-          multiTagFallbackStrategy,
-          robotToCamera,
-          new Transform3d());
-    }
+    // if (!bestTF.equals(new Transform3d())) {
+    var best_tf = bestTF;
+    var best =
+        new Pose3d()
+            .plus(best_tf) // field-to-camera
+            .relativeTo(SwerveSubsystem.fieldTags.getOrigin())
+            .plus(robotToCamera.inverse()); // field-to-robot
+    return Optional.of(
+        new EstimatedRobotPose(
+            best,
+            result.getTimestampSeconds(),
+            result.getTargets(),
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
+    // } else {
+    //   return update(
+    //       result,
+    //       cameraMatrix.get(),
+    //       distCoeffs.get(),
+    //       multiTagFallbackStrategy,
+    //       robotToCamera,
+    //       new Transform3d());
+    // }
   }
 
   /**
