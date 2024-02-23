@@ -58,7 +58,7 @@ public class Vision {
             result,
             inputs.constants.intrinsicsMatrix(),
             inputs.constants.distCoeffs(),
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            PoseStrategy.LOWEST_AMBIGUITY,
             inputs.constants.robotToCamera(),
             inputs.coprocPNPTransform);
     // // Reject if estimated pose is in the air or ground

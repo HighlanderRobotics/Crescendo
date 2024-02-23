@@ -368,7 +368,7 @@ public class VisionHelper {
 
       if (target.getFiducialId() < 1 || target.getFiducialId() > 16) continue;
 
-      if (target.getBestCameraToTarget().getTranslation().getNorm() > 3) {
+      if (target.getBestCameraToTarget().getTranslation().getNorm() > 5) {
         continue;
       }
 
