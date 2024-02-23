@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
@@ -45,7 +45,8 @@ public class PhoenixOdometryThread extends Thread {
 
   public record Samples(double timestamp, Map<BaseStatusSignal, Double> values) {}
 
-  private final Lock journalLock = new ReentrantLock();
+  private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
+
   private final Set<BaseStatusSignal> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
 
@@ -80,39 +81,52 @@ public class PhoenixOdometryThread extends Thread {
 
   // Returns a handle which can be used to collect the last 20 signal results
   public void registerSignals(Registration... registrations) {
-    journalLock.lock();
+    var writeLock = journalLock.writeLock();
+
     try {
+      writeLock.lock();
+
       for (var registration : registrations) {
         assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
 
         signals.addAll(registration.signals);
       }
     } finally {
-      journalLock.unlock();
+      writeLock.unlock();
     }
   }
 
   public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
-    return journal.stream()
-        .filter(s -> s.timestamp > timestamp)
-        .map(
-            s -> {
-              var filteredValues =
-                  s.values.entrySet().stream()
-                      .filter(e -> signals.contains(e.getKey()))
-                      .collect(
-                          Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-              return new Samples(s.timestamp, filteredValues);
-            })
-        .collect(Collectors.toUnmodifiableList());
+    var readLock = journalLock.readLock();
+    try {
+      readLock.lock();
+
+      return journal.stream()
+      .filter(s -> s.timestamp > timestamp)
+      .map(
+          s -> {
+            var filteredValues =
+                s.values.entrySet().stream()
+                    .filter(e -> signals.contains(e.getKey()))
+                    .collect(
+                        Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+            return new Samples(s.timestamp, filteredValues);
+          })
+      .collect(Collectors.toUnmodifiableList());
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public void run() {
     while (true) {
       // Wait for updates from all signals
-      journalLock.lock();
+      var writeLock = journalLock.writeLock();
+
       try {
+          writeLock.lock();
+
         // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
         // but keeping up a symmetric array is too and it's probably negligible on latency.
         BaseStatusSignal.waitForAll(
@@ -120,7 +134,7 @@ public class PhoenixOdometryThread extends Thread {
         journal.add(
             new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
       } finally {
-        journalLock.unlock();
+        writeLock.unlock();
       }
     }
   }
