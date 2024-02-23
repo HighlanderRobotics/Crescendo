@@ -12,11 +12,12 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
-  private final TalonFX motor = new TalonFX(30);
-  private final TalonFX follower = new TalonFX(31);
+  private final TalonFX motor = new TalonFX(16, "canivore");
+  private final TalonFX follower = new TalonFX(17, "canivore");
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final MotionMagicVoltage positionVoltage =
@@ -31,13 +32,15 @@ public class ElevatorIOReal implements ElevatorIO {
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
 
+    config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
     config.Slot0.GravityType = GravityTypeValue.Elevator_Static;
-    config.Slot0.kG = 0.0;
-    config.Slot0.kS = 0.0;
-    config.Slot0.kV = 0.0;
-    config.Slot0.kA = 0.0;
-    config.Slot0.kP = 0.0;
-    config.Slot0.kD = 0.0;
+    config.Slot0.kG = 0.11591;
+    config.Slot0.kS = 0.16898;
+    config.Slot0.kV = 10.911;
+    config.Slot0.kA = 0.28688;
+    config.Slot0.kP = 69.785;
+    config.Slot0.kD = 17.53;
 
     config.CurrentLimits.StatorCurrentLimit = 60.0;
     config.CurrentLimits.StatorCurrentLimitEnable = true;
@@ -49,11 +52,12 @@ public class ElevatorIOReal implements ElevatorIO {
 
     // Carriage position meters in direction of elevator
     config.Feedback.SensorToMechanismRatio =
-        ElevatorSubsystem.GEAR_RATIO * 2 * Math.PI * ElevatorSubsystem.DRUM_RADIUS_METERS;
+        ElevatorSubsystem.GEAR_RATIO / (2 * Math.PI * ElevatorSubsystem.DRUM_RADIUS_METERS);
 
     motor.getConfigurator().apply(config);
+    motor.setPosition(0.0); // Assume we boot 0ed
     follower.getConfigurator().apply(new TalonFXConfiguration());
-    follower.setControl(new Follower(30, true));
+    follower.setControl(new Follower(motor.getDeviceID(), true));
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, current, temp);
     motor.optimizeBusUtilization();
