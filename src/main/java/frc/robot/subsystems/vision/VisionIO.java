@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
@@ -23,8 +26,13 @@ public interface VisionIO {
         new ArrayList<>(); // TODO make protobuf work whenever that happens
     public double numTags = 0; // TODO why isn't this just targets.size()?
     public Transform3d coprocPNPTransform = new Transform3d();
-    public Pose3d[] targetPose3ds;
-    public VisionConstants constants;
+    public Pose3d[] targetPose3ds = new Pose3d[] {};
+    public VisionConstants constants =
+        new VisionConstants(
+            "Default",
+            new Transform3d(),
+            Matrix.eye(Nat.N3()),
+            MatBuilder.fill(Nat.N5(), Nat.N1(), 0.0, 0.0, 0.0, 0.0, 0.0));
   }
 
   public void updateInputs(VisionIOInputs inputs);
