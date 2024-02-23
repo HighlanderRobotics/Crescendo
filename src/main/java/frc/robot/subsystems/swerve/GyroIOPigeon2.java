@@ -49,7 +49,9 @@ public class GyroIOPigeon2 implements GyroIO {
 
     var samples =
         PhoenixOdometryThread.getInstance().samplesSince(lastUpdate, ImmutableSet.of(yaw));
-    lastUpdate = samples.get(samples.size() - 1).timestamp();
+    if (! samples.isEmpty()) {
+      lastUpdate = samples.get(samples.size() - 1).timestamp();
+    }
 
     inputs.odometryYawPositions =
         samples.stream()

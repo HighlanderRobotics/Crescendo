@@ -102,17 +102,17 @@ public class PhoenixOdometryThread extends Thread {
       readLock.lock();
 
       return journal.stream()
-      .filter(s -> s.timestamp > timestamp)
-      .map(
-          s -> {
-            var filteredValues =
-                s.values.entrySet().stream()
-                    .filter(e -> signals.contains(e.getKey()))
-                    .collect(
-                        Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-            return new Samples(s.timestamp, filteredValues);
-          })
-      .collect(Collectors.toUnmodifiableList());
+          .filter(s -> s.timestamp > timestamp)
+          .map(
+              s -> {
+                var filteredValues =
+                    s.values.entrySet().stream()
+                        .filter(e -> signals.contains(e.getKey()))
+                        .collect(
+                            Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+                return new Samples(s.timestamp, filteredValues);
+              })
+          .collect(Collectors.toUnmodifiableList());
     } finally {
       readLock.unlock();
     }
@@ -125,7 +125,7 @@ public class PhoenixOdometryThread extends Thread {
       var writeLock = journalLock.writeLock();
 
       try {
-          writeLock.lock();
+        writeLock.lock();
 
         // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
         // but keeping up a symmetric array is too and it's probably negligible on latency.
