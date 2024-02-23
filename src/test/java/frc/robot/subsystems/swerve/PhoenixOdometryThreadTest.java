@@ -31,6 +31,15 @@ public class PhoenixOdometryThreadTest {
   }
 
   @Test
+  void statusSignalsFromDifferentDevicesShouldNotBeEqual() {
+    TalonFX otherTalon = new TalonFX(1);
+    Assertions.assertNotEquals(talon.getAcceleration(), otherTalon.getAcceleration());
+
+    Assertions.assertNotEquals(
+        talon.getAcceleration().hashCode(), otherTalon.getAcceleration().hashCode());
+  }
+
+  @Test
   void samplesSinceReturnsNothingWhenNoSamples() {
     var thread = PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque());
     var samples = thread.samplesSince(0, ImmutableSet.of(talon.getAcceleration()));
