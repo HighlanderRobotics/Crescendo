@@ -396,7 +396,7 @@ public class Robot extends LoggedRobot {
                 .minus(DynamicAuto.getClosestNote(swerve::getPose).getPose())
                 .getTranslation()
                 .getNorm()
-            < 1.5);
+            > 1.5);
     Logger.recordOutput("DynamicAuto/Current Path Ending Pose", curTrajectory.getFinalPose());
     Logger.recordOutput("DynamicAuto/Current Path Initial Pose", curTrajectory.getInitialPose());
     Logger.recordOutput(
@@ -611,7 +611,7 @@ public class Robot extends LoggedRobot {
 
   public CommandSelector selectAuto() {
     if (dynamicAutoCounter == 0) {
-      swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04)));
+      //  swerve.setPose(new Pose2d(0.71, 6.72, Rotation2d.fromRadians(1.04)));
       System.out.println("start to note");
       return CommandSelector.START_TO_NOTE;
 
@@ -631,7 +631,7 @@ public class Robot extends LoggedRobot {
       atShootingLocation = true;
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return CommandSelector.NOTE_TO_SHOOT;
-    } else if (!(carriage.getBeambreak() || feeder.getFirstBeambreak())
+    } else if ((!(carriage.getBeambreak() || feeder.getFirstBeambreak()) && Robot.isReal())
         || (!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
                     .getPose()
@@ -640,7 +640,8 @@ public class Robot extends LoggedRobot {
                     .getNorm()
                 < 1.5)) {
 
-      System.out.println("note to note 1");
+      System.out.println(
+          "note to note 1");
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return CommandSelector.NOTE_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
@@ -651,9 +652,12 @@ public class Robot extends LoggedRobot {
                     .getTranslation()
                     .getNorm()
                 > 1.5)) {
+
+      System.out.println("dynamic to note");
       return CommandSelector.DYNAMIC_TO_NOTE;
     } else {
       atShootingLocation = true;
+      System.out.println("dynamoci to shoot");
       return CommandSelector.DYNAMIC_TO_SHOOT;
     }
   }
