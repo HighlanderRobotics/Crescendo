@@ -70,6 +70,8 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
+  private final Boolean useAutoAim = true;
+
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = -0.1;
 
@@ -206,7 +208,7 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> false)
+        .and(() -> useAutoAim)
         .whileTrue(
             Commands.parallel(
                 teleopAutoAim(
@@ -234,7 +236,7 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> true)
+        .and(() -> !useAutoAim)
         .whileTrue(shootWithDashboard());
     controller
         .rightTrigger()
