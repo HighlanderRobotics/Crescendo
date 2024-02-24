@@ -159,11 +159,11 @@ public class SwerveSubsystem extends SubsystemBase {
           -0.05532777359,
           -0.002561333884,
           0.001247279226,
-          0.01795026339);
-  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX_OPT =
+          0.01795026339); //Last 3 values have been truncated
+  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX =
       MatBuilder.fill(
           Nat.N3(), Nat.N3(), 911.3512229, 0, 613.8313639, 0, 907.3772729, 361.1892783, 0, 0, 1);
-  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS_OPT =
+  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
@@ -171,7 +171,7 @@ public class SwerveSubsystem extends SubsystemBase {
           -0.05424391133,
           -0.00171161002,
           0.0007729068571,
-          0.001176848411);
+          0.001176848411); // Last 3 values have been truncated
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left_Camera",
@@ -194,8 +194,8 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(-7.384)),
               new Rotation3d(0, 0, Units.degreesToRadians(-195))
                   .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
-          RIGHT_CAMERA_MATRIX_OPT,
-          RIGHT_DIST_COEFFS_OPT);
+          RIGHT_CAMERA_MATRIX,
+          RIGHT_DIST_COEFFS);
   private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
