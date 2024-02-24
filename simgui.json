@@ -1,4 +1,11 @@
 {
+  "HALProvider": {
+    "Addressable LEDs": {
+      "window": {
+        "visible": true
+      }
+    }
+  },
   "NTProvider": {
     "types": {
       "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
