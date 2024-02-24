@@ -37,8 +37,6 @@ import org.photonvision.targeting.TargetCorner;
 
 public class VisionHelper {
 
-  public static final boolean SKIP_RIO_MULTI = true;
-
   /***
    * To be added
    */
@@ -262,7 +260,7 @@ public class VisionHelper {
       Transform3d robotToCamera) {
     boolean hasCalibData = cameraMatrix.isPresent() && distCoeffs.isPresent();
     // cannot run multitagPNP, use fallback strategy
-    if (!hasCalibData || result.getTargets().size() < 2 || SKIP_RIO_MULTI) {
+    if (!hasCalibData || result.getTargets().size() < 2) {
       return update(
           result,
           cameraMatrix.get(),
@@ -325,28 +323,28 @@ public class VisionHelper {
       Transform3d robotToCamera,
       PoseStrategy multiTagFallbackStrategy,
       Transform3d bestTF) {
-    // if (!bestTF.equals(new Transform3d())) {
-    var best_tf = bestTF;
-    var best =
-        new Pose3d()
-            .plus(best_tf) // field-to-camera
-            .relativeTo(SwerveSubsystem.fieldTags.getOrigin())
-            .plus(robotToCamera.inverse()); // field-to-robot
-    return Optional.of(
-        new EstimatedRobotPose(
-            best,
-            result.getTimestampSeconds(),
-            result.getTargets(),
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
-    // } else {
-    //   return update(
-    //       result,
-    //       cameraMatrix.get(),
-    //       distCoeffs.get(),
-    //       multiTagFallbackStrategy,
-    //       robotToCamera,
-    //       new Transform3d());
-    // }
+    if (!bestTF.equals(new Transform3d())) {
+      var best_tf = bestTF;
+      var best =
+          new Pose3d()
+              .plus(best_tf) // field-to-camera
+              .relativeTo(SwerveSubsystem.fieldTags.getOrigin())
+              .plus(robotToCamera.inverse()); // field-to-robot
+      return Optional.of(
+          new EstimatedRobotPose(
+              best,
+              result.getTimestampSeconds(),
+              result.getTargets(),
+              PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
+    } else {
+      return update(
+          result,
+          cameraMatrix.get(),
+          distCoeffs.get(),
+          multiTagFallbackStrategy,
+          robotToCamera,
+          new Transform3d());
+    }
   }
 
   /**
