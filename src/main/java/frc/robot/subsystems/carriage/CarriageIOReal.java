@@ -10,13 +10,13 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.utils.components.InvertedDigitalInput;
 
 /** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
   final TalonFX motor = new TalonFX(18, "canivore");
 
-  final DigitalInput beambreak = new DigitalInput(2);
+  final InvertedDigitalInput beambreak = new InvertedDigitalInput(2);
 
   final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 

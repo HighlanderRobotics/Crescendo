@@ -64,8 +64,8 @@ public class Robot extends LoggedRobot {
     SPEAKER
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = false;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  public static final boolean USE_AUTO_AIM = true;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -246,7 +246,7 @@ public class Robot extends LoggedRobot {
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
                       return polarSpeeds;
                     }),
-                Commands.waitSeconds(0.5)
+                Commands.waitSeconds(2)
                     .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
     controller
         .rightTrigger()

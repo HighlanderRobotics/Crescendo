@@ -155,33 +155,23 @@ public class SwerveSubsystem extends SubsystemBase {
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085);
-  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX_OPT =
+          0.04229355767,
+          -0.05532777359,
+          -0.002561333884,
+          0.001247279226,
+          0.01795026339); // Last 3 values have been truncated
+  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(),
-          Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO find!!
-  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS_OPT =
+          Nat.N3(), Nat.N3(), 911.3512229, 0, 613.8313639, 0, 907.3772729, 361.1892783, 0, 0, 1);
+  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085); // TODO find!!
+          0.0475654581,
+          -0.05424391133,
+          -0.00171161002,
+          0.0007729068571,
+          0.001176848411); // Last 3 values have been truncated
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left_Camera",
@@ -190,7 +180,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(-10.386),
                   Units.inchesToMeters(-10.380),
                   Units.inchesToMeters(-7.381)),
-              new Rotation3d(0, 0, Units.degreesToRadians(150 + 90))
+              new Rotation3d(0, 0, Units.degreesToRadians(-105))
                   .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS);
@@ -200,12 +190,12 @@ public class SwerveSubsystem extends SubsystemBase {
           new Transform3d(
               new Translation3d(
                   Units.inchesToMeters(-10.597),
-                  Units.inchesToMeters(10.143),
+                  Units.inchesToMeters(-10.143),
                   Units.inchesToMeters(-7.384)),
-              new Rotation3d(0, 0, Units.degreesToRadians(150))
+              new Rotation3d(0, 0, Units.degreesToRadians(-195))
                   .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
-          RIGHT_CAMERA_MATRIX_OPT,
-          RIGHT_DIST_COEFFS_OPT);
+          RIGHT_CAMERA_MATRIX,
+          RIGHT_DIST_COEFFS);
   private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
@@ -442,6 +432,9 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput(
         "Vision/Left Cam Pose",
         getPose3d().transformBy(cameras[0].inputs.constants.robotToCamera().inverse()));
+    Logger.recordOutput(
+        "Vision/Right Cam Pose",
+        getPose3d().transformBy(cameras[1].inputs.constants.robotToCamera().inverse()));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {
@@ -768,7 +761,7 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            40.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
+            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     return Commands.sequence(
