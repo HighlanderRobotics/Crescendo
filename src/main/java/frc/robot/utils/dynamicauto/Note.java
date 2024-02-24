@@ -11,7 +11,7 @@ public class Note {
 
   private boolean blacklisted;
   private int priority;
-  private final Pose2d pose;
+  private Pose2d pose;
   private final String name;
   private boolean isThere;
 
@@ -28,6 +28,7 @@ public class Note {
     this.blacklisted = blacklisted;
     this.priority = priority;
     this.name = name;
+    this.isThere = false;
   }
 
   public Note(String name) {
@@ -35,6 +36,7 @@ public class Note {
     this.blacklisted = true;
     this.priority = -1;
     this.name = name;
+    this.isThere = false;
   }
 
   public Note() {
@@ -42,6 +44,7 @@ public class Note {
     this.blacklisted = true;
     this.priority = -1;
     this.name = "Uninitialized";
+    this.isThere = false;
   }
 
   public void blacklist() {
@@ -56,6 +59,10 @@ public class Note {
 
   public void setPriority(Integer priority) {
     this.priority = priority;
+  }
+
+  public void setPose(Pose2d pose){
+    this.pose = pose;
   }
 
   public boolean getBlacklist() {
