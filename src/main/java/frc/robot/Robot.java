@@ -640,8 +640,7 @@ public class Robot extends LoggedRobot {
                     .getNorm()
                 < 1.5)) {
 
-      System.out.println(
-          "note to note 1");
+      System.out.println("note to note 1");
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return CommandSelector.NOTE_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())

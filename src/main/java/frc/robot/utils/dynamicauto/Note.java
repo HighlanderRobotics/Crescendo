@@ -61,7 +61,7 @@ public class Note {
     this.priority = priority;
   }
 
-  public void setPose(Pose2d pose){
+  public void setPose(Pose2d pose) {
     this.pose = pose;
   }
 

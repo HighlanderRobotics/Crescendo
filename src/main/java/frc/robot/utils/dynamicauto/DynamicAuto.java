@@ -9,8 +9,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import org.littletonrobotics.junction.Logger;
@@ -88,13 +86,13 @@ public class DynamicAuto {
     return closestLocation;
   }
 
-  public static void flipNote(Note note){
+  public static void flipNote(Note note) {
     Pose2d pose = note.getPose();
-    note.setPose(new Pose2d(
-        16.5410515 - pose.getX(),
-        pose.getY(),
-        Rotation2d.fromRadians(Math.PI - pose.getRotation().getRadians())));
-        
+    note.setPose(
+        new Pose2d(
+            16.5410515 - pose.getX(),
+            pose.getY(),
+            Rotation2d.fromRadians(Math.PI - pose.getRotation().getRadians())));
   }
 
   public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
