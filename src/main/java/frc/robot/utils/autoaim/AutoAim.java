@@ -20,7 +20,7 @@ public class AutoAim {
         new ShotData(Rotation2d.fromDegrees(55), 60, 80, 0.25));
     shotMap.put(
         2.0 + Units.inchesToMeters(13.5 + 3.25),
-        new ShotData(Rotation2d.fromDegrees(45), 60, 80, 0.31));
+        new ShotData(Rotation2d.fromDegrees(44), 60, 80, 0.31));
     shotMap.put(
         3.0 + Units.inchesToMeters(13.5 + 3.25),
         new ShotData(Rotation2d.fromDegrees(34), 60, 80, 0.36));
