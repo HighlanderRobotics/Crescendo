@@ -65,7 +65,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = false;
+  public static final boolean USE_AUTO_AIM = true;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -235,8 +235,9 @@ public class Robot extends LoggedRobot {
                       double polarVelocity =
                           MathUtil.clamp(
                               Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
-                              -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
-                              SwerveSubsystem.MAX_LINEAR_SPEED / 2);
+                              -SwerveSubsystem.MAX_LINEAR_SPEED / 5,
+                              SwerveSubsystem.MAX_LINEAR_SPEED / 5);
+                      Logger.recordOutput("AutoAim/Polar Velocity", polarVelocity);
                       double polarRadians = Math.atan2(vy, vx);
                       ChassisSpeeds polarSpeeds =
                           new ChassisSpeeds(
@@ -246,8 +247,14 @@ public class Robot extends LoggedRobot {
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
                       return polarSpeeds;
                     }),
-                Commands.waitSeconds(2)
-                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))));
+                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS)
+                    .andThen(
+                        Commands.parallel(
+                            feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY),
+                            Commands.runOnce(
+                                () ->
+                                    Logger.recordOutput(
+                                        "AutoAim/Shooting Pose", swerve.getPose()))))));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -435,7 +442,10 @@ public class Robot extends LoggedRobot {
                 AutoAim.LOOKAHEAD_TIME_SECONDS));
     return Commands.sequence(
         getInitialValues,
-        Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot),
+        Commands.deadline(
+            Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
+            runRobot,
+            Commands.print(String.valueOf(AutoAimStates.curShotSpeeds.vxMetersPerSecond))),
         // keeps moving to prevent the robot from stopping and changing the velocity of the note
         swerve
             .runVelocityFieldRelative(
@@ -444,7 +454,7 @@ public class Robot extends LoggedRobot {
                         AutoAimStates.curShotSpeeds.vxMetersPerSecond,
                         AutoAimStates.curShotSpeeds.vyMetersPerSecond,
                         0))
-            .withTimeout(0.25));
+            .withTimeout(0));
   }
 
   public Command autonomousAutoAim(String pathName) {

@@ -29,6 +29,6 @@ public class AutoAim {
         new ShotData(Rotation2d.fromDegrees(30), 60, 100, 0.4));
     shotMap.put(
         5.0 + Units.inchesToMeters(13.5 + 3.25),
-        new ShotData(Rotation2d.fromDegrees(27), 50, 100, 0.4)); //TODO check
+        new ShotData(Rotation2d.fromDegrees(27), 50, 100, 0.4)); // TODO check
   }
 }

@@ -525,17 +525,25 @@ public class SwerveSubsystem extends SubsystemBase {
 
   @AutoLogOutput(key = "Odometry/Velocity")
   public ChassisSpeeds getVelocity() {
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        kinematics.toChassisSpeeds(
-            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
-        getRotation());
+    var speeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(
+            kinematics.toChassisSpeeds(
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+            getRotation());
+    var invertedSpeeds =
+        new ChassisSpeeds(
+            -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+    return invertedSpeeds;
   }
 
   @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
   public ChassisSpeeds getRobotRelativeSpeeds() {
-    return kinematics.toChassisSpeeds(
-        (SwerveModuleState[])
-            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+    ChassisSpeeds speeds =
+        kinematics.toChassisSpeeds(
+            (SwerveModuleState[])
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+    return new ChassisSpeeds(
+        -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   /** Returns the current odometry pose. */
@@ -652,8 +660,8 @@ public class SwerveSubsystem extends SubsystemBase {
     return getPose()
         .transformBy(
             new Transform2d(
-                speedsRobotRelative.vxMetersPerSecond * time,
-                speedsRobotRelative.vyMetersPerSecond * time,
+                -speedsRobotRelative.vxMetersPerSecond * time,
+                -speedsRobotRelative.vyMetersPerSecond * time,
                 Rotation2d.fromRadians(speedsRobotRelative.omegaRadiansPerSecond * time)));
   }
 
@@ -693,7 +701,7 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            20.0, 0.0, 4.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED / 2));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     return Commands.sequence(
