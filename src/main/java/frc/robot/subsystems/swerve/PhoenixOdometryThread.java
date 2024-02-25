@@ -140,16 +140,14 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   private double timestampFor(Set<BaseStatusSignal> signals) {
-    double timestamp = Logger.getRealTimestamp() / 1e6;
-
-    final double totalLatency =
-        signals.stream().mapToDouble(s -> s.getTimestamp().getLatency()).sum();
+    final double totalTimestamp =
+        signals.stream().mapToDouble(s -> s.getTimestamp().getTime()).sum();
 
     // Account for mean latency for a "good enough" timestamp
     if (!signals.isEmpty()) {
-      timestamp -= totalLatency / signals.size();
+      return totalTimestamp / signals.size();
+    } else {
+      return Logger.getRealTimestamp() / 1e6;
     }
-
-    return timestamp;
   }
 }
