@@ -64,7 +64,7 @@ public class Robot extends LoggedRobot {
     SPEAKER
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
   private Command autonomousCommand;
 
@@ -352,6 +352,7 @@ public class Robot extends LoggedRobot {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
     Logger.recordOutput("Target", currentTarget);
+    Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
@@ -407,14 +408,19 @@ public class Robot extends LoggedRobot {
             () -> {
               AutoAimStates.curShotSpeeds = speeds.get();
               Logger.recordOutput("AutoAim/cur shot speedd", AutoAimStates.curShotSpeeds);
-              AutoAimStates.curShotData =
-                  AutoAim.shotMap.get(
-                      swerve
-                          .getLinearFuturePose(
-                              AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
-                          .minus(FieldConstants.getSpeaker())
-                          .getTranslation()
-                          .getNorm());
+              double distance =
+                  swerve
+                      .getLinearFuturePose(
+                          AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
+                      .minus(FieldConstants.getSpeaker())
+                      .getTranslation()
+                      .getNorm();
+              AutoAimStates.curShotData = AutoAim.shotMap.get(distance);
+              Logger.recordOutput("AutoAim/Distance From Target", distance);
+              Logger.recordOutput(
+                  "AutoAim/Desired Shooting Angle", AutoAim.shotMap.get(distance).getRotation());
+              Logger.recordOutput(
+                  "AutoAim/Actual Shooting Angle", AutoAimStates.curShotData.getRotation());
               System.out.println(Timer.getFPGATimestamp());
             });
     Command runRobot =

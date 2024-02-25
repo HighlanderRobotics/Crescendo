@@ -395,7 +395,7 @@ public class VisionHelper {
             targetPosition
                 .get()
                 .transformBy(lowestAmbiguityTarget.getBestCameraToTarget().inverse())
-                .transformBy(robotToCamera),
+                .transformBy(robotToCamera.inverse()),
             result.getTimestampSeconds(),
             result.getTargets(),
             PoseStrategy.LOWEST_AMBIGUITY);

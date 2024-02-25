@@ -178,10 +178,13 @@ public class SwerveSubsystem extends SubsystemBase {
           new Transform3d(
               new Translation3d(
                   Units.inchesToMeters(-10.386),
-                  Units.inchesToMeters(-10.380),
-                  Units.inchesToMeters(-7.381)),
-              new Rotation3d(0, 0, Units.degreesToRadians(-105))
-                  .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
+                  Units.inchesToMeters(10.380),
+                  Units.inchesToMeters(7.381)),
+              // https://www.desmos.com/calculator/lgvvnrju8p
+              new Rotation3d(
+                  Units.degreesToRadians(0.0),
+                  Units.degreesToRadians(-28.125),
+                  Units.degreesToRadians(120))),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS);
   public static final VisionConstants rightCamConstants =
@@ -476,7 +479,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
     return this.runVelocityCmd(
-        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), gyroInputs.yawPosition));
+        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
   /**
@@ -539,7 +542,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return pose;
+    return estimator.getEstimatedPosition();
   }
 
   public Pose3d getPose3d() {
@@ -555,15 +558,15 @@ public class SwerveSubsystem extends SubsystemBase {
   public void setPose(Pose2d pose) {
     this.pose = pose;
     try {
-      estimator.resetPosition(pose.getRotation(), lastModulePositions, pose);
+      estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
     } catch (Exception e) {
     }
     odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
-    gyroIO.setYaw(yaw);
-    // setPose(new Pose2d(getPose().getTranslation(), yaw));
+    // gyroIO.setYaw(yaw);
+    setPose(new Pose2d(getPose().getTranslation(), yaw));
   }
 
   /** Returns an array of module translations. */
