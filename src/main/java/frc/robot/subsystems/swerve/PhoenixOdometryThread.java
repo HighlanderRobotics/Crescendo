@@ -33,11 +33,10 @@ import org.littletonrobotics.junction.Logger;
 /**
  * Provides an interface for high frequency sampling of Phoenix devices.
  *
- * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses.
- * CAN FD compliant devices are required (TalonFX, CANCoder, Pigeon 2.0, CANdle) due to
- * the use of the "waitForAll" blocking method to enable more consistent sampling.
- * This also allows Phoenix Pro users to benefit from lower latency between devices using CANivore
- * time synchronization.
+ * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses. CAN FD
+ * compliant devices are required (TalonFX, CANCoder, Pigeon 2.0, CANdle) due to the use of the
+ * "waitForAll" blocking method to enable more consistent sampling. This also allows Phoenix Pro
+ * users to benefit from lower latency between devices using CANivore time synchronization.
  */
 public class PhoenixOdometryThread extends Thread {
   public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
@@ -59,7 +58,7 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   // Used for testing
-  public static PhoenixOdometryThread createWithJournal(final Queue<Samples> journal) {
+  protected static PhoenixOdometryThread createWithJournal(final Queue<Samples> journal) {
     return new PhoenixOdometryThread(journal);
   }
 
