@@ -62,13 +62,13 @@ public class DynamicAuto {
 
   public static Command DynamicToNote(Supplier<Pose2d> curPose) {
     return AutoBuilder.pathfindToPose(
-        getClosestNote(curPose).getPose(),
+        getClosestNote(curPose).getPoseAllianceSpicific(),
         new PathConstraints(3.0, 4.0, Units.degreesToRadians(540), Units.degreesToRadians(720)));
   }
 
   public static Command DynamicToShoot(Supplier<Pose2d> curPose) {
     return AutoBuilder.pathfindToPose(
-        closestShootingLocation(curPose, shootingLocations).getPose(),
+        closestShootingLocation(curPose, shootingLocations).getPoseAllianceSpicific(),
         new PathConstraints(3.0, 4.0, Units.degreesToRadians(540), Units.degreesToRadians(720)));
   }
 
@@ -78,25 +78,19 @@ public class DynamicAuto {
     ShootingLocation closestLocation = new ShootingLocation("shooting shooting");
     double shortestDistance = 9999999;
     for (ShootingLocation location : shootingLocations) {
-      if (shortestDistance > curPose.get().minus(location.getPose()).getTranslation().getNorm()) {
+      if (shortestDistance > curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm()) {
         closestLocation = location;
-        shortestDistance = curPose.get().minus(location.getPose()).getTranslation().getNorm();
+        shortestDistance = curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm();
       }
     }
     return closestLocation;
   }
 
-  public static void flipNote(Note note) {
-    Pose2d pose = note.getPose();
-    note.setPose(
-        new Pose2d(
-            16.5410515 - pose.getX(),
-            pose.getY(),
-            Rotation2d.fromRadians(Math.PI - pose.getRotation().getRadians())));
-  }
+  
 
   public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
+    startingLocation.setPose(startingLocation.getPoseAllianceSpicific());
     Note closestNote = getClosestNote(startingPose);
     if ("Uninitialized" == closestNote.getName()) {
       closestNote = getAbsoluteClosestNote(startingPose);
@@ -145,8 +139,8 @@ public class DynamicAuto {
     Note closestNote = new Note();
     double shortestDistance = 99999999;
     for (Note note : notes) {
-      if (shortestDistance > curPose.get().minus(note.getPose()).getTranslation().getNorm()) {
-        shortestDistance = curPose.get().minus(note.getPose()).getTranslation().getNorm();
+      if (shortestDistance > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+        shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
         closestNote = note;
       }
     }
@@ -162,15 +156,15 @@ public class DynamicAuto {
 
         continue;
       } else if (note.getPriority() > closestNote.getPriority()) {
-        shortestDistance = curPose.get().minus(note.getPose()).getTranslation().getNorm();
+        shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
         closestNote = note;
-        if (shortestDistance > curPose.get().minus(note.getPose()).getTranslation().getNorm()) {
-          shortestDistance = curPose.get().minus(note.getPose()).getTranslation().getNorm();
+        if (shortestDistance > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+          shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
           closestNote = note;
         }
       } else if (note.getPriority() == closestNote.getPriority()) {
-        if (shortestDistance > curPose.get().minus(note.getPose()).getTranslation().getNorm()) {
-          shortestDistance = curPose.get().minus(note.getPose()).getTranslation().getNorm();
+        if (shortestDistance > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+          shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
           closestNote = note;
         }
       }

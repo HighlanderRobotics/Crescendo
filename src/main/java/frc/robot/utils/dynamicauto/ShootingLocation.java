@@ -5,6 +5,9 @@
 package frc.robot.utils.dynamicauto;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 /** Add your docs here. */
 public class ShootingLocation {
@@ -25,8 +28,26 @@ public class ShootingLocation {
     this.name = name;
   }
 
+  public void setPose(Pose2d pose){
+    this.pose = pose;
+  }
+
   public Pose2d getPose() {
     return pose;
+  }
+
+  public Pose2d getPoseAllianceSpicific() {
+    if(DriverStation.getAlliance().isPresent()){
+      if(DriverStation.getAlliance().get() == Alliance.Red){
+        return new Pose2d(
+        16.5410515 - this.pose.getX(),
+        this.pose.getY(),
+        Rotation2d.fromRadians(Math.PI - this.pose.getRotation().getRadians()));
+      }
+    }
+    return this.pose;
+  
+    
   }
 
   public String getName() {

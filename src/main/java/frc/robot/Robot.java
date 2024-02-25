@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -177,6 +178,7 @@ public class Robot extends LoggedRobot {
     for (Note note : DynamicAuto.notes) {
       noteDropdown.addOption(note.getName(), note);
     }
+
 
     // Default Commands here
     swerve.setDefaultCommand(
@@ -393,7 +395,7 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Note Within Distance",
         swerve
                 .getPose()
-                .minus(DynamicAuto.getClosestNote(swerve::getPose).getPose())
+                .minus(DynamicAuto.getClosestNote(swerve::getPose).getPoseAllianceSpicific())
                 .getTranslation()
                 .getNorm()
             > 1.5);
@@ -403,16 +405,16 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Note Exists",
         DynamicAuto.getClosestNote(swerve::getPose).getExistence());
     Logger.recordOutput(
-        "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve::getPose).getPose());
+        "DynamicAuto/Closest Note", DynamicAuto.getClosestNote(swerve::getPose).getPoseAllianceSpicific());
 
     Logger.recordOutput(
         "DynamicAuto/Absolute Closest Note",
-        DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose());
+        DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPoseAllianceSpicific());
 
     Logger.recordOutput(
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
-            .getPose());
+            .getPoseAllianceSpicific());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
@@ -623,7 +625,7 @@ public class Robot extends LoggedRobot {
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
                     .getPose()
-                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose())
+                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPoseAllianceSpicific())
                     .getTranslation()
                     .getNorm()
                 < 1.5)) {
@@ -635,7 +637,7 @@ public class Robot extends LoggedRobot {
         || (!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
                     .getPose()
-                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose())
+                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPoseAllianceSpicific())
                     .getTranslation()
                     .getNorm()
                 < 1.5)) {
@@ -647,7 +649,7 @@ public class Robot extends LoggedRobot {
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
                     .getPose()
-                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPose())
+                    .minus(DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getPoseAllianceSpicific())
                     .getTranslation()
                     .getNorm()
                 > 1.5)) {
