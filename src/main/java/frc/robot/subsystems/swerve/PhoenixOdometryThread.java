@@ -1,4 +1,4 @@
-// Copyright 2021-2024 FRC 6328
+// Copyright 2021-2024 FRC 6328, FRC 8033, Kevin Clark
 // http://github.com/Mechanical-Advantage
 //
 // This program is free software; you can redistribute it and/or
@@ -10,8 +10,6 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
-// Copyright 2024 FRC 8033 and Kevin Clark
 
 package frc.robot.subsystems.swerve;
 
@@ -33,10 +31,11 @@ import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Provides an interface for asynchronously reading high-frequency measurements to a set of queues.
+ * Provides an interface for high frequency sampling of Phoenix devices.
  *
- * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses. When using
- * a CANivore, the thread uses the "waitForAll" blocking method to enable more consistent sampling.
+ * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses.
+ * CAN FD compliant devices are required (TalonFX, CANCoder, Pigeon 2.0, CANdle) due to
+ * the use of the "waitForAll" blocking method to enable more consistent sampling.
  * This also allows Phoenix Pro users to benefit from lower latency between devices using CANivore
  * time synchronization.
  */
