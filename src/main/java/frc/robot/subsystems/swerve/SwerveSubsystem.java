@@ -527,12 +527,8 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = modules[i].getState();
-    }
-
+    SwerveModuleState[] states =
+        Arrays.stream(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
     return states;
   }
 
@@ -596,10 +592,9 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /** Returns the module positions (turn angles and drive velocities) for all of the modules. */
-  @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModulePosition[] getModulePositions() {
-    SwerveModulePosition[] states = new SwerveModulePosition[4];
-    Arrays.stream(modules).map(Module::getPosition).toArray();
+    SwerveModulePosition[] states =
+        Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
     return states;
   }
 
