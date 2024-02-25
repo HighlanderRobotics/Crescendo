@@ -194,9 +194,8 @@ public class SwerveSubsystem extends SubsystemBase {
               new Translation3d(
                   Units.inchesToMeters(-10.597),
                   Units.inchesToMeters(-10.143),
-                  Units.inchesToMeters(-7.384)),
-              new Rotation3d(0, 0, Units.degreesToRadians(-195))
-                  .rotateBy(new Rotation3d(0, Units.degreesToRadians(28.125), 0))),
+                  Units.inchesToMeters(7.384)),
+              new Rotation3d(0, Units.degreesToRadians(-28.125), Units.degreesToRadians(210))),
           RIGHT_CAMERA_MATRIX,
           RIGHT_DIST_COEFFS);
   private SwerveDriveOdometry odometry;
