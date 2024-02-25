@@ -65,7 +65,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = true;
+  public static final boolean USE_AUTO_AIM = false;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -165,10 +165,10 @@ public class Robot extends LoggedRobot {
             feeder.indexCmd().until(() -> currentTarget != Target.SPEAKER),
             Commands.sequence(
                     feeder
-                        .runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE)
+                        .runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
                         .until(() -> carriage.getBeambreak()),
-                    feeder.runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    feeder.runVoltageCmd(0.0))
+                    feeder.runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5),
+                    feeder.runVelocityCmd(0))
                 .until(() -> currentTarget != Target.AMP)));
     carriage.setDefaultCommand(
         Commands.repeatingSequence(
@@ -219,7 +219,7 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             Commands.parallel(
                 shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
-                Commands.waitSeconds(0.5).andThen(feeder.runVoltageCmd(3.0))));
+                Commands.waitSeconds(0.5).andThen(feeder.runVelocityCmd(24.0)))); // TODO tune
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -247,7 +247,7 @@ public class Robot extends LoggedRobot {
                       return polarSpeeds;
                     }),
                 Commands.waitSeconds(2)
-                    .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
+                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -255,7 +255,7 @@ public class Robot extends LoggedRobot {
         .whileTrue(shootWithDashboard())
         .onFalse(
             Commands.parallel(
-                    shooter.run(() -> {}), feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))
+                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5));
     controller
         .rightTrigger()
@@ -310,13 +310,13 @@ public class Robot extends LoggedRobot {
         .toggleOnFalse(
             Commands.parallel(
                 elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 25.0)
+                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
                     .until(
                         () ->
                             elevator.getExtensionMeters()
                                 > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
                     .andThen(
-                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 25.0))));
+                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
