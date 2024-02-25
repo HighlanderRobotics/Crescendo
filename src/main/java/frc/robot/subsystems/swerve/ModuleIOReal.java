@@ -209,10 +209,11 @@ public class ModuleIOReal implements ModuleIO {
 
     inputs.odometryTimestamps = samples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
-        samples.stream().mapToDouble(s -> s.values().get(drivePosition)).toArray();
+        samples.stream().filter(s -> s != null).mapToDouble(s -> s.values().get(drivePosition)).toArray();
     inputs.odometryTurnPositions =
         samples.stream()
             // should be after offset + gear ratio
+            .filter(s -> s != null)
             .map(s -> Rotation2d.fromRotations(s.values().get(turnPosition)))
             .toArray(Rotation2d[]::new);
   }
