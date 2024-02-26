@@ -111,6 +111,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 2;
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
@@ -701,9 +702,14 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED / 2));
+            0.5, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED / 2));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
-
+    ProfiledPIDController vxController =
+        new ProfiledPIDController(
+            0.5, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
+    ProfiledPIDController vyController =
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
     return Commands.sequence(
         Commands.runOnce(
             () -> {
@@ -727,7 +733,10 @@ public class SwerveSubsystem extends SubsystemBase {
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
                           AutoAimStates.rotationsToTranslation.getRadians());
-                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
+                  double vxFeedbackOutput =
+                      vxController.calculate(getPose().getX(), AutoAimStates.endingPose.getX());
+                  double vyFeedbackOutput =
+                      vyController.calculate(getPose().getY(), AutoAimStates.endingPose.getY());
                   Logger.recordOutput(
                       "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
                   Logger.recordOutput(
@@ -736,13 +745,37 @@ public class SwerveSubsystem extends SubsystemBase {
                       "AutoAim/Goal Rotation", headingController.getGoal().position);
                   Logger.recordOutput(
                       "AutoAim/Goal Velocity", headingController.getGoal().velocity);
+
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint X Position", vxController.getSetpoint().position);
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint X Velocity", vxController.getSetpoint().velocity);
+                  Logger.recordOutput("AutoAim/Goal X Position", vxController.getGoal().position);
+                  Logger.recordOutput("AutoAim/Goal X Velocity", vxController.getGoal().velocity);
+
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint Y Positon", vyController.getSetpoint().position);
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint Y Velocity", vyController.getSetpoint().velocity);
+                  Logger.recordOutput("AutoAim/Goal Y Position", vyController.getGoal().position);
+                  Logger.recordOutput("AutoAim/Goal Y Velosity", vyController.getGoal().velocity);
+                  Logger.recordOutput(
+                      "AutoAim/Setpoint pose",
+                      new Pose2d(
+                          vxController.getSetpoint().position,
+                          vyController.getSetpoint().position,
+                          Rotation2d.fromRadians(headingController.getSetpoint().position)));
                   return new ChassisSpeeds(
-                      xMetersPerSecond.getAsDouble(),
-                      yMetersPerSecond.getAsDouble(),
+                      vxFeedbackOutput + vxController.getSetpoint().velocity,
+                      vyFeedbackOutput + vyController.getSetpoint().velocity,
                       feedbackOutput + headingController.getSetpoint().velocity);
                 })
             .beforeStarting(
                 () -> {
+                  vxController.setConstraints(
+                      new Constraints(xMetersPerSecond.getAsDouble(), MAX_AUTOAIM_SPEED));
+                  vyController.setConstraints(
+                      new Constraints(yMetersPerSecond.getAsDouble(), MAX_AUTOAIM_SPEED));
                   AutoAimStates.endingPose =
                       new Pose2d(
                           getLinearFuturePose(
@@ -753,7 +786,12 @@ public class SwerveSubsystem extends SubsystemBase {
                               .getY(),
                           AutoAimStates.rotationsToTranslation);
                   Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
-                  headingController.reset(new State(getPose().getRotation().getRadians(), 0));
+                  headingController.reset(
+                      new State(
+                          getPose().getRotation().getRadians(),
+                          getVelocity().omegaRadiansPerSecond));
+                  vxController.reset(new State(getPose().getX(), getVelocity().vxMetersPerSecond));
+                  vyController.reset(new State(getPose().getY(), getVelocity().vyMetersPerSecond));
                   Logger.recordOutput("AutoAim/Translated Target", AutoAimStates.virtualTarget);
                 }));
   }
