@@ -69,17 +69,15 @@ public class Note {
   }
 
   public Pose2d getPoseAllianceSpicific() {
-    if(DriverStation.getAlliance().isPresent()){
-      if(DriverStation.getAlliance().get() == Alliance.Red){
+    if (DriverStation.getAlliance().isPresent()) {
+      if (DriverStation.getAlliance().get() == Alliance.Red) {
         return new Pose2d(
-        16.5410515 - this.pose.getX(),
-        this.pose.getY(),
-        Rotation2d.fromRadians(Math.PI - this.pose.getRotation().getRadians()));
+            16.5410515 - this.pose.getX(),
+            this.pose.getY(),
+            Rotation2d.fromRadians(Math.PI - this.pose.getRotation().getRadians()));
       }
     }
     return this.pose;
-  
-    
   }
 
   public boolean getBlacklist() {

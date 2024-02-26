@@ -78,15 +78,15 @@ public class DynamicAuto {
     ShootingLocation closestLocation = new ShootingLocation("shooting shooting");
     double shortestDistance = 9999999;
     for (ShootingLocation location : shootingLocations) {
-      if (shortestDistance > curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+      if (shortestDistance
+          > curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm()) {
         closestLocation = location;
-        shortestDistance = curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm();
+        shortestDistance =
+            curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm();
       }
     }
     return closestLocation;
   }
-
-  
 
   public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
@@ -139,8 +139,10 @@ public class DynamicAuto {
     Note closestNote = new Note();
     double shortestDistance = 99999999;
     for (Note note : notes) {
-      if (shortestDistance > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
-        shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
+      if (shortestDistance
+          > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+        shortestDistance =
+            curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
         closestNote = note;
       }
     }
@@ -156,20 +158,37 @@ public class DynamicAuto {
 
         continue;
       } else if (note.getPriority() > closestNote.getPriority()) {
-        shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
+        shortestDistance =
+            curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
         closestNote = note;
-        if (shortestDistance > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
-          shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
+        if (shortestDistance
+            > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+          shortestDistance =
+              curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
           closestNote = note;
         }
       } else if (note.getPriority() == closestNote.getPriority()) {
-        if (shortestDistance > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
-          shortestDistance = curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
+        if (shortestDistance
+            > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+          shortestDistance =
+              curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm();
           closestNote = note;
         }
       }
     }
 
     return closestNote;
+  }
+
+  public static Pose2d[] addTwoTrajectories(
+      ChoreoTrajectory trajectory1, ChoreoTrajectory trajectory2) {
+    Pose2d[] poses = new Pose2d[trajectory1.getPoses().length + trajectory2.getPoses().length];
+    for (int i = 0; i < trajectory1.getPoses().length; i++) {
+      poses[i] = trajectory1.getPoses()[i];
+    }
+    for (int i = 0; i < trajectory2.getPoses().length; i++) {
+      poses[i + trajectory1.getPoses().length] = trajectory2.getPoses()[i];
+    }
+    return poses;
   }
 }
