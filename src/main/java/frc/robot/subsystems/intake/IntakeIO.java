@@ -11,12 +11,14 @@ public interface IntakeIO {
   public static class IntakeIOInputs {
     public double intakeVelocityRotationsPerSecond = 0.0;
     public double intakeAppliedVolts = 0.0;
-    public double intakeCurrentAmps = 0.0;
+    public double intakeStatorCurrentAmps = 0.0;
+    public double intakeSupplyCurrentAmps = 0.0;
     public double intakeTemperatureCelsius = 0.0;
 
     public double centeringVelocityRotationsPerSecond = 0.0;
     public double centeringAppliedVolts = 0.0;
-    public double centeringCurrentAmps = 0.0;
+    public double centeringStatorCurrentAmps = 0.0;
+    public double centeringSupplyCurrentAmps = 0.0;
     public double centeringTemperatureCelsius = 0.0;
   }
 

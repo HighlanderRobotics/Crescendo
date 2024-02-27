@@ -21,12 +21,14 @@ public class IntakeIOReal implements IntakeIO {
 
   private final StatusSignal<Double> intakeVelocity = intakeMotor.getVelocity();
   private final StatusSignal<Double> intakeVoltage = intakeMotor.getMotorVoltage();
-  private final StatusSignal<Double> intakeAmperage = intakeMotor.getStatorCurrent();
+  private final StatusSignal<Double> intakeStatorCurrentAmps = intakeMotor.getStatorCurrent();
+  private final StatusSignal<Double> intakeSupplyCurrentAmps = intakeMotor.getSupplyCurrent();
   private final StatusSignal<Double> intakeTemp = intakeMotor.getDeviceTemp();
 
   private final StatusSignal<Double> centeringVelocity = centeringMotor.getVelocity();
   private final StatusSignal<Double> centeringVoltage = centeringMotor.getMotorVoltage();
-  private final StatusSignal<Double> centeringAmperage = centeringMotor.getStatorCurrent();
+  private final StatusSignal<Double> centeringStatorCurrentAmps = centeringMotor.getStatorCurrent();
+  private final StatusSignal<Double> centeringSupplyCurrentAmps = centeringMotor.getSupplyCurrent();
   private final StatusSignal<Double> centeringTemp = centeringMotor.getDeviceTemp();
 
   public IntakeIOReal() {
@@ -42,11 +44,13 @@ public class IntakeIOReal implements IntakeIO {
         50.0,
         intakeVelocity,
         intakeVoltage,
-        intakeAmperage,
+        intakeStatorCurrentAmps,
+        intakeSupplyCurrentAmps,
         intakeTemp,
         centeringVelocity,
         centeringVoltage,
-        centeringAmperage,
+        centeringStatorCurrentAmps,
+        centeringSupplyCurrentAmps,
         centeringTemp);
     intakeMotor.optimizeBusUtilization();
     centeringMotor.optimizeBusUtilization();
@@ -58,20 +62,24 @@ public class IntakeIOReal implements IntakeIO {
     BaseStatusSignal.refreshAll(
         intakeVelocity,
         intakeVoltage,
-        intakeAmperage,
+        intakeStatorCurrentAmps,
+        intakeSupplyCurrentAmps,
         intakeTemp,
         centeringVelocity,
         centeringVoltage,
-        centeringAmperage,
+        centeringStatorCurrentAmps,
+        centeringSupplyCurrentAmps,
         centeringTemp);
     inputs.intakeVelocityRotationsPerSecond = intakeVelocity.getValueAsDouble();
     inputs.intakeAppliedVolts = intakeVoltage.getValueAsDouble();
-    inputs.intakeCurrentAmps = intakeAmperage.getValueAsDouble();
+    inputs.intakeStatorCurrentAmps = intakeStatorCurrentAmps.getValueAsDouble();
+    inputs.intakeSupplyCurrentAmps = intakeSupplyCurrentAmps.getValueAsDouble();
     inputs.intakeTemperatureCelsius = intakeTemp.getValueAsDouble();
 
     inputs.centeringVelocityRotationsPerSecond = centeringVelocity.getValueAsDouble();
     inputs.centeringAppliedVolts = centeringVoltage.getValueAsDouble();
-    inputs.centeringCurrentAmps = centeringAmperage.getValueAsDouble();
+    inputs.centeringStatorCurrentAmps = centeringStatorCurrentAmps.getValueAsDouble();
+    inputs.centeringSupplyCurrentAmps = centeringSupplyCurrentAmps.getValueAsDouble();
     inputs.centeringTemperatureCelsius = centeringTemp.getValueAsDouble();
   }
 
