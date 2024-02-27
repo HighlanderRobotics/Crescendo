@@ -32,10 +32,10 @@ public class ElevatorSubsystem extends SubsystemBase {
   public static final double DRUM_RADIUS_METERS = Units.inchesToMeters(1.751 / 2.0);
   public static final Rotation2d ELEVATOR_ANGLE = Rotation2d.fromDegrees(65.0);
 
-  public static final double MAX_EXTENSION_METERS = Units.inchesToMeters(31.3);
+  public static final double MAX_EXTENSION_METERS = Units.inchesToMeters(30);
 
-  public static final double CLIMB_EXTENSION_METERS = 0.6;
-  public static final double TRAP_EXTENSION_METERS = 0.9;
+  public static final double CLIMB_EXTENSION_METERS = 0.65;
+  public static final double TRAP_EXTENSION_METERS = Units.inchesToMeters(29);
   public static final double AMP_EXTENSION_METERS = 0.6;
 
   private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();

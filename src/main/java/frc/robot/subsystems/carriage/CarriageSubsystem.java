@@ -24,7 +24,7 @@ public class CarriageSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Intake", inputs);
+    Logger.processInputs("Carriage", inputs);
   }
 
   /** Run the carriage roller at the specified voltage */
@@ -39,7 +39,7 @@ public class CarriageSubsystem extends SubsystemBase {
   public Command indexForwardsCmd() {
     return runVoltageCmd(INDEXING_VOLTAGE)
         .until(() -> inputs.beambreak)
-        .andThen(runVoltageCmd(INDEXING_VOLTAGE).withTimeout(0.25));
+        .andThen(runVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12), runVoltageCmd(0.0));
   }
 
   /** Run the amp mech backwards until the beambreak cycles, then forward index. */
@@ -48,6 +48,7 @@ public class CarriageSubsystem extends SubsystemBase {
         runVoltageCmd(-INDEXING_VOLTAGE).until(() -> inputs.beambreak),
         runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.25),
         runVoltageCmd(-INDEXING_VOLTAGE).until(() -> !inputs.beambreak),
+        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.25),
         indexForwardsCmd());
   }
 
