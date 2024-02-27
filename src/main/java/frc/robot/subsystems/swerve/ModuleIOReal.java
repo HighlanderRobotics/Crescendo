@@ -213,8 +213,9 @@ public class ModuleIOReal implements ModuleIO {
     inputs.odometryTurnPositions =
         samples.stream()
             // should be after offset + gear ratio
+            .map(s -> s.values().get(turnPosition))
             .filter(s -> s != null)
-            .map(s -> Rotation2d.fromRotations(s.values().get(turnPosition)))
+            .map(Rotation2d::fromRotations)
             .toArray(Rotation2d[]::new);
   }
 
