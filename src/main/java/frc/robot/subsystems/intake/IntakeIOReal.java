@@ -72,7 +72,15 @@ public class IntakeIOReal implements IntakeIO {
   /** Updates the set of loggable inputs. */
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
-    BaseStatusSignal.refreshAll(intakeVelocity, intakeVoltage, intakeAmperage, intakeTemp);
+    BaseStatusSignal.refreshAll(
+        intakeVelocity,
+        intakeVoltage,
+        intakeAmperage,
+        intakeTemp,
+        centeringVelocity,
+        centeringVoltage,
+        centeringAmperage,
+        centeringTemp);
     inputs.intakeVelocityRotationsPerSecond = intakeVelocity.getValueAsDouble();
     inputs.intakeAppliedVolts = intakeVoltage.getValueAsDouble();
     inputs.intakeCurrentAmps = intakeAmperage.getValueAsDouble();
