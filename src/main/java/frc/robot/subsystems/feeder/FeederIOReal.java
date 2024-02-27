@@ -37,7 +37,8 @@ public class FeederIOReal implements FeederIO {
 
     motor.getConfigurator().apply(config);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, statorCurrent, temp, supplyCurrent);
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50.0, velocity, voltage, statorCurrent, temp, supplyCurrent);
     motor.optimizeBusUtilization();
   }
 

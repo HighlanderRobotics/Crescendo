@@ -32,7 +32,8 @@ public class CarriageIOReal implements CarriageIO {
     config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     motor.getConfigurator().apply(config);
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, statorCurrent, supplyCurrent, temp);
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50.0, velocity, voltage, statorCurrent, supplyCurrent, temp);
     motor.optimizeBusUtilization();
   }
 

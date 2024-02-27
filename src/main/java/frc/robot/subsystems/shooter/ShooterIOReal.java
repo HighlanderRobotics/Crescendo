@@ -23,14 +23,18 @@ public class ShooterIOReal implements ShooterIO {
   private final StatusSignal<Double> pivotTempC = pivotMotor.getDeviceTemp();
   private final StatusSignal<Double> pivotRotations = pivotMotor.getPosition();
 
-  private final StatusSignal<Double> flywheelLeftStatorCurrentAmps = flywheelLeftMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelLeftSupplyCurrentAmps = flywheelLeftMotor.getSupplyCurrent();
+  private final StatusSignal<Double> flywheelLeftStatorCurrentAmps =
+      flywheelLeftMotor.getStatorCurrent();
+  private final StatusSignal<Double> flywheelLeftSupplyCurrentAmps =
+      flywheelLeftMotor.getSupplyCurrent();
   private final StatusSignal<Double> flywheelLeftVoltage = flywheelLeftMotor.getMotorVoltage();
   private final StatusSignal<Double> flywheelLeftTempC = flywheelLeftMotor.getDeviceTemp();
   private final StatusSignal<Double> flywheelLeftVelocity = flywheelLeftMotor.getVelocity();
 
-  private final StatusSignal<Double> flywheelRightStatorCurrentAmps = flywheelRightMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelRightSupplyCurrentAmps = flywheelRightMotor.getSupplyCurrent();
+  private final StatusSignal<Double> flywheelRightStatorCurrentAmps =
+      flywheelRightMotor.getStatorCurrent();
+  private final StatusSignal<Double> flywheelRightSupplyCurrentAmps =
+      flywheelRightMotor.getSupplyCurrent();
   private final StatusSignal<Double> flywheelRightVoltage = flywheelRightMotor.getMotorVoltage();
   private final StatusSignal<Double> flywheelRightTempC = flywheelRightMotor.getDeviceTemp();
   private final StatusSignal<Double> flywheelRightVelocity = flywheelRightMotor.getVelocity();
@@ -71,7 +75,13 @@ public class ShooterIOReal implements ShooterIO {
     pivotMotor.setPosition(
         ShooterSubystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, pivotVelocity, pivotVoltage, pivotStatorCurrentAmps, pivotSupplyCurrentAmps, pivotTempC, pivotRotations);
+        50.0,
+        pivotVelocity,
+        pivotVoltage,
+        pivotStatorCurrentAmps,
+        pivotSupplyCurrentAmps,
+        pivotTempC,
+        pivotRotations);
     pivotMotor.optimizeBusUtilization();
 
     var flywheelConfig = new TalonFXConfiguration();

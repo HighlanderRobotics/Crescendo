@@ -64,20 +64,42 @@ public class ElevatorIOReal implements ElevatorIO {
     follower.getConfigurator().apply(new TalonFXConfiguration());
     follower.setControl(new Follower(motor.getDeviceID(), true));
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, statorCurrent, supplyCurrent, temp, followerStatorCurrent, followerSupplyCurrent, followerTemp);
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50.0,
+        position,
+        velocity,
+        voltage,
+        statorCurrent,
+        supplyCurrent,
+        temp,
+        followerStatorCurrent,
+        followerSupplyCurrent,
+        followerTemp);
     motor.optimizeBusUtilization();
     follower.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(position, velocity, voltage, statorCurrent, supplyCurrent, temp, followerStatorCurrent, followerSupplyCurrent, followerTemp);
+    BaseStatusSignal.refreshAll(
+        position,
+        velocity,
+        voltage,
+        statorCurrent,
+        supplyCurrent,
+        temp,
+        followerStatorCurrent,
+        followerSupplyCurrent,
+        followerTemp);
     inputs.elevatorPositionMeters = position.getValueAsDouble();
     inputs.elevatorVelocityMetersPerSec = velocity.getValueAsDouble();
     inputs.elevatorAppliedVolts = voltage.getValueAsDouble();
-    inputs.elevatorStatorCurrentAmps = new double[] {statorCurrent.getValueAsDouble(), followerStatorCurrent.getValueAsDouble()};
-    inputs.elevatorSupplyCurrentAmps = new double[] {supplyCurrent.getValueAsDouble(), followerSupplyCurrent.getValueAsDouble()};
-    inputs.elevatorTempCelsius = new double[] {temp.getValueAsDouble(), followerTemp.getValueAsDouble()};
+    inputs.elevatorStatorCurrentAmps =
+        new double[] {statorCurrent.getValueAsDouble(), followerStatorCurrent.getValueAsDouble()};
+    inputs.elevatorSupplyCurrentAmps =
+        new double[] {supplyCurrent.getValueAsDouble(), followerSupplyCurrent.getValueAsDouble()};
+    inputs.elevatorTempCelsius =
+        new double[] {temp.getValueAsDouble(), followerTemp.getValueAsDouble()};
   }
 
   @Override
