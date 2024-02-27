@@ -21,7 +21,8 @@ public class FeederIOReal implements FeederIO {
 
   private final StatusSignal<Double> velocity = motor.getVelocity();
   private final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  private final StatusSignal<Double> current = motor.getStatorCurrent();
+  private final StatusSignal<Double> statorCurrent = motor.getStatorCurrent();
+  private final StatusSignal<Double> supplyCurrent = motor.getSupplyCurrent();
   private final StatusSignal<Double> temp = motor.getDeviceTemp();
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
@@ -36,17 +37,18 @@ public class FeederIOReal implements FeederIO {
 
     motor.getConfigurator().apply(config);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, current, temp);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, statorCurrent, temp, supplyCurrent);
     motor.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(final FeederIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(velocity, voltage, current, temp);
+    BaseStatusSignal.refreshAll(velocity, voltage, statorCurrent, supplyCurrent, temp);
 
     inputs.feederVelocityRotationsPerSec = velocity.getValue();
     inputs.feederAppliedVolts = voltage.getValue();
-    inputs.feederCurrentAmps = current.getValue();
+    inputs.feederStatorCurrentAmps = statorCurrent.getValue();
+    inputs.feederSupplyCurrentAmps = supplyCurrent.getValue();
     inputs.feederTempC = temp.getValue();
 
     inputs.firstBeambreak = firstBeambreak.get();

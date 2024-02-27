@@ -11,7 +11,8 @@ public interface FeederIO {
   public static class FeederIOInputs {
     public double feederVelocityRotationsPerSec = 0.0;
     public double feederAppliedVolts = 0.0;
-    public double feederCurrentAmps = 0.0;
+    public double feederStatorCurrentAmps = 0.0;
+    public double feederSupplyCurrentAmps = 0.0;
     public double feederTempC = 0.0;
 
     public boolean firstBeambreak = false;
