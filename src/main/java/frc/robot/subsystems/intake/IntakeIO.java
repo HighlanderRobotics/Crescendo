@@ -28,6 +28,10 @@ public interface IntakeIO {
   /** Run the intake at a specified voltage */
   public void setIntakeVoltage(final double volts);
 
+  public void setIntakeSpeed(final double rps);
+
   /** Run the centering wheels at a specified voltage */
   public void setCenteringVoltage(final double volts);
+
+  public void setCenteringSpeed(final double rps);
 }
