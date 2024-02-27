@@ -58,14 +58,16 @@ public class ModuleIOReal implements ModuleIO {
   private final Queue<Double> drivePositionQueue;
   private final StatusSignal<Double> driveVelocity;
   private final StatusSignal<Double> driveAppliedVolts;
-  private final StatusSignal<Double> driveCurrent;
+  private final StatusSignal<Double> driveStatorCurrent;
+  private final StatusSignal<Double> driveSupplyCurrent;
 
   private final StatusSignal<Double> turnAbsolutePosition;
   private final StatusSignal<Double> turnPosition;
   private final Queue<Double> turnPositionQueue;
   private final StatusSignal<Double> turnVelocity;
   private final StatusSignal<Double> turnAppliedVolts;
-  private final StatusSignal<Double> turnCurrent;
+  private final StatusSignal<Double> turnStatorCurrent;
+  private final StatusSignal<Double> turnSupplyCurrent;
 
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
@@ -148,7 +150,8 @@ public class ModuleIOReal implements ModuleIO {
         PhoenixOdometryThread.getInstance().registerSignal(driveTalon, driveTalon.getPosition());
     driveVelocity = driveTalon.getVelocity();
     driveAppliedVolts = driveTalon.getMotorVoltage();
-    driveCurrent = driveTalon.getStatorCurrent();
+    driveStatorCurrent = driveTalon.getStatorCurrent();
+    driveSupplyCurrent = driveTalon.getSupplyCurrent();
 
     turnAbsolutePosition = cancoder.getAbsolutePosition();
     turnPosition = turnTalon.getPosition();
@@ -156,7 +159,8 @@ public class ModuleIOReal implements ModuleIO {
         PhoenixOdometryThread.getInstance().registerSignal(turnTalon, turnTalon.getPosition());
     turnVelocity = turnTalon.getVelocity();
     turnAppliedVolts = turnTalon.getMotorVoltage();
-    turnCurrent = turnTalon.getStatorCurrent();
+    turnStatorCurrent = turnTalon.getStatorCurrent();
+    turnSupplyCurrent = turnTalon.getSupplyCurrent();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -164,11 +168,13 @@ public class ModuleIOReal implements ModuleIO {
         50.0,
         driveVelocity,
         driveAppliedVolts,
-        driveCurrent,
+        driveStatorCurrent,
+        driveSupplyCurrent,
         turnAbsolutePosition,
         turnVelocity,
         turnAppliedVolts,
-        turnCurrent);
+        turnStatorCurrent,
+        turnSupplyCurrent);
     driveTalon.optimizeBusUtilization();
     turnTalon.optimizeBusUtilization();
     cancoder.optimizeBusUtilization();
@@ -180,23 +186,25 @@ public class ModuleIOReal implements ModuleIO {
         drivePosition,
         driveVelocity,
         driveAppliedVolts,
-        driveCurrent,
+        driveStatorCurrent,
         turnAbsolutePosition,
         turnPosition,
         turnVelocity,
         turnAppliedVolts,
-        turnCurrent);
+        turnStatorCurrent);
 
     inputs.drivePositionMeters = drivePosition.getValueAsDouble();
     inputs.driveVelocityMetersPerSec = driveVelocity.getValueAsDouble();
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
-    inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
+    inputs.driveStatorCurrentAmps = driveStatorCurrent.getValueAsDouble();
+    inputs.driveSupplyCurrentAmps = driveSupplyCurrent.getValueAsDouble();
 
     inputs.turnAbsolutePosition = Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
     inputs.turnPosition = Rotation2d.fromRotations(turnPosition.getValueAsDouble());
     inputs.turnVelocityRadPerSec = Units.rotationsToRadians(turnVelocity.getValueAsDouble());
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
-    inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
+    inputs.turnStatorCurrentAmps = turnStatorCurrent.getValueAsDouble();
+    inputs.turnSupplyCurrentAmps = turnSupplyCurrent.getValueAsDouble();
 
     inputs.odometryDrivePositionsMeters =
         drivePositionQueue.stream().mapToDouble(Units::rotationsToRadians).toArray();
