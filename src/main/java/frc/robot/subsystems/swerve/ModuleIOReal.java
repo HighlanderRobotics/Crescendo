@@ -25,11 +25,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.google.common.collect.ImmutableSet;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
-import java.util.Queue;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 
 /**
  * Module IO implementation for Talon FX drive motor controller, Talon FX turn motor controller, and
@@ -56,17 +57,17 @@ public class ModuleIOReal implements ModuleIO {
 
   // Signals
   private final StatusSignal<Double> drivePosition;
-  private final Queue<Double> drivePositionQueue;
   private final StatusSignal<Double> driveVelocity;
   private final StatusSignal<Double> driveAppliedVolts;
   private final StatusSignal<Double> driveCurrent;
 
   private final StatusSignal<Double> turnAbsolutePosition;
   private final StatusSignal<Double> turnPosition;
-  private final Queue<Double> turnPositionQueue;
   private final StatusSignal<Double> turnVelocity;
   private final StatusSignal<Double> turnAppliedVolts;
   private final StatusSignal<Double> turnCurrent;
+
+  private double lastUpdate = 0;
 
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
@@ -146,19 +147,20 @@ public class ModuleIOReal implements ModuleIO {
     cancoder.getConfigurator().apply(cancoderConfig);
 
     drivePosition = driveTalon.getPosition();
-    drivePositionQueue =
-        PhoenixOdometryThread.getInstance().registerSignal(driveTalon, driveTalon.getPosition());
     driveVelocity = driveTalon.getVelocity();
     driveAppliedVolts = driveTalon.getMotorVoltage();
     driveCurrent = driveTalon.getStatorCurrent();
 
     turnAbsolutePosition = cancoder.getAbsolutePosition();
     turnPosition = turnTalon.getPosition();
-    turnPositionQueue =
-        PhoenixOdometryThread.getInstance().registerSignal(turnTalon, turnTalon.getPosition());
     turnVelocity = turnTalon.getVelocity();
     turnAppliedVolts = turnTalon.getMotorVoltage();
     turnCurrent = turnTalon.getStatorCurrent();
+
+    PhoenixOdometryThread.getInstance()
+        .registerSignals(
+            new Registration(driveTalon, ImmutableSet.of(drivePosition)),
+            new Registration(turnTalon, ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -200,14 +202,23 @@ public class ModuleIOReal implements ModuleIO {
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
+    var samples =
+        PhoenixOdometryThread.getInstance()
+            .samplesSince(lastUpdate, ImmutableSet.of(drivePosition, turnPosition));
+    if (!samples.isEmpty()) {
+      lastUpdate = samples.get(samples.size() - 1).timestamp();
+    }
+
+    inputs.odometryTimestamps = samples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
-        drivePositionQueue.stream().mapToDouble(Units::rotationsToRadians).toArray();
+        samples.stream().filter(s -> s != null).mapToDouble(s -> s.values().get(drivePosition)).toArray();
     inputs.odometryTurnPositions =
-        turnPositionQueue.stream()
-            .map(Rotation2d::fromRotations) // should be after offset + gear ratio
+        samples.stream()
+            // should be after offset + gear ratio
+            .map(s -> s.values().get(turnPosition))
+            .filter(s -> s != null)
+            .map(Rotation2d::fromRotations)
             .toArray(Rotation2d[]::new);
-    drivePositionQueue.clear();
-    turnPositionQueue.clear();
   }
 
   @Override

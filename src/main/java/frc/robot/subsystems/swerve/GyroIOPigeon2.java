@@ -18,16 +18,17 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
+import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
-import java.util.Queue;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 
 /** IO implementation for Pigeon2 */
 public class GyroIOPigeon2 implements GyroIO {
   private final Pigeon2 pigeon = new Pigeon2(SwerveSubsystem.PIGEON_ID, "canivore");
   private final StatusSignal<Double> yaw = pigeon.getYaw();
-  private final Queue<Double> yawPositionQueue;
   private final StatusSignal<Double> yawVelocity = pigeon.getAngularVelocityZWorld();
+  private double lastUpdate = 0;
 
   public GyroIOPigeon2() {
     var config = new Pigeon2Configuration();
@@ -36,7 +37,8 @@ public class GyroIOPigeon2 implements GyroIO {
     yaw.setUpdateFrequency(Module.ODOMETRY_FREQUENCY_HZ);
     yawVelocity.setUpdateFrequency(100.0);
     pigeon.optimizeBusUtilization();
-    yawPositionQueue = PhoenixOdometryThread.getInstance().registerSignal(pigeon, pigeon.getYaw());
+    PhoenixOdometryThread.getInstance()
+        .registerSignals(new Registration(pigeon, ImmutableSet.of(yaw)));
   }
 
   @Override
@@ -45,11 +47,18 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.yawPosition = Rotation2d.fromDegrees(yaw.getValueAsDouble());
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(yawVelocity.getValueAsDouble());
 
+    var samples =
+        PhoenixOdometryThread.getInstance().samplesSince(lastUpdate, ImmutableSet.of(yaw));
+    if (!samples.isEmpty()) {
+      lastUpdate = samples.get(samples.size() - 1).timestamp();
+    }
+
     inputs.odometryYawPositions =
-        yawPositionQueue.stream()
-            .map((Double value) -> Rotation2d.fromDegrees(value))
-            .toArray(Rotation2d[]::new);
-    yawPositionQueue.clear();
+        samples.stream()
+          .map(s -> s.values().get(yaw))
+          .filter(s -> s != null)
+          .map(Rotation2d::fromRotations)
+          .toArray(Rotation2d[]::new);
   }
 
   @Override

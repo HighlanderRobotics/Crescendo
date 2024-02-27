@@ -11,6 +11,10 @@
       "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
       "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
       "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
       "/SmartDashboard/Run Elevator Sysid": "Command",
       "/SmartDashboard/Run Flywheel Sysid": "Command",
       "/SmartDashboard/Run Pivot Sysid": "Command",
@@ -27,6 +31,20 @@
     }
   },
   "NetworkTables Info": {
+    "AdvantageScope@1": {
+      "Publishers": {
+        "open": true
+      },
+      "Subscribers": {
+        "open": true
+      }
+    },
+    "Clients": {
+      "open": true
+    },
     "visible": true
+  },
+  "NetworkTables View": {
+    "visible": false
   }
 }
