@@ -25,8 +25,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.google.common.collect.ImmutableSet;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
@@ -211,7 +211,10 @@ public class ModuleIOReal implements ModuleIO {
 
     inputs.odometryTimestamps = samples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
-        samples.stream().filter(s -> s != null).mapToDouble(s -> s.values().get(drivePosition)).toArray();
+        samples.stream()
+            .filter(s -> s != null)
+            .mapToDouble(s -> s.values().get(drivePosition))
+            .toArray();
     inputs.odometryTurnPositions =
         samples.stream()
             // should be after offset + gear ratio
