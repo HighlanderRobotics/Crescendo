@@ -13,17 +13,20 @@ public interface ShooterIO {
     public Rotation2d pivotRotation = new Rotation2d();
     public double pivotVelocityRotationsPerSecond = 0.0;
     public double pivotVoltage = 0.0;
-    public double pivotAmps = 0.0;
+    public double pivotStatorCurrentAmps = 0.0;
+    public double pivotSupplyCurrentAmps = 0.0;
     public double pivotTempC = 0.0;
 
     public double flywheelLeftVoltage = 0.0;
     public double flywheelLeftVelocityRotationsPerSecond = 0.0;
-    public double flywheelLeftAmps = 0.0;
+    public double flywheelLeftStatorCurrentAmps = 0.0;
+    public double flywheelLeftSupplyCurrentAmps = 0.0;
     public double flywheelLeftTempC = 0.0;
 
     public double flywheelRightVoltage = 0.0;
     public double flywheelRightVelocityRotationsPerSecond = 0.0;
-    public double flywheelRightAmps = 0.0;
+    public double flywheelRightStatorCurrentAmps = 0.0;
+    public double flywheelRightSupplyCurrentAmps = 0.0;
     public double flywheelRightTempC = 0.0;
   }
 

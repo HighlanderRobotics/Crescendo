@@ -52,18 +52,18 @@ public class ShooterIOSim implements ShooterIO {
     inputs.pivotVelocityRotationsPerSecond =
         Units.rotationsToRadians(pivotSim.getVelocityRadPerSec());
     inputs.pivotVoltage = 0.0;
-    inputs.pivotAmps = pivotSim.getCurrentDrawAmps();
+    inputs.pivotStatorCurrentAmps = pivotSim.getCurrentDrawAmps();
     inputs.pivotTempC = 0.0;
 
     inputs.flywheelLeftVelocityRotationsPerSecond = leftFlywheelSim.getAngularVelocityRPM() / 60.0;
     inputs.flywheelLeftVoltage = 0.0;
-    inputs.flywheelLeftAmps = leftFlywheelSim.getCurrentDrawAmps();
+    inputs.flywheelLeftStatorCurrentAmps = leftFlywheelSim.getCurrentDrawAmps();
     inputs.flywheelLeftTempC = 0.0;
 
     inputs.flywheelRightVelocityRotationsPerSecond =
         rightFlywheelSim.getAngularVelocityRPM() / 60.0;
     inputs.flywheelRightVoltage = 0.0;
-    inputs.flywheelRightAmps = rightFlywheelSim.getCurrentDrawAmps();
+    inputs.flywheelRightStatorCurrentAmps = rightFlywheelSim.getCurrentDrawAmps();
     inputs.flywheelRightTempC = 0.0;
   }
 
