@@ -1,4 +1,4 @@
-// Copyright 2021-2024 FRC 6328
+// Copyright 2021-2024 FRC 6328, FRC 8033, Kevin Clark
 // http://github.com/Mechanical-Advantage
 //
 // This program is free software; you can redistribute it and/or
@@ -17,30 +17,36 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Provides an interface for asynchronously reading high-frequency measurements to a set of queues.
+ * Provides an interface for high frequency sampling of Phoenix devices.
  *
- * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses. When using
- * a CANivore, the thread uses the "waitForAll" blocking method to enable more consistent sampling.
- * This also allows Phoenix Pro users to benefit from lower latency between devices using CANivore
- * time synchronization.
+ * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses. CAN FD
+ * compliant devices are required (TalonFX, CANCoder, Pigeon 2.0, CANdle) due to the use of the
+ * "waitForAll" blocking method to enable more consistent sampling. This also allows Phoenix Pro
+ * users to benefit from lower latency between devices using CANivore time synchronization.
  */
 public class PhoenixOdometryThread extends Thread {
-  private final Lock signalsLock =
-      new ReentrantLock(); // Prevents conflicts when registering signals
-  private BaseStatusSignal[] signals = new BaseStatusSignal[0];
-  private final List<Queue<Double>> queues = new ArrayList<>();
-  private final List<Queue<Double>> timestampQueues = new ArrayList<>();
-  private boolean isCANFD = false;
+  public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
+
+  public record Samples(double timestamp, Map<BaseStatusSignal, Double> values) {}
+
+  private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
+
+  private final Set<BaseStatusSignal> signals = Sets.newHashSet();
+  private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
 
@@ -51,88 +57,95 @@ public class PhoenixOdometryThread extends Thread {
     return instance;
   }
 
-  private PhoenixOdometryThread() {
+  // Used for testing
+  protected static PhoenixOdometryThread createWithJournal(final Queue<Samples> journal) {
+    return new PhoenixOdometryThread(journal);
+  }
+
+  private PhoenixOdometryThread(final Queue<Samples> journal) {
     setName("PhoenixOdometryThread");
     setDaemon(true);
+
+    this.journal = journal;
   }
 
-  @Override
-  public void start() {
-    if (timestampQueues.size() > 0) {
-      super.start();
-    }
+  private PhoenixOdometryThread() {
+    this(EvictingQueue.create(20));
   }
 
-  public Queue<Double> registerSignal(ParentDevice device, StatusSignal<Double> signal) {
-    Queue<Double> queue = new ArrayDeque<>(100);
-    signalsLock.lock();
-    SwerveSubsystem.odometryLock.lock();
+  public void registerSignals(Collection<Registration> registrations) {
+    registerSignals(registrations.toArray(new Registration[] {}));
+  }
+
+  // Returns a handle which can be used to collect the last 20 signal results
+  public void registerSignals(Registration... registrations) {
+    var writeLock = journalLock.writeLock();
+
     try {
-      isCANFD = CANBus.isNetworkFD(device.getNetwork());
-      BaseStatusSignal[] newSignals = new BaseStatusSignal[signals.length + 1];
-      System.arraycopy(signals, 0, newSignals, 0, signals.length);
-      newSignals[signals.length] = signal;
-      signals = newSignals;
-      queues.add(queue);
+      writeLock.lock();
+
+      for (var registration : registrations) {
+        assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
+
+        signals.addAll(registration.signals);
+      }
     } finally {
-      signalsLock.unlock();
-      SwerveSubsystem.odometryLock.unlock();
+      writeLock.unlock();
     }
-    return queue;
   }
 
-  public Queue<Double> makeTimestampQueue() {
-    Queue<Double> queue = new ArrayDeque<>(100);
-    SwerveSubsystem.odometryLock.lock();
+  public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
+    var readLock = journalLock.readLock();
     try {
-      timestampQueues.add(queue);
+      readLock.lock();
+
+      return journal.stream()
+          .filter(s -> s.timestamp > timestamp)
+          .map(
+              s -> {
+                var filteredValues =
+                    s.values.entrySet().stream()
+                        .filter(e -> signals.contains(e.getKey()))
+                        .collect(
+                            Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+                return new Samples(s.timestamp, filteredValues);
+              })
+          .collect(Collectors.toUnmodifiableList());
     } finally {
-      SwerveSubsystem.odometryLock.unlock();
+      readLock.unlock();
     }
-    return queue;
   }
 
   @Override
   public void run() {
     while (true) {
       // Wait for updates from all signals
-      signalsLock.lock();
-      try {
-        if (isCANFD) {
-          BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals);
-        } else {
-          // "waitForAll" does not support blocking on multiple
-          // signals with a bus that is not CAN FD, regardless
-          // of Pro licensing. No reasoning for this behavior
-          // is provided by the documentation.
-          Thread.sleep((long) (1000.0 / Module.ODOMETRY_FREQUENCY_HZ));
-          if (signals.length > 0) BaseStatusSignal.refreshAll(signals);
-        }
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      } finally {
-        signalsLock.unlock();
-      }
+      var writeLock = journalLock.writeLock();
 
-      // Save new data to queues
-      SwerveSubsystem.odometryLock.lock();
       try {
-        double timestamp = Logger.getRealTimestamp() / 1e6;
-        double totalLatency =
-            Arrays.stream(signals).mapToDouble(s -> s.getTimestamp().getLatency()).sum();
-        if (signals.length > 0) {
-          timestamp -= totalLatency / signals.length;
-        }
+        writeLock.lock();
 
-        for (int i = 0; i < signals.length; i++) {
-          queues.get(i).offer(signals[i].getValueAsDouble());
-        }
-        for (int i = 0; i < timestampQueues.size(); i++) {
-          timestampQueues.get(i).offer(timestamp);
-        }
+        // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
+        // but keeping up a symmetric array is too and it's probably negligible on latency.
+        BaseStatusSignal.waitForAll(
+            2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
+        journal.add(
+            new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
       } finally {
-        SwerveSubsystem.odometryLock.unlock();
+        writeLock.unlock();
       }
+    }
+  }
+
+  private double timestampFor(Set<BaseStatusSignal> signals) {
+    final double totalTimestamp =
+        signals.stream().mapToDouble(s -> s.getTimestamp().getTime()).sum();
+
+    // Account for mean latency for a "good enough" timestamp
+    if (!signals.isEmpty()) {
+      return totalTimestamp / signals.size();
+    } else {
+      return Logger.getRealTimestamp() / 1e6;
     }
   }
 }
