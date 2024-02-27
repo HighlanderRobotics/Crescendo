@@ -22,7 +22,8 @@ public class CarriageIOReal implements CarriageIO {
 
   final StatusSignal<Double> velocity = motor.getVelocity();
   final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  final StatusSignal<Double> amperage = motor.getStatorCurrent();
+  final StatusSignal<Double> statorCurrent = motor.getStatorCurrent();
+  final StatusSignal<Double> supplyCurrent = motor.getSupplyCurrent();
   final StatusSignal<Double> temp = motor.getDeviceTemp();
 
   public CarriageIOReal() {
@@ -31,18 +32,19 @@ public class CarriageIOReal implements CarriageIO {
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
     motor.getConfigurator().apply(config);
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, amperage, temp);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, statorCurrent, supplyCurrent, temp);
     motor.optimizeBusUtilization();
   }
 
   /** Updates the set of loggable inputs. */
   @Override
   public void updateInputs(final CarriageIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(velocity, voltage, amperage, temp);
+    BaseStatusSignal.refreshAll(velocity, voltage, statorCurrent, supplyCurrent, temp);
     inputs.velocityRotationsPerSecond = velocity.getValueAsDouble();
     inputs.appliedVolts = voltage.getValueAsDouble();
-    inputs.currentAmps = new double[] {amperage.getValueAsDouble()};
-    inputs.temperatureCelsius = new double[] {temp.getValueAsDouble()};
+    inputs.statorCurrentAmps = statorCurrent.getValueAsDouble();
+    inputs.supplyCurrentAmps = supplyCurrent.getValueAsDouble();
+    inputs.temperatureCelsius = temp.getValueAsDouble();
 
     inputs.beambreak = beambreak.get();
   }

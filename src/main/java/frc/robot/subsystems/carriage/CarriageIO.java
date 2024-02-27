@@ -11,9 +11,9 @@ public interface CarriageIO {
   public static class CarriageIOInputs {
     public double velocityRotationsPerSecond = 0.0;
     public double appliedVolts = 0.0;
-    public double[] currentAmps = new double[] {};
-    public double[] temperatureCelsius = new double[] {};
-    // Not in cad as of 1/28 but requested
+    public double statorCurrentAmps = 0.0;
+    public double supplyCurrentAmps = 0.0;
+    public double temperatureCelsius = 0.0;
     public boolean beambreak = false;
   }
 
