@@ -26,8 +26,13 @@ public class ElevatorIOReal implements ElevatorIO {
   private final StatusSignal<Double> position = motor.getPosition();
   private final StatusSignal<Double> velocity = motor.getVelocity();
   private final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  private final StatusSignal<Double> current = motor.getStatorCurrent();
+  private final StatusSignal<Double> statorCurrent = motor.getStatorCurrent();
+  private final StatusSignal<Double> supplyCurrent = motor.getSupplyCurrent();
   private final StatusSignal<Double> temp = motor.getDeviceTemp();
+
+  private final StatusSignal<Double> followerStatorCurrent = follower.getStatorCurrent();
+  private final StatusSignal<Double> followerSupplyCurrent = follower.getSupplyCurrent();
+  private final StatusSignal<Double> followerTemp = follower.getDeviceTemp();
 
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
@@ -59,19 +64,20 @@ public class ElevatorIOReal implements ElevatorIO {
     follower.getConfigurator().apply(new TalonFXConfiguration());
     follower.setControl(new Follower(motor.getDeviceID(), true));
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, current, temp);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, statorCurrent, supplyCurrent, temp, followerStatorCurrent, followerSupplyCurrent, followerTemp);
     motor.optimizeBusUtilization();
     follower.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(position, velocity, voltage, current, temp);
+    BaseStatusSignal.refreshAll(position, velocity, voltage, statorCurrent, supplyCurrent, temp, followerStatorCurrent, followerSupplyCurrent, followerTemp);
     inputs.elevatorPositionMeters = position.getValueAsDouble();
     inputs.elevatorVelocityMetersPerSec = velocity.getValueAsDouble();
     inputs.elevatorAppliedVolts = voltage.getValueAsDouble();
-    inputs.elevatorCurrentAmps = new double[] {current.getValueAsDouble()};
-    inputs.elevatorTempCelsius = new double[] {temp.getValueAsDouble()};
+    inputs.elevatorStatorCurrentAmps = new double[] {statorCurrent.getValueAsDouble(), followerStatorCurrent.getValueAsDouble()};
+    inputs.elevatorSupplyCurrentAmps = new double[] {supplyCurrent.getValueAsDouble(), followerSupplyCurrent.getValueAsDouble()};
+    inputs.elevatorTempCelsius = new double[] {temp.getValueAsDouble(), followerTemp.getValueAsDouble()};
   }
 
   @Override

@@ -39,7 +39,7 @@ public class ElevatorIOSim implements ElevatorIO {
     inputs.elevatorPositionMeters = physicsSim.getPositionMeters();
     inputs.elevatorVelocityMetersPerSec = physicsSim.getVelocityMetersPerSecond();
     inputs.elevatorAppliedVolts = volts;
-    inputs.elevatorCurrentAmps = new double[] {physicsSim.getCurrentDrawAmps()};
+    inputs.elevatorStatorCurrentAmps = new double[] {physicsSim.getCurrentDrawAmps()};
     inputs.elevatorTempCelsius = new double[] {20.0};
   }
 

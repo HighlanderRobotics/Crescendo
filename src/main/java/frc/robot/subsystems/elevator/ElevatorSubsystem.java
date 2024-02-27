@@ -91,7 +91,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public Command runCurrentZeroing() {
     return this.run(() -> io.setVoltage(-1.0))
-        .until(() -> inputs.elevatorCurrentAmps[0] > 40.0)
+        .until(() -> inputs.elevatorStatorCurrentAmps[0] > 40.0)
         .finallyDo(() -> io.resetEncoder(0.0));
   }
 
