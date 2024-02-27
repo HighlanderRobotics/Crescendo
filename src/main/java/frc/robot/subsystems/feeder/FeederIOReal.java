@@ -45,11 +45,11 @@ public class FeederIOReal implements FeederIO {
   public void updateInputs(final FeederIOInputsAutoLogged inputs) {
     BaseStatusSignal.refreshAll(velocity, voltage, statorCurrent, supplyCurrent, temp);
 
-    inputs.feederVelocityRotationsPerSec = velocity.getValue();
-    inputs.feederAppliedVolts = voltage.getValue();
-    inputs.feederStatorCurrentAmps = statorCurrent.getValue();
-    inputs.feederSupplyCurrentAmps = supplyCurrent.getValue();
-    inputs.feederTempC = temp.getValue();
+    inputs.feederVelocityRotationsPerSec = velocity.getValueAsDouble();
+    inputs.feederAppliedVolts = voltage.getValueAsDouble();
+    inputs.feederStatorCurrentAmps = statorCurrent.getValueAsDouble();
+    inputs.feederSupplyCurrentAmps = supplyCurrent.getValueAsDouble();
+    inputs.feederTempC = temp.getValueAsDouble();
 
     inputs.firstBeambreak = firstBeambreak.get();
     inputs.lastBeambreak = lastBeambreak.get();

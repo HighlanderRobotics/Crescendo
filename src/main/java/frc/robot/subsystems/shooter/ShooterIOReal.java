@@ -130,24 +130,24 @@ public class ShooterIOReal implements ShooterIO {
         flywheelRightSupplyCurrentAmps,
         flywheelRightTempC);
 
-    inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
-    inputs.pivotVelocityRotationsPerSecond = pivotVelocity.getValue();
-    inputs.pivotVoltage = pivotVoltage.getValue();
-    inputs.pivotStatorCurrentAmps = pivotStatorCurrentAmps.getValue();
-    inputs.pivotSupplyCurrentAmps = pivotSupplyCurrentAmps.getValue();
-    inputs.pivotTempC = pivotTempC.getValue();
+    inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValueAsDouble());
+    inputs.pivotVelocityRotationsPerSecond = pivotVelocity.getValueAsDouble();
+    inputs.pivotVoltage = pivotVoltage.getValueAsDouble();
+    inputs.pivotStatorCurrentAmps = pivotStatorCurrentAmps.getValueAsDouble();
+    inputs.pivotSupplyCurrentAmps = pivotSupplyCurrentAmps.getValueAsDouble();
+    inputs.pivotTempC = pivotTempC.getValueAsDouble();
 
-    inputs.flywheelLeftVelocityRotationsPerSecond = flywheelLeftVelocity.getValue();
-    inputs.flywheelLeftVoltage = flywheelLeftVoltage.getValue();
-    inputs.flywheelLeftStatorCurrentAmps = flywheelLeftStatorCurrentAmps.getValue();
-    inputs.flywheelLeftSupplyCurrentAmps = flywheelLeftSupplyCurrentAmps.getValue();
-    inputs.flywheelLeftTempC = flywheelLeftTempC.getValue();
+    inputs.flywheelLeftVelocityRotationsPerSecond = flywheelLeftVelocity.getValueAsDouble();
+    inputs.flywheelLeftVoltage = flywheelLeftVoltage.getValueAsDouble();
+    inputs.flywheelLeftStatorCurrentAmps = flywheelLeftStatorCurrentAmps.getValueAsDouble();
+    inputs.flywheelLeftSupplyCurrentAmps = flywheelLeftSupplyCurrentAmps.getValueAsDouble();
+    inputs.flywheelLeftTempC = flywheelLeftTempC.getValueAsDouble();
 
-    inputs.flywheelRightVelocityRotationsPerSecond = flywheelRightVelocity.getValue();
-    inputs.flywheelRightVoltage = flywheelRightVoltage.getValue();
-    inputs.flywheelRightStatorCurrentAmps = flywheelRightStatorCurrentAmps.getValue();
-    inputs.flywheelRightSupplyCurrentAmps = flywheelRightSupplyCurrentAmps.getValue();
-    inputs.flywheelRightTempC = flywheelRightTempC.getValue();
+    inputs.flywheelRightVelocityRotationsPerSecond = flywheelRightVelocity.getValueAsDouble();
+    inputs.flywheelRightVoltage = flywheelRightVoltage.getValueAsDouble();
+    inputs.flywheelRightStatorCurrentAmps = flywheelRightStatorCurrentAmps.getValueAsDouble();
+    inputs.flywheelRightSupplyCurrentAmps = flywheelRightSupplyCurrentAmps.getValueAsDouble();
+    inputs.flywheelRightTempC = flywheelRightTempC.getValueAsDouble();
   }
 
   public void setPivotVoltage(final double voltage) {
