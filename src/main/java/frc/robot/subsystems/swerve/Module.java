@@ -80,7 +80,11 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(Rotation2d.fromRotations(inputs.turn.position)).getRadians()));
+            * Math.cos(
+                optimizedState
+                    .angle
+                    .minus(Rotation2d.fromRotations(inputs.turn.position))
+                    .getRadians()));
 
     return optimizedState;
   }
