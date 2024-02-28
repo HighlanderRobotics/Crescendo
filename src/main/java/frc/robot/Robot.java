@@ -88,6 +88,9 @@ public class Robot extends LoggedRobot {
                 public void setYaw(Rotation2d yaw) {}
               },
           mode == RobotMode.REAL
+              ? SwerveSubsystem.createRealCameras()
+              : SwerveSubsystem.createSimCameras(),
+          mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
               : SwerveSubsystem.createSimModules());
   private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
