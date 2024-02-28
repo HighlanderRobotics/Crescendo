@@ -1,17 +1,5 @@
 {
   "HALProvider": {
-    "Other Devices": {
-      "Talon FX (v6)[20]/Rotor Sensor": {
-        "header": {
-          "open": true
-        }
-      },
-      "window": {
-        "visible": false
-      }
-    }
-  },
-  "HALProvider": {
     "Addressable LEDs": {
       "window": {
         "visible": true
@@ -36,18 +24,18 @@
       "/SmartDashboard/Run Pivot Sysid": "Command",
       "/SmartDashboard/Run Swerve Azimuth Sysid": "Command",
       "/SmartDashboard/Run Swerve Drive Sysid": "Command",
+      "/SmartDashboard/SendableChooser[0]": "String Chooser",
+      "/SmartDashboard/Set robot pose center": "Command",
+      "/SmartDashboard/Shoot To Note": "Command",
       "/SmartDashboard/Shooter shoot": "Command",
+      "/SmartDashboard/Start To Note": "Command",
+      "/SmartDashboard/Update Note": "Command",
       "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left_Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right_Camera/Sim Field": "Field2d",
-      "/SmartDashboard/SendableChooser[0]": "String Chooser",
-      "/SmartDashboard/Shoot To Note": "Command",
-      "/SmartDashboard/Shooter shoot": "Command",
-      "/SmartDashboard/Start To Note": "Command",
-      "/SmartDashboard/Update Note": "Command",
       "/SmartDashboard/Whitelist All": "Command",
       "/SmartDashboard/Whitelist Note": "Command",
       "/SmartDashboard/gleeb": "Command",

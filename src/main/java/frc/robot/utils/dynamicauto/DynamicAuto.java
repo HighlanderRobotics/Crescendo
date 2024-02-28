@@ -11,6 +11,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
+
 import org.littletonrobotics.junction.Logger;
 
 public class DynamicAuto {
@@ -68,7 +69,7 @@ public class DynamicAuto {
 
   public static Command DynamicToShoot(Supplier<Pose2d> curPose) {
     return AutoBuilder.pathfindToPose(
-        closestShootingLocation(curPose, shootingLocations).getPoseAllianceSpicific(),
+        closestShootingLocation(curPose, shootingLocations).getPoseAllianceSpecific(),
         new PathConstraints(3.0, 4.0, Units.degreesToRadians(540), Units.degreesToRadians(720)));
   }
 
@@ -79,10 +80,10 @@ public class DynamicAuto {
     double shortestDistance = 9999999;
     for (ShootingLocation location : shootingLocations) {
       if (shortestDistance
-          > curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm()) {
+          > curPose.get().minus(location.getPoseAllianceSpecific()).getTranslation().getNorm()) {
         closestLocation = location;
         shortestDistance =
-            curPose.get().minus(location.getPoseAllianceSpicific()).getTranslation().getNorm();
+            curPose.get().minus(location.getPoseAllianceSpecific()).getTranslation().getNorm();
       }
     }
     return closestLocation;
@@ -90,7 +91,7 @@ public class DynamicAuto {
 
   public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
-    startingLocation.setPose(startingLocation.getPoseAllianceSpicific());
+    startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
     Note closestNote = getClosestNote(startingPose);
     if ("Uninitialized" == closestNote.getName()) {
       closestNote = getAbsoluteClosestNote(startingPose);

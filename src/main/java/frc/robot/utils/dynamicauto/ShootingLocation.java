@@ -36,7 +36,7 @@ public class ShootingLocation {
     return pose;
   }
 
-  public Pose2d getPoseAllianceSpicific() {
+  public Pose2d getPoseAllianceSpecific() {
     if (DriverStation.getAlliance().isPresent()) {
       if (DriverStation.getAlliance().get() == Alliance.Red) {
         return new Pose2d(

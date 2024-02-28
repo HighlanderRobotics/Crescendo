@@ -72,13 +72,14 @@ public class Robot extends LoggedRobot {
     SPEAKER
   }
 
-  private static enum CommandSelector {
+  private static enum AutoStepSelector {
     START_TO_NOTE,
     NOTE_TO_SHOOT,
     NOTE_TO_NOTE,
     SHOOT_TO_NOTE,
     DYNAMIC_TO_NOTE,
-    DYNAMIC_TO_SHOOT
+    DYNAMIC_TO_SHOOT,
+    END
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
@@ -391,7 +392,7 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData(
         "Set robot pose center",
         Commands.runOnce(
-            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpicific())));
+            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific())));
 
     SmartDashboard.putData("Dynamic Auto", dynamicAuto());
   }
@@ -447,9 +448,10 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
-            .getPoseAllianceSpicific());
+            .getPoseAllianceSpecific());
     Logger.recordOutput("DynamicAuto/Curent Trajectory Followed", curTrajectory.getPoses());
     Logger.recordOutput("DynamicAuto/Forward Trajectory Followed", forwardLookingTrajectory);
+    Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
@@ -666,16 +668,16 @@ public class Robot extends LoggedRobot {
     return Commands.runOnce(() -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist());
   }
 
-  public CommandSelector selectAuto() {
+  public AutoStepSelector selectAuto() {
     if (dynamicAutoCounter == 0) {
-
       System.out.println("start to note");
-      return CommandSelector.START_TO_NOTE;
-
+      return AutoStepSelector.START_TO_NOTE;
+    } else if (DynamicAuto.whitelistCount == 0) {
+      return AutoStepSelector.END;
     } else if (atShootingLocation) {
       atShootingLocation = false;
       System.out.println("shoot to note");
-      return CommandSelector.SHOOT_TO_NOTE;
+      return AutoStepSelector.SHOOT_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -690,7 +692,7 @@ public class Robot extends LoggedRobot {
       System.out.println("note to shoot");
       atShootingLocation = true;
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
-      return CommandSelector.NOTE_TO_SHOOT;
+      return AutoStepSelector.NOTE_TO_SHOOT;
     } else if ((!(carriage.getBeambreak() || feeder.getFirstBeambreak()) && Robot.isReal())
         || (!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -705,7 +707,7 @@ public class Robot extends LoggedRobot {
 
       System.out.println("note to note 1");
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
-      return CommandSelector.NOTE_TO_NOTE;
+      return AutoStepSelector.NOTE_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -719,26 +721,25 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
 
       System.out.println("dynamic to note");
-      return CommandSelector.DYNAMIC_TO_NOTE;
+      return AutoStepSelector.DYNAMIC_TO_NOTE;
     } else {
       atShootingLocation = true;
       System.out.println("dynamoci to shoot");
-      return CommandSelector.DYNAMIC_TO_SHOOT;
+      return AutoStepSelector.DYNAMIC_TO_SHOOT;
     }
   }
 
   double distance = 0;
 
   public Command dynamicAuto() {
-
     return Commands.repeatingSequence(
             Commands.select(
                 Map.ofEntries(
                     Map.entry(
-                        CommandSelector.NOTE_TO_NOTE,
+                        AutoStepSelector.NOTE_TO_NOTE,
                         Commands.race(noteToNote(), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
-                        CommandSelector.NOTE_TO_SHOOT,
+                        AutoStepSelector.NOTE_TO_SHOOT,
                         Commands.race(
                             noteToShoot(),
                             shooter.runStateCmd(
@@ -746,24 +747,25 @@ public class Robot extends LoggedRobot {
                                 () -> AutoAim.shotMap.get(distance).getLeftRPS(),
                                 () -> AutoAim.shotMap.get(distance).getRightRPS()))),
                     Map.entry(
-                        CommandSelector.START_TO_NOTE,
+                        AutoStepSelector.START_TO_NOTE,
                         Commands.race(startToNote(), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
-                        CommandSelector.SHOOT_TO_NOTE,
+                        AutoStepSelector.SHOOT_TO_NOTE,
                         Commands.race(shootToNote(), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
-                        CommandSelector.DYNAMIC_TO_NOTE,
+                        AutoStepSelector.DYNAMIC_TO_NOTE,
                         Commands.race(
                             DynamicAuto.DynamicToNote(swerve::getPose),
                             intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
-                        CommandSelector.DYNAMIC_TO_SHOOT,
+                        AutoStepSelector.DYNAMIC_TO_SHOOT,
                         Commands.race(
                             DynamicAuto.DynamicToShoot(swerve::getPose),
                             shooter.runStateCmd(
                                 () -> AutoAim.shotMap.get(distance).getRotation(),
                                 () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                () -> AutoAim.shotMap.get(distance).getRightRPS())))),
+                                () -> AutoAim.shotMap.get(distance).getRightRPS()))),
+                    Map.entry(AutoStepSelector.END, Commands.idle())),
                 this::selectAuto),
             Commands.runOnce(
                 () -> {
@@ -777,7 +779,7 @@ public class Robot extends LoggedRobot {
                           .getNorm();
                 }))
         .beforeStarting(
-            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpicific()))
+            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific()))
         .asProxy();
   }
 
@@ -787,9 +789,6 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     dynamicAutoCounter = 0;
-    for (Note note : DynamicAuto.notes) {
-      note.whitelist();
-    }
     dynamicAuto().schedule();
   }
 
