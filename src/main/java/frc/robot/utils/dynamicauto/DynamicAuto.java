@@ -9,6 +9,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
@@ -44,6 +46,9 @@ public class DynamicAuto {
   };
 
   public static int whitelistCount = notes.length;
+
+  public static ChoreoTrajectory curTrajectory = new ChoreoTrajectory();
+  public static Pose2d[] forwardLookingTrajectory = curTrajectory.getPoses();
 
   public static void updateWhitelistCount() {
     whitelistCount = 0;
@@ -192,4 +197,88 @@ public class DynamicAuto {
     }
     return poses;
   }
+
+  
+  public static Command startToNote(SwerveSubsystem swerve) {
+    return swerve
+        .runChoreoTraj(
+            () -> {
+              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose);
+              forwardLookingTrajectory =
+                  DynamicAuto.addTwoTrajectories(
+                      curTrajectory, DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
+              return curTrajectory;
+            })
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.whitelistCount > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public static Command noteToNote(SwerveSubsystem swerve) {
+    return swerve
+        .runChoreoTraj(
+            () -> {
+              System.out.println(DynamicAuto.whitelistCount);
+              curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose);
+              forwardLookingTrajectory =
+                  DynamicAuto.addTwoTrajectories(
+                      curTrajectory, DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
+              return DynamicAuto.makeNoteToNote(swerve::getPose);
+            })
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.whitelistCount > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public static Command shootToNote(SwerveSubsystem swerve) {
+    return swerve
+        .runChoreoTraj(
+            () -> {
+              curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose);
+              forwardLookingTrajectory =
+                  DynamicAuto.addTwoTrajectories(
+                      curTrajectory, DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
+              return DynamicAuto.makeShootingToNote(swerve::getPose);
+            })
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.whitelistCount > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
+  public static Command noteToShoot(SwerveSubsystem swerve) {
+    return swerve
+        .runChoreoTraj(
+            () -> {
+              curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose);
+              return DynamicAuto.makeNoteToShooting(swerve::getPose);
+            })
+        .onlyIf(
+            () -> {
+              if (DynamicAuto.whitelistCount > 0) {
+                return true;
+              } else {
+                System.out.println("No more avalible notes!!!!! >:(");
+                return false;
+              }
+            });
+  }
+
 }
