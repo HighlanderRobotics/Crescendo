@@ -47,7 +47,7 @@ public class DynamicAuto {
 
   public static int whitelistCount = notes.length;
 
-  public static ChoreoTrajectory curTrajectory = new ChoreoTrajectory();
+  public static ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
   public static Pose2d[] forwardLookingTrajectory = curTrajectory.getPoses();
 
   public static void updateWhitelistCount() {

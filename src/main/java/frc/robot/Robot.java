@@ -94,7 +94,6 @@ public class Robot extends LoggedRobot {
   private int dynamicAutoCounter = 0;
   private boolean atShootingLocation = false;
   private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
-  private Pose2d[] forwardLookingTrajectory = curTrajectory.getPoses();
 
 
   
@@ -425,8 +424,8 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPoseAllianceSpecific());
-    Logger.recordOutput("DynamicAuto/Curent Trajectory Followed", curTrajectory.getPoses());
-    Logger.recordOutput("DynamicAuto/Forward Trajectory Followed", forwardLookingTrajectory);
+    Logger.recordOutput("DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.getPoses());
+    Logger.recordOutput("DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
@@ -662,7 +661,7 @@ public class Robot extends LoggedRobot {
                           .getNorm();
                 }))
         .beforeStarting(
-            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific()))
+            () -> {swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific()); DynamicAuto.updateWhitelistCount();})
         .asProxy();
   }
 
