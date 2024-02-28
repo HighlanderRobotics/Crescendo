@@ -771,7 +771,7 @@ public class Robot extends LoggedRobot {
                           .minus(FieldConstants.getSpeaker())
                           .getTranslation()
                           .getNorm();
-                })).beforeStarting(() -> swerve.setPose(DynamicAuto.startingLocations[1].getPose()))
+                })).beforeStarting(() -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpicific()))
         .asProxy();
   }
 
