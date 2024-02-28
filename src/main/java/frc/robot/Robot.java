@@ -193,6 +193,7 @@ public class Robot extends LoggedRobot {
     for (Note note : DynamicAuto.notes) {
       noteDropdown.addOption(note.getName(), note);
     }
+    DynamicAuto.updateWhitelistCount();
 
     // Default Commands here
     swerve.setDefaultCommand(
