@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
+import frc.robot.subsystems.elevator.ElevatorIOReal;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
@@ -70,6 +71,8 @@ public class Robot extends LoggedRobot {
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
+
+  private final Boolean useAutoAim = true;
 
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = -0.1;
@@ -209,10 +212,7 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller
-        .leftTrigger()
-        // .and(() -> !(carriage.getBeambreak() || feeder.getFirstBeambreak()))
-        .whileTrue(intake.runVelocityCmd(80.0, 30.0));
+    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)

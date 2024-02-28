@@ -93,6 +93,9 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
     driveConfig.CurrentLimits.StatorCurrentLimit = 30.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    driveConfig.CurrentLimits.SupplyTimeThreshold = Module.DRIVE_SUPPLY_TIME_CUTOFF;
+    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
