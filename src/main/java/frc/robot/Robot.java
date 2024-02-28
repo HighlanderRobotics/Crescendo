@@ -388,6 +388,10 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
     SmartDashboard.putData("Update Note", updateNote());
+    SmartDashboard.putData(
+        "Set robot pose center",
+        Commands.runOnce(
+            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpicific())));
 
     SmartDashboard.putData("Dynamic Auto", dynamicAuto());
   }
