@@ -664,7 +664,7 @@ public class Robot extends LoggedRobot {
 
   public CommandSelector selectAuto() {
     if (dynamicAutoCounter == 0) {
-      
+
       System.out.println("start to note");
       return CommandSelector.START_TO_NOTE;
 
@@ -771,7 +771,9 @@ public class Robot extends LoggedRobot {
                           .minus(FieldConstants.getSpeaker())
                           .getTranslation()
                           .getNorm();
-                })).beforeStarting(() -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpicific()))
+                }))
+        .beforeStarting(
+            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpicific()))
         .asProxy();
   }
 
