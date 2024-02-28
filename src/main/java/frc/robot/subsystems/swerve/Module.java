@@ -80,7 +80,7 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
+            * Math.cos(optimizedState.angle.minus(Rotation2d.fromRotations(inputs.turn.position)).getRadians()));
 
     return optimizedState;
   }
@@ -108,17 +108,17 @@ public class Module {
 
   /** Returns the current turn angle of the module. */
   public Rotation2d getAngle() {
-    return inputs.turnPosition;
+    return Rotation2d.fromRotations(inputs.turn.position);
   }
 
   /** Returns the current drive position of the module in meters. */
   public double getPositionMeters() {
-    return inputs.drivePositionMeters;
+    return inputs.drive.position;
   }
 
   /** Returns the current drive velocity of the module in meters per second. */
   public double getVelocityMetersPerSec() {
-    return inputs.driveVelocityMetersPerSec;
+    return inputs.drive.velocity;
   }
 
   /** Returns the module position (turn angle and drive position). */
@@ -138,7 +138,7 @@ public class Module {
 
   /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
-    return inputs.driveVelocityMetersPerSec;
+    return inputs.drive.velocity;
   }
 
   /** Returns the timestamps of the samples received this cycle. */

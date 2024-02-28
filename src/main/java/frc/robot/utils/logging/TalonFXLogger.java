@@ -21,7 +21,7 @@ public class TalonFXLogger {
         public double supplyCurrentAmps = 0.0;
         public double temperatureCelsius = 0.0;
         public double position = 0.0;
-        public double velocityRotationsPerSecond = 0.0;
+        public double velocity = 0.0;
 
         public TalonFXLog(double appliedVolts, double statorCurrentAmps, double supplyCurrentAmps, double temperatureCelsius, double position, double velocityRotationsPerSecond) {
             this.appliedVolts = appliedVolts;
@@ -29,7 +29,7 @@ public class TalonFXLogger {
             this.supplyCurrentAmps = supplyCurrentAmps;
             this.temperatureCelsius = temperatureCelsius;
             this.position = position;
-            this.velocityRotationsPerSecond = velocityRotationsPerSecond;
+            this.velocity = velocityRotationsPerSecond;
         }
 
         public static TalonFXLogStruct struct = new TalonFXLogStruct();
@@ -73,7 +73,7 @@ public class TalonFXLogger {
                 bb.putDouble(value.supplyCurrentAmps);
                 bb.putDouble(value.temperatureCelsius);
                 bb.putDouble(value.position);
-                bb.putDouble(value.velocityRotationsPerSecond);
+                bb.putDouble(value.velocity);
             }
         }
     }
@@ -99,6 +99,10 @@ public class TalonFXLogger {
         if (shouldOptimizeBusUsage) talon.optimizeBusUtilization();
     }
 
+    public TalonFXLogger(TalonFX talon) {
+        this(talon, 50.0, true);
+    }
+
     public void update() {
         BaseStatusSignal.refreshAll(voltageSignal, statorCurrentSignal, supplyCurrentSignal, temperatureSignal);
         log.appliedVolts = voltageSignal.getValueAsDouble();
@@ -106,6 +110,6 @@ public class TalonFXLogger {
         log.supplyCurrentAmps = supplyCurrentSignal.getValueAsDouble();
         log.temperatureCelsius = temperatureSignal.getValueAsDouble();
         log.position = rotationSignal.getValueAsDouble();
-        log.velocityRotationsPerSecond = rotationSignal.getValueAsDouble();
+        log.velocity = rotationSignal.getValueAsDouble();
     }
 }
