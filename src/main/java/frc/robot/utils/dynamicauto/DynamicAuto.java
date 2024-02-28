@@ -51,7 +51,7 @@ public class DynamicAuto {
   public static void updateWhitelistCount() {
     whitelistCount = 0;
     for (Note note : notes) {
-      whitelistCount += note.getBlacklist() ? 1 : 0;
+      whitelistCount += note.getBlacklist() ? 0 : 1;
     }
   }
 

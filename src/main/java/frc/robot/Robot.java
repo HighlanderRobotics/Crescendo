@@ -10,7 +10,6 @@ import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -96,8 +95,6 @@ public class Robot extends LoggedRobot {
   private boolean atShootingLocation = false;
   private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
 
-
-  
   private double distance = 0;
   private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
   private LoggedDashboardNumber leftRPS =
@@ -426,8 +423,10 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPoseAllianceSpecific());
-    Logger.recordOutput("DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.getPoses());
-    Logger.recordOutput("DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
+    Logger.recordOutput(
+        "DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.getPoses());
+    Logger.recordOutput(
+        "DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
     Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
@@ -608,6 +607,9 @@ public class Robot extends LoggedRobot {
 
       System.out.println("dynamic to note");
       return AutoStepSelector.DYNAMIC_TO_NOTE;
+    } if(DynamicAuto.whitelistCount == 0){
+        System.out.println("END");
+        return AutoStepSelector.END;
     } else {
       atShootingLocation = true;
       System.out.println("dynamoci to shoot");
@@ -651,12 +653,15 @@ public class Robot extends LoggedRobot {
                             shooter.runStateCmd(
                                 () -> AutoAim.shotMap.get(distance).getRotation(),
                                 () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                () -> AutoAim.shotMap.get(distance).getRightRPS())))),
+                                () -> AutoAim.shotMap.get(distance).getRightRPS()))),
+                    Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),
                 this::selectAuto),
             Commands.runOnce(
                 () -> {
                   dynamicAutoCounter++;
+                  DynamicAuto.updateWhitelistCount();
                   System.out.println(dynamicAutoCounter);
+                  System.out.println(DynamicAuto.whitelistCount);
                   distance =
                       curTrajectory
                           .getFinalPose()
@@ -665,7 +670,10 @@ public class Robot extends LoggedRobot {
                           .getNorm();
                 }))
         .beforeStarting(
-            () -> {swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific()); DynamicAuto.updateWhitelistCount();})
+            () -> {
+              swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific());
+              DynamicAuto.updateWhitelistCount();
+            })
         .asProxy();
   }
 
