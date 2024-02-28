@@ -81,6 +81,7 @@ public class Robot extends LoggedRobot {
     DYNAMIC_TO_SHOOT,
     END
   }
+
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
   private Command autonomousCommand;
@@ -96,8 +97,6 @@ public class Robot extends LoggedRobot {
   private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
   private Pose2d[] forwardLookingTrajectory = curTrajectory.getPoses();
 
-
-  
   private double distance = 0;
   private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
   private LoggedDashboardNumber leftRPS =
@@ -427,6 +426,7 @@ public class Robot extends LoggedRobot {
             .getPoseAllianceSpecific());
     Logger.recordOutput("DynamicAuto/Curent Trajectory Followed", curTrajectory.getPoses());
     Logger.recordOutput("DynamicAuto/Forward Trajectory Followed", forwardLookingTrajectory);
+    Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
@@ -557,7 +557,7 @@ public class Robot extends LoggedRobot {
 
       System.out.println("start to note");
       return AutoStepSelector.START_TO_NOTE;
-} else if (DynamicAuto.whitelistCount == 0) {
+    } else if (DynamicAuto.whitelistCount == 0) {
       return AutoStepSelector.END;
     } else if (atShootingLocation) {
       atShootingLocation = false;
@@ -613,15 +613,14 @@ public class Robot extends LoggedRobot {
     }
   }
 
-
   public Command dynamicAuto() {
-
     return Commands.repeatingSequence(
             Commands.select(
                 Map.ofEntries(
                     Map.entry(
                         AutoStepSelector.NOTE_TO_NOTE,
-                        Commands.race(DynamicAuto.noteToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
+                        Commands.race(
+                            DynamicAuto.noteToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
                         AutoStepSelector.NOTE_TO_SHOOT,
                         Commands.race(
@@ -632,10 +631,12 @@ public class Robot extends LoggedRobot {
                                 () -> AutoAim.shotMap.get(distance).getRightRPS()))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
-                        Commands.race(DynamicAuto.startToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
+                        Commands.race(
+                            DynamicAuto.startToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
                         AutoStepSelector.SHOOT_TO_NOTE,
-                        Commands.race(DynamicAuto.shootToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
+                        Commands.race(
+                            DynamicAuto.shootToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
                         AutoStepSelector.DYNAMIC_TO_NOTE,
                         Commands.race(
@@ -656,7 +657,7 @@ public class Robot extends LoggedRobot {
                   System.out.println(dynamicAutoCounter);
                   distance =
                       curTrajectory
-                      .getFinalPose()
+                          .getFinalPose()
                           .minus(FieldConstants.getSpeaker())
                           .getTranslation()
                           .getNorm();

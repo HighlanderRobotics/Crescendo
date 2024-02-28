@@ -10,10 +10,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
-
 import org.littletonrobotics.junction.Logger;
 
 public class DynamicAuto {
@@ -198,7 +196,6 @@ public class DynamicAuto {
     return poses;
   }
 
-  
   public static Command startToNote(SwerveSubsystem swerve) {
     return swerve
         .runChoreoTraj(
@@ -280,5 +277,4 @@ public class DynamicAuto {
               }
             });
   }
-
 }
