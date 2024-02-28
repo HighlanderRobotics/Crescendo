@@ -37,15 +37,15 @@ public class ElevatorIOReal implements ElevatorIO {
     config.Slot0.GravityType = GravityTypeValue.Elevator_Static;
     config.Slot0.kG = 0.11591;
     config.Slot0.kS = 0.16898;
-    config.Slot0.kV = 10.911;
-    config.Slot0.kA = 0.28688;
+    config.Slot0.kV = 11.3;
+    config.Slot0.kA = 0.0;
     config.Slot0.kP = 69.785;
     config.Slot0.kD = 17.53;
 
     config.CurrentLimits.StatorCurrentLimit = 60.0;
     config.CurrentLimits.StatorCurrentLimitEnable = true;
 
-    config.MotionMagic.MotionMagicAcceleration = 10.0;
+    config.MotionMagic.MotionMagicAcceleration = 4.0;
     // Estimated from slightly less than motor free speed
     config.MotionMagic.MotionMagicCruiseVelocity =
         50.0 / (ElevatorSubsystem.GEAR_RATIO * 2 * Math.PI * ElevatorSubsystem.DRUM_RADIUS_METERS);

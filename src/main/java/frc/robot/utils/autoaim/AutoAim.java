@@ -5,6 +5,7 @@
 package frc.robot.utils.autoaim;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 
 /** Add your docs here. */
 public class AutoAim {
@@ -14,10 +15,20 @@ public class AutoAim {
   public static final double LOOKAHEAD_TIME_SECONDS = 1.0;
 
   static {
-
-    // Examples until we aquire actual data
-    for (double i = 0; i < 10; i++) {
-      shotMap.put(i, new ShotData(Rotation2d.fromDegrees(5 * i), 100 * i, 90 * i, 0.1 * i));
-    }
+    shotMap.put(
+        1.0 + Units.inchesToMeters(13.5 + 3.25),
+        new ShotData(Rotation2d.fromDegrees(55), 60, 80, 0.25));
+    shotMap.put(
+        2.0 + Units.inchesToMeters(13.5 + 3.25),
+        new ShotData(Rotation2d.fromDegrees(44), 60, 80, 0.31));
+    shotMap.put(
+        3.0 + Units.inchesToMeters(13.5 + 3.25),
+        new ShotData(Rotation2d.fromDegrees(34), 60, 80, 0.36));
+    shotMap.put(
+        4.0 + Units.inchesToMeters(13.5 + 3.25),
+        new ShotData(Rotation2d.fromDegrees(30), 60, 100, 0.4));
+    shotMap.put(
+        5.0 + Units.inchesToMeters(13.5 + 3.25),
+        new ShotData(Rotation2d.fromDegrees(27), 50, 100, 0.4)); // TODO check
   }
 }

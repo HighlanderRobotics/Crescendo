@@ -99,7 +99,33 @@ public class ShooterSubystem extends SubsystemBase {
               "Shooter/Right At Target",
               MathUtil.isNear(
                   right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
-          Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get());
+          Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get().getRadians());
+          Logger.recordOutput(
+              "Shooter/Pivot Error Degrees",
+              inputs.pivotRotation.getDegrees() - rotation.get().getDegrees());
+          Logger.recordOutput(
+              "Shooter/Pivot At Target",
+              MathUtil.isNear(
+                  rotation.get().getDegrees(), inputs.pivotRotation.getDegrees(), 0.25));
+          io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
+          io.setPivotSetpoint(rotation.get());
+        });
+  }
+
+  public Command runFlywheelsCmd(DoubleSupplier left, DoubleSupplier right) {
+    return this.run(
+        () -> {
+          Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
+          Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
+          Logger.recordOutput("Shooter/Rotation Setpoint", 0.0);
+          Logger.recordOutput(
+              "Shooter/Left At Target",
+              MathUtil.isNear(
+                  left.getAsDouble(), inputs.flywheelLeftVelocityRotationsPerSecond, 1.0));
+          Logger.recordOutput(
+              "Shooter/Right At Target",
+              MathUtil.isNear(
+                  right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
           Logger.recordOutput(
               "Shooter/Pivot At Target",
               MathUtil.isNear(
@@ -107,7 +133,7 @@ public class ShooterSubystem extends SubsystemBase {
                   inputs.flywheelRightVelocityRotationsPerSecond,
                   Units.degreesToRotations(0.5)));
           io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
-          io.setPivotSetpoint(rotation.get());
+          io.setPivotVoltage(0.0);
         });
   }
 

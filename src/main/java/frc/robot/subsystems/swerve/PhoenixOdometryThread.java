@@ -1,4 +1,4 @@
-// Copyright 2021-2023 FRC 6328
+// Copyright 2021-2024 FRC 6328
 // http://github.com/Mechanical-Advantage
 //
 // This program is free software; you can redistribute it and/or
@@ -17,12 +17,13 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Provides an interface for asynchronously reading high-frequency measurements to a set of queues.
@@ -37,6 +38,7 @@ public class PhoenixOdometryThread extends Thread {
       new ReentrantLock(); // Prevents conflicts when registering signals
   private BaseStatusSignal[] signals = new BaseStatusSignal[0];
   private final List<Queue<Double>> queues = new ArrayList<>();
+  private final List<Queue<Double>> timestampQueues = new ArrayList<>();
   private boolean isCANFD = false;
 
   private static PhoenixOdometryThread instance = null;
@@ -51,22 +53,40 @@ public class PhoenixOdometryThread extends Thread {
   private PhoenixOdometryThread() {
     setName("PhoenixOdometryThread");
     setDaemon(true);
-    start();
+  }
+
+  @Override
+  public void start() {
+    if (timestampQueues.size() > 0) {
+      super.start();
+    }
   }
 
   public Queue<Double> registerSignal(ParentDevice device, StatusSignal<Double> signal) {
-    isCANFD = CANBus.isNetworkFD(device.getNetwork());
-    Queue<Double> queue = new ArrayBlockingQueue<>(100);
+    Queue<Double> queue = new ArrayDeque<>(100);
     signalsLock.lock();
+    SwerveSubsystem.odometryLock.lock();
     try {
+      isCANFD = CANBus.isNetworkFD(device.getNetwork());
       BaseStatusSignal[] newSignals = new BaseStatusSignal[signals.length + 1];
       System.arraycopy(signals, 0, newSignals, 0, signals.length);
       newSignals[signals.length] = signal;
       signals = newSignals;
       queues.add(queue);
-
     } finally {
       signalsLock.unlock();
+      SwerveSubsystem.odometryLock.unlock();
+    }
+    return queue;
+  }
+
+  public Queue<Double> makeTimestampQueue() {
+    Queue<Double> queue = new ArrayDeque<>(100);
+    SwerveSubsystem.odometryLock.lock();
+    try {
+      timestampQueues.add(queue);
+    } finally {
+      SwerveSubsystem.odometryLock.unlock();
     }
     return queue;
   }
@@ -77,7 +97,7 @@ public class PhoenixOdometryThread extends Thread {
       // Wait for updates from all signals
       signalsLock.lock();
       try {
-        if (isCANFD && signals.length > 0) {
+        if (isCANFD) {
           BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals);
         } else {
           // "waitForAll" does not support blocking on multiple
@@ -85,7 +105,7 @@ public class PhoenixOdometryThread extends Thread {
           // of Pro licensing. No reasoning for this behavior
           // is provided by the documentation.
           Thread.sleep((long) (1000.0 / Module.ODOMETRY_FREQUENCY_HZ));
-          BaseStatusSignal.refreshAll(signals);
+          if (signals.length > 0) BaseStatusSignal.refreshAll(signals);
         }
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -96,8 +116,19 @@ public class PhoenixOdometryThread extends Thread {
       // Save new data to queues
       SwerveSubsystem.odometryLock.lock();
       try {
+        double timestamp = Logger.getRealTimestamp() / 1e6;
+        double totalLatency = 0.0;
+        for (BaseStatusSignal signal : signals) {
+          totalLatency += signal.getTimestamp().getLatency();
+        }
+        if (signals.length > 0) {
+          timestamp -= totalLatency / signals.length;
+        }
         for (int i = 0; i < signals.length; i++) {
           queues.get(i).offer(signals[i].getValueAsDouble());
+        }
+        for (int i = 0; i < timestampQueues.size(); i++) {
+          timestampQueues.get(i).offer(timestamp);
         }
       } finally {
         SwerveSubsystem.odometryLock.unlock();

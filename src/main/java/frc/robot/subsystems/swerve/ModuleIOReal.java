@@ -68,6 +68,8 @@ public class ModuleIOReal implements ModuleIO {
   private final StatusSignal<Double> turnAppliedVolts;
   private final StatusSignal<Double> turnCurrent;
 
+  private final Queue<Double> timestampQueue;
+
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
@@ -84,11 +86,13 @@ public class ModuleIOReal implements ModuleIO {
     var driveConfig = new TalonFXConfiguration();
     // Current limits
     // TODO: Do we want to limit supply current?
-    driveConfig.CurrentLimits.StatorCurrentLimit = Module.DRIVE_STATOR_CURRENT_LIMIT;
-    driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+    driveConfig.CurrentLimits.SupplyCurrentLimit = Module.DRIVE_SUPPLY_CURRENT_LIMIT;
+    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     driveConfig.CurrentLimits.SupplyTimeThreshold = Module.DRIVE_SUPPLY_TIME_CUTOFF;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
+    driveConfig.CurrentLimits.StatorCurrentLimit = 30.0;
+    driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
@@ -145,6 +149,8 @@ public class ModuleIOReal implements ModuleIO {
             : SensorDirectionValue.Clockwise_Positive;
     cancoder.getConfigurator().apply(cancoderConfig);
 
+    timestampQueue = PhoenixOdometryThread.getInstance().makeTimestampQueue();
+
     drivePosition = driveTalon.getPosition();
     drivePositionQueue =
         PhoenixOdometryThread.getInstance().registerSignal(driveTalon, driveTalon.getPosition());
@@ -200,12 +206,15 @@ public class ModuleIOReal implements ModuleIO {
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
+    inputs.odometryTimestamps =
+        timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryDrivePositionsMeters =
-        drivePositionQueue.stream().mapToDouble(Units::rotationsToRadians).toArray();
+        drivePositionQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()
             .map(Rotation2d::fromRotations) // should be after offset + gear ratio
             .toArray(Rotation2d[]::new);
+    timestampQueue.clear();
     drivePositionQueue.clear();
     turnPositionQueue.clear();
   }
