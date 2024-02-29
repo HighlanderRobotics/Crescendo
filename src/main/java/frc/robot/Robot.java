@@ -281,7 +281,7 @@ public class Robot extends LoggedRobot {
                               polarVelocity * Math.sin(polarRadians),
                               omega);
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
-                      return polarSpeeds;
+                      return new ChassisSpeeds();
                     }),
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS)
                     .andThen(
@@ -436,12 +436,6 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
-
-  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
-  private LoggedDashboardNumber leftRPS =
-      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
-  private LoggedDashboardNumber rightRPS =
-      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
 
   public Command shootWithDashboard() {
     return Commands.parallel(
