@@ -1,0 +1,111 @@
+{
+  "hubs": [
+    {
+      "x": 242,
+      "y": 205,
+      "width": 1214,
+      "height": 681,
+      "state": {
+        "sidebar": {
+          "width": 385,
+          "expanded": [
+            "/AdvantageKit",
+            "/AdvantageKit/RealOutputs",
+            "/AdvantageKit/RealOutputs/PathPlanner",
+            "/AdvantageKit/RealOutputs/Elevator",
+            "/AdvantageKit/RealOutputs/Odometry",
+            "/AdvantageKit/RealOutputs/AutoAim",
+            "/AdvantageKit/RealOutputs/DynamicAuto"
+          ]
+        },
+        "tabs": {
+          "selected": 1,
+          "tabs": [
+            {
+              "type": 0,
+              "path": "../docs/INDEX.md"
+            },
+            {
+              "type": 6,
+              "uuid": "godheywfexnuq7b5nde379abz8r3vvtq",
+              "fields": [],
+              "listFields": [
+                [
+                  {
+                    "type": "Component (Robot)",
+                    "key": "NT:/AdvantageKit/RealOutputs/Elevator/Carriage Pose",
+                    "sourceTypeIndex": 1,
+                    "sourceType": "Pose3d"
+                  },
+                  {
+                    "type": "Robot",
+                    "key": "NT:/PathPlanner/activePath",
+                    "sourceTypeIndex": 0,
+                    "sourceType": 5
+                  }
+                ],
+                [
+                  {
+                    "type": "Robot",
+                    "key": "NT:/AdvantageKit/RealOutputs/Odometry/Robot",
+                    "sourceTypeIndex": 1,
+                    "sourceType": "Pose2d"
+                  },
+                  {
+                    "type": "Green Ghost",
+                    "key": "NT:/AdvantageKit/RealOutputs/DynamicAuto/Current Path Initial Pose",
+                    "sourceTypeIndex": 1,
+                    "sourceType": "Pose2d"
+                  },
+                  {
+                    "type": "Yellow Ghost",
+                    "key": "NT:/AdvantageKit/RealOutputs/DynamicAuto/Current Path Ending Pose",
+                    "sourceTypeIndex": 1,
+                    "sourceType": "Pose2d"
+                  },
+                  {
+                    "type": "Trajectory",
+                    "key": "NT:/AdvantageKit/RealOutputs/DynamicAuto/Forward Trajectory Followed",
+                    "sourceTypeIndex": 2,
+                    "sourceType": "Pose2d[]"
+                  },
+                  {
+                    "type": "Trajectory",
+                    "key": "NT:/AdvantageKit/RealOutputs/DynamicAuto/Curent Trajectory Followed",
+                    "sourceTypeIndex": 2,
+                    "sourceType": "Pose2d[]"
+                  }
+                ]
+              ],
+              "options": {
+                "field": "2024 Field",
+                "alliance": "blue",
+                "robot": "8033 Crescendo",
+                "unitDistance": "meters",
+                "unitRotation": "radians"
+              },
+              "configHidden": false,
+              "visualizer": {
+                "cameraIndex": -2,
+                "orbitFov": 50,
+                "cameraPosition": [
+                  -8.608288762599031,
+                  10.771000922833943,
+                  7.312892116957138
+                ],
+                "cameraTarget": [
+                  -6.483848096358995,
+                  0.8606557485222912,
+                  7.657088875749636
+                ]
+              },
+              "title": "3D Field"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": [],
+  "version": "3.1.0"
+}
