@@ -42,6 +42,7 @@ import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import frc.robot.utils.LowFrequencyNT4Publisher;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -130,7 +131,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new LowFrequencyNT4Publisher(10.0)); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
