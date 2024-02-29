@@ -522,10 +522,8 @@ public class SwerveSubsystem extends SubsystemBase {
             kinematics.toChassisSpeeds(
                 Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
             getRotation());
-    var invertedSpeeds =
-        new ChassisSpeeds(
+    return new ChassisSpeeds(
             -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
-    return invertedSpeeds;
   }
 
   @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
