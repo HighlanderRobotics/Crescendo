@@ -234,8 +234,8 @@ public class Robot extends LoggedRobot {
                       double polarVelocity =
                           MathUtil.clamp(
                               Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
-                              -SwerveSubsystem.MAX_LINEAR_SPEED / 5,
-                              SwerveSubsystem.MAX_LINEAR_SPEED / 5);
+                              -SwerveSubsystem.MAX_AUTOAIM_SPEED,
+                              SwerveSubsystem.MAX_AUTOAIM_SPEED);
                       Logger.recordOutput("AutoAim/Polar Velocity", polarVelocity);
                       double polarRadians = Math.atan2(vy, vx);
                       ChassisSpeeds polarSpeeds =

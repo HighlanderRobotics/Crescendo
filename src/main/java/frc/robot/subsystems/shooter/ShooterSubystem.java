@@ -84,7 +84,7 @@ public class ShooterSubystem extends SubsystemBase {
     return new Pose3d(
         0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
-
+  
   public Command runStateCmd(
       Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(

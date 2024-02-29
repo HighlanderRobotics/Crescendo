@@ -112,7 +112,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
-  public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 2;
+  public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 4;
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
@@ -703,7 +703,7 @@ public class SwerveSubsystem extends SubsystemBase {
             0.5, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
     ProfiledPIDController vyController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
+            0.5, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
     return Commands.sequence(
         Commands.runOnce(
             () -> {
