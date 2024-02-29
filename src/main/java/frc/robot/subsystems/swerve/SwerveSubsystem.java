@@ -75,6 +75,7 @@ import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
@@ -360,7 +361,16 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
     Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    // Update odometry
+
+    updateOdometry();
+    updateVision();
+
+    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
+    Logger.recordOutput(
+        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+  }
+
+  private void updateOdometry() {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount = sampleTimestamps.length;
@@ -405,8 +415,9 @@ public class SwerveSubsystem extends SubsystemBase {
       // Apply update
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
     }
+  }
 
-    List<Pose3d> visionPoses = new ArrayList<>();
+  private void updateVision() {
     for (var camera : cameras) {
       PhotonPipelineResult result =
           new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
@@ -417,7 +428,6 @@ public class SwerveSubsystem extends SubsystemBase {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
-        visionPoses.add(visionPose);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
         estimator.addVisionMeasurement(
@@ -428,16 +438,6 @@ public class SwerveSubsystem extends SubsystemBase {
       } catch (NoSuchElementException e) {
       }
     }
-    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
-    Logger.recordOutput(
-        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
-
-    Logger.recordOutput(
-        "Vision/Left Cam Pose",
-        getPose3d().transformBy(cameras[0].inputs.constants.robotToCamera().inverse()));
-    Logger.recordOutput(
-        "Vision/Right Cam Pose",
-        getPose3d().transformBy(cameras[1].inputs.constants.robotToCamera().inverse()));
   }
 
   private void runVelocity(ChassisSpeeds speeds) {
@@ -515,12 +515,8 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = modules[i].getState();
-    }
-
+    SwerveModuleState[] states =
+        Arrays.stream(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
     return states;
   }
 
@@ -531,10 +527,8 @@ public class SwerveSubsystem extends SubsystemBase {
             kinematics.toChassisSpeeds(
                 Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
             getRotation());
-    var invertedSpeeds =
-        new ChassisSpeeds(
-            -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
-    return invertedSpeeds;
+    return new ChassisSpeeds(
+        -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
