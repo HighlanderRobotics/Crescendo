@@ -332,13 +332,13 @@ public class Robot extends LoggedRobot {
         .toggleOnFalse(
             Commands.parallel(
                 elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 25.0)
+                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
                     .until(
                         () ->
                             elevator.getExtensionMeters()
                                 > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
                     .andThen(
-                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 25.0))));
+                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 0.0));
@@ -436,6 +436,12 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
+
+  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
+  private LoggedDashboardNumber leftRPS =
+      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
+  private LoggedDashboardNumber rightRPS =
+      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
 
   public Command shootWithDashboard() {
     return Commands.parallel(
