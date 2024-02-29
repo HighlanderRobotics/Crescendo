@@ -179,7 +179,6 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(-10.386),
                   Units.inchesToMeters(10.380),
                   Units.inchesToMeters(7.381)),
-              // https://www.desmos.com/calculator/lgvvnrju8p
               new Rotation3d(
                   Units.degreesToRadians(0.0),
                   Units.degreesToRadians(-28.125),
