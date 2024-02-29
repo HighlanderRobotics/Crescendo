@@ -116,7 +116,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
-  public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 2;
+  public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 5;
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
