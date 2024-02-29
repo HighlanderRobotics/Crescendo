@@ -278,12 +278,6 @@ public class Robot extends LoggedRobot {
         .leftStick()
         .and(controller.rightStick())
         .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
-    controller
-        .a()
-        .whileTrue(
-            swerve.teleopPointTowardsTranslationCmd(
-                () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
-                () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     controller
         .y()
