@@ -32,6 +32,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -65,6 +66,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.FieldConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.subsystems.vision.NoteDetectionIO;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionHelper;
@@ -73,6 +75,7 @@ import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
+import frc.robot.utils.vision.NoteDetectionIOInputsLogged;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
@@ -212,12 +215,21 @@ public class SwerveSubsystem extends SubsystemBase {
               new Rotation3d(0, -0.490, Math.PI * 2 / 3)), // TODO check
           RIGHT_CAMERA_MATRIX_OPT,
           RIGHT_DIST_COEFFS_OPT);
+  public static final VisionConstants noteDetectionCamAConstants =
+      new VisionConstants(
+          "a",
+          new Transform3d(new Translation3d(), new Rotation3d()), // TODO
+          LEFT_CAMERA_MATRIX,
+          LEFT_DIST_COEFFS);
   private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
+  private final NoteDetectionIO noteDetectionIO; // TODO assuming there is only one for now
+  private final NoteDetectionIOInputsLogged noteDetectionInputs = new NoteDetectionIOInputsLogged();
 
-  public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
+  public SwerveSubsystem(
+      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs, NoteDetectionIO noteDetectionIO) {
     this.gyroIO = gyroIO;
     cameras = new Vision[visionIOs.length];
     new AutoAim();
@@ -230,6 +242,7 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int i = 0; i < visionIOs.length; i++) {
       cameras[i] = new Vision(visionIOs[i]);
     }
+    this.noteDetectionIO = noteDetectionIO;
 
     // mildly questionable
     VisionIOSim.pose = this::getPose3d;
@@ -356,6 +369,8 @@ public class SwerveSubsystem extends SubsystemBase {
     for (var module : modules) {
       module.periodic();
     }
+    noteDetectionIO.updateInputs(noteDetectionInputs);
+    Logger.processInputs("Note Detection", noteDetectionInputs);
 
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {
@@ -876,4 +891,36 @@ public class SwerveSubsystem extends SubsystemBase {
         driveRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
   }
+
+  // TODO idk if i did this right
+  public Command poseLockDriveCmd(DoubleSupplier x, DoubleSupplier y, DoubleSupplier theta) {
+    PIDController xController = new PIDController(-1, 0, 0);
+    PIDController yController = new PIDController(-1, 0, 0);
+    PIDController headingController = new PIDController(1.2, 0, 0.1);
+    headingController.enableContinuousInput(0, 2 * Math.PI);
+    return runVelocityFieldRelative(
+        () -> {
+          return new ChassisSpeeds(
+              xController.calculate(pose.getX(), x.getAsDouble()) * MAX_LINEAR_SPEED,
+              yController.calculate(pose.getY(), y.getAsDouble()) * MAX_LINEAR_SPEED,
+              headingController.calculate(pose.getRotation().getRadians(), theta.getAsDouble())
+                  * MAX_ANGULAR_SPEED);
+        });
+  }
+
+  public Command driveToPoseCmd(Supplier<Pose2d> pose) {
+    return poseLockDriveCmd(
+        () -> pose.get().getX(),
+        () -> pose.get().getY(),
+        () -> pose.get().getRotation().getRadians());
+  }
+
+  public Command driveToNoteCmd() {
+      var note = VisionHelper.getBestTarget(getPose(), new PhotonPipelineResult(noteDetectionInputs.latency, noteDetectionInputs.targets), 0); //TODO change camerax and ppresult
+      if (note.isEmpty()) {
+        return Commands.none();
+      } // TODO driver feedback? Must be proxied for duration
+      var pickup = note.get().transformBy(new Transform2d(new Translation2d(-1, 0), new Rotation2d()));
+      return driveToPoseCmd(() -> pickup);
+    }
 }

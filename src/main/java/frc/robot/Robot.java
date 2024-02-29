@@ -41,6 +41,8 @@ import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
+import frc.robot.subsystems.vision.NoteDetectionIOReal;
+import frc.robot.subsystems.vision.NoteDetectionIOSim;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.Supplier;
@@ -92,7 +94,10 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimCameras(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
-              : SwerveSubsystem.createSimModules());
+              : SwerveSubsystem.createSimModules(),
+          mode == RobotMode.REAL
+              ? new NoteDetectionIOReal(SwerveSubsystem.noteDetectionCamAConstants)
+              : new NoteDetectionIOSim(SwerveSubsystem.noteDetectionCamAConstants));
   private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =

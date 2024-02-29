@@ -1,7 +1,9 @@
-package frc.robot.subsystems.vision;
+package frc.robot.utils.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.vision.VisionHelper;
+import frc.robot.subsystems.vision.VisionIO;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 

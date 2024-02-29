@@ -8,14 +8,19 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Quaternion;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
@@ -27,6 +32,7 @@ import java.util.Optional;
 import org.littletonrobotics.junction.LogTable;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.PhotonUtils;
 import org.photonvision.estimation.TargetModel;
 import org.photonvision.estimation.VisionEstimation;
 import org.photonvision.simulation.VisionSystemSim;
@@ -437,4 +443,30 @@ public class VisionHelper {
     if (!Robot.isSimulation()) return null;
     return visionSim.getDebugField();
   }
+  //6995
+  public static double getDistance(PhotonTrackedTarget target) {
+        return PhotonUtils.calculateDistanceToTargetMeters(
+            0, 0, 0, Units.degreesToRadians(target.getPitch())); // TODO fix
+    }
+public static Translation2d getNoteTargetOffset(PhotonTrackedTarget target, double cameraX) {
+  return new Translation2d(getDistance(target), Rotation2d.fromDegrees(-target.getYaw()))
+.plus(new Translation2d(cameraX, 0));
+}
+
+public static List<Pose2d> getTargets(Pose2d robotPose, PhotonPipelineResult result, double cameraX) {
+    if (result == null) {
+        return List.of();
+    }
+    // TODO add sim logic
+    if (!result.hasTargets()) return List.of();
+    var list = result.getTargets();
+    list.removeIf((t)-> (t.getPitch() > 9));
+    return list.stream().map((t)->robotPose.transformBy(new Transform2d(getNoteTargetOffset(t, cameraX), Rotation2d.fromDegrees(-t.getYaw())))).toList();
+}
+
+public static Optional<Pose2d> getBestTarget(Pose2d robotPose, PhotonPipelineResult result, double cameraX) {
+    var targets = getTargets(robotPose, result, cameraX);
+    if (targets.size() == 0) {return Optional.empty();}
+    return Optional.of(targets.get(0));
+}
 }
