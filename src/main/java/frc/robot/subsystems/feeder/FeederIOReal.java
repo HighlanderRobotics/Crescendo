@@ -17,8 +17,8 @@ import frc.robot.utils.components.InvertedDigitalInput;
 public class FeederIOReal implements FeederIO {
   private final TalonFX motor = new TalonFX(13, "canivore");
 
-  private InvertedDigitalInput firstBeambreak = new InvertedDigitalInput(0);
-  private InvertedDigitalInput lastBeambreak = new InvertedDigitalInput(1);
+  private final InvertedDigitalInput firstBeambreak = new InvertedDigitalInput(0);
+  private final InvertedDigitalInput lastBeambreak = new InvertedDigitalInput(1);
 
   private final StatusSignal<Double> velocity = motor.getVelocity();
   private final StatusSignal<Double> voltage = motor.getMotorVoltage();
