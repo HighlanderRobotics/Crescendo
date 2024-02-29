@@ -486,6 +486,17 @@ public class SwerveSubsystem extends SubsystemBase {
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
+  public Command runVelocityFieldRelativeTeleopCmd(Supplier<ChassisSpeeds> speeds) {
+    return this.runVelocityCmd(
+        () ->
+            ChassisSpeeds.fromFieldRelativeSpeeds(
+                speeds.get(),
+                DriverStation.getAlliance().isPresent()
+                        && DriverStation.getAlliance().get() == Alliance.Blue
+                    ? getPose().getRotation()
+                    : getPose().getRotation().plus(Rotation2d.fromDegrees(180))));
+  }
+
   /**
    * Stops the drive and turns the modules to an X arrangement to resist movement. The modules will
    * return to their normal orientations the next time a nonzero velocity is requested.

@@ -194,7 +194,7 @@ public class Robot extends LoggedRobot {
 
     // Default Commands here
     swerve.setDefaultCommand(
-        swerve.runVelocityFieldRelative(
+        swerve.runVelocityFieldRelativeTeleopCmd(
             () ->
                 new ChassisSpeeds(
                     -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
@@ -327,23 +327,10 @@ public class Robot extends LoggedRobot {
             swerve.teleopPointTowardsTranslationCmd(
                 () -> -controller.getLeftY() * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () -> -controller.getLeftX() * SwerveSubsystem.MAX_LINEAR_SPEED));
-
-    // Test binding for elevator
-    controller.b().whileTrue(elevator.setExtensionCmd(() -> 1.0));
-
     controller
         .x()
-        .toggleOnTrue(swerve.runChoreoTraj(() -> DynamicAuto.makeNoteToNote(swerve::getPose)));
-    controller
-        .leftBumper()
-        .toggleOnTrue(
-            Commands.runOnce(
-                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist(), swerve));
-    controller
-        .rightBumper()
-        .toggleOnTrue(
-            Commands.runOnce(
-                () -> DynamicAuto.getAbsoluteClosestNote(swerve::getPose).whitelist(), swerve));
+        .whileTrue(
+            Commands.parallel(carriage.runVoltageCmd(-5.0), intake.runVelocityCmd(-50.0, -50.0)));
 
     SmartDashboard.putData(
         "Whitelist Note",
@@ -607,9 +594,10 @@ public class Robot extends LoggedRobot {
 
       System.out.println("dynamic to note");
       return AutoStepSelector.DYNAMIC_TO_NOTE;
-    } if(DynamicAuto.whitelistCount == 0){
-        System.out.println("END");
-        return AutoStepSelector.END;
+    }
+    if (DynamicAuto.whitelistCount == 0) {
+      System.out.println("END");
+      return AutoStepSelector.END;
     } else {
       atShootingLocation = true;
       System.out.println("dynamoci to shoot");
