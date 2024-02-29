@@ -65,6 +65,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
+  public static final boolean USE_AUTO_AIM = true;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -128,7 +129,7 @@ public class Robot extends LoggedRobot {
 
     switch (mode) {
       case REAL:
-        // Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
+        Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
         Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
@@ -166,10 +167,10 @@ public class Robot extends LoggedRobot {
             feeder.indexCmd().until(() -> currentTarget != Target.SPEAKER),
             Commands.sequence(
                     feeder
-                        .runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE)
+                        .runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
                         .until(() -> carriage.getBeambreak()),
-                    feeder.runVoltageCmd(-FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    feeder.runVoltageCmd(0.0))
+                    feeder.runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5),
+                    feeder.runVelocityCmd(0))
                 .until(() -> currentTarget != Target.AMP)));
     carriage.setDefaultCommand(
         Commands.repeatingSequence(
@@ -193,6 +194,9 @@ public class Robot extends LoggedRobot {
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+    leds.setDefaultCommand(
+        leds.defaultStateDisplayCmd(
+            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -211,7 +215,14 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> useAutoAim)
+        .whileTrue(
+            Commands.parallel(
+                shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
+                Commands.waitSeconds(0.5).andThen(feeder.runVelocityCmd(24.0)))); // TODO tune
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SPEAKER)
+        .and(() -> USE_AUTO_AIM)
         .whileTrue(
             Commands.parallel(
                 teleopAutoAim(
@@ -223,8 +234,9 @@ public class Robot extends LoggedRobot {
                       double polarVelocity =
                           MathUtil.clamp(
                               Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
-                              -SwerveSubsystem.MAX_LINEAR_SPEED / 2,
-                              SwerveSubsystem.MAX_LINEAR_SPEED / 2);
+                              -SwerveSubsystem.MAX_LINEAR_SPEED / 5,
+                              SwerveSubsystem.MAX_LINEAR_SPEED / 5);
+                      Logger.recordOutput("AutoAim/Polar Velocity", polarVelocity);
                       double polarRadians = Math.atan2(vy, vx);
                       ChassisSpeeds polarSpeeds =
                           new ChassisSpeeds(
@@ -234,13 +246,23 @@ public class Robot extends LoggedRobot {
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
                       return polarSpeeds;
                     }),
-                Commands.waitSeconds(0.5)
-                    .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))));
+                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS)
+                    .andThen(
+                        Commands.parallel(
+                            feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY),
+                            Commands.runOnce(
+                                () ->
+                                    Logger.recordOutput(
+                                        "AutoAim/Shooting Pose", swerve.getPose()))))));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> !useAutoAim)
-        .whileTrue(shootWithDashboard());
+        .and(() -> !USE_AUTO_AIM)
+        .whileTrue(shootWithDashboard())
+        .onFalse(
+            Commands.parallel(
+                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                .withTimeout(0.5));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
@@ -294,13 +316,13 @@ public class Robot extends LoggedRobot {
         .toggleOnFalse(
             Commands.parallel(
                 elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 25.0)
+                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
                     .until(
                         () ->
                             elevator.getExtensionMeters()
                                 > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
                     .andThen(
-                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 25.0))));
+                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
@@ -336,25 +358,21 @@ public class Robot extends LoggedRobot {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
     Logger.recordOutput("Target", currentTarget);
+    Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
-  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)");
-  private LoggedDashboardNumber leftRPS = new LoggedDashboardNumber("Left RPS (Rotations Per Sec)");
+  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
+  private LoggedDashboardNumber leftRPS =
+      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
   private LoggedDashboardNumber rightRPS =
-      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)");
+      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
 
   public Command shootWithDashboard() {
     return Commands.parallel(
-            shooter.runStateCmd(
-                () -> Rotation2d.fromDegrees(degrees.get()),
-                () -> leftRPS.get(),
-                () -> rightRPS.get()),
-            feeder
-                .indexCmd()
-                .withTimeout(1.25)
-                .andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))
-        .withTimeout(3);
+        shooter.runStateCmd(
+            () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
+        feeder.indexCmd());
   }
 
   public Command drivePath() {
@@ -396,14 +414,19 @@ public class Robot extends LoggedRobot {
             () -> {
               AutoAimStates.curShotSpeeds = speeds.get();
               Logger.recordOutput("AutoAim/cur shot speedd", AutoAimStates.curShotSpeeds);
-              AutoAimStates.curShotData =
-                  AutoAim.shotMap.get(
-                      swerve
-                          .getLinearFuturePose(
-                              AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
-                          .minus(FieldConstants.getSpeaker())
-                          .getTranslation()
-                          .getNorm());
+              double distance =
+                  swerve
+                      .getLinearFuturePose(
+                          AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
+                      .minus(FieldConstants.getSpeaker())
+                      .getTranslation()
+                      .getNorm();
+              AutoAimStates.curShotData = AutoAim.shotMap.get(distance);
+              Logger.recordOutput("AutoAim/Distance From Target", distance);
+              Logger.recordOutput(
+                  "AutoAim/Desired Shooting Angle", AutoAim.shotMap.get(distance).getRotation());
+              Logger.recordOutput(
+                  "AutoAim/Actual Shooting Angle", AutoAimStates.curShotData.getRotation());
               System.out.println(Timer.getFPGATimestamp());
             });
     Command runRobot =
@@ -418,7 +441,10 @@ public class Robot extends LoggedRobot {
                 AutoAim.LOOKAHEAD_TIME_SECONDS));
     return Commands.sequence(
         getInitialValues,
-        Commands.deadline(Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS), runRobot),
+        Commands.deadline(
+            Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
+            runRobot,
+            Commands.print(String.valueOf(AutoAimStates.curShotSpeeds.vxMetersPerSecond))),
         // keeps moving to prevent the robot from stopping and changing the velocity of the note
         swerve
             .runVelocityFieldRelative(
@@ -427,7 +453,7 @@ public class Robot extends LoggedRobot {
                         AutoAimStates.curShotSpeeds.vxMetersPerSecond,
                         AutoAimStates.curShotSpeeds.vyMetersPerSecond,
                         0))
-            .withTimeout(0.25));
+            .withTimeout(0));
   }
 
   public Command autonomousAutoAim(String pathName) {

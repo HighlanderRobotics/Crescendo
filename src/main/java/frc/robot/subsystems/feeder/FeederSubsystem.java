@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.Logger;
 /** Feeder motor for shooter and associated beambreaks for indexing */
 public class FeederSubsystem extends SubsystemBase {
   public static final double INDEXING_VOLTAGE = 4.0;
+  public static final double INDEXING_VELOCITY = 35.0;
 
   private final FeederIO io;
   private final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
@@ -31,16 +32,30 @@ public class FeederSubsystem extends SubsystemBase {
     return this.run(() -> io.setVoltage(volts));
   }
 
+  public Command runVelocityCmd(double velocity) {
+    return this.run(() -> io.setVelocity(velocity));
+  }
+
   /** Run the feeder to place the ring between the beambreaks. */
   public Command indexCmd() {
+    // return this.run(
+    //     () -> {
+    //       if (inputs.lastBeambreak) {
+    //         io.setVoltage(-INDEXING_VOLTAGE);
+    //       } else if (inputs.firstBeambreak) {
+    //         io.setVoltage(0.0);
+    //       } else {
+    //         io.setVoltage(INDEXING_VOLTAGE);
+    //       }
+    //     });
     return this.run(
         () -> {
           if (inputs.lastBeambreak) {
-            io.setVoltage(-INDEXING_VOLTAGE);
+            io.setVelocity(-INDEXING_VELOCITY);
           } else if (inputs.firstBeambreak) {
-            io.setVoltage(0.0);
+            io.setVelocity(0.0);
           } else {
-            io.setVoltage(INDEXING_VOLTAGE);
+            io.setVelocity(INDEXING_VELOCITY);
           }
         });
   }

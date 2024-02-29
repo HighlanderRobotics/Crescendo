@@ -68,7 +68,7 @@ public class VisionIOSim implements VisionIO {
     sim.update(pose.get().toPose2d());
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    inputs.targets = result.targets;
+    inputs.targets = result.targets; // TODO aaaaaaa
     inputs.constants = constants;
   }
 

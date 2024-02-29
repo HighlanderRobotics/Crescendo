@@ -148,70 +148,53 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(),
-          Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO find!!
+          Nat.N3(), Nat.N3(), 906.2602005, 0, 671.984679, 0, 902.128407, 388.5381523, 0, 0, 1);
   public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085); // TODO find!!
-  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX_OPT =
+          0.04229355767,
+          -0.05532777359,
+          -0.002561333884,
+          0.001247279226,
+          0.01795026339); // Last 3 values have been truncated
+  public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(),
-          Nat.N3(),
-          923.5403619629557,
-          0.0,
-          644.4965658066068,
-          0.0,
-          925.8136962361125,
-          402.6412935350414,
-          0.0,
-          0.0,
-          1.0); // TODO find!!
-  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS_OPT =
+          Nat.N3(), Nat.N3(), 911.3512229, 0, 613.8313639, 0, 907.3772729, 361.1892783, 0, 0, 1);
+  public static final Matrix<N5, N1> RIGHT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.05452153950284706,
-          -0.04331612051891956,
-          0.00176988756858703,
-          -0.004530368741385627,
-          -0.040501622476628085); // TODO find!!
+          0.0475654581,
+          -0.05424391133,
+          -0.00171161002,
+          0.0007729068571,
+          0.001176848411); // Last 3 values have been truncated
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
-          "Left Camera",
+          "Left_Camera",
           new Transform3d(
               new Translation3d(
-                  Units.inchesToMeters(10.386),
-                  Units.inchesToMeters(-10.380),
-                  Units.inchesToMeters(-7.381)),
-              new Rotation3d(0, -0.490, -Math.PI * 7 / 6)), // TODO check
+                  Units.inchesToMeters(-10.386),
+                  Units.inchesToMeters(10.380),
+                  Units.inchesToMeters(7.381)),
+              new Rotation3d(
+                  Units.degreesToRadians(0.0),
+                  Units.degreesToRadians(-28.125),
+                  Units.degreesToRadians(120))),
           LEFT_CAMERA_MATRIX,
           LEFT_DIST_COEFFS);
   public static final VisionConstants rightCamConstants =
       new VisionConstants(
-          "Right Camera",
+          "Right_Camera",
           new Transform3d(
               new Translation3d(
                   Units.inchesToMeters(-10.597),
                   Units.inchesToMeters(-10.143),
-                  Units.inchesToMeters(-7.384)),
-              new Rotation3d(0, -0.490, Math.PI * 2 / 3)), // TODO check
-          RIGHT_CAMERA_MATRIX_OPT,
-          RIGHT_DIST_COEFFS_OPT);
+                  Units.inchesToMeters(7.384)),
+              new Rotation3d(0, Units.degreesToRadians(-28.125), Units.degreesToRadians(210))),
+          RIGHT_CAMERA_MATRIX,
+          RIGHT_DIST_COEFFS);
   private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
@@ -491,7 +474,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
     return this.runVelocityCmd(
-        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), gyroInputs.yawPosition));
+        () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
   /**
@@ -534,23 +517,29 @@ public class SwerveSubsystem extends SubsystemBase {
 
   @AutoLogOutput(key = "Odometry/Velocity")
   public ChassisSpeeds getVelocity() {
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        kinematics.toChassisSpeeds(
-            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
-        getRotation());
+    var speeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(
+            kinematics.toChassisSpeeds(
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
+            getRotation());
+    return new ChassisSpeeds(
+        -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
   public ChassisSpeeds getRobotRelativeSpeeds() {
-    return kinematics.toChassisSpeeds(
-        (SwerveModuleState[])
-            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+    ChassisSpeeds speeds =
+        kinematics.toChassisSpeeds(
+            (SwerveModuleState[])
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+    return new ChassisSpeeds(
+        -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return pose;
+    return estimator.getEstimatedPosition();
   }
 
   public Pose3d getPose3d() {
@@ -573,7 +562,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void setYaw(Rotation2d yaw) {
-    gyroIO.setYaw(yaw);
+    // gyroIO.setYaw(yaw);
     setPose(new Pose2d(getPose().getTranslation(), yaw));
   }
 
@@ -661,8 +650,8 @@ public class SwerveSubsystem extends SubsystemBase {
     return getPose()
         .transformBy(
             new Transform2d(
-                speedsRobotRelative.vxMetersPerSecond * time,
-                speedsRobotRelative.vyMetersPerSecond * time,
+                -speedsRobotRelative.vxMetersPerSecond * time,
+                -speedsRobotRelative.vyMetersPerSecond * time,
                 Rotation2d.fromRadians(speedsRobotRelative.omegaRadiansPerSecond * time)));
   }
 
@@ -702,7 +691,7 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            40.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED / 2));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     return Commands.sequence(
@@ -772,7 +761,7 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            40.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
+            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     return Commands.sequence(

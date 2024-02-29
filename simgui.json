@@ -20,12 +20,24 @@
       "/SmartDashboard/Run Pivot Sysid": "Command",
       "/SmartDashboard/Run Swerve Azimuth Sysid": "Command",
       "/SmartDashboard/Run Swerve Drive Sysid": "Command",
-      "/SmartDashboard/Shooter shoot": "Command"
+      "/SmartDashboard/Shooter shoot": "Command",
+      "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Left_Camera/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
+      "/SmartDashboard/VisionSystemSim-Right_Camera/Sim Field": "Field2d"
     }
   },
   "NetworkTables": {
     "transitory": {
       "AdvantageKit": {
+        "RealOutputs": {
+          "AutoAim": {
+            "open": true
+          },
+          "open": true
+        },
         "open": true
       }
     }
