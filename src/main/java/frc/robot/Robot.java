@@ -14,8 +14,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.PowerDistribution;
-import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
@@ -89,7 +87,7 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   private Target currentTarget = Target.SPEAKER;
-  private double flywheelIdleSpeed = -0.1;
+  private double flywheelIdleSpeed = 0.0;
 
   private int dynamicAutoCounter = 0;
   private boolean atShootingLocation = false;
@@ -134,9 +132,6 @@ public class Robot extends LoggedRobot {
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
 
-  private AutoManager autoManager = new AutoManager(swerve, intake, elevator, shooter, feeder);
-  ;
-
   private LoggedDashboardChooser<Note> noteDropdown =
       new LoggedDashboardChooser<Note>("Note Picker");
 
@@ -165,8 +160,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
-        new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
+        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         break;
       case REPLAY:
         setUseTiming(false); // Run as fast as possible
@@ -331,6 +325,31 @@ public class Robot extends LoggedRobot {
         .x()
         .whileTrue(
             Commands.parallel(carriage.runVoltageCmd(-5.0), intake.runVelocityCmd(-50.0, -50.0)));
+
+    operator
+        .rightTrigger(0.5)
+        .and(operator.rightBumper())
+        .toggleOnFalse(
+            Commands.parallel(
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 25.0)
+                    .until(
+                        () ->
+                            elevator.getExtensionMeters()
+                                > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+                    .andThen(
+                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 25.0))));
+    operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
+    operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
+    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 0.0));
+    operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
+    operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
+    operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
+
+    operator
+        .start()
+        .whileTrue(shooter.runPivotCurrentZeroing())
+        .whileTrue(elevator.runCurrentZeroing());
 
     SmartDashboard.putData(
         "Whitelist Note",
