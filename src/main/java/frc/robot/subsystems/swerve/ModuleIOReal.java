@@ -151,9 +151,7 @@ public class ModuleIOReal implements ModuleIO {
             ? SensorDirectionValue.CounterClockwise_Positive
             : SensorDirectionValue.Clockwise_Positive;
     cancoder.getConfigurator().apply(cancoderConfig);
-
-    timestampQueue = PhoenixOdometryThread.getInstance().makeTimestampQueue();
-
+    
     drivePosition = driveTalon.getPosition();
     driveVelocity = driveTalon.getVelocity();
     driveAppliedVolts = driveTalon.getMotorVoltage();
