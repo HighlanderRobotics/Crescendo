@@ -59,11 +59,7 @@ public class LEDSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           for (int i = 0; i < LED_LENGTH; i++) {
-            if (i < progress.getAsDouble() * LED_LENGTH) {
-              setIndex(i, color);
-            } else {
-              setIndex(i, Color.kBlack);
-            }
+            setIndex(i, i < progress.getAsDouble() * LED_LENGTH ? color : Color.kBlack);
           }
         });
   }
