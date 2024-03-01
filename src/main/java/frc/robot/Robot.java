@@ -39,10 +39,12 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
+import java.util.List;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -83,7 +85,7 @@ public class Robot extends LoggedRobot {
               : new GyroIO() {
                 // Blank implementation to mock gyro in sim
                 @Override
-                public void updateInputs(GyroIOInputs inputs) {}
+                public void updateInputs(GyroIOInputs inputs, List<Samples> asyncOdometrySamples) {}
 
                 @Override
                 public void setYaw(Rotation2d yaw) {}
