@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
@@ -43,11 +42,11 @@ import org.littletonrobotics.junction.Logger;
 public class PhoenixOdometryThread extends Thread {
   public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
 
-  public record Samples(double timestamp, Map<BaseStatusSignal, Double> values) {}
+  public record Samples(double timestamp, Map<StatusSignal<Double>, Double> values) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
 
-  private final Set<BaseStatusSignal> signals = Sets.newHashSet();
+  private final Set<StatusSignal<Double>> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
@@ -97,6 +96,10 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
+    var readLock = journalLock.readLock();
+    try {
+      readLock.lock();
+
       return journal.stream()
           .filter(s -> s.timestamp > timestamp)
           .map(
@@ -109,6 +112,13 @@ public class PhoenixOdometryThread extends Thread {
                 return new Samples(s.timestamp, filteredValues);
               })
           .collect(Collectors.toUnmodifiableList());
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  public List<Samples> samplesSince(double timestamp) {
+    return samplesSince(timestamp, signals);
   }
 
   public Lock getReadLock() {
@@ -139,7 +149,7 @@ public class PhoenixOdometryThread extends Thread {
     }
   }
 
-  private double timestampFor(Set<BaseStatusSignal> signals) {
+  private double timestampFor(Set<StatusSignal<Double>> signals) {
     final double totalTimestamp =
         signals.stream().mapToDouble(s -> s.getTimestamp().getTime()).sum();
 

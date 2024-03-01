@@ -1,6 +1,6 @@
 package frc.robot.subsystems.swerve;
 
-import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -48,7 +48,7 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceReturnsAfterTimestamp() {
-    Map<BaseStatusSignal, Double> sampleValue = ImmutableMap.of(talon.getAcceleration(), 42.0);
+    Map<StatusSignal<Double>, Double> sampleValue = ImmutableMap.of(talon.getAcceleration(), 42.0);
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
@@ -58,7 +58,7 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceIgnoresBeforeTimestamp() {
-    Map<BaseStatusSignal, Double> sampleValue = ImmutableMap.of(talon.getAcceleration(), 42.0);
+    Map<StatusSignal<Double>, Double> sampleValue = ImmutableMap.of(talon.getAcceleration(), 42.0);
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
@@ -68,7 +68,7 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceIgnoresWhenTimestampEqual() {
-    Map<BaseStatusSignal, Double> sampleValue = ImmutableMap.of(talon.getAcceleration(), 42.0);
+    Map<StatusSignal<Double>, Double> sampleValue = ImmutableMap.of(talon.getAcceleration(), 42.0);
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
@@ -78,7 +78,7 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceOnlySelectsRequestedSignals() {
-    Map<BaseStatusSignal, Double> sampleValue =
+    Map<StatusSignal<Double>, Double> sampleValue =
         ImmutableMap.of(talon.getAcceleration(), 42.0, talon.getPosition(), 1024.0);
     var sample = new Samples(10, sampleValue);
     var thread =

@@ -75,8 +75,6 @@ import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -144,7 +142,8 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
-  private double lastEstTimestamp = 0;
+  private double lastEstTimestamp = 0.0;
+  private double lastOdometryUpdateTimestamp = 0.0;
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
@@ -329,13 +328,15 @@ public class SwerveSubsystem extends SubsystemBase {
       camera.updateInputs();
       camera.processInputs();
     }
-    var odometryReadLock = PhoenixOdometryThread.getInstance().getReadLock();
-    odometryReadLock.lock();
-    gyroIO.updateInputs(gyroInputs);
-    for (var module : modules) {
-      module.updateInputs();
+    var odometrySamples =
+        PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp);
+    if (odometrySamples.size() != 0) {
+      lastOdometryUpdateTimestamp = odometrySamples.get(odometrySamples.size() - 1).timestamp();
     }
-    odometryReadLock.unlock();
+    gyroIO.updateInputs(gyroInputs, odometrySamples);
+    for (var module : modules) {
+      module.updateInputs(odometrySamples);
+    }
     Logger.processInputs("Swerve/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
@@ -551,7 +552,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Pose3d getPose3d() {
-    return new Pose3d(pose);
+    return new Pose3d(getPose());
   }
 
   /** Returns the current odometry rotation. */
