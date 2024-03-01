@@ -373,8 +373,8 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
-      SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
-      SwerveModulePosition[] estPositions = new SwerveModulePosition[4];
+      SwerveModulePosition[] moduleDeltas =
+          new SwerveModulePosition[4]; // change in positions since the last update
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
         moduleDeltas[moduleIndex] =
@@ -382,19 +382,13 @@ public class SwerveSubsystem extends SubsystemBase {
                 modulePositions[moduleIndex].distanceMeters
                     - lastModulePositions[moduleIndex].distanceMeters,
                 modulePositions[moduleIndex].angle);
-        estPositions[moduleIndex] = // TODO i don't know why this works but it does
-            new SwerveModulePosition(
-                getModulePositions()[moduleIndex]
-                        .distanceMeters // smth abt odo positions vs module positions
-                    - lastModulePositions[moduleIndex].distanceMeters,
-                getModulePositions()[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
       // The twist represents the motion of the robot since the last
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
-      Twist2d twist = kinematics.toTwist2d(modulePositions);
+      Twist2d twist = kinematics.toTwist2d(moduleDeltas);
       if (gyroInputs.connected) {
         // If the gyro is connected, replace the theta component of the twist
         // with the change in angle since the last sample.
@@ -409,7 +403,7 @@ public class SwerveSubsystem extends SubsystemBase {
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
-      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
+      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
     }
   }
 
@@ -540,7 +534,8 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return estimator.getEstimatedPosition();
+    // return estimator.getEstimatedPosition(); //Vision
+    return pose;
   }
 
   public Pose3d getPose3d() {
@@ -559,7 +554,7 @@ public class SwerveSubsystem extends SubsystemBase {
       estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
     } catch (Exception e) {
     }
-    odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
+    // odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
@@ -583,9 +578,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Returns the module positions (turn angles and drive velocities) for all of the modules. */
   private SwerveModulePosition[] getModulePositions() {
-    SwerveModulePosition[] states =
+    SwerveModulePosition[] positions =
         Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
-    return states;
+    return positions;
   }
 
   public Rotation2d getFutureRotationToTranslation(Pose2d translation, Pose2d pose) {
