@@ -367,9 +367,16 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   private void updateOdometry() {
+    for (int i = 0; i < modules.length; i++) {
+      Logger.recordOutput(
+          "Swerve/Updates Since Last " + i, modules[i].getOdometryTimestamps().length);
+    }
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
-    int sampleCount = sampleTimestamps.length;
+    int sampleCount =
+        Math.min(
+            Arrays.stream(modules).mapToInt(m -> m.getOdometryTimestamps().length).min().getAsInt(),
+            gyroInputs.odometryYawPositions.length);
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];

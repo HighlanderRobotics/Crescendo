@@ -121,16 +121,20 @@ public class PhoenixOdometryThread extends Thread {
     while (true) {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
-
       try {
-        writeLock.lock();
 
         // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
         // but keeping up a symmetric array is too and it's probably negligible on latency.
-        BaseStatusSignal.waitForAll(
-            2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
-        journal.add(
-            new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
+        var status =
+            BaseStatusSignal.waitForAll(
+                2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
+        writeLock.lock();
+        if (status.isOK()) {
+          journal.add(
+              new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
+        } else {
+          System.out.println("Odo thread error: " + status.toString());
+        }
       } finally {
         writeLock.unlock();
       }

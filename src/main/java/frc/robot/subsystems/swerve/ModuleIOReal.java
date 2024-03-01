@@ -210,7 +210,7 @@ public class ModuleIOReal implements ModuleIO {
     var samples =
         PhoenixOdometryThread.getInstance()
             .samplesSince(lastUpdate, ImmutableSet.of(drivePosition, turnPosition));
-    if (!samples.isEmpty()) {
+    if (samples.stream().filter(s -> s != null).count() != 0) {
       lastUpdate = samples.get(samples.size() - 1).timestamp();
     }
 
