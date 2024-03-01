@@ -901,13 +901,12 @@ public class SwerveSubsystem extends SubsystemBase {
         xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME_SECONDS);
   }
 
-  public Command runChoreoTraj(Supplier<ChoreoTrajectory> traj) {
+  public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj) {
 
     return Commands.defer(
-        () -> {
-          try {
-            return Choreo.choreoSwerveCommand(
-                traj.get(),
+        () -> 
+          Choreo.choreoSwerveCommand(
+                traj.get().get(),
                 this::getPose,
                 new PIDController(6.0, 0.0, 0.0),
                 new PIDController(6.0, 0.0, 0.0),
@@ -918,12 +917,14 @@ public class SwerveSubsystem extends SubsystemBase {
                   Optional<Alliance> alliance = DriverStation.getAlliance();
                   return alliance.isPresent() && alliance.get() == Alliance.Red;
                 },
-                this);
-          } catch (Exception e) {
-            throw e;
-          }
-        },
-        Set.of(this));
+                this)
+        ,
+        Set.of(this)).onlyIf(() -> {if(traj.get().isEmpty()){
+          stopWithXCmd();
+          return false;
+        } else{
+          return true;
+        }});
   }
 
   public Command runModuleSteerCharacterizationCmd() {

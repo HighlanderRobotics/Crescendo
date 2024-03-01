@@ -10,6 +10,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import org.littletonrobotics.junction.Logger;
@@ -45,8 +47,8 @@ public class DynamicAuto {
 
   public static int whitelistCount = notes.length;
 
-  public static ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
-  public static Pose2d[] forwardLookingTrajectory = curTrajectory.getPoses();
+  public static Optional<ChoreoTrajectory> curTrajectory = Optional.of(Choreo.getTrajectory("Amp Side To C1"));
+  public static Pose2d[] forwardLookingTrajectory = curTrajectory.get().getPoses();
 
   public static void updateWhitelistCount() {
     whitelistCount = 0;
@@ -92,99 +94,80 @@ public class DynamicAuto {
     return closestLocation;
   }
 
-  public static ChoreoTrajectory makeStartToNote(
-      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
-    try {
-      ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
-      startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
-      Note closestNote = getClosestNote(startingPose);
-      if (closestNote.getName().equals("Uninitialized")) {
-        closestNote = getAbsoluteClosestNote(startingPose);
-        System.out.println("No more avaliable notes!");
-      }
+  public static Optional<ChoreoTrajectory> makeStartToNote(
+    Supplier<Pose2d> startingPose) {
+    ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
+    startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
+    Note closestNote = getClosestNote(startingPose);
+    if (closestNote.getName().equals("Uninitialized")) {
+      closestNote = getAbsoluteClosestNote(startingPose);
+      System.out.println("No more avaliable notes!");
+    }
 
-      ChoreoTrajectory trajectory =
-          Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
-      if (trajectory == null) {
-        swerve.stopWithXCmd();
-        return Choreo.getTrajectory("Blank");
-      } else {
-        return trajectory;
-      }
-    } catch (Exception e) {
-      throw e;
+    ChoreoTrajectory trajectory =
+        Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
+    if(trajectory == null){
+      return Optional.empty();
+    } else{
+      return Optional.of(trajectory);
     }
   }
 
-  public static ChoreoTrajectory makeNoteToShooting(
-      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
-    try {
-      Note closestNote = getAbsoluteClosestNote(startingPose);
-      ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
-      if (closestNote.getName().equals("Uninitialized")) {
-        closestNote = getAbsoluteClosestNote(startingPose);
-        System.out.println("No more avaliable notes!");
-      }
-      ChoreoTrajectory trajectory =
-          Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
-      if (trajectory == null) {
-        swerve.stopWithXCmd();
-        return Choreo.getTrajectory("Blank");
-      } else {
-        return trajectory;
-      }
-    } catch (Exception e) {
-      throw e;
+  public static Optional<ChoreoTrajectory> makeNoteToShooting(
+    Supplier<Pose2d> startingPose) {
+
+    Note closestNote = getAbsoluteClosestNote(startingPose);
+    ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+    if (closestNote.getName().equals("Uninitialized")) {
+      closestNote = getAbsoluteClosestNote(startingPose);
+      System.out.println("No more avaliable notes!");
+    }
+    ChoreoTrajectory trajectory =
+        Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
+    if(trajectory == null){
+    return Optional.empty();
+    } else{
+    return Optional.of(trajectory);
     }
   }
 
-  public static ChoreoTrajectory makeShootingToNote(
-      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
-    try {
-      Note closestNote = getClosestNote(startingPose);
-      ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
-      if (closestNote.getName().equals("Uninitialized")) {
-        closestNote = getAbsoluteClosestNote(startingPose);
-        System.out.println("No more avaliable notes!");
-      }
-      ChoreoTrajectory trajectory =
-          Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
-      if (trajectory == null) {
-        swerve.stopWithXCmd();
-        return Choreo.getTrajectory("Blank");
-      } else {
-        return trajectory;
-      }
-    } catch (Exception e) {
-      throw e;
+  public static Optional<ChoreoTrajectory> makeShootingToNote(
+    Supplier<Pose2d> startingPose) {
+    Note closestNote = getClosestNote(startingPose);
+    ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+    if (closestNote.getName().equals("Uninitialized")) {
+      closestNote = getAbsoluteClosestNote(startingPose);
+      System.out.println("No more avaliable notes!");
+    }
+    ChoreoTrajectory trajectory =
+        Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
+    if(trajectory == null){
+      return Optional.empty();
+    } else{
+      return Optional.of(trajectory);
     }
   }
 
-  public static ChoreoTrajectory makeNoteToNote(
-      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
-    try {
-      Note closestNote = getAbsoluteClosestNote(startingPose);
-      Note nextClosest = new Note();
-      if (!closestNote.getBlacklist()) {
-        closestNote.blacklist();
-        nextClosest = getClosestNote(startingPose);
-        closestNote.whitelist();
-      } else {
-        nextClosest = getClosestNote(startingPose);
-      }
+  public static Optional<ChoreoTrajectory> makeNoteToNote(
+    Supplier<Pose2d> startingPose) {
+    Note closestNote = getAbsoluteClosestNote(startingPose);
+    Note nextClosest = new Note();
+    if (!closestNote.getBlacklist()) {
+      closestNote.blacklist();
+      nextClosest = getClosestNote(startingPose);
+      closestNote.whitelist();
+    } else {
+      nextClosest = getClosestNote(startingPose);
+    }
 
-      Logger.recordOutput(
-          "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
-      ChoreoTrajectory trajectory =
-          Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
-      if (trajectory == null) {
-        swerve.stopWithXCmd();
-        return Choreo.getTrajectory("Blank");
-      } else {
-        return trajectory;
-      }
-    } catch (Exception e) {
-      throw e;
+    Logger.recordOutput(
+        "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
+    ChoreoTrajectory trajectory =
+        Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
+    if(trajectory == null){
+      return Optional.empty();
+    } else{
+      return Optional.of(trajectory);
     }
   }
 
@@ -249,7 +232,7 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose, swerve);
+              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose);
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
@@ -272,12 +255,12 @@ public class DynamicAuto {
         .runChoreoTraj(
             () -> {
               System.out.println(DynamicAuto.whitelistCount);
-              curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose, swerve);
+              curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose);
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
               // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
-              return DynamicAuto.makeNoteToNote(swerve::getPose, swerve);
+              return DynamicAuto.makeNoteToNote(swerve::getPose);
             })
         .onlyIf(
             () -> {
@@ -294,12 +277,12 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose, swerve);
+              curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose);
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
               // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
-              return DynamicAuto.makeShootingToNote(swerve::getPose, swerve);
+              return DynamicAuto.makeShootingToNote(swerve::getPose);
             })
         .onlyIf(
             () -> {
@@ -316,8 +299,8 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose, swerve);
-              return DynamicAuto.makeNoteToShooting(swerve::getPose, swerve);
+              curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose);
+              return DynamicAuto.makeNoteToShooting(swerve::getPose);
             })
         .onlyIf(
             () -> {

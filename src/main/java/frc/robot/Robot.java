@@ -432,8 +432,11 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPoseAllianceSpecific());
+    if(DynamicAuto.curTrajectory.isPresent()){
+
     Logger.recordOutput(
-        "DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.getPoses());
+        "DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.get().getPoses());
+    }
     Logger.recordOutput(
         "DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
     Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
