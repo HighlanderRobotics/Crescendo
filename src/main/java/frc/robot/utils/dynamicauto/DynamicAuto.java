@@ -17,9 +17,9 @@ import org.littletonrobotics.junction.Logger;
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 0, "W1", true), // w1
-    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 1, "W2", true), // w2
-    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 2, "W3", true), // w3
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 1, "W1", true), // w1
+    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 2, "W2", true), // w2
+    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 0, "W3", true), // w3
     new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, 3, "C1", true), // c1
     new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C2", true), // c2
     new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), true, 1, "C3", true), // c3
@@ -93,50 +93,91 @@ public class DynamicAuto {
   }
 
   public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
-    ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
-    startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
-    Note closestNote = getClosestNote(startingPose);
-    if ("Uninitialized" == closestNote.getName()) {
-      closestNote = getAbsoluteClosestNote(startingPose);
-      System.out.println("No more avaliable notes!");
+    try {
+      ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
+      startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
+      Note closestNote = getClosestNote(startingPose);
+      if (closestNote.getName().equals("Uninitialized")) {
+        closestNote = getAbsoluteClosestNote(startingPose);
+        System.out.println("No more avaliable notes!");
+      }
+
+      ChoreoTrajectory trajectory =
+          Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
+      if (trajectory == null) {
+        throw new NullPointerException();
+      } else {
+        return trajectory;
+      }
+    } catch (Exception e) {
+      throw e;
     }
-    return Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
   }
 
   public static ChoreoTrajectory makeNoteToShooting(Supplier<Pose2d> startingPose) {
-    Note closestNote = getAbsoluteClosestNote(startingPose);
-    ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
-    if ("Uninitialized" == closestNote.getName()) {
-      closestNote = getAbsoluteClosestNote(startingPose);
-      System.out.println("No more avaliable notes!");
+    try {
+      Note closestNote = getAbsoluteClosestNote(startingPose);
+      ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+      if (closestNote.getName().equals("Uninitialized")) {
+        closestNote = getAbsoluteClosestNote(startingPose);
+        System.out.println("No more avaliable notes!");
+      }
+      ChoreoTrajectory trajectory =
+          Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
+      if (trajectory == null) {
+        throw new NullPointerException();
+      } else {
+        return trajectory;
+      }
+    } catch (Exception e) {
+      throw e;
     }
-    return Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
   }
 
   public static ChoreoTrajectory makeShootingToNote(Supplier<Pose2d> startingPose) {
-    Note closestNote = getClosestNote(startingPose);
-    ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
-    if ("Uninitialized" == closestNote.getName()) {
-      closestNote = getAbsoluteClosestNote(startingPose);
-      System.out.println("No more avaliable notes!");
+    try {
+      Note closestNote = getClosestNote(startingPose);
+      ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+      if (closestNote.getName().equals("Uninitialized")) {
+        closestNote = getAbsoluteClosestNote(startingPose);
+        System.out.println("No more avaliable notes!");
+      }
+      ChoreoTrajectory trajectory =
+          Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
+      if (trajectory == null) {
+        throw new NullPointerException();
+      } else {
+        return trajectory;
+      }
+    } catch (Exception e) {
+      throw e;
     }
-    return Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
   }
 
   public static ChoreoTrajectory makeNoteToNote(Supplier<Pose2d> startingPose) {
-    Note closestNote = getAbsoluteClosestNote(startingPose);
-    Note nextClosest = new Note();
-    if (!closestNote.getBlacklist()) {
-      closestNote.blacklist();
-      nextClosest = getClosestNote(startingPose);
-      closestNote.whitelist();
-    } else {
-      nextClosest = getClosestNote(startingPose);
-    }
+    try {
+      Note closestNote = getAbsoluteClosestNote(startingPose);
+      Note nextClosest = new Note();
+      if (!closestNote.getBlacklist()) {
+        closestNote.blacklist();
+        nextClosest = getClosestNote(startingPose);
+        closestNote.whitelist();
+      } else {
+        nextClosest = getClosestNote(startingPose);
+      }
 
-    Logger.recordOutput(
-        "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
-    return Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
+      Logger.recordOutput(
+          "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
+      ChoreoTrajectory trajectory =
+          Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
+      if (trajectory == null) {
+        throw new NullPointerException();
+      } else {
+        return trajectory;
+      }
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   public static Note getAbsoluteClosestNote(Supplier<Pose2d> curPose) {
@@ -201,9 +242,10 @@ public class DynamicAuto {
         .runChoreoTraj(
             () -> {
               curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose);
-              forwardLookingTrajectory =
-                  DynamicAuto.addTwoTrajectories(
-                      curTrajectory, DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
+              // forwardLookingTrajectory =
+              //     DynamicAuto.addTwoTrajectories(
+              //         curTrajectory,
+              // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
               return curTrajectory;
             })
         .onlyIf(
@@ -223,9 +265,10 @@ public class DynamicAuto {
             () -> {
               System.out.println(DynamicAuto.whitelistCount);
               curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose);
-              forwardLookingTrajectory =
-                  DynamicAuto.addTwoTrajectories(
-                      curTrajectory, DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
+              // forwardLookingTrajectory =
+              //     DynamicAuto.addTwoTrajectories(
+              //         curTrajectory,
+              // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
               return DynamicAuto.makeNoteToNote(swerve::getPose);
             })
         .onlyIf(
@@ -244,9 +287,10 @@ public class DynamicAuto {
         .runChoreoTraj(
             () -> {
               curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose);
-              forwardLookingTrajectory =
-                  DynamicAuto.addTwoTrajectories(
-                      curTrajectory, DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
+              // forwardLookingTrajectory =
+              //     DynamicAuto.addTwoTrajectories(
+              //         curTrajectory,
+              // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
               return DynamicAuto.makeShootingToNote(swerve::getPose);
             })
         .onlyIf(

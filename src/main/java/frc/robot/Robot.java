@@ -645,7 +645,7 @@ public class Robot extends LoggedRobot {
                                     () -> AutoAim.shotMap.get(distance).getRotation(),
                                     () -> AutoAim.shotMap.get(distance).getLeftRPS(),
                                     () -> AutoAim.shotMap.get(distance).getRightRPS())),
-                            feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.2))),
+                            feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
                         Commands.race(
@@ -675,12 +675,7 @@ public class Robot extends LoggedRobot {
                   DynamicAuto.updateWhitelistCount();
                   System.out.println(dynamicAutoCounter);
                   System.out.println(DynamicAuto.whitelistCount);
-                  distance =
-                      curTrajectory
-                          .getFinalPose()
-                          .minus(FieldConstants.getSpeaker())
-                          .getTranslation()
-                          .getNorm();
+                  distance = 0;
                 }))
         .beforeStarting(
             () -> {

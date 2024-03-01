@@ -583,7 +583,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
     odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
     estimator.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
-    
   }
 
   public void setYaw(Rotation2d yaw) {
@@ -905,8 +904,9 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(Supplier<ChoreoTrajectory> traj) {
 
     return Commands.defer(
-        () ->
-            Choreo.choreoSwerveCommand(
+        () -> {
+          try {
+            return Choreo.choreoSwerveCommand(
                 traj.get(),
                 this::getPose,
                 new PIDController(6.0, 0.0, 0.0),
@@ -918,7 +918,11 @@ public class SwerveSubsystem extends SubsystemBase {
                   Optional<Alliance> alliance = DriverStation.getAlliance();
                   return alliance.isPresent() && alliance.get() == Alliance.Red;
                 },
-                this),
+                this);
+          } catch (Exception e) {
+            throw e;
+          }
+        },
         Set.of(this));
   }
 
