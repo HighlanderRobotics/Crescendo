@@ -160,7 +160,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         break;
       case REPLAY:
         setUseTiming(false); // Run as fast as possible

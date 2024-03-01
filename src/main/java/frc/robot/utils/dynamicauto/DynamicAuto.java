@@ -17,9 +17,9 @@ import org.littletonrobotics.junction.Logger;
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 1, "W1", true), // w1
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), true, 1, "W1", true), // w1
     new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 2, "W2", true), // w2
-    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 0, "W3", true), // w3
+    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), true, 0, "W3", true), // w3
     new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, 3, "C1", true), // c1
     new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C2", true), // c2
     new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), true, 1, "C3", true), // c3
@@ -92,7 +92,8 @@ public class DynamicAuto {
     return closestLocation;
   }
 
-  public static ChoreoTrajectory makeStartToNote(Supplier<Pose2d> startingPose) {
+  public static ChoreoTrajectory makeStartToNote(
+      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
     try {
       ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
       startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
@@ -105,7 +106,8 @@ public class DynamicAuto {
       ChoreoTrajectory trajectory =
           Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
       if (trajectory == null) {
-        throw new NullPointerException();
+        swerve.stopWithXCmd();
+        return Choreo.getTrajectory("Blank");
       } else {
         return trajectory;
       }
@@ -114,7 +116,8 @@ public class DynamicAuto {
     }
   }
 
-  public static ChoreoTrajectory makeNoteToShooting(Supplier<Pose2d> startingPose) {
+  public static ChoreoTrajectory makeNoteToShooting(
+      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
     try {
       Note closestNote = getAbsoluteClosestNote(startingPose);
       ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
@@ -125,7 +128,8 @@ public class DynamicAuto {
       ChoreoTrajectory trajectory =
           Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
       if (trajectory == null) {
-        throw new NullPointerException();
+        swerve.stopWithXCmd();
+        return Choreo.getTrajectory("Blank");
       } else {
         return trajectory;
       }
@@ -134,7 +138,8 @@ public class DynamicAuto {
     }
   }
 
-  public static ChoreoTrajectory makeShootingToNote(Supplier<Pose2d> startingPose) {
+  public static ChoreoTrajectory makeShootingToNote(
+      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
     try {
       Note closestNote = getClosestNote(startingPose);
       ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
@@ -145,7 +150,8 @@ public class DynamicAuto {
       ChoreoTrajectory trajectory =
           Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
       if (trajectory == null) {
-        throw new NullPointerException();
+        swerve.stopWithXCmd();
+        return Choreo.getTrajectory("Blank");
       } else {
         return trajectory;
       }
@@ -154,7 +160,8 @@ public class DynamicAuto {
     }
   }
 
-  public static ChoreoTrajectory makeNoteToNote(Supplier<Pose2d> startingPose) {
+  public static ChoreoTrajectory makeNoteToNote(
+      Supplier<Pose2d> startingPose, SwerveSubsystem swerve) {
     try {
       Note closestNote = getAbsoluteClosestNote(startingPose);
       Note nextClosest = new Note();
@@ -171,7 +178,8 @@ public class DynamicAuto {
       ChoreoTrajectory trajectory =
           Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
       if (trajectory == null) {
-        throw new NullPointerException();
+        swerve.stopWithXCmd();
+        return Choreo.getTrajectory("Blank");
       } else {
         return trajectory;
       }
@@ -241,7 +249,7 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose);
+              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose, swerve);
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
@@ -264,12 +272,12 @@ public class DynamicAuto {
         .runChoreoTraj(
             () -> {
               System.out.println(DynamicAuto.whitelistCount);
-              curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose);
+              curTrajectory = DynamicAuto.makeNoteToNote(swerve::getPose, swerve);
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
               // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
-              return DynamicAuto.makeNoteToNote(swerve::getPose);
+              return DynamicAuto.makeNoteToNote(swerve::getPose, swerve);
             })
         .onlyIf(
             () -> {
@@ -286,12 +294,12 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose);
+              curTrajectory = DynamicAuto.makeShootingToNote(swerve::getPose, swerve);
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
               // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
-              return DynamicAuto.makeShootingToNote(swerve::getPose);
+              return DynamicAuto.makeShootingToNote(swerve::getPose, swerve);
             })
         .onlyIf(
             () -> {
@@ -308,8 +316,8 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose);
-              return DynamicAuto.makeNoteToShooting(swerve::getPose);
+              curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose, swerve);
+              return DynamicAuto.makeNoteToShooting(swerve::getPose, swerve);
             })
         .onlyIf(
             () -> {
