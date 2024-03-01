@@ -24,6 +24,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
+import frc.robot.subsystems.climber.ClimberIOReal;
+import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
@@ -71,8 +73,6 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
-  private final Boolean useAutoAim = true;
-
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = -0.1;
 
@@ -105,6 +105,7 @@ public class Robot extends LoggedRobot {
   //     new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
+    private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
 
   @Override
   public void robotInit() {
@@ -273,6 +274,19 @@ public class Robot extends LoggedRobot {
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
+
+    // ---New climb----
+    operator.rightBumper().toggleOnFalse( //TODO ???
+            Commands.parallel(
+                climber.extendClimb(),
+                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
+                    .until(
+                        () ->
+                            climber.getPosition().getDegrees() > ClimberSubsystem.CLIMB_ANGLE.getDegrees())
+                    .andThen(
+                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
+    controller.x().onTrue(climber.retractClimb().alongWith(leds.setRainbowCmd())); //TODO not sure yet how the actual trap scoring works
+
     // Heading reset
     controller
         .leftStick()

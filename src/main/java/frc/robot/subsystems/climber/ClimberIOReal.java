@@ -33,12 +33,12 @@ public class ClimberIOReal implements ClimberIO {
     config.MotionMagic.MotionMagicAcceleration = 1.0;
     config.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
+    //TODO find PID values
     motor.getConfigurator().apply(config);
-    motor.setPosition(0.0); // TODO find
+    motor.setPosition(ClimberSubsystem.CLIMBER_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
         250.0, velocity, voltage, amperage, temp, position);
     motor.optimizeBusUtilization();
-    motor.getConfigurator().apply(config);
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, amperage, temp, position);
     motor.optimizeBusUtilization();
