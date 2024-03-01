@@ -57,7 +57,7 @@ public class GyroIOPigeon2 implements GyroIO {
         samples.stream()
             .map(s -> s.values().get(yaw))
             .filter(s -> s != null)
-            .map(Rotation2d::fromRotations)
+            .map(Rotation2d::fromDegrees)
             .toArray(Rotation2d[]::new);
   }
 

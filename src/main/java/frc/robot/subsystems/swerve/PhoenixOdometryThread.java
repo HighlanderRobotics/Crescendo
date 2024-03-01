@@ -122,7 +122,6 @@ public class PhoenixOdometryThread extends Thread {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
       try {
-
         // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
         // but keeping up a symmetric array is too and it's probably negligible on latency.
         var status =
