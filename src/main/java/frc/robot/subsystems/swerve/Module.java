@@ -103,27 +103,27 @@ public class Module {
     io.setDriveVoltage(0.0);
   }
 
-  /** Returns the current turn angle of the module. */
+  /** Returns the current turn angle of the module without PhoenixOdometryThread. */
   public Rotation2d getAngle() {
     return inputs.turnPosition;
   }
 
-  /** Returns the current drive position of the module in meters. */
+  /** Returns the current drive position of the module in meters without PhoenixOdometryThread. */
   public double getPositionMeters() {
     return inputs.drivePositionMeters;
   }
 
-  /** Returns the current drive velocity of the module in meters per second. */
+  /** Returns the current drive velocity of the module in meters per second without PhoenixOdometryThread. */
   public double getVelocityMetersPerSec() {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  /** Returns the module position (turn angle and drive position). */
+  /** Returns the module position (turn angle and drive position) without PhoenixOdometryThread. */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(getPositionMeters(), getAngle());
   }
 
-  /** Returns the module state (turn angle and drive velocity). */
+  /** Returns the module state (turn angle and drive velocity) without PhoenixOdometryThread. */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
   }
@@ -133,12 +133,12 @@ public class Module {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  /** Returns the timestamps of the samples received this cycle. */
+  /** Returns the timestamps of the samples received this cycle from PhoenixOdometryThread. */
   public double[] getOdometryTimestamps() {
     return inputs.odometryTimestamps;
   }
 
-  /** Returns the module positions received this cycle. */
+  /** Returns the module positions received this cycle from PhoenixOdometryThread. */
   public SwerveModulePosition[] getOdometryPositions() {
     return odometryPositions;
   }

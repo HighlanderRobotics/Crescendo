@@ -129,7 +129,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
   private Pose2d pose = new Pose2d();
-  private SwerveModulePosition[] lastModulePositions = // For delta tracking
+  /**For delta tracking with PhoenixOdometryThread**/
+  private SwerveModulePosition[] lastModulePositions =
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
         new SwerveModulePosition(),
@@ -376,7 +377,7 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] moduleDeltas =
           new SwerveModulePosition[4]; // change in positions since the last update
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
+        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex]; //gets positions from the thread, NOT inputs
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
@@ -555,9 +556,10 @@ public class SwerveSubsystem extends SubsystemBase {
       estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
       odometry.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
     } catch (Exception e) {
-      // getModulePositions() will give you the positions reported by the module inputs and not the
-      // separate thread so it will be less accurate, but i'm assuming this will not be used unless
-      // the thread hasn't started yet
+      // resets the position with the positions reported by the module inputs and not the
+      // thread so it will technically be less accurate, but i'm assuming this will not be used unless
+      // the thread/robot hasn't started yet in which case it should not really matter
+      estimator.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
       odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
     }
   }
@@ -581,11 +583,9 @@ public class SwerveSubsystem extends SubsystemBase {
     return new VisionConstants[] {leftCamConstants, rightCamConstants};
   }
 
-  /** Returns the module positions (turn angles and drive velocities) for all of the modules. */
+  /** Returns the module positions (turn angles and drive velocities) for all of the modules without PhoenixOdometryThread. */
   private SwerveModulePosition[] getModulePositions() {
-    SwerveModulePosition[] positions =
-        Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
-    return positions;
+    return Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
   }
 
   public Rotation2d getFutureRotationToTranslation(Pose2d translation, Pose2d pose) {
