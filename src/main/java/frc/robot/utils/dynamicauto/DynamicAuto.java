@@ -48,7 +48,7 @@ public class DynamicAuto {
 
   public static Optional<ChoreoTrajectory> curTrajectory = Optional.empty();
 
-  public static Pose2d[] forwardLookingTrajectory;
+  public static Pose2d[] forwardLookingTrajectory = new Pose2d[0];
 
   public static void updateWhitelistCount() {
     whitelistCount = 0;
