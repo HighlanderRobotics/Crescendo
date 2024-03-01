@@ -10,7 +10,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 
 /** Add your docs here. */
@@ -25,19 +24,18 @@ public class ClimberIOReal implements ClimberIO {
   final StatusSignal<Double> temp = motor.getDeviceTemp();
   final StatusSignal<Double> position = motor.getPosition();
 
-  private final MotionMagicVoltage motionMagic =
-      new MotionMagicVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicVoltage motionMagic = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   public ClimberIOReal() {
     var config = new TalonFXConfiguration();
     config.MotionMagic.MotionMagicAcceleration = 1.0;
     config.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
-    //TODO find PID values
+    // TODO find PID values
     motor.getConfigurator().apply(config);
-    motor.setPosition(ClimberSubsystem.CLIMBER_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        250.0, velocity, voltage, amperage, temp, position);
+    motor.setPosition(
+        ClimberSubsystem.CLIMBER_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
+    BaseStatusSignal.setUpdateFrequencyForAll(250.0, velocity, voltage, amperage, temp, position);
     motor.optimizeBusUtilization();
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, amperage, temp, position);
@@ -58,10 +56,12 @@ public class ClimberIOReal implements ClimberIO {
   public void setClimberVoltage(double volts) {
     motor.setControl(voltageOut.withOutput(volts));
   }
+
   @Override
   public void setSetpoint(Rotation2d rotation) {
     motor.setControl(motionMagic.withPosition(rotation.getRotations()));
   }
+
   @Override
   public void resetPosition(Rotation2d rotation) {
     motor.setPosition(rotation.getRotations());

@@ -105,7 +105,7 @@ public class Robot extends LoggedRobot {
   //     new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
-    private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
+  private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
 
   @Override
   public void robotInit() {
@@ -276,16 +276,25 @@ public class Robot extends LoggedRobot {
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
 
     // ---New climb----
-    operator.rightBumper().toggleOnFalse( //TODO ???
+    operator
+        .rightBumper()
+        .toggleOnFalse( // TODO ???
             Commands.parallel(
                 climber.extendClimb(),
                 leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
                     .until(
                         () ->
-                            climber.getPosition().getDegrees() > ClimberSubsystem.CLIMB_ANGLE.getDegrees())
+                            climber.getPosition().getDegrees()
+                                > ClimberSubsystem.CLIMB_ANGLE.getDegrees())
                     .andThen(
                         leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
-    controller.x().onTrue(climber.retractClimb().alongWith(leds.setRainbowCmd())); //TODO not sure yet how the actual trap scoring works
+    controller
+        .x()
+        .onTrue(
+            climber
+                .retractClimb()
+                .alongWith(
+                    leds.setRainbowCmd())); // TODO not sure yet how the actual trap scoring works
 
     // Heading reset
     controller

@@ -10,9 +10,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class ClimberSubsystem extends SubsystemBase {
-  public static final Rotation2d CLIMBER_MIN_ANGLE = Rotation2d.fromDegrees(0.0); //TODO
-  public static final Rotation2d CLIMBER_MAX_ANGLE = Rotation2d.fromDegrees(0.0); //TODO
-  public static final Rotation2d CLIMB_ANGLE = Rotation2d.fromDegrees(0.0); //TODO
+  public static final Rotation2d CLIMBER_MIN_ANGLE = Rotation2d.fromDegrees(0.0); // TODO
+  public static final Rotation2d CLIMBER_MAX_ANGLE = Rotation2d.fromDegrees(0.0); // TODO
+  public static final Rotation2d CLIMB_ANGLE = Rotation2d.fromDegrees(0.0); // TODO
 
   final ClimberIO io;
   final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
@@ -34,25 +34,24 @@ public class ClimberSubsystem extends SubsystemBase {
 
   public Command extendClimb() {
     return this.run(
-      () -> {
-        io.setSetpoint(CLIMB_ANGLE); //TODO find
-      }
-    );
+        () -> {
+          io.setSetpoint(CLIMB_ANGLE); // TODO find
+        });
   }
 
   public Command retractClimb() {
     return this.run(
-      () -> {
-        io.setSetpoint(CLIMBER_MIN_ANGLE); //TODO find
-      }
-    );
+        () -> {
+          io.setSetpoint(CLIMBER_MIN_ANGLE); // TODO find
+        });
   }
 
-  public Command runClimberCurrentZeroing() { //TODO numbers are from shooter pivot
+  public Command runClimberCurrentZeroing() { // TODO numbers are from shooter pivot
     return this.run(() -> io.setClimberVoltage(-1.0))
         .until(() -> inputs.climberCurrentAmps > 40.0)
         .finallyDo(() -> io.resetPosition(CLIMBER_MIN_ANGLE));
   }
+
   public Rotation2d getPosition() {
     return inputs.climberRotation;
   }
