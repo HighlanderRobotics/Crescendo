@@ -64,6 +64,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.FieldConstants;
+import frc.robot.Robot;
+import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
@@ -375,9 +377,11 @@ public class SwerveSubsystem extends SubsystemBase {
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
     int sampleCount =
-        Math.min(
-            Arrays.stream(modules).mapToInt(m -> m.getOdometryTimestamps().length).min().getAsInt(),
-            gyroInputs.odometryYawPositions.length);
+            Arrays.stream(modules).mapToInt(m -> m.getOdometryTimestamps().length).min().getAsInt();
+    // if the gyro isnt connected, dont worry about it
+    if (gyroInputs.connected) {
+      sampleCount = Math.min(sampleCount, gyroInputs.odometryTimestamps.length);
+    }
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
