@@ -121,10 +121,6 @@ public class PhoenixOdometryThread extends Thread {
     return samplesSince(timestamp, signals);
   }
 
-  public Lock getReadLock() {
-    return journalLock.readLock();
-  }
-
   @Override
   public void run() {
     while (true) {

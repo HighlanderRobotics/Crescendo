@@ -211,14 +211,14 @@ public class ModuleIOReal implements ModuleIO {
         asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
         asyncOdometrySamples.stream()
+          .mapToDouble(s -> s.values().get(drivePosition))
             .filter(s -> s != null)
-            .mapToDouble(s -> s.values().get(drivePosition))
             .toArray();
     inputs.odometryTurnPositions =
         asyncOdometrySamples.stream()
             // should be after offset + gear ratio
-            .filter(s -> s != null)
             .map(s -> s.values().get(turnPosition))
+            .filter(s -> s != null)
             .map(Rotation2d::fromRotations)
             .toArray(Rotation2d[]::new);
   }
