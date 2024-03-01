@@ -903,7 +903,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj) {
 
-    return Commands.defer(
+    return Commands.either(
+        Commands.defer(
             () ->
                 Choreo.choreoSwerveCommand(
                     traj.get().get(),
@@ -918,16 +919,9 @@ public class SwerveSubsystem extends SubsystemBase {
                       return alliance.isPresent() && alliance.get() == Alliance.Red;
                     },
                     this),
-            Set.of(this))
-        .onlyIf(
-            () -> {
-              if (traj.get().isEmpty()) {
-                stopWithXCmd();
-                return false;
-              } else {
-                return true;
-              }
-            });
+            Set.of(this)),
+        stopWithXCmd(),
+        () -> traj.get().isPresent());
   }
 
   public Command runModuleSteerCharacterizationCmd() {

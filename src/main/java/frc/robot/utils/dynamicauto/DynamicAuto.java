@@ -46,9 +46,9 @@ public class DynamicAuto {
 
   public static int whitelistCount = notes.length;
 
-  public static Optional<ChoreoTrajectory> curTrajectory =
-      Optional.of(Choreo.getTrajectory("Amp Side To C1"));
-  public static Pose2d[] forwardLookingTrajectory = curTrajectory.get().getPoses();
+  public static Optional<ChoreoTrajectory> curTrajectory = Optional.empty();
+
+  public static Pose2d[] forwardLookingTrajectory;
 
   public static void updateWhitelistCount() {
     whitelistCount = 0;
@@ -99,7 +99,6 @@ public class DynamicAuto {
     startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
     Note closestNote = getClosestNote(startingPose);
     if (closestNote.getName().equals("Uninitialized")) {
-      closestNote = getAbsoluteClosestNote(startingPose);
       System.out.println("No more avaliable notes!");
     }
 
@@ -117,7 +116,6 @@ public class DynamicAuto {
     Note closestNote = getAbsoluteClosestNote(startingPose);
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
     if (closestNote.getName().equals("Uninitialized")) {
-      closestNote = getAbsoluteClosestNote(startingPose);
       System.out.println("No more avaliable notes!");
     }
     ChoreoTrajectory trajectory =
@@ -131,14 +129,13 @@ public class DynamicAuto {
 
   public static Optional<ChoreoTrajectory> makeShootingToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getClosestNote(startingPose);
-    ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
+    ShootingLocation shootingLocation = closestShootingLocation(startingPose, shootingLocations);
     if (closestNote.getName().equals("Uninitialized")) {
-      closestNote = getAbsoluteClosestNote(startingPose);
       System.out.println("No more avaliable notes!");
     }
     ChoreoTrajectory trajectory =
-        Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
-    System.out.println(closestNote.getName() + " To " + startingLocation.getName());
+        Choreo.getTrajectory(shootingLocation.getName() + " To " + closestNote.getName());
+    System.out.println(closestNote.getName() + " To " + shootingLocation.getName());
     if (trajectory == null) {
       return Optional.empty();
     } else {

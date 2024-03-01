@@ -432,13 +432,14 @@ public class Robot extends LoggedRobot {
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPoseAllianceSpecific());
     if (DynamicAuto.curTrajectory.isPresent()) {
-            Logger.recordOutput("DynamicAuto/Current Path Ending Pose", DynamicAuto.curTrajectory.get().getFinalPose());
-    Logger.recordOutput("DynamicAuto/Current Path Initial Pose", DynamicAuto.curTrajectory.get().getInitialPose());
+      Logger.recordOutput(
+          "DynamicAuto/Current Path Ending Pose", DynamicAuto.curTrajectory.get().getFinalPose());
+      Logger.recordOutput(
+          "DynamicAuto/Current Path Initial Pose",
+          DynamicAuto.curTrajectory.get().getInitialPose());
       Logger.recordOutput(
           "DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.get().getPoses());
     }
-    Logger.recordOutput(
-        "DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
     Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
 
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
@@ -576,7 +577,7 @@ public class Robot extends LoggedRobot {
     } else if (atShootingLocation) {
       atShootingLocation = false;
       System.out.println("shoot to note");
-      
+
       return AutoStepSelector.SHOOT_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
@@ -650,7 +651,7 @@ public class Robot extends LoggedRobot {
                                     () -> AutoAim.shotMap.get(distance).getRotation(),
                                     () -> AutoAim.shotMap.get(distance).getLeftRPS(),
                                     () -> AutoAim.shotMap.get(distance).getRightRPS()),
-                            feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))),
+                                feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
                         Commands.race(
