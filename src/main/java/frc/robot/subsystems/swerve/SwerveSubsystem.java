@@ -330,7 +330,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     var odometrySamples =
         PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp);
-    if (odometrySamples.size() != 0) {
+    if (!odometrySamples.isEmpty()) {
       lastOdometryUpdateTimestamp = odometrySamples.get(odometrySamples.size() - 1).timestamp();
     }
     gyroIO.updateInputs(gyroInputs, odometrySamples);
