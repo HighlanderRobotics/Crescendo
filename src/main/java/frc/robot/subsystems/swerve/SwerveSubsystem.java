@@ -75,8 +75,6 @@ import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
