@@ -113,7 +113,10 @@ public class Module {
     return inputs.drivePositionMeters;
   }
 
-  /** Returns the current drive velocity of the module in meters per second without PhoenixOdometryThread. */
+  /**
+   * Returns the current drive velocity of the module in meters per second without
+   * PhoenixOdometryThread.
+   */
   public double getVelocityMetersPerSec() {
     return inputs.driveVelocityMetersPerSec;
   }
