@@ -904,27 +904,30 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj) {
 
     return Commands.defer(
-        () -> 
-          Choreo.choreoSwerveCommand(
-                traj.get().get(),
-                this::getPose,
-                new PIDController(6.0, 0.0, 0.0),
-                new PIDController(6.0, 0.0, 0.0),
-                new PIDController(1.0, 0.0, 0.0),
-                (ChassisSpeeds speeds) -> //
-                this.runVelocity(speeds),
-                () -> {
-                  Optional<Alliance> alliance = DriverStation.getAlliance();
-                  return alliance.isPresent() && alliance.get() == Alliance.Red;
-                },
-                this)
-        ,
-        Set.of(this)).onlyIf(() -> {if(traj.get().isEmpty()){
-          stopWithXCmd();
-          return false;
-        } else{
-          return true;
-        }});
+            () ->
+                Choreo.choreoSwerveCommand(
+                    traj.get().get(),
+                    this::getPose,
+                    new PIDController(6.0, 0.0, 0.0),
+                    new PIDController(6.0, 0.0, 0.0),
+                    new PIDController(1.0, 0.0, 0.0),
+                    (ChassisSpeeds speeds) -> //
+                    this.runVelocity(speeds),
+                    () -> {
+                      Optional<Alliance> alliance = DriverStation.getAlliance();
+                      return alliance.isPresent() && alliance.get() == Alliance.Red;
+                    },
+                    this),
+            Set.of(this))
+        .onlyIf(
+            () -> {
+              if (traj.get().isEmpty()) {
+                stopWithXCmd();
+                return false;
+              } else {
+                return true;
+              }
+            });
   }
 
   public Command runModuleSteerCharacterizationCmd() {

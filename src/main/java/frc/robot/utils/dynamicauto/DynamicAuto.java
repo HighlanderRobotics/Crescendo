@@ -10,7 +10,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
@@ -19,13 +18,13 @@ import org.littletonrobotics.junction.Logger;
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), true, 1, "W1", true), // w1
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 1, "W1", true), // w1
     new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 2, "W2", true), // w2
-    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), true, 0, "W3", true), // w3
+    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 0, "W3", true), // w3
     new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, 3, "C1", true), // c1
     new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C2", true), // c2
-    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), true, 1, "C3", true), // c3
-    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), true, 2, "C4", true), // c4
+    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), false, 1, "C3", true), // c3
+    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), false, 2, "C4", true), // c4
     new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C5", true) // c5
   };
 
@@ -47,7 +46,8 @@ public class DynamicAuto {
 
   public static int whitelistCount = notes.length;
 
-  public static Optional<ChoreoTrajectory> curTrajectory = Optional.of(Choreo.getTrajectory("Amp Side To C1"));
+  public static Optional<ChoreoTrajectory> curTrajectory =
+      Optional.of(Choreo.getTrajectory("Amp Side To C1"));
   public static Pose2d[] forwardLookingTrajectory = curTrajectory.get().getPoses();
 
   public static void updateWhitelistCount() {
@@ -94,8 +94,7 @@ public class DynamicAuto {
     return closestLocation;
   }
 
-  public static Optional<ChoreoTrajectory> makeStartToNote(
-    Supplier<Pose2d> startingPose) {
+  public static Optional<ChoreoTrajectory> makeStartToNote(Supplier<Pose2d> startingPose) {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
     startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
     Note closestNote = getClosestNote(startingPose);
@@ -106,15 +105,14 @@ public class DynamicAuto {
 
     ChoreoTrajectory trajectory =
         Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
-    if(trajectory == null){
+    if (trajectory == null) {
       return Optional.empty();
-    } else{
+    } else {
       return Optional.of(trajectory);
     }
   }
 
-  public static Optional<ChoreoTrajectory> makeNoteToShooting(
-    Supplier<Pose2d> startingPose) {
+  public static Optional<ChoreoTrajectory> makeNoteToShooting(Supplier<Pose2d> startingPose) {
 
     Note closestNote = getAbsoluteClosestNote(startingPose);
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
@@ -124,15 +122,14 @@ public class DynamicAuto {
     }
     ChoreoTrajectory trajectory =
         Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
-    if(trajectory == null){
-    return Optional.empty();
-    } else{
-    return Optional.of(trajectory);
+    if (trajectory == null) {
+      return Optional.empty();
+    } else {
+      return Optional.of(trajectory);
     }
   }
 
-  public static Optional<ChoreoTrajectory> makeShootingToNote(
-    Supplier<Pose2d> startingPose) {
+  public static Optional<ChoreoTrajectory> makeShootingToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getClosestNote(startingPose);
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
     if (closestNote.getName().equals("Uninitialized")) {
@@ -140,16 +137,16 @@ public class DynamicAuto {
       System.out.println("No more avaliable notes!");
     }
     ChoreoTrajectory trajectory =
-        Choreo.getTrajectory(closestNote.getName() + " To " + startingLocation.getName());
-    if(trajectory == null){
+        Choreo.getTrajectory(startingLocation.getName() + " To " + closestNote.getName());
+    System.out.println(closestNote.getName() + " To " + startingLocation.getName());
+    if (trajectory == null) {
       return Optional.empty();
-    } else{
+    } else {
       return Optional.of(trajectory);
     }
   }
 
-  public static Optional<ChoreoTrajectory> makeNoteToNote(
-    Supplier<Pose2d> startingPose) {
+  public static Optional<ChoreoTrajectory> makeNoteToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getAbsoluteClosestNote(startingPose);
     Note nextClosest = new Note();
     if (!closestNote.getBlacklist()) {
@@ -164,9 +161,9 @@ public class DynamicAuto {
         "DynamicAuto/Path Name", closestNote.getName() + " To " + nextClosest.getName());
     ChoreoTrajectory trajectory =
         Choreo.getTrajectory(closestNote.getName() + " To " + nextClosest.getName());
-    if(trajectory == null){
+    if (trajectory == null) {
       return Optional.empty();
-    } else{
+    } else {
       return Optional.of(trajectory);
     }
   }
@@ -282,7 +279,7 @@ public class DynamicAuto {
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,
               // DynamicAuto.makeNoteToShooting(curTrajectory::getFinalPose));
-              return DynamicAuto.makeShootingToNote(swerve::getPose);
+              return curTrajectory;
             })
         .onlyIf(
             () -> {

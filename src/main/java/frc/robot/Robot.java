@@ -415,8 +415,7 @@ public class Robot extends LoggedRobot {
                 .getTranslation()
                 .getNorm()
             > 1.5);
-    Logger.recordOutput("DynamicAuto/Current Path Ending Pose", curTrajectory.getFinalPose());
-    Logger.recordOutput("DynamicAuto/Current Path Initial Pose", curTrajectory.getInitialPose());
+
     Logger.recordOutput(
         "DynamicAuto/Closest Note Exists",
         DynamicAuto.getClosestNote(swerve::getPose).getExistence());
@@ -432,10 +431,11 @@ public class Robot extends LoggedRobot {
         "DynamicAuto/Closest Shooting Location",
         DynamicAuto.closestShootingLocation(() -> swerve.getPose(), DynamicAuto.shootingLocations)
             .getPoseAllianceSpecific());
-    if(DynamicAuto.curTrajectory.isPresent()){
-
-    Logger.recordOutput(
-        "DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.get().getPoses());
+    if (DynamicAuto.curTrajectory.isPresent()) {
+            Logger.recordOutput("DynamicAuto/Current Path Ending Pose", DynamicAuto.curTrajectory.get().getFinalPose());
+    Logger.recordOutput("DynamicAuto/Current Path Initial Pose", DynamicAuto.curTrajectory.get().getInitialPose());
+      Logger.recordOutput(
+          "DynamicAuto/Curent Trajectory Followed", DynamicAuto.curTrajectory.get().getPoses());
     }
     Logger.recordOutput(
         "DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
@@ -576,6 +576,7 @@ public class Robot extends LoggedRobot {
     } else if (atShootingLocation) {
       atShootingLocation = false;
       System.out.println("shoot to note");
+      
       return AutoStepSelector.SHOOT_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
@@ -590,6 +591,7 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
       System.out.println("note to shoot");
       atShootingLocation = true;
+      System.out.println(atShootingLocation);
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return AutoStepSelector.NOTE_TO_SHOOT;
     } else if ((!(carriage.getBeambreak() || feeder.getFirstBeambreak()) && Robot.isReal())
@@ -647,8 +649,8 @@ public class Robot extends LoggedRobot {
                                 shooter.runStateCmd(
                                     () -> AutoAim.shotMap.get(distance).getRotation(),
                                     () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                    () -> AutoAim.shotMap.get(distance).getRightRPS())),
-                            feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))),
+                                    () -> AutoAim.shotMap.get(distance).getRightRPS()),
+                            feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
                         Commands.race(
