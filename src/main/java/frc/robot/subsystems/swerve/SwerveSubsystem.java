@@ -550,11 +550,16 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
+    // This is in a try-catch because it is possible lastModulePositions hasn't been updated yet
     try {
       estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
+      odometry.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
     } catch (Exception e) {
+      // getModulePositions() will give you the positions reported by the module inputs and not the
+      // separate thread so it will be less accurate, but i'm assuming this will not be used unless
+      // the thread hasn't started yet
+      odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
     }
-    // odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
