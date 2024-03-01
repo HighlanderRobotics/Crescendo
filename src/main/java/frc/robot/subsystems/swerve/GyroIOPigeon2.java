@@ -53,6 +53,7 @@ public class GyroIOPigeon2 implements GyroIO {
       lastUpdate = samples.get(samples.size() - 1).timestamp();
     }
 
+    inputs.odometryTimestamps = samples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryYawPositions =
         samples.stream()
             .map(s -> s.values().get(yaw))

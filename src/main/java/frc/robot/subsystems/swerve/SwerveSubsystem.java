@@ -122,7 +122,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final ModuleConstants backRight =
       new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
 
-  public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules; // FL, FR, BL, BR
@@ -330,12 +329,13 @@ public class SwerveSubsystem extends SubsystemBase {
       camera.updateInputs();
       camera.processInputs();
     }
-    odometryLock.lock(); // Prevents odometry updates while reading data
+    var odometryReadLock = PhoenixOdometryThread.getInstance().getReadLock();
+    odometryReadLock.lock();
     gyroIO.updateInputs(gyroInputs);
     for (var module : modules) {
       module.updateInputs();
     }
-    odometryLock.unlock();
+    odometryReadLock.unlock();
     Logger.processInputs("Swerve/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();

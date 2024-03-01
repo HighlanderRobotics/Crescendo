@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.stream.Collectors;
 import org.littletonrobotics.junction.Logger;
 
@@ -95,10 +97,6 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
-    var readLock = journalLock.readLock();
-    try {
-      readLock.lock();
-
       return journal.stream()
           .filter(s -> s.timestamp > timestamp)
           .map(
@@ -111,9 +109,10 @@ public class PhoenixOdometryThread extends Thread {
                 return new Samples(s.timestamp, filteredValues);
               })
           .collect(Collectors.toUnmodifiableList());
-    } finally {
-      readLock.unlock();
-    }
+  }
+
+  public Lock getReadLock() {
+    return journalLock.readLock();
   }
 
   @Override
