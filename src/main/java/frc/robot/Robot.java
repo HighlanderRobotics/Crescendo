@@ -693,7 +693,14 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     dynamicAutoCounter = 0;
-    dynamicAuto().schedule();
+    dynamicAuto()
+        .finallyDo(
+            () -> {
+              for (Note note : DynamicAuto.notes) {
+                note.whitelist();
+              }
+            })
+        .schedule();
   }
 
   @Override
