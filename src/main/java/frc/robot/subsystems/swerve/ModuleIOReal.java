@@ -211,7 +211,7 @@ public class ModuleIOReal implements ModuleIO {
         asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
         asyncOdometrySamples.stream()
-          .mapToDouble(s -> s.values().get(drivePosition))
+            .mapToDouble(s -> s.values().get(drivePosition))
             .filter(s -> s != null)
             .toArray();
     inputs.odometryTurnPositions =
