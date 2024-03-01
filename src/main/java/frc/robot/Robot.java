@@ -437,6 +437,7 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "DynamicAuto/Forward Trajectory Followed", DynamicAuto.forwardLookingTrajectory);
     Logger.recordOutput("DynamicAuto/Whitelist Count", DynamicAuto.whitelistCount);
+
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
   }
 
@@ -617,7 +618,7 @@ public class Robot extends LoggedRobot {
       System.out.println("dynamic to note");
       return AutoStepSelector.DYNAMIC_TO_NOTE;
     }
-    if (DynamicAuto.whitelistCount == 0) {
+    if (DynamicAuto.whitelistCount <= 0) {
       System.out.println("END");
       return AutoStepSelector.END;
     } else {
@@ -637,12 +638,14 @@ public class Robot extends LoggedRobot {
                             DynamicAuto.noteToNote(swerve), intake.runVelocityCmd(80.0, 30.0))),
                     Map.entry(
                         AutoStepSelector.NOTE_TO_SHOOT,
-                        Commands.race(
-                            DynamicAuto.noteToShoot(swerve),
-                            shooter.runStateCmd(
-                                () -> AutoAim.shotMap.get(distance).getRotation(),
-                                () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                () -> AutoAim.shotMap.get(distance).getRightRPS()))),
+                        Commands.sequence(
+                            Commands.race(
+                                DynamicAuto.noteToShoot(swerve),
+                                shooter.runStateCmd(
+                                    () -> AutoAim.shotMap.get(distance).getRotation(),
+                                    () -> AutoAim.shotMap.get(distance).getLeftRPS(),
+                                    () -> AutoAim.shotMap.get(distance).getRightRPS())),
+                            feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.2))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
                         Commands.race(
