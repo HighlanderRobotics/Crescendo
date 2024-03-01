@@ -450,15 +450,14 @@ public class SwerveSubsystem extends SubsystemBase {
    new ProfiledPIDController(1.0, 0.0, 0.0,);        
    
    this.run (
-    controllers.calculate(runVelocity)
+    controllers.calculate(this.runVelocity)
     )
    
+  
+    this.runOnce(() -> ProfiledPIDControllers.reset(
+    new State(setPose(new Pose2d().getPose().getVelocity().RadiansPerSecond))))
+    
    
-   this.runOnce(() -> ProfiledPIDControllers.reset(
-    new State(
-        setPose( new Pose2d().getPose()))))
-
-
   }
 }
 }
