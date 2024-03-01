@@ -46,6 +46,11 @@
         "window": {
           "visible": true
         }
+      },
+      "/SmartDashboard/Set robot pose center": {
+        "window": {
+          "visible": true
+        }
       }
     }
   },
