@@ -20,6 +20,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 
 /**
  * Physics sim implementation of module IO.
@@ -55,7 +57,7 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs) {
+  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
 

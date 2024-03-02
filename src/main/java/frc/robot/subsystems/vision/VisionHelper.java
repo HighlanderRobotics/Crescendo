@@ -366,9 +366,7 @@ public class VisionHelper {
 
       if (target.getFiducialId() < 1 || target.getFiducialId() > 16) continue;
 
-      if (target.getBestCameraToTarget().getTranslation().getNorm() > 5) {
-        continue;
-      }
+      if (target.getBestCameraToTarget().getTranslation().getNorm() > 5) continue;
 
       // Make sure the target is a Fiducial target.
       if (targetPoseAmbiguity != -1 && targetPoseAmbiguity < lowestAmbiguityScore) {

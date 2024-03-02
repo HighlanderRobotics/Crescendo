@@ -38,6 +38,7 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
@@ -45,6 +46,7 @@ import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.dynamicauto.DynamicAuto;
 import frc.robot.utils.dynamicauto.LocalADStarAK;
 import frc.robot.utils.dynamicauto.Note;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -86,8 +88,10 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
+  private final Boolean useAutoAim = true;
+
   private Target currentTarget = Target.SPEAKER;
-  private double flywheelIdleSpeed = 0.0;
+  private double flywheelIdleSpeed = -0.1;
 
   private int dynamicAutoCounter = 0;
   private boolean atShootingLocation = false;
@@ -109,7 +113,7 @@ public class Robot extends LoggedRobot {
               : new GyroIO() {
                 // Blank implementation to mock gyro in sim
                 @Override
-                public void updateInputs(GyroIOInputs inputs) {}
+                public void updateInputs(GyroIOInputs inputs, List<Samples> asyncOdometrySamples) {}
 
                 @Override
                 public void setYaw(Rotation2d yaw) {}
@@ -245,10 +249,7 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller
-        .leftTrigger()
-        // .and(() -> !(carriage.getBeambreak() || feeder.getFirstBeambreak()))
-        .whileTrue(intake.runVelocityCmd(80.0, 30.0));
+    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -328,7 +329,31 @@ public class Robot extends LoggedRobot {
         .x()
         .whileTrue(
             Commands.parallel(carriage.runVoltageCmd(-5.0), intake.runVelocityCmd(-50.0, -50.0)));
+    controller
+        .y()
+        .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+        .onTrue(
+            Commands.sequence(
+                    elevator
+                        .setExtensionCmd(() -> 0.0)
+                        .until(() -> elevator.getExtensionMeters() < 0.05),
+                    Commands.waitUntil(() -> controller.y().getAsBoolean()),
+                    Commands.parallel(
+                        carriage
+                            .runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)
+                            .withTimeout(0.25)
+                            .andThen(
+                                Commands.parallel(
+                                    Commands.waitUntil(
+                                        () ->
+                                            elevator.getExtensionMeters()
+                                                > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS),
+                                    carriage.runVoltageCmd(0.0)),
+                                carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)),
+                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)))
+                .alongWith(leds.setRainbowCmd()));
 
+    // Prep climb
     operator
         .rightTrigger(0.5)
         .and(operator.rightBumper())
@@ -344,7 +369,7 @@ public class Robot extends LoggedRobot {
                         leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
-    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 0.0));
+    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
     operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
