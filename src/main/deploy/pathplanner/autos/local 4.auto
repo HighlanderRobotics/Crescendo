@@ -39,7 +39,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         },
         {
@@ -55,7 +55,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": null
+                  "name": "intake"
                 }
               }
             ]
@@ -64,7 +64,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         },
         {
@@ -80,7 +80,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": null
+                  "name": "intake"
                 }
               }
             ]

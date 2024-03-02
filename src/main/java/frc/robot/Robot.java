@@ -76,7 +76,7 @@ public class Robot extends LoggedRobot {
   private final Boolean useAutoAim = true;
 
   private Target currentTarget = Target.SPEAKER;
-  private double flywheelIdleSpeed = -0.1;
+  private double flywheelIdleSpeed = 30.0;
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -246,7 +246,7 @@ public class Robot extends LoggedRobot {
                               polarVelocity * Math.sin(polarRadians),
                               omega);
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
-                      return polarSpeeds;
+                      return new ChassisSpeeds();
                     }),
                 Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS)
                     .andThen(
@@ -365,9 +365,9 @@ public class Robot extends LoggedRobot {
                                 .getNorm())
                         .getRightRPS())
             .alongWith(
-                Commands.waitSeconds(1.0)
+                Commands.waitSeconds(1.5)
                     .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)))
-            .withTimeout(1.5)
+            .withTimeout(1.75)
             .asProxy());
 
     // Dashboard command buttons
@@ -515,7 +515,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("amp 5");
+    autonomousCommand = new PathPlannerAuto("local 4");
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
