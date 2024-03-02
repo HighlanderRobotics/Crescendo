@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.7470832467079163,
-      "y": 6.625458717346191
+      "x": 0.7078160047531128,
+      "y": 6.623246669769287
     },
-    "rotation": 60.53273310724105
+    "rotation": 60.10110776953835
   },
   "command": {
     "type": "sequential",
@@ -24,7 +24,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local.1"
+                  "pathName": "amp 5.1"
                 }
               },
               {
@@ -39,7 +39,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         },
         {
@@ -49,13 +49,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local.2"
+                  "pathName": "amp 5.2"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": null
+                  "name": "intake"
                 }
               }
             ]
@@ -64,7 +64,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         },
         {
@@ -74,13 +74,63 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local.3"
+                  "pathName": "amp 5.3"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": null
+                  "name": "intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "amp 5.4"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "amp 5.5"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "intake"
                 }
               }
             ]

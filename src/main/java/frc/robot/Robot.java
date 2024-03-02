@@ -39,10 +39,12 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
+import java.util.List;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -83,7 +85,7 @@ public class Robot extends LoggedRobot {
               : new GyroIO() {
                 // Blank implementation to mock gyro in sim
                 @Override
-                public void updateInputs(GyroIOInputs inputs) {}
+                public void updateInputs(GyroIOInputs inputs, List<Samples> asyncOdometrySamples) {}
 
                 @Override
                 public void setYaw(Rotation2d yaw) {}
@@ -330,8 +332,43 @@ public class Robot extends LoggedRobot {
         .whileTrue(elevator.runCurrentZeroing());
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+    NamedCommands.registerCommand("intake", intake.runVelocityCmd(80.0, 30.0));
     NamedCommands.registerCommand(
-        "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
+        "shoot",
+        shooter
+            .runStateCmd(
+                () ->
+                    AutoAim.shotMap
+                        .get(
+                            swerve
+                                .getPose()
+                                .minus(FieldConstants.getSpeaker())
+                                .getTranslation()
+                                .getNorm())
+                        .getRotation(),
+                () ->
+                    AutoAim.shotMap
+                        .get(
+                            swerve
+                                .getPose()
+                                .minus(FieldConstants.getSpeaker())
+                                .getTranslation()
+                                .getNorm())
+                        .getLeftRPS(),
+                () ->
+                    AutoAim.shotMap
+                        .get(
+                            swerve
+                                .getPose()
+                                .minus(FieldConstants.getSpeaker())
+                                .getTranslation()
+                                .getNorm())
+                        .getRightRPS())
+            .alongWith(
+                Commands.waitSeconds(1.0)
+                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)))
+            .withTimeout(1.5)
+            .asProxy());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -478,7 +515,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("New Auto");
+    autonomousCommand = new PathPlannerAuto("amp 5");
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();

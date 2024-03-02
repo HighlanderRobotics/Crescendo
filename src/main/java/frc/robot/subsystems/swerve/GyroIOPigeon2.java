@@ -22,13 +22,14 @@ import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 
 /** IO implementation for Pigeon2 */
 public class GyroIOPigeon2 implements GyroIO {
   private final Pigeon2 pigeon = new Pigeon2(SwerveSubsystem.PIGEON_ID, "canivore");
   private final StatusSignal<Double> yaw = pigeon.getYaw();
   private final StatusSignal<Double> yawVelocity = pigeon.getAngularVelocityZWorld();
-  private double lastUpdate = 0;
 
   public GyroIOPigeon2() {
     var config = new Pigeon2Configuration();
@@ -42,22 +43,18 @@ public class GyroIOPigeon2 implements GyroIO {
   }
 
   @Override
-  public void updateInputs(GyroIOInputs inputs) {
+  public void updateInputs(GyroIOInputs inputs, List<Samples> asyncOdometrySamples) {
     inputs.connected = BaseStatusSignal.refreshAll(yaw, yawVelocity).equals(StatusCode.OK);
     inputs.yawPosition = Rotation2d.fromDegrees(yaw.getValueAsDouble());
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(yawVelocity.getValueAsDouble());
 
-    var samples =
-        PhoenixOdometryThread.getInstance().samplesSince(lastUpdate, ImmutableSet.of(yaw));
-    if (!samples.isEmpty()) {
-      lastUpdate = samples.get(samples.size() - 1).timestamp();
-    }
-
+    inputs.odometryTimestamps =
+        asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryYawPositions =
-        samples.stream()
+        asyncOdometrySamples.stream()
             .map(s -> s.values().get(yaw))
             .filter(s -> s != null)
-            .map(Rotation2d::fromRotations)
+            .map(Rotation2d::fromDegrees)
             .toArray(Rotation2d[]::new);
   }
 

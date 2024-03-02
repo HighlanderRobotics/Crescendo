@@ -31,6 +31,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 
 /**
  * Module IO implementation for Talon FX drive motor controller, Talon FX turn motor controller, and
@@ -67,8 +69,6 @@ public class ModuleIOReal implements ModuleIO {
   private final StatusSignal<Double> turnAppliedVolts;
   private final StatusSignal<Double> turnCurrent;
 
-  private double lastUpdate = 0;
-
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
@@ -87,14 +87,6 @@ public class ModuleIOReal implements ModuleIO {
     // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.SupplyCurrentLimit = Module.DRIVE_SUPPLY_CURRENT_LIMIT;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyTimeThreshold = Module.DRIVE_SUPPLY_TIME_CUTOFF;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
-    driveConfig.CurrentLimits.StatorCurrentLimit = 30.0;
-    driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyTimeThreshold = Module.DRIVE_SUPPLY_TIME_CUTOFF;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
@@ -184,7 +176,7 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(ModuleIOInputs inputs) {
+  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
     BaseStatusSignal.refreshAll(
         drivePosition,
         driveVelocity,
@@ -207,21 +199,12 @@ public class ModuleIOReal implements ModuleIO {
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
-    var samples =
-        PhoenixOdometryThread.getInstance()
-            .samplesSince(lastUpdate, ImmutableSet.of(drivePosition, turnPosition));
-    if (!samples.isEmpty()) {
-      lastUpdate = samples.get(samples.size() - 1).timestamp();
-    }
-
-    inputs.odometryTimestamps = samples.stream().mapToDouble(s -> s.timestamp()).toArray();
+    inputs.odometryTimestamps =
+        asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
-        samples.stream()
-            .filter(s -> s != null)
-            .mapToDouble(s -> s.values().get(drivePosition))
-            .toArray();
+        asyncOdometrySamples.stream().mapToDouble(s -> s.values().get(drivePosition)).toArray();
     inputs.odometryTurnPositions =
-        samples.stream()
+        asyncOdometrySamples.stream()
             // should be after offset + gear ratio
             .map(s -> s.values().get(turnPosition))
             .filter(s -> s != null)

@@ -56,7 +56,7 @@ public class ElevatorIOReal implements ElevatorIO {
 
     motor.getConfigurator().apply(config);
     motor.setPosition(0.0); // Assume we boot 0ed
-    follower.getConfigurator().apply(new TalonFXConfiguration());
+    follower.getConfigurator().apply(config);
     follower.setControl(new Follower(motor.getDeviceID(), true));
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, current, temp);
