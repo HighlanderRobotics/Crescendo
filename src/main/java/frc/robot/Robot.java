@@ -277,10 +277,15 @@ public class Robot extends LoggedRobot {
 
     controller
         .y()
-        .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMBER_MAX_ROTATIONS)
+        .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
         .onTrue(
             Commands.sequence(
-                    climber.retractClimbCmd().until(() -> climber.getRotations() < 0.05), // TODO check
+                    climber
+                        .retractClimbCmd()
+                        .until(
+                            () ->
+                                climber.getRotations()
+                                    < 1.1 * ClimberSubsystem.CLIMBER_MIN_ROTATIONS),
                     Commands.waitUntil(() -> controller.y().getAsBoolean()),
                     Commands.parallel(
                         carriage
@@ -304,6 +309,7 @@ public class Robot extends LoggedRobot {
         .toggleOnFalse(
             Commands.parallel(
                 climber.extendClimbCmd(),
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
                 leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
                     .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS)
                     .andThen(

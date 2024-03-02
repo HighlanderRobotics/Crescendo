@@ -12,7 +12,7 @@ public class ClimberSubsystem extends SubsystemBase {
   public static final double CLIMBER_MIN_ROTATIONS = 0.0; // TODO
   public static final double CLIMBER_MAX_ROTATIONS = 0.0; // TODO
   public static final double CLIMB_ROTATIONS = 0.0; // TODO
-  public static final double SENSOR_TO_MECHANISM_RATIO = 0.0; //TODO
+  public static final double SENSOR_TO_MECHANISM_RATIO = 0.0; // TODO
 
   private final ClimberIO io;
   private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
@@ -47,7 +47,7 @@ public class ClimberSubsystem extends SubsystemBase {
     return extendRotationsCmd(CLIMBER_MIN_ROTATIONS);
   }
 
-  public Command runClimberCurrentZeroing() { // TODO numbers are from shooter pivot
+  public Command runClimberCurrentZeroing() {
     return this.run(() -> io.setClimberVoltage(-1.0))
         .until(() -> inputs.climberCurrentAmps > 40.0)
         .finallyDo(() -> io.resetPosition(CLIMBER_MIN_ROTATIONS));

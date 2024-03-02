@@ -30,7 +30,7 @@ public class ClimberIOReal implements ClimberIO {
   public ClimberIOReal() {
     var config = new TalonFXConfiguration();
 
-    //TODO find all of this
+    // TODO find all of this
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
     config.Feedback.SensorToMechanismRatio = ClimberSubsystem.SENSOR_TO_MECHANISM_RATIO;
