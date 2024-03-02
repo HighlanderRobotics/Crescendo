@@ -17,6 +17,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -54,8 +56,8 @@ public class Module {
    * Update inputs without running the rest of the periodic logic. This is useful since these
    * updates need to be properly thread-locked.
    */
-  public void updateInputs() {
-    io.updateInputs(inputs);
+  public void updateInputs(final List<Samples> asyncOdometrySamples) {
+    io.updateInputs(inputs, asyncOdometrySamples);
   }
 
   public void periodic() {

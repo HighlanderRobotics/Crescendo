@@ -41,11 +41,11 @@ import org.littletonrobotics.junction.Logger;
 public class PhoenixOdometryThread extends Thread {
   public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
 
-  public record Samples(double timestamp, Map<BaseStatusSignal, Double> values) {}
+  public record Samples(double timestamp, Map<StatusSignal<Double>, Double> values) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
 
-  private final Set<BaseStatusSignal> signals = Sets.newHashSet();
+  private final Set<StatusSignal<Double>> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
@@ -116,36 +116,46 @@ public class PhoenixOdometryThread extends Thread {
     }
   }
 
+  public List<Samples> samplesSince(double timestamp) {
+    return samplesSince(timestamp, signals);
+  }
+
   @Override
   public void run() {
     while (true) {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
-
+      // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
+      // but keeping up a symmetric array is too and it's probably negligible on latency.
+      var status =
+          BaseStatusSignal.waitForAll(
+              2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
       try {
         writeLock.lock();
-
-        // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
-        // but keeping up a symmetric array is too and it's probably negligible on latency.
-        BaseStatusSignal.waitForAll(
-            2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
-        journal.add(
-            new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
+        if (status.isOK()) {
+          journal.add(
+              new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
+        } else {
+          System.out.println("Odo thread error: " + status.toString());
+        }
       } finally {
         writeLock.unlock();
       }
     }
   }
 
-  private double timestampFor(Set<BaseStatusSignal> signals) {
-    final double totalTimestamp =
-        signals.stream().mapToDouble(s -> s.getTimestamp().getTime()).sum();
+  private double timestampFor(Set<StatusSignal<Double>> signals) {
+    double timestamp = Logger.getRealTimestamp() / 1e6;
+
+    // Use latency because ctre StatusSignals do NOT synchronize their time base with the fpga
+    final double totalLatency =
+        signals.stream().mapToDouble(s -> s.getTimestamp().getLatency()).sum();
 
     // Account for mean latency for a "good enough" timestamp
     if (!signals.isEmpty()) {
-      return totalTimestamp / signals.size();
-    } else {
-      return Logger.getRealTimestamp() / 1e6;
+      timestamp -= totalLatency / signals.size();
     }
+
+    return timestamp;
   }
 }
