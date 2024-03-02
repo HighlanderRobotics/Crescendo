@@ -47,7 +47,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
@@ -77,7 +76,6 @@ import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.util.Arrays;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
@@ -146,7 +144,7 @@ public class SwerveSubsystem extends SubsystemBase {
       AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
-  Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
+  Vector<N3> odoStdDevs = VecBuilder.fill(0.3 * 10, 0.3 * 10, 0.01);
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
 
@@ -199,7 +197,6 @@ public class SwerveSubsystem extends SubsystemBase {
               new Rotation3d(0, Units.degreesToRadians(-28.125), Units.degreesToRadians(210))),
           RIGHT_CAMERA_MATRIX,
           RIGHT_DIST_COEFFS);
-  private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
@@ -207,7 +204,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
     this.gyroIO = gyroIO;
     cameras = new Vision[visionIOs.length];
-    new AutoAim();
     modules = new Module[moduleIOs.length];
 
     for (int i = 0; i < moduleIOs.length; i++) {
@@ -252,8 +248,6 @@ public class SwerveSubsystem extends SubsystemBase {
     PathPlannerLogging.setLogActivePathCallback(
         (path) -> Logger.recordOutput("PathPlanner/Active Path", path.toArray(Pose2d[]::new)));
     Logger.recordOutput("PathPlanner/Target", new Pose2d());
-
-    odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
 
     moduleSteerRoutine =
         new SysIdRoutine(
@@ -433,19 +427,19 @@ public class SwerveSubsystem extends SubsystemBase {
           new PhotonPipelineResult(camera.inputs.latency, camera.inputs.targets);
       result.setTimestampSeconds(camera.inputs.timestamp);
       boolean newResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
-      try {
-        var estPose = camera.update(result);
+      var estPose = camera.update(result);
+      if (estPose.isPresent()) {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
+        pose = pose.interpolate(visionPose.toPose2d(), 0.5);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
             VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
         if (newResult) lastEstTimestamp = camera.inputs.timestamp;
-      } catch (NoSuchElementException e) {
       }
     }
   }
@@ -565,7 +559,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return estimator.getEstimatedPosition();
+    return pose;
   }
 
   public Pose3d getPose3d() {
@@ -580,11 +574,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
-    try {
-      estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
-    } catch (Exception e) {
-    }
-    odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
+    estimator.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {

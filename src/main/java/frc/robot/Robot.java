@@ -88,8 +88,6 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
-  private final Boolean useAutoAim = true;
-
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = -0.1;
 
@@ -413,10 +411,10 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
     SmartDashboard.putData("Update Note", updateNote());
-    SmartDashboard.putData(
-        "Set robot pose center",
-        Commands.runOnce(
-            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific())));
+    // SmartDashboard.putData(
+    //     "Set robot pose center",
+    //     Commands.runOnce(
+    //         () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific())));
 
     SmartDashboard.putData("Dynamic Auto", dynamicAuto());
   }
@@ -710,7 +708,7 @@ public class Robot extends LoggedRobot {
                 }))
         .beforeStarting(
             () -> {
-              swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific());
+              //   swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific());
               DynamicAuto.updateWhitelistCount();
             })
         .asProxy();
