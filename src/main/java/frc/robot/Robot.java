@@ -89,7 +89,7 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   private Target currentTarget = Target.SPEAKER;
-  private double flywheelIdleSpeed = -0.1;
+  private double flywheelIdleSpeed = 0.0;
 
   private int dynamicAutoCounter = 0;
   private boolean atShootingLocation = false;
@@ -326,7 +326,11 @@ public class Robot extends LoggedRobot {
     controller
         .x()
         .whileTrue(
-            Commands.parallel(carriage.runVoltageCmd(-5.0), intake.runVelocityCmd(-50.0, -50.0)));
+            Commands.parallel(
+                shooter.runFlywheelVoltageCmd(ShooterSubystem.PIVOT_MIN_ANGLE, -5.0),
+                feeder.runVoltageCmd(-5.0),
+                carriage.runVoltageCmd(-5.0),
+                intake.runVelocityCmd(-50.0, -50.0)));
     controller
         .y()
         .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
@@ -367,7 +371,7 @@ public class Robot extends LoggedRobot {
                         leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
-    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
+    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 0.0));
     operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
@@ -720,12 +724,15 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     dynamicAutoCounter = 0;
-    dynamicAuto().schedule();
+    autonomousCommand = dynamicAuto();
+    autonomousCommand.schedule();
   }
 
   @Override
   public void teleopInit() {
-    dynamicAuto().cancel();
+    if (autonomousCommand != null) {
+      autonomousCommand.cancel();
+    }
   }
 
   @Override

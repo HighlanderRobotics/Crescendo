@@ -138,7 +138,7 @@ public class PhoenixOdometryThread extends Thread {
           journal.add(
               new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
         } else {
-          System.out.println("Odo thread error: " + status.toString());
+          // System.out.println("Odo thread error: " + status.toString());
         }
       } finally {
         writeLock.unlock();
