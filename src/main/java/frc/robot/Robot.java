@@ -103,8 +103,6 @@ public class Robot extends LoggedRobot {
   private final ShooterSubystem shooter =
       new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
-  // private final ReactionBarReleaseSubsystem reactionBarRelease =
-  //     new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
   private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
@@ -192,11 +190,7 @@ public class Robot extends LoggedRobot {
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
         shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
-    // reactionBarRelease.setDefaultCommand(
-    //     reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
-    leds.setDefaultCommand(
-        leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+    climber.setDefaultCommand(climber.runVoltageCmd(0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -287,32 +281,30 @@ public class Robot extends LoggedRobot {
                         .until(() -> climber.getRotations() < 0.1), // TODO find actual tolerances
                     Commands.waitUntil(() -> controller.y().getAsBoolean()),
                     Commands.parallel(
-                        carriage
-                            .runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)
-                            .withTimeout(0.25)
-                            .andThen(
-                                Commands.parallel(
-                                    Commands.waitUntil(
-                                        () ->
-                                            elevator.getExtensionMeters()
-                                                > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS),
-                                    carriage.runVoltageCmd(0.0)),
-                                carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)),
+                        carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
                         elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)))
-                .alongWith(leds.setRainbowCmd()));
+                .alongWith(
+                    leds.setRainbowCmd(),
+                    shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0)));
 
     // Prep climb
     operator
         .rightTrigger(0.5)
-        .and(operator.rightBumper())
+        .debounce(0.25)
         .toggleOnFalse(
             Commands.parallel(
-                climber.extendClimbCmd(),
-                elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
-                    .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS)
+                Commands.waitUntil(operator.rightBumper())
                     .andThen(
-                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
+                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)),
+                Commands.waitUntil(() -> shooter.getAngle().getDegrees() > 80.0)
+                    .andThen(
+                        climber.extendRotationsCmd(
+                            () -> ClimberSubsystem.CLIMB_ROTATIONS + (-operator.getLeftY() * 2.0))),
+                shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0),
+                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 10.0)
+                    .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS * 0.9)
+                    .andThen(
+                        leds.setBlinkingCmd(new Color("#777700"), new Color("#ffffff"), 10.0))));
     // Heading reset
     controller
         .leftStick()
@@ -329,7 +321,9 @@ public class Robot extends LoggedRobot {
     operator
         .start()
         .whileTrue(shooter.runPivotCurrentZeroing())
-        .whileTrue(elevator.runCurrentZeroing());
+        .whileTrue(elevator.runCurrentZeroing())
+        .whileTrue(climber.runClimberCurrentZeroing());
+    operator.back().whileTrue(climber.runClimberCurrentZeroing());
 
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
