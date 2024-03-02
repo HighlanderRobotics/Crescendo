@@ -83,18 +83,11 @@ public class ModuleIOReal implements ModuleIO {
     cancoder = new CANcoder(constants.cancoderID(), "canivore");
 
     var driveConfig = new TalonFXConfiguration();
+    driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     // Current limits
     // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.SupplyCurrentLimit = Module.DRIVE_SUPPLY_CURRENT_LIMIT;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyTimeThreshold = Module.DRIVE_SUPPLY_TIME_CUTOFF;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
-    driveConfig.CurrentLimits.StatorCurrentLimit = 30.0;
-    driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyTimeThreshold = Module.DRIVE_SUPPLY_TIME_CUTOFF;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyCurrentThreshold = Module.DRIVE_SUPPLY_TIME_CURRENT_LIMIT;
     // Inverts
     driveConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;

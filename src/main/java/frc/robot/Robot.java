@@ -220,7 +220,7 @@ public class Robot extends LoggedRobot {
                         .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
                         .until(() -> feeder.getFirstBeambreak()),
                     carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
+                    carriage.runVoltageCmd(0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
