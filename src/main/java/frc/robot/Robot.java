@@ -284,10 +284,7 @@ public class Robot extends LoggedRobot {
             Commands.sequence(
                     climber
                         .retractClimbCmd()
-                        .until(
-                            () ->
-                                climber.getRotations()
-                                    < 0.1), //TODO find actual tolerances
+                        .until(() -> climber.getRotations() < 0.1), // TODO find actual tolerances
                     Commands.waitUntil(() -> controller.y().getAsBoolean()),
                     Commands.parallel(
                         carriage

@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class ClimberSubsystem extends SubsystemBase {
-  //TODO check
+  // TODO check
   public static final double CLIMBER_MIN_ROTATIONS = 0.0;
   public static final double CLIMBER_MAX_ROTATIONS = 3.0;
   public static final double CLIMB_ROTATIONS = 2.9;
