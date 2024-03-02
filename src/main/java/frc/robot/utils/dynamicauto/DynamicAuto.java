@@ -46,6 +46,8 @@ public class DynamicAuto {
 
   public static int whitelistCount = notes.length;
 
+  public static Note noteClosest = new Note();
+
   public static Optional<ChoreoTrajectory> curTrajectory = Optional.empty();
 
   public static Pose2d[] forwardLookingTrajectory = new Pose2d[0];
@@ -98,6 +100,7 @@ public class DynamicAuto {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
     startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
     Note closestNote = getClosestNote(startingPose);
+
     if (closestNote.getName().equals("Uninitialized")) {
       System.out.println("No more avaliable notes!");
     }
@@ -114,6 +117,7 @@ public class DynamicAuto {
   public static Optional<ChoreoTrajectory> makeNoteToShooting(Supplier<Pose2d> startingPose) {
 
     Note closestNote = getAbsoluteClosestNote(startingPose);
+    noteClosest = closestNote;
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
     if (closestNote.getName().equals("Uninitialized")) {
       System.out.println("No more avaliable notes!");
@@ -145,6 +149,7 @@ public class DynamicAuto {
 
   public static Optional<ChoreoTrajectory> makeNoteToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getAbsoluteClosestNote(startingPose);
+    noteClosest = closestNote;
     Note nextClosest = new Note();
     if (!closestNote.getBlacklist()) {
       closestNote.blacklist();

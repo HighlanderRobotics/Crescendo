@@ -78,6 +78,7 @@ public class Robot extends LoggedRobot {
     SHOOT_TO_NOTE,
     DYNAMIC_TO_NOTE,
     DYNAMIC_TO_SHOOT,
+    SHOOT,
     END
   }
 
@@ -93,6 +94,7 @@ public class Robot extends LoggedRobot {
 
   private int dynamicAutoCounter = 0;
   private boolean atShootingLocation = false;
+  private boolean justShotWNote = false;
   private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
 
   private double distance = 0;
@@ -415,10 +417,10 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
     SmartDashboard.putData("Update Note", updateNote());
-    // SmartDashboard.putData(
-    //     "Set robot pose center",
-    //     Commands.runOnce(
-    //         () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific())));
+    SmartDashboard.putData(
+        "Set robot pose center",
+        Commands.runOnce(
+            () -> swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific())));
 
     SmartDashboard.putData("Dynamic Auto", dynamicAuto());
   }
@@ -606,6 +608,12 @@ public class Robot extends LoggedRobot {
       System.out.println("shoot to note");
 
       return AutoStepSelector.SHOOT_TO_NOTE;
+    } else if (!justShotWNote && (DynamicAuto.noteClosest.getName().equals("W1")
+        || DynamicAuto.noteClosest.getName().equals("W2")
+        || DynamicAuto.noteClosest.getName().equals("W3"))) {
+      System.out.println("Shoot note");
+      justShotWNote = true;
+      return AutoStepSelector.SHOOT;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -619,6 +627,7 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
       System.out.println("note to shoot");
       atShootingLocation = true;
+      justShotWNote = false;
       System.out.println(atShootingLocation);
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return AutoStepSelector.NOTE_TO_SHOOT;
@@ -635,6 +644,7 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
 
       System.out.println("note to note 1");
+      justShotWNote = false;
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return AutoStepSelector.NOTE_TO_NOTE;
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
@@ -649,6 +659,7 @@ public class Robot extends LoggedRobot {
                 > 1.5)) {
 
       System.out.println("dynamic to note");
+      justShotWNote = false;
       return AutoStepSelector.DYNAMIC_TO_NOTE;
     }
     if (DynamicAuto.whitelistCount <= 0) {
@@ -656,6 +667,7 @@ public class Robot extends LoggedRobot {
       return AutoStepSelector.END;
     } else {
       atShootingLocation = true;
+      justShotWNote = false;
       System.out.println("dynamoci to shoot");
       return AutoStepSelector.DYNAMIC_TO_SHOOT;
     }
@@ -700,6 +712,14 @@ public class Robot extends LoggedRobot {
                                 () -> AutoAim.shotMap.get(distance).getRotation(),
                                 () -> AutoAim.shotMap.get(distance).getLeftRPS(),
                                 () -> AutoAim.shotMap.get(distance).getRightRPS()))),
+                    Map.entry(
+                        AutoStepSelector.SHOOT,
+                        Commands.parallel(
+                            shooter.runStateCmd(
+                                () -> AutoAim.shotMap.get(distance).getRotation(),
+                                () -> AutoAim.shotMap.get(distance).getLeftRPS(),
+                                () -> AutoAim.shotMap.get(distance).getRightRPS()),
+                            feeder.indexCmd()).withTimeout(0.75)),
                     Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),
                 this::selectAuto),
             Commands.runOnce(
