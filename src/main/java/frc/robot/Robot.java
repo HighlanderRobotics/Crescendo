@@ -24,6 +24,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
+import frc.robot.subsystems.climber.ClimberIOReal;
+import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
@@ -73,8 +75,6 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
-  private final Boolean useAutoAim = true;
-
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = -0.1;
 
@@ -107,6 +107,7 @@ public class Robot extends LoggedRobot {
   //     new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
+  private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
 
   @Override
   public void robotInit() {
@@ -275,20 +276,15 @@ public class Robot extends LoggedRobot {
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
-    // Heading reset
-    controller
-        .leftStick()
-        .and(controller.rightStick())
-        .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
 
     controller
         .y()
-        .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+        .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
         .onTrue(
             Commands.sequence(
-                    elevator
-                        .setExtensionCmd(() -> 0.0)
-                        .until(() -> elevator.getExtensionMeters() < 0.05),
+                    climber
+                        .retractClimbCmd()
+                        .until(() -> climber.getRotations() < 0.1), // TODO find actual tolerances
                     Commands.waitUntil(() -> controller.y().getAsBoolean()),
                     Commands.parallel(
                         carriage
@@ -311,14 +307,18 @@ public class Robot extends LoggedRobot {
         .and(operator.rightBumper())
         .toggleOnFalse(
             Commands.parallel(
-                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                climber.extendClimbCmd(),
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS),
                 leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
-                    .until(
-                        () ->
-                            elevator.getExtensionMeters()
-                                > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+                    .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS)
                     .andThen(
                         leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
+    // Heading reset
+    controller
+        .leftStick()
+        .and(controller.rightStick())
+        .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
+
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
