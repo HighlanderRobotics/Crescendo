@@ -4,18 +4,18 @@
 
 package frc.robot.subsystems.climber;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class ClimberSubsystem extends SubsystemBase {
-  public static final Rotation2d CLIMBER_MIN_ANGLE = Rotation2d.fromDegrees(0.0); // TODO
-  public static final Rotation2d CLIMBER_MAX_ANGLE = Rotation2d.fromDegrees(0.0); // TODO
-  public static final Rotation2d CLIMB_ANGLE = Rotation2d.fromDegrees(0.0); // TODO
+  public static final double CLIMBER_MIN_ROTATIONS = 0.0; // TODO
+  public static final double CLIMBER_MAX_ROTATIONS = 0.0; // TODO
+  public static final double CLIMB_ROTATIONS = 0.0; // TODO
+  public static final double SENSOR_TO_MECHANISM_RATIO = 0.0; //TODO
 
-  final ClimberIO io;
-  final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+  private final ClimberIO io;
+  private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem(ClimberIO io) {
@@ -32,27 +32,28 @@ public class ClimberSubsystem extends SubsystemBase {
     return this.run(() -> io.setClimberVoltage(voltage));
   }
 
-  public Command extendClimb() {
+  public Command extendRotationsCmd(double rotations) {
     return this.run(
         () -> {
-          io.setSetpoint(CLIMB_ANGLE); // TODO find
+          io.setSetpoint(rotations);
         });
   }
 
-  public Command retractClimb() {
-    return this.run(
-        () -> {
-          io.setSetpoint(CLIMBER_MIN_ANGLE); // TODO find
-        });
+  public Command extendClimbCmd() {
+    return extendRotationsCmd(CLIMB_ROTATIONS);
+  }
+
+  public Command retractClimbCmd() {
+    return extendRotationsCmd(CLIMBER_MIN_ROTATIONS);
   }
 
   public Command runClimberCurrentZeroing() { // TODO numbers are from shooter pivot
     return this.run(() -> io.setClimberVoltage(-1.0))
         .until(() -> inputs.climberCurrentAmps > 40.0)
-        .finallyDo(() -> io.resetPosition(CLIMBER_MIN_ANGLE));
+        .finallyDo(() -> io.resetPosition(CLIMBER_MIN_ROTATIONS));
   }
 
-  public Rotation2d getPosition() {
-    return inputs.climberRotation;
+  public double getRotations() {
+    return inputs.climberRotations;
   }
 }

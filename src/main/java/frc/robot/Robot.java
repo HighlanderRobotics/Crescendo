@@ -275,41 +275,12 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.75));
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
 
-    // ---New climb----
-    operator
-        .rightBumper()
-        .toggleOnFalse( // TODO ???
-            Commands.parallel(
-                climber.extendClimb(),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
-                    .until(
-                        () ->
-                            climber.getPosition().getDegrees()
-                                > ClimberSubsystem.CLIMB_ANGLE.getDegrees())
-                    .andThen(
-                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
-    controller
-        .x()
-        .onTrue(
-            climber
-                .retractClimb()
-                .alongWith(
-                    leds.setRainbowCmd())); // TODO not sure yet how the actual trap scoring works
-
-    // Heading reset
-    controller
-        .leftStick()
-        .and(controller.rightStick())
-        .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
-
     controller
         .y()
-        .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+        .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMBER_MAX_ROTATIONS)
         .onTrue(
             Commands.sequence(
-                    elevator
-                        .setExtensionCmd(() -> 0.0)
-                        .until(() -> elevator.getExtensionMeters() < 0.05),
+                    climber.retractClimbCmd().until(() -> climber.getRotations() < 0.05), // TODO check
                     Commands.waitUntil(() -> controller.y().getAsBoolean()),
                     Commands.parallel(
                         carriage
@@ -332,14 +303,17 @@ public class Robot extends LoggedRobot {
         .and(operator.rightBumper())
         .toggleOnFalse(
             Commands.parallel(
-                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                climber.extendClimbCmd(),
                 leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
-                    .until(
-                        () ->
-                            elevator.getExtensionMeters()
-                                > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
+                    .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS)
                     .andThen(
                         leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
+    // Heading reset
+    controller
+        .leftStick()
+        .and(controller.rightStick())
+        .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
+
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));

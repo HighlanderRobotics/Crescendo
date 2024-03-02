@@ -10,33 +10,46 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.math.geometry.Rotation2d;
+import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
-  final TalonFX motor = new TalonFX(0, "canivore"); // TODO get id
+  final TalonFX motor = new TalonFX(19, "canivore");
 
   final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-  final StatusSignal<Double> velocity = motor.getVelocity();
-  final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  final StatusSignal<Double> amperage = motor.getStatorCurrent();
-  final StatusSignal<Double> temp = motor.getDeviceTemp();
-  final StatusSignal<Double> position = motor.getPosition();
+  private final StatusSignal<Double> velocity = motor.getVelocity();
+  private final StatusSignal<Double> voltage = motor.getMotorVoltage();
+  private final StatusSignal<Double> amperage = motor.getStatorCurrent();
+  private final StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final StatusSignal<Double> position = motor.getPosition();
 
   private final MotionMagicVoltage motionMagic = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   public ClimberIOReal() {
     var config = new TalonFXConfiguration();
+
+    //TODO find all of this
+    config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+    config.Feedback.SensorToMechanismRatio = ClimberSubsystem.SENSOR_TO_MECHANISM_RATIO;
+
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+    config.CurrentLimits.StatorCurrentLimit = 40.0;
+
+    config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
+    config.Slot0.kG = 0.0;
+    config.Slot0.kV = 0.0;
+    config.Slot0.kA = 0.0;
+    config.Slot0.kS = 0.0;
+    config.Slot0.kP = 0.0;
+    config.Slot0.kD = 0.0;
     config.MotionMagic.MotionMagicAcceleration = 1.0;
     config.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
-    // TODO find PID values
     motor.getConfigurator().apply(config);
-    motor.setPosition(
-        ClimberSubsystem.CLIMBER_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
-    BaseStatusSignal.setUpdateFrequencyForAll(250.0, velocity, voltage, amperage, temp, position);
-    motor.optimizeBusUtilization();
+    motor.setPosition(ClimberSubsystem.CLIMBER_MIN_ROTATIONS); // Assume we boot at hard stop
 
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, amperage, temp, position);
     motor.optimizeBusUtilization();
@@ -49,7 +62,7 @@ public class ClimberIOReal implements ClimberIO {
     inputs.climberAppliedVolts = voltage.getValueAsDouble();
     inputs.climberCurrentAmps = amperage.getValueAsDouble();
     inputs.climberTempC = temp.getValueAsDouble();
-    inputs.climberRotation = Rotation2d.fromRotations(position.getValue());
+    inputs.climberRotations = position.getValueAsDouble();
   }
 
   @Override
@@ -58,12 +71,12 @@ public class ClimberIOReal implements ClimberIO {
   }
 
   @Override
-  public void setSetpoint(Rotation2d rotation) {
-    motor.setControl(motionMagic.withPosition(rotation.getRotations()));
+  public void setSetpoint(double rotations) {
+    motor.setControl(motionMagic.withPosition(rotations));
   }
 
   @Override
-  public void resetPosition(Rotation2d rotation) {
-    motor.setPosition(rotation.getRotations());
+  public void resetPosition(double rotation) {
+    motor.setPosition(rotation);
   }
 }
