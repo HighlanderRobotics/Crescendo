@@ -287,7 +287,7 @@ public class Robot extends LoggedRobot {
                         .until(
                             () ->
                                 climber.getRotations()
-                                    < 1.1 * ClimberSubsystem.CLIMBER_MIN_ROTATIONS),
+                                    < 0.1), //TODO find actual tolerances
                     Commands.waitUntil(() -> controller.y().getAsBoolean()),
                     Commands.parallel(
                         carriage

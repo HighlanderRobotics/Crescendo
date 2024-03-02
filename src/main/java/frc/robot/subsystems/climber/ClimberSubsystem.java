@@ -9,10 +9,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class ClimberSubsystem extends SubsystemBase {
-  public static final double CLIMBER_MIN_ROTATIONS = 0.0; // TODO
-  public static final double CLIMBER_MAX_ROTATIONS = 0.0; // TODO
-  public static final double CLIMB_ROTATIONS = 0.0; // TODO
-  public static final double SENSOR_TO_MECHANISM_RATIO = 0.0; // TODO
+  //TODO check
+  public static final double CLIMBER_MIN_ROTATIONS = 0.0;
+  public static final double CLIMBER_MAX_ROTATIONS = 3.0;
+  public static final double CLIMB_ROTATIONS = 2.9;
+  public static final double SENSOR_TO_MECHANISM_RATIO = 64.0;
 
   private final ClimberIO io;
   private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
