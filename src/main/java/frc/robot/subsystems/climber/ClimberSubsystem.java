@@ -6,13 +6,14 @@ package frc.robot.subsystems.climber;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class ClimberSubsystem extends SubsystemBase {
   // TODO check
   public static final double CLIMBER_MIN_ROTATIONS = 0.0;
-  public static final double CLIMBER_MAX_ROTATIONS = 3.0;
-  public static final double CLIMB_ROTATIONS = 2.9;
+  public static final double CLIMBER_MAX_ROTATIONS = 5.0;
+  public static final double CLIMB_ROTATIONS = 4.7;
   public static final double SENSOR_TO_MECHANISM_RATIO = 64.0;
 
   private final ClimberIO io;
@@ -33,11 +34,15 @@ public class ClimberSubsystem extends SubsystemBase {
     return this.run(() -> io.setClimberVoltage(voltage));
   }
 
-  public Command extendRotationsCmd(double rotations) {
+  public Command extendRotationsCmd(DoubleSupplier rotations) {
     return this.run(
         () -> {
-          io.setSetpoint(rotations);
+          io.setSetpoint(rotations.getAsDouble());
         });
+  }
+
+  public Command extendRotationsCmd(double rotations) {
+    return extendRotationsCmd(() -> rotations);
   }
 
   public Command extendClimbCmd() {
@@ -49,8 +54,8 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public Command runClimberCurrentZeroing() {
-    return this.run(() -> io.setClimberVoltage(-1.0))
-        .until(() -> inputs.climberCurrentAmps > 40.0)
+    return this.run(() -> io.setClimberVoltage(-3.0))
+        .until(() -> inputs.climberCurrentAmps > 9.0)
         .finallyDo(() -> io.resetPosition(CLIMBER_MIN_ROTATIONS));
   }
 
