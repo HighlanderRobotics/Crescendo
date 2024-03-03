@@ -71,7 +71,7 @@ public class Robot extends LoggedRobot {
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
-  public static final boolean USE_SOTM = false;
+  public static final boolean USE_SOTM = true;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -442,8 +442,11 @@ public class Robot extends LoggedRobot {
             staticAutoAim(),
             () ->
                 shooter.isAtGoal()
-                    && swerve.getVelocity().omegaRadiansPerSecond
-                        < 0.1 // If swerve isnt spinning, probably close TODO make not suck
+                    && MathUtil.isNear(AutoAimStates.endingPose
+                    .getTranslation()
+                    .minus(AutoAimStates.virtualTarget.getTranslation())
+                    .getAngle()
+                    .getDegrees(), swerve.getRotation().getDegrees(), 2.0)
             ));
   }
 
