@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
-import frc.robot.subsystems.shooter.ShooterSubystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ public final class AutoManager {
   SwerveSubsystem swerveSubsystem;
   IntakeSubsystem intakeSubsystem;
   ElevatorSubsystem elevatorSubsystem;
-  ShooterSubystem shooterSubsystem;
+  ShooterSubsystem shooterSubsystem;
   FeederSubsystem feederSubsystem;
 
   private void setUpChooser(String defaultAutoName) {
@@ -47,7 +47,7 @@ public final class AutoManager {
       SwerveSubsystem swerveSubsystem,
       IntakeSubsystem intakeSubsystem,
       ElevatorSubsystem elevatorSubsystem,
-      ShooterSubystem shooterSubsystem,
+      ShooterSubsystem shooterSubsystem,
       FeederSubsystem feederSubsystem) {
     this.swerveSubsystem = swerveSubsystem;
     this.intakeSubsystem = intakeSubsystem;

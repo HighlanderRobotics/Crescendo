@@ -7,7 +7,6 @@ package frc.robot;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
-import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -138,7 +137,7 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
-private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
+  private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
   private LoggedDashboardChooser<Note> noteDropdown =
       new LoggedDashboardChooser<Note>("Note Picker");
 
@@ -288,19 +287,10 @@ private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal(
                 .withTimeout(0.75));
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
     controller
-        .a()
-        .whileTrue(
-            swerve.teleopPointTowardsTranslationCmd(
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftX())
-                        * SwerveSubsystem.MAX_LINEAR_SPEED));
-    controller
         .x()
         .whileTrue(
             Commands.parallel(
-                shooter.runFlywheelVoltageCmd(ShooterSubystem.PIVOT_MIN_ANGLE, -5.0),
+                shooter.runFlywheelVoltageCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, -5.0),
                 feeder.runVoltageCmd(-5.0),
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
@@ -382,7 +372,6 @@ private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal(
               }
             },
             swerve));
-
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -663,9 +652,10 @@ private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal(
       System.out.println("shoot to note");
 
       return AutoStepSelector.SHOOT_TO_NOTE;
-    } else if (!justShotWNote && (DynamicAuto.noteClosest.getName().equals("W1")
-        || DynamicAuto.noteClosest.getName().equals("W2")
-        || DynamicAuto.noteClosest.getName().equals("W3"))) {
+    } else if (!justShotWNote
+        && (DynamicAuto.noteClosest.getName().equals("W1")
+            || DynamicAuto.noteClosest.getName().equals("W2")
+            || DynamicAuto.noteClosest.getName().equals("W3"))) {
       System.out.println("Shoot note");
       justShotWNote = true;
       return AutoStepSelector.SHOOT;
@@ -770,11 +760,12 @@ private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal(
                     Map.entry(
                         AutoStepSelector.SHOOT,
                         Commands.parallel(
-                            shooter.runStateCmd(
-                                () -> AutoAim.shotMap.get(distance).getRotation(),
-                                () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                () -> AutoAim.shotMap.get(distance).getRightRPS()),
-                            feeder.indexCmd()).withTimeout(0.75)),
+                                shooter.runStateCmd(
+                                    () -> AutoAim.shotMap.get(distance).getRotation(),
+                                    () -> AutoAim.shotMap.get(distance).getLeftRPS(),
+                                    () -> AutoAim.shotMap.get(distance).getRightRPS()),
+                                feeder.indexCmd())
+                            .withTimeout(0.75)),
                     Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),
                 this::selectAuto),
             Commands.runOnce(

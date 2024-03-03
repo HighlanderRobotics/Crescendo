@@ -18,7 +18,6 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
-import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -749,83 +748,6 @@ public class SwerveSubsystem extends SubsystemBase {
                           getVelocity().omegaRadiansPerSecond));
                   vxController.reset(new State(getPose().getX(), getVelocity().vxMetersPerSecond));
                   vyController.reset(new State(getPose().getY(), getVelocity().vyMetersPerSecond));
-                }));
-  }
-
-  /**
-   * Faces the robot towards a translation on the field Uses a constant lookahead time specified in
-   * AutoAim.java
-   *
-   * @param xMetersPerSecond Requested X velocity
-   * @param yMetersPerSecond Requested Y velocity
-   * @return A command refrence that rotates the robot to a computed rotation
-   */
-  public Command autonomousPointTowardsTranslationCmd() {
-    ProfiledPIDController headingController =
-        // assume we can accelerate to max in 2/3 of a second
-        new ProfiledPIDController(
-            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
-    headingController.enableContinuousInput(-Math.PI, Math.PI);
-
-    return Commands.sequence(
-        Commands.runOnce(
-            () -> {
-              AutoAimStates.startingAutonomousSeconds = Timer.getFPGATimestamp();
-
-              AutoAimStates.curState = getAutoState(AutoAim.LOOKAHEAD_TIME_SECONDS);
-              AutoAimStates.inputSpeeds =
-                  new ChassisSpeeds(
-                      AutoAimStates.curState.velocityX,
-                      AutoAimStates.curState.velocityY,
-                      getVelocity().omegaRadiansPerSecond);
-              AutoAimStates.virtualTarget =
-                  getVirtualTarget(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(
-                          AutoAimStates.inputSpeeds, getRotation()));
-
-              AutoAimStates.rotationsToTranslation =
-                  getFutureRotationToTranslation(
-                      AutoAimStates.virtualTarget, AutoAimStates.curState.getPose());
-            },
-            this),
-        this.runVelocityFieldRelative(
-                () -> {
-                  double feedbackOutput =
-                      headingController.calculate(
-                          getPose().getRotation().getRadians(),
-                          AutoAimStates.rotationsToTranslation.getRadians());
-
-                  AutoAimStates.curState = getAutoState(AutoAimStates.elapsedAutonomousSeconds);
-                  AutoAimStates.elapsedAutonomousSeconds +=
-                      Timer.getFPGATimestamp()
-                          - AutoAimStates.elapsedAutonomousSeconds
-                          - AutoAimStates.startingAutonomousSeconds;
-                  System.out.println(AutoAimStates.elapsedAutonomousSeconds);
-                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
-                  Logger.recordOutput("AutoAim/Virtual Target", AutoAimStates.virtualTarget);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Velocity", headingController.getSetpoint().velocity);
-                  Logger.recordOutput(
-                      "AutoAim/Goal Rotation", headingController.getGoal().position);
-                  Logger.recordOutput(
-                      "AutoAim/Goal Velocity", headingController.getGoal().velocity);
-                  return new ChassisSpeeds(
-                      AutoAimStates.curState.velocityX,
-                      AutoAimStates.curState.velocityY,
-                      feedbackOutput + headingController.getSetpoint().velocity);
-                })
-            .beforeStarting(
-                () -> {
-                  AutoAimStates.endingPose =
-                      new Pose2d(
-                          AutoAimStates.curState.x,
-                          AutoAimStates.curState.y,
-                          AutoAimStates.rotationsToTranslation);
-                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
-                  headingController.reset(new State(getPose().getRotation().getRadians(), 0));
-                  Logger.recordOutput("AutoAim/Translated Target", AutoAimStates.virtualTarget);
                 }));
   }
 
