@@ -445,11 +445,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public Command PoseLockDriveCmd(){
    Profiled FirstProfiledPIDControllers =
-   new ProfiledPIDController(1.0, 0.0, 0.0,);
+   new ProfiledPIDController(1.0, 0.0, 0.0);
    Profiled SecondProfiledPIDControllers =
-   new ProfiledPIDController(1.0, 0.0, 0.0,); 
+   new ProfiledPIDController(1.0, 0.0, 0.0); 
    Profiled ThirdProfiledPIDControllers =
-   new ProfiledPIDController(1.0, 0.0, 0.0,);        
+   new ProfiledPIDController(1.0, 0.0, 0.0);        
    
    this.run (
     controllers.calculate(this.runVelocity)
