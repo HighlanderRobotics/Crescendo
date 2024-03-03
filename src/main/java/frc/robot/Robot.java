@@ -47,6 +47,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -249,7 +250,9 @@ public class Robot extends LoggedRobot {
                       Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
                       return polarSpeeds;
                     }),
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS)
+                Commands.defer(
+                        () -> Commands.waitSeconds(SwerveSubsystem.AutoAimStates.lookaheadTime),
+                        Set.of())
                     .andThen(
                         Commands.parallel(
                             feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY),
@@ -328,7 +331,9 @@ public class Robot extends LoggedRobot {
 
     operator
         .start()
-        .whileTrue(shooter.resetPivotPosition()) //removing current zeroing for now because backlash is a thing
+        .whileTrue(
+            shooter.resetPivotPosition()) // removing current zeroing for now because backlash is a
+        // thing
         .whileTrue(elevator.runCurrentZeroing());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
@@ -412,10 +417,10 @@ public class Robot extends LoggedRobot {
             () -> {
               AutoAimStates.curShotSpeeds = speeds.get();
               Logger.recordOutput("AutoAim/cur shot speedd", AutoAimStates.curShotSpeeds);
+              AutoAimStates.lookaheadTime = swerve.getLookaheadTime();
               double distance =
                   swerve
-                      .getLinearFuturePose(
-                          AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
+                      .getLinearFuturePose(AutoAimStates.lookaheadTime, AutoAimStates.curShotSpeeds)
                       .minus(FieldConstants.getSpeaker())
                       .getTranslation()
                       .getNorm();
@@ -436,11 +441,11 @@ public class Robot extends LoggedRobot {
             swerve.teleopPointTowardsTranslationCmd(
                 () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
                 () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                AutoAim.LOOKAHEAD_TIME_SECONDS));
+                AutoAimStates.lookaheadTime));
     return Commands.sequence(
         getInitialValues,
         Commands.deadline(
-            Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
+            Commands.waitSeconds(AutoAimStates.lookaheadTime),
             runRobot,
             Commands.print(String.valueOf(AutoAimStates.curShotSpeeds.vxMetersPerSecond))),
         // keeps moving to prevent the robot from stopping and changing the velocity of the note
