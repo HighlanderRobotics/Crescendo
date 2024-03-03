@@ -22,11 +22,11 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
-public class ShooterSubystem extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
   public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
-  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(8.5);
+  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(14.951);
   public static final Rotation2d PIVOT_MAX_ANGLE = Rotation2d.fromDegrees(106.0);
 
   private final ShooterIO io;
@@ -42,7 +42,11 @@ public class ShooterSubystem extends SubsystemBase {
   private final MechanismLigament2d shooterLig =
       root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
-  public ShooterSubystem(ShooterIO shooterIO) {
+  private Rotation2d rotationGoal = new Rotation2d();
+  private double leftGoal = 0.0;
+  private double rightGoal = 0.0;
+
+  public ShooterSubsystem(ShooterIO shooterIO) {
     this.io = shooterIO;
     inputs = new ShooterIOInputsAutoLogged();
 
@@ -85,10 +89,17 @@ public class ShooterSubystem extends SubsystemBase {
         0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
 
+  public Rotation2d getAngle() {
+    return inputs.pivotRotation;
+  }
+
   public Command runStateCmd(
       Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
+          rotationGoal = rotation.get();
+          leftGoal = left.getAsDouble();
+          rightGoal = right.getAsDouble();
           Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
           Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
           Logger.recordOutput(
@@ -115,6 +126,8 @@ public class ShooterSubystem extends SubsystemBase {
   public Command runFlywheelsCmd(DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
+          leftGoal = left.getAsDouble();
+          rightGoal = right.getAsDouble();
           Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
           Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
           Logger.recordOutput("Shooter/Rotation Setpoint", 0.0);
@@ -152,7 +165,7 @@ public class ShooterSubystem extends SubsystemBase {
   public Command runPivotCurrentZeroing() {
     return this.run(() -> io.setPivotVoltage(-1.0))
         .until(() -> inputs.pivotAmps > 40.0)
-        .finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
+        .finallyDo(() -> io.resetPivotPosition(PIVOT_MIN_ANGLE));
   }
 
   public Command runFlywheelSysidCmd() {
@@ -198,5 +211,15 @@ public class ShooterSubystem extends SubsystemBase {
             .dynamic(Direction.kReverse)
             .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
         this.runOnce(() -> SignalLogger.stop()));
+  }
+
+  public Command resetPivotPosition(Rotation2d rotation) {
+    return this.runOnce(() -> io.resetPivotPosition(rotation));
+  }
+
+  public boolean isAtGoal() {
+    return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivotRotation.getDegrees(), 0.5)
+        && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0)
+        && MathUtil.isNear(rightGoal, inputs.flywheelRightVelocityRotationsPerSecond, 1.0);
   }
 }

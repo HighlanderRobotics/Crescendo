@@ -147,14 +147,17 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   private double timestampFor(Set<StatusSignal<Double>> signals) {
-    final double totalTimestamp =
-        signals.stream().mapToDouble(s -> s.getTimestamp().getTime()).sum();
+    double timestamp = Logger.getRealTimestamp() / 1e6;
+
+    // Use latency because ctre StatusSignals do NOT synchronize their time base with the fpga
+    final double totalLatency =
+        signals.stream().mapToDouble(s -> s.getTimestamp().getLatency()).sum();
 
     // Account for mean latency for a "good enough" timestamp
     if (!signals.isEmpty()) {
-      return totalTimestamp / signals.size();
-    } else {
-      return Logger.getRealTimestamp() / 1e6;
+      timestamp -= totalLatency / signals.size();
     }
+
+    return timestamp;
   }
 }
