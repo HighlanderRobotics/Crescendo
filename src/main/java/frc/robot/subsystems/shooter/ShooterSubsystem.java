@@ -200,7 +200,7 @@ public class ShooterSubsystem extends SubsystemBase {
         this.runOnce(() -> SignalLogger.stop()));
   }
 
-public Command resetPivotPosition(Rotation2d rotation) {
+  public Command resetPivotPosition(Rotation2d rotation) {
     return this.runOnce(() -> io.resetPivotPosition(rotation));
-}
+  }
 }
