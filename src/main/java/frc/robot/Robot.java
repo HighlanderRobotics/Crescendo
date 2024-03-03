@@ -4,14 +4,15 @@
 
 package frc.robot;
 
-import com.choreo.lib.Choreo;
 import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -71,6 +72,7 @@ public class Robot extends LoggedRobot {
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
+  public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -227,6 +229,7 @@ public class Robot extends LoggedRobot {
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
+        .and(() -> USE_SOTM)
         .whileTrue(
             Commands.parallel(
                 teleopAutoAim(
@@ -260,6 +263,12 @@ public class Robot extends LoggedRobot {
                                 () ->
                                     Logger.recordOutput(
                                         "AutoAim/Shooting Pose", swerve.getPose()))))));
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SPEAKER)
+        .and(() -> USE_AUTO_AIM)
+        .and(() -> !USE_SOTM)
+        .whileTrue(staticAutoAim());
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -336,8 +345,6 @@ public class Robot extends LoggedRobot {
         // thing
         .whileTrue(elevator.runCurrentZeroing());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand(
-        "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -363,6 +370,11 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
+    Logger.recordOutput(
+        "Angle to target",
+        Math.atan2(
+            FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
+            FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
   }
 
   private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
@@ -459,27 +471,63 @@ public class Robot extends LoggedRobot {
             .withTimeout(0));
   }
 
-  public Command autonomousAutoAim(String pathName) {
-
-    return Commands.sequence(
-        Commands.deadline(
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
-                Commands.parallel(
-                    shooter.runStateCmd(
-                        AutoAimStates.curShotData::getRotation,
-                        AutoAimStates.curShotData::getLeftRPS,
-                        AutoAimStates.curShotData::getRightRPS),
-                    swerve.autonomousPointTowardsTranslationCmd()))
-            .beforeStarting(
-                () -> {
-                  AutoAimStates.pathName = pathName;
-                  AutoAimStates.pathTotalTime = Choreo.getTrajectory(pathName).getTotalTime();
-                },
-                swerve),
-        Commands.print("Whoosh!"),
-        drivePath());
-    // keeps moving to prevent the robot from stopping and changing the velocity of the note
-
+  public Command staticAutoAim() {
+    var headingController =
+        new ProfiledPIDController(
+            0.5,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED, SwerveSubsystem.MAX_ANGULAR_SPEED));
+    return Commands.parallel(
+        swerve.runVelocityFieldRelative(
+            () -> {
+              var pidOut = headingController.calculate(
+                    swerve.getPose().getRotation().getRadians(),
+                    swerve
+                        .getPose()
+                        .getTranslation()
+                        .minus(FieldConstants.getSpeaker().getTranslation())
+                        .getAngle()
+                        .getRadians());
+              return new ChassisSpeeds(
+                  0.0,
+                  0.0,
+                  pidOut + headingController.getSetpoint().velocity
+                  );
+            }),
+        feeder
+            .runVelocityCmd(0.0)
+            .until(() -> shooter.isAtGoal() && swerve.getVelocity().omegaRadiansPerSecond < 0.25)
+            .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
+        shooter.runStateCmd(
+            () ->
+                AutoAim.shotMap
+                    .get(
+                        swerve
+                            .getPose()
+                            .minus(FieldConstants.getSpeaker())
+                            .getTranslation()
+                            .getNorm())
+                    .getRotation(),
+            () ->
+                AutoAim.shotMap
+                    .get(
+                        swerve
+                            .getPose()
+                            .minus(FieldConstants.getSpeaker())
+                            .getTranslation()
+                            .getNorm())
+                    .getLeftRPS(),
+            () ->
+                AutoAim.shotMap
+                    .get(
+                        swerve
+                            .getPose()
+                            .minus(FieldConstants.getSpeaker())
+                            .getTranslation()
+                            .getNorm())
+                    .getRightRPS()));
   }
 
   @Override

@@ -42,6 +42,10 @@ public class ShooterSubystem extends SubsystemBase {
   private final MechanismLigament2d shooterLig =
       root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
+  private Rotation2d rotationGoal = new Rotation2d();
+  private double leftGoal = 0.0;
+  private double rightGoal = 0.0;
+
   public ShooterSubystem(ShooterIO shooterIO) {
     this.io = shooterIO;
     inputs = new ShooterIOInputsAutoLogged();
@@ -85,10 +89,19 @@ public class ShooterSubystem extends SubsystemBase {
         0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
 
+  public boolean isAtGoal() {
+    return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivotRotation.getDegrees(), 0.5)
+        && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0)
+        && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0);
+  }
+
   public Command runStateCmd(
       Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
+          rotationGoal = rotation.get();
+          leftGoal = left.getAsDouble();
+          rightGoal = right.getAsDouble();
           Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
           Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
           Logger.recordOutput(
@@ -115,6 +128,8 @@ public class ShooterSubystem extends SubsystemBase {
   public Command runFlywheelsCmd(DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {
+          leftGoal = left.getAsDouble();
+          rightGoal = right.getAsDouble();
           Logger.recordOutput("Shooter/Left Velocity Setpoint", left.getAsDouble());
           Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
           Logger.recordOutput("Shooter/Rotation Setpoint", 0.0);
