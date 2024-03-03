@@ -74,7 +74,8 @@ public class Robot extends LoggedRobot {
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
-  private LoggedDashboardChooser<Command> autoChooser = new LoggedDashboardChooser<>("Auto Chooser");
+  private LoggedDashboardChooser<Command> autoChooser =
+      new LoggedDashboardChooser<>("Auto Chooser");
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
@@ -159,7 +160,7 @@ public class Robot extends LoggedRobot {
 
     // Default Commands here
     swerve.setDefaultCommand(
-        swerve.runVelocityFieldRelative(
+        swerve.runVelocityTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
                     -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
@@ -359,7 +360,8 @@ public class Robot extends LoggedRobot {
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
-    autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("amp 4 local"));
+    autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
+    autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());

@@ -55,6 +55,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -478,6 +479,16 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
     return this.runVelocityCmd(
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
+  }
+
+  public Command runVelocityTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
+    return this.runVelocityCmd(
+        () ->
+            ChassisSpeeds.fromFieldRelativeSpeeds(
+                speeds.get(),
+                DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                    ? getPose().getRotation()
+                    : getPose().getRotation().minus(Rotation2d.fromDegrees(180))));
   }
 
   /**
