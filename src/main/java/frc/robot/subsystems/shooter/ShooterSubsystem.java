@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
-public class ShooterSubystem extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
   public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
@@ -42,7 +42,7 @@ public class ShooterSubystem extends SubsystemBase {
   private final MechanismLigament2d shooterLig =
       root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
-  public ShooterSubystem(ShooterIO shooterIO) {
+  public ShooterSubsystem(ShooterIO shooterIO) {
     this.io = shooterIO;
     inputs = new ShooterIOInputsAutoLogged();
 
@@ -152,7 +152,7 @@ public class ShooterSubystem extends SubsystemBase {
   public Command runPivotCurrentZeroing() {
     return this.run(() -> io.setPivotVoltage(-1.0))
         .until(() -> inputs.pivotAmps > 40.0)
-        .finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
+        .finallyDo(() -> io.resetPivotPosition(PIVOT_MIN_ANGLE));
   }
 
   public Command runFlywheelSysidCmd() {
