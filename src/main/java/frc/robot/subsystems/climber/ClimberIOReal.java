@@ -12,6 +12,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 /** Add your docs here. */
 public class ClimberIOReal implements ClimberIO {
@@ -35,18 +36,20 @@ public class ClimberIOReal implements ClimberIO {
 
     config.Feedback.SensorToMechanismRatio = ClimberSubsystem.SENSOR_TO_MECHANISM_RATIO;
 
+    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
     config.CurrentLimits.StatorCurrentLimitEnable = true;
-    config.CurrentLimits.StatorCurrentLimit = 40.0;
+    config.CurrentLimits.StatorCurrentLimit = 60.0;
 
     config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
     config.Slot0.kG = 0.0;
-    config.Slot0.kV = 0.0;
+    config.Slot0.kV = 8.0;
     config.Slot0.kA = 0.0;
-    config.Slot0.kS = 0.0;
-    config.Slot0.kP = 0.0;
+    config.Slot0.kS = 0.18;
+    config.Slot0.kP = 20.0;
     config.Slot0.kD = 0.0;
-    config.MotionMagic.MotionMagicAcceleration = 1.0;
-    config.MotionMagic.MotionMagicCruiseVelocity = 1.0;
+    config.MotionMagic.MotionMagicAcceleration = 10.0;
+    config.MotionMagic.MotionMagicCruiseVelocity = 4.0;
 
     motor.getConfigurator().apply(config);
     motor.setPosition(ClimberSubsystem.CLIMBER_MIN_ROTATIONS); // Assume we boot at hard stop

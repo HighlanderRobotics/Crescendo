@@ -44,11 +44,7 @@ public class AutoAim {
   public static Pose2d getVirtualTarget(Pose2d pose, ChassisSpeeds speedsFieldRelative) {
     Pose2d target = FieldConstants.getSpeaker();
 
-    double distance =
-            pose
-            .minus(target)
-            .getTranslation()
-            .getNorm();
+    double distance = pose.minus(target).getTranslation().getNorm();
 
     return target.transformBy(
         new Transform2d(

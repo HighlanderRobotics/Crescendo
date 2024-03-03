@@ -16,8 +16,6 @@ package frc.robot.subsystems.swerve;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
-import com.choreo.lib.Choreo;
-import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -57,7 +55,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -623,7 +620,8 @@ public class SwerveSubsystem extends SubsystemBase {
             new Transform2d(
                 speedsRobotRelative.vxMetersPerSecond * time,
                 speedsRobotRelative.vyMetersPerSecond * time,
-                new Rotation2d()//Rotation2d.fromRadians(speedsRobotRelative.omegaRadiansPerSecond * time)
+                new Rotation2d() // Rotation2d.fromRadians(speedsRobotRelative.omegaRadiansPerSecond
+                // * time)
                 ));
   }
 
@@ -654,7 +652,9 @@ public class SwerveSubsystem extends SubsystemBase {
     return AutoAim.LOOKAHEAD_TIME_SECONDS
         + Math.abs(
             getInstantRotationToTranslation(FieldConstants.getSpeaker(), getPose())
-                .minus(getPose().getRotation()).minus(Rotation2d.fromDegrees(180.0)).getRotations());
+                .minus(getPose().getRotation())
+                .minus(Rotation2d.fromDegrees(180.0))
+                .getRotations());
   }
 
   /**
@@ -685,7 +685,11 @@ public class SwerveSubsystem extends SubsystemBase {
                   double feedbackOutput =
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
-                          AutoAimStates.endingPose.getTranslation().minus(AutoAimStates.virtualTarget.getTranslation()).getAngle().getRadians());
+                          AutoAimStates.endingPose
+                              .getTranslation()
+                              .minus(AutoAimStates.virtualTarget.getTranslation())
+                              .getAngle()
+                              .getRadians());
                   double vxFeedbackOutput =
                       vxController.calculate(getPose().getX(), AutoAimStates.endingPose.getX());
                   double vyFeedbackOutput =
