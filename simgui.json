@@ -11,10 +11,6 @@
       "/AdvantageKit/RealOutputs/Elevator/Mechanism2d": "Mechanism2d",
       "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
       "/FMSInfo": "FMSInfo",
-      "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
-      "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
-      "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
-      "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
       "/SmartDashboard/Run Elevator Sysid": "Command",
       "/SmartDashboard/Run Flywheel Sysid": "Command",
       "/SmartDashboard/Run Pivot Sysid": "Command",
@@ -26,7 +22,9 @@
       "/SmartDashboard/VisionSystemSim-Left_Camera/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Right Camera/Sim Field": "Field2d",
-      "/SmartDashboard/VisionSystemSim-Right_Camera/Sim Field": "Field2d"
+      "/SmartDashboard/VisionSystemSim-Right_Camera/Sim Field": "Field2d",
+      "/SmartDashboard/Zero shooter": "Command",
+      "/SmartDashboard/manual zero shooter": "Command"
     }
   },
   "NetworkTables": {
