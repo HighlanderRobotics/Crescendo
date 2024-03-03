@@ -54,7 +54,7 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   public Command runClimberCurrentZeroing() {
-    return this.run(() -> io.setClimberVoltage(-2.0))
+    return this.run(() -> io.setClimberVoltage(-4.0))
         .until(() -> inputs.climberCurrentAmps > 9.0)
         .finallyDo(() -> io.resetPosition(CLIMBER_MIN_ROTATIONS));
   }
