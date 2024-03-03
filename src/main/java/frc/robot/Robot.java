@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -70,7 +71,7 @@ public class Robot extends LoggedRobot {
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
-  public static final boolean USE_SOTM = true;
+  public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
@@ -363,12 +364,21 @@ public class Robot extends LoggedRobot {
         swerve
             .runVelocityFieldRelative(
                 () -> {
-                  double velocity = Math.sqrt(
-                            Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
-                                + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
-                  Rotation2d direction = new Rotation2d(swerve.getVelocity().vxMetersPerSecond, swerve.getVelocity().vyMetersPerSecond);
-                  double clampedSpeed = MathUtil.clamp(velocity, -SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95, SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95);
-                  return new ChassisSpeeds(clampedSpeed * direction.getCos(), clampedSpeed * direction.getSin(), 0.0);
+                  double velocity =
+                      Math.sqrt(
+                          Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
+                              + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
+                  Rotation2d direction =
+                      new Rotation2d(
+                          swerve.getVelocity().vxMetersPerSecond,
+                          swerve.getVelocity().vyMetersPerSecond);
+                  double clampedSpeed =
+                      MathUtil.clamp(
+                          velocity,
+                          -SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95,
+                          SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95);
+                  return new ChassisSpeeds(
+                      clampedSpeed * direction.getCos(), clampedSpeed * direction.getSin(), 0.0);
                 })
             .until(
                 () ->
@@ -441,52 +451,63 @@ public class Robot extends LoggedRobot {
             0.0,
             0.0,
             new Constraints(SwerveSubsystem.MAX_ANGULAR_SPEED, SwerveSubsystem.MAX_ANGULAR_SPEED));
-    return Commands.parallel(
-        swerve.runVelocityFieldRelative(
-            () -> {
-              var pidOut =
-                  headingController.calculate(
-                      swerve.getPose().getRotation().getRadians(),
-                      swerve
-                          .getPose()
-                          .getTranslation()
-                          .minus(FieldConstants.getSpeaker().getTranslation())
-                          .getAngle()
-                          .getRadians());
-              return new ChassisSpeeds(0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
-            }),
-        feeder
-            .runVelocityCmd(0.0)
-            .until(() -> shooter.isAtGoal() && swerve.getVelocity().omegaRadiansPerSecond < 0.25)
-            .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
-        shooter.runStateCmd(
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    return Commands.runOnce(
             () ->
-                AutoAim.shotMap
-                    .get(
-                        swerve
-                            .getPose()
-                            .minus(FieldConstants.getSpeaker())
-                            .getTranslation()
-                            .getNorm())
-                    .getRotation(),
-            () ->
-                AutoAim.shotMap
-                    .get(
-                        swerve
-                            .getPose()
-                            .minus(FieldConstants.getSpeaker())
-                            .getTranslation()
-                            .getNorm())
-                    .getLeftRPS(),
-            () ->
-                AutoAim.shotMap
-                    .get(
-                        swerve
-                            .getPose()
-                            .minus(FieldConstants.getSpeaker())
-                            .getTranslation()
-                            .getNorm())
-                    .getRightRPS()));
+                headingController.reset(
+                    new State(
+                        swerve.getPose().getRotation().getRadians(),
+                        swerve.getVelocity().omegaRadiansPerSecond)))
+        .andThen(
+            Commands.parallel(
+                swerve.runVelocityFieldRelative(
+                    () -> {
+                      var pidOut =
+                          headingController.calculate(
+                              swerve.getPose().getRotation().getRadians(),
+                              swerve
+                                  .getPose()
+                                  .getTranslation()
+                                  .minus(FieldConstants.getSpeaker().getTranslation())
+                                  .getAngle()
+                                  .getRadians());
+                      return new ChassisSpeeds(
+                          0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
+                    }),
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(
+                        () ->
+                            shooter.isAtGoal() && swerve.getVelocity().omegaRadiansPerSecond < 0.25)
+                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
+                shooter.runStateCmd(
+                    () ->
+                        AutoAim.shotMap
+                            .get(
+                                swerve
+                                    .getPose()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getNorm())
+                            .getRotation(),
+                    () ->
+                        AutoAim.shotMap
+                            .get(
+                                swerve
+                                    .getPose()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getNorm())
+                            .getLeftRPS(),
+                    () ->
+                        AutoAim.shotMap
+                            .get(
+                                swerve
+                                    .getPose()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getNorm())
+                            .getRightRPS())));
   }
 
   @Override
