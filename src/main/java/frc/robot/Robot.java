@@ -442,12 +442,14 @@ public class Robot extends LoggedRobot {
             staticAutoAim(),
             () ->
                 shooter.isAtGoal()
-                    && MathUtil.isNear(AutoAimStates.endingPose
-                    .getTranslation()
-                    .minus(AutoAimStates.virtualTarget.getTranslation())
-                    .getAngle()
-                    .getDegrees(), swerve.getRotation().getDegrees(), 2.0)
-            ));
+                    && MathUtil.isNear(
+                        AutoAimStates.endingPose
+                            .getTranslation()
+                            .minus(AutoAimStates.virtualTarget.getTranslation())
+                            .getAngle()
+                            .getDegrees(),
+                        swerve.getRotation().getDegrees(),
+                        2.0)));
   }
 
   public Command staticAutoAim() {
