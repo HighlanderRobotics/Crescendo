@@ -310,39 +310,40 @@ public class Robot extends LoggedRobot {
     NamedCommands.registerCommand("intake", intake.runVelocityCmd(80.0, 30.0));
     NamedCommands.registerCommand(
         "shoot",
-        shooter
-            .runStateCmd(
-                () ->
-                    AutoAim.shotMap
-                        .get(
-                            swerve
-                                .getPose()
-                                .minus(FieldConstants.getSpeaker())
-                                .getTranslation()
-                                .getNorm())
-                        .getRotation(),
-                () ->
-                    AutoAim.shotMap
-                        .get(
-                            swerve
-                                .getPose()
-                                .minus(FieldConstants.getSpeaker())
-                                .getTranslation()
-                                .getNorm())
-                        .getLeftRPS(),
-                () ->
-                    AutoAim.shotMap
-                        .get(
-                            swerve
-                                .getPose()
-                                .minus(FieldConstants.getSpeaker())
-                                .getTranslation()
-                                .getNorm())
-                        .getRightRPS())
-            .alongWith(
-                Commands.waitSeconds(1.5)
-                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)))
-            .withTimeout(1.75)
+        Commands.race(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(() -> shooter.isAtGoal())
+                    .andThen(
+                        feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5)),
+                shooter.runStateCmd(
+                    () ->
+                        AutoAim.shotMap
+                            .get(
+                                swerve
+                                    .getPose()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getNorm())
+                            .getRotation(),
+                    () ->
+                        AutoAim.shotMap
+                            .get(
+                                swerve
+                                    .getPose()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getNorm())
+                            .getLeftRPS(),
+                    () ->
+                        AutoAim.shotMap
+                            .get(
+                                swerve
+                                    .getPose()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getNorm())
+                            .getRightRPS()))
             .asProxy());
 
     // Dashboard command buttons
