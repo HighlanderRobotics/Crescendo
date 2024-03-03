@@ -36,7 +36,7 @@ public class IntakeIOReal implements IntakeIO {
 
   public IntakeIOReal() {
     var intakeConfig = new TalonFXConfiguration();
-    intakeConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
+    intakeConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
     intakeConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     intakeConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
