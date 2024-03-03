@@ -251,6 +251,15 @@ public class Robot extends LoggedRobot {
     controller.rightBumper().whileTrue(swerve.stopWithXCmd());
 
     controller
+        .x()
+        .whileTrue(
+            Commands.parallel(
+                shooter.runFlywheelVoltageCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, -5.0),
+                feeder.runVoltageCmd(-5.0),
+                carriage.runVoltageCmd(-5.0),
+                intake.runVelocityCmd(-50.0, -50.0)));
+
+    controller
         .y()
         .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
         .onTrue(
