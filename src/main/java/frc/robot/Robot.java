@@ -338,6 +338,9 @@ public class Robot extends LoggedRobot {
         Math.atan2(
             FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
             FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
+    Logger.recordOutput(
+        "AutoAIm/Actual Distance",
+        swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
   }
 
   private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
@@ -450,7 +453,9 @@ public class Robot extends LoggedRobot {
             0.5,
             0.0,
             0.0,
-            new Constraints(SwerveSubsystem.MAX_ANGULAR_SPEED, SwerveSubsystem.MAX_ANGULAR_SPEED));
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75,
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.runOnce(
             () ->

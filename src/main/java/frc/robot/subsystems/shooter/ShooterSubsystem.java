@@ -26,7 +26,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
-  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(8.5);
+  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(14.951);
   public static final Rotation2d PIVOT_MAX_ANGLE = Rotation2d.fromDegrees(106.0);
 
   private final ShooterIO io;
@@ -220,6 +220,6 @@ public class ShooterSubsystem extends SubsystemBase {
   public boolean isAtGoal() {
     return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivotRotation.getDegrees(), 0.5)
         && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0)
-        && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0);
+        && MathUtil.isNear(rightGoal, inputs.flywheelRightVelocityRotationsPerSecond, 1.0);
   }
 }
