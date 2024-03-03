@@ -38,7 +38,7 @@ import frc.robot.subsystems.leds.LEDIOSim;
 import frc.robot.subsystems.leds.LEDSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
-import frc.robot.subsystems.shooter.ShooterSubystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
@@ -100,8 +100,8 @@ public class Robot extends LoggedRobot {
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =
       new ElevatorSubsystem(mode == RobotMode.REAL ? new ElevatorIOReal() : new ElevatorIOSim());
-  private final ShooterSubystem shooter =
-      new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final ShooterSubsystem shooter =
+      new ShooterSubsystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
@@ -320,11 +320,10 @@ public class Robot extends LoggedRobot {
 
     operator
         .start()
-        .whileTrue(shooter.runPivotCurrentZeroing())
+        .whileTrue(shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)) //removing current zeroing for now because backlash is a thing
         .whileTrue(elevator.runCurrentZeroing())
         .whileTrue(climber.runClimberCurrentZeroing());
     operator.back().whileTrue(climber.runClimberCurrentZeroing());
-
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
         "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
@@ -336,6 +335,9 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
+    SmartDashboard.putData("Zero shooter", shooter.runPivotCurrentZeroing());
+    SmartDashboard.putData(
+        "manual zero shooter", shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
   }
 
   @Override
