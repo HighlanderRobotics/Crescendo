@@ -320,8 +320,12 @@ public class Robot extends LoggedRobot {
 
     operator
         .start()
-        .whileTrue(shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)) //removing current zeroing for now because backlash is a thing
-        .whileTrue(elevator.runCurrentZeroing())
+        .whileTrue(
+            shooter.resetPivotPosition(
+                ShooterSubsystem
+                    .PIVOT_MIN_ANGLE)) // removing current zeroing for now because backlash is a
+        // thing
+        .whileTrue(elevator.runCurrentZeroing());
     operator.back().whileTrue(climber.runClimberCurrentZeroing());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
