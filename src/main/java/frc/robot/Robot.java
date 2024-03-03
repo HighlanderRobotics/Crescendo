@@ -363,12 +363,21 @@ public class Robot extends LoggedRobot {
         swerve
             .runVelocityFieldRelative(
                 () -> {
-                  double velocity = Math.sqrt(
-                            Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
-                                + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
-                  Rotation2d direction = new Rotation2d(swerve.getVelocity().vxMetersPerSecond, swerve.getVelocity().vyMetersPerSecond);
-                  double clampedSpeed = MathUtil.clamp(velocity, -SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95, SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95);
-                  return new ChassisSpeeds(clampedSpeed * direction.getCos(), clampedSpeed * direction.getSin(), 0.0);
+                  double velocity =
+                      Math.sqrt(
+                          Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
+                              + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
+                  Rotation2d direction =
+                      new Rotation2d(
+                          swerve.getVelocity().vxMetersPerSecond,
+                          swerve.getVelocity().vyMetersPerSecond);
+                  double clampedSpeed =
+                      MathUtil.clamp(
+                          velocity,
+                          -SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95,
+                          SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95);
+                  return new ChassisSpeeds(
+                      clampedSpeed * direction.getCos(), clampedSpeed * direction.getSin(), 0.0);
                 })
             .until(
                 () ->
