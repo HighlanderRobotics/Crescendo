@@ -652,10 +652,9 @@ public class SwerveSubsystem extends SubsystemBase {
   @AutoLogOutput(key = "AutoAim/Lookahead")
   public double getLookaheadTime() {
     return AutoAim.LOOKAHEAD_TIME_SECONDS
-        // + Math.abs(
-        //     getLinearFutureRotationToTranslation(FieldConstants.getSpeaker(), new ChassisSpeeds())
-        //         .getRotations())
-                ;
+        + Math.abs(
+            getInstantRotationToTranslation(FieldConstants.getSpeaker(), getPose())
+                .minus(getPose().getRotation()).minus(Rotation2d.fromDegrees(180.0)).getRotations());
   }
 
   /**
