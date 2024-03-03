@@ -450,12 +450,11 @@ public class Robot extends LoggedRobot {
   public Command staticAutoAim() {
     var headingController =
         new ProfiledPIDController(
-            0.5,
+            8.0,
             0.0,
-            0.0,
+            0.01,
             new Constraints(
-                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75,
-                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75));
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.runOnce(
             () ->
@@ -483,7 +482,16 @@ public class Robot extends LoggedRobot {
                     .runVelocityCmd(0.0)
                     .until(
                         () ->
-                            shooter.isAtGoal() && swerve.getVelocity().omegaRadiansPerSecond < 0.25)
+                            shooter.isAtGoal()
+                                && MathUtil.isNear(
+                                    swerve
+                                        .getPose()
+                                        .getTranslation()
+                                        .minus(FieldConstants.getSpeaker().getTranslation())
+                                        .getAngle()
+                                        .getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
+                                    3.0))
                     .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
                 shooter.runStateCmd(
                     () ->
