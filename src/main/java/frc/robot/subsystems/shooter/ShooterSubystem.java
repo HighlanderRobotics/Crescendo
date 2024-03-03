@@ -26,7 +26,7 @@ public class ShooterSubystem extends SubsystemBase {
   public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
-  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(8.5);
+  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(14.915); // 14.915
   public static final Rotation2d PIVOT_MAX_ANGLE = Rotation2d.fromDegrees(106.0);
 
   private final ShooterIO io;
@@ -150,9 +150,13 @@ public class ShooterSubystem extends SubsystemBase {
   }
 
   public Command runPivotCurrentZeroing() {
-    return this.run(() -> io.setPivotVoltage(-1.0))
-        .until(() -> inputs.pivotAmps > 40.0)
+    return this.run(() -> io.setPivotVoltage(-0.5))
+        .until(() -> inputs.pivotAmps > 5.0)
         .finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
+  }
+
+  public Command resetPivotPosition() {
+    return this.run(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
   }
 
   public Command runFlywheelSysidCmd() {

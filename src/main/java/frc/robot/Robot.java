@@ -328,9 +328,8 @@ public class Robot extends LoggedRobot {
 
     operator
         .start()
-        .whileTrue(shooter.runPivotCurrentZeroing())
+        .whileTrue(shooter.resetPivotPosition()) //removing current zeroing for now because backlash is a thing
         .whileTrue(elevator.runCurrentZeroing());
-
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand(
         "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
@@ -342,6 +341,9 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
+    SmartDashboard.putData("Zero shooter", shooter.runPivotCurrentZeroing());
+    SmartDashboard.putData(
+        "manual zero shooter", shooter.resetPivotPosition().ignoringDisable(true));
   }
 
   @Override
