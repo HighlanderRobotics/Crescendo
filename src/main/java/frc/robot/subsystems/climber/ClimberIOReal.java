@@ -39,7 +39,7 @@ public class ClimberIOReal implements ClimberIO {
     config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
     config.CurrentLimits.StatorCurrentLimitEnable = true;
-    config.CurrentLimits.StatorCurrentLimit = 20.0;
+    config.CurrentLimits.StatorCurrentLimit = 60.0;
 
     config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
     config.Slot0.kG = 0.0;
