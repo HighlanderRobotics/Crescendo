@@ -22,11 +22,11 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
-public class ShooterSubystem extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
   public static final double PIVOT_RATIO = (27.0 / 1.0) * (48.0 / 22.0);
   public static final double FLYWHEEL_RATIO = 18.0 / 24.0;
 
-  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(14.915); // 14.915
+  public static final Rotation2d PIVOT_MIN_ANGLE = Rotation2d.fromDegrees(8.5);
   public static final Rotation2d PIVOT_MAX_ANGLE = Rotation2d.fromDegrees(106.0);
 
   private final ShooterIO io;
@@ -42,7 +42,7 @@ public class ShooterSubystem extends SubsystemBase {
   private final MechanismLigament2d shooterLig =
       root.append(new MechanismLigament2d("Shooter", Units.inchesToMeters(13.0), 0.0));
 
-  public ShooterSubystem(ShooterIO shooterIO) {
+  public ShooterSubsystem(ShooterIO shooterIO) {
     this.io = shooterIO;
     inputs = new ShooterIOInputsAutoLogged();
 
@@ -150,13 +150,9 @@ public class ShooterSubystem extends SubsystemBase {
   }
 
   public Command runPivotCurrentZeroing() {
-    return this.run(() -> io.setPivotVoltage(-0.5))
-        .until(() -> inputs.pivotAmps > 5.0)
-        .finallyDo(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
-  }
-
-  public Command resetPivotPosition() {
-    return this.run(() -> io.resetPivotPostion(PIVOT_MIN_ANGLE));
+    return this.run(() -> io.setPivotVoltage(-1.0))
+        .until(() -> inputs.pivotAmps > 40.0)
+        .finallyDo(() -> io.resetPivotPosition(PIVOT_MIN_ANGLE));
   }
 
   public Command runFlywheelSysidCmd() {
@@ -203,4 +199,8 @@ public class ShooterSubystem extends SubsystemBase {
             .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
         this.runOnce(() -> SignalLogger.stop()));
   }
+
+public Command resetPivotPosition(Rotation2d rotation) {
+    return this.runOnce(() -> io.resetPivotPosition(rotation));
+}
 }
