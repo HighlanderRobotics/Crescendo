@@ -775,7 +775,8 @@ public class Robot extends LoggedRobot {
                   System.out.println(dynamicAutoCounter);
                   System.out.println(DynamicAuto.whitelistCount);
                   distance = 0;
-                }))
+                }),
+            Commands.race(Commands.waitSeconds(0.5), intake.runVelocityCmd(80, 30)))
         .beforeStarting(
             () -> {
               //   swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific());
