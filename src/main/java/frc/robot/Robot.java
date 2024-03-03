@@ -52,6 +52,7 @@ import java.util.List;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
@@ -73,6 +74,7 @@ public class Robot extends LoggedRobot {
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
+  private LoggedDashboardChooser<Command> autoChooser = new LoggedDashboardChooser<>("Auto Chooser");
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
@@ -355,6 +357,10 @@ public class Robot extends LoggedRobot {
                             .getRightRPS()))
             .asProxy());
 
+    autoChooser.addDefaultOption("None", Commands.none());
+    autoChooser.addOption("Shoot Preload", teleopAutoAim());
+    autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("amp 4 local"));
+
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
     SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
@@ -580,7 +586,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("local 4");
+    autonomousCommand = autoChooser.get();
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
