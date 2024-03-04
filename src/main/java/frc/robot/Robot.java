@@ -213,7 +213,7 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
+    controller.leftTrigger().whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -266,14 +266,15 @@ public class Robot extends LoggedRobot {
         .y()
         .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
         .onTrue(
-            Commands.sequence(
-                    climber
-                        .retractClimbCmd()
-                        .until(() -> climber.getRotations() < 0.1), // TODO find actual tolerances
-                    Commands.waitUntil(() -> controller.y().getAsBoolean()),
-                    Commands.parallel(
-                        carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
-                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)))
+            // Commands.sequence(
+            climber
+                .retractClimbCmd()
+                .until(() -> climber.getRotations() < 0.1) // TODO find actual tolerances
+                // Commands.waitUntil(() -> controller.y().getAsBoolean()),
+                // Commands.parallel(
+                //     carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
+                //     elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS))
+                // )
                 .alongWith(
                     leds.setRainbowCmd(),
                     shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0)));
@@ -319,43 +320,51 @@ public class Robot extends LoggedRobot {
         .whileTrue(elevator.runCurrentZeroing());
     operator.back().whileTrue(climber.runClimberCurrentZeroing());
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand("intake", intake.runVelocityCmd(80.0, 30.0));
+    NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
     NamedCommands.registerCommand(
         "shoot",
-        Commands.race(
-                feeder
-                    .runVelocityCmd(0.0)
-                    .until(() -> shooter.isAtGoal())
-                    .andThen(
-                        feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5)),
-                shooter.runStateCmd(
-                    () ->
-                        AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .getPose()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
-                            .getRotation(),
-                    () ->
-                        AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .getPose()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
-                            .getLeftRPS(),
-                    () ->
-                        AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .getPose()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
-                            .getRightRPS()))
+        feeder
+            .indexCmd()
+            .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
+            .until(() -> feeder.getFirstBeambreak())
+            .andThen(
+                Commands.race(
+                        feeder
+                            .runVelocityCmd(0.0)
+                            .until(() -> shooter.isAtGoal())
+                            .andThen(
+                                feeder
+                                    .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                                    .withTimeout(0.5)),
+                        shooter.runStateCmd(
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getRotation(),
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getLeftRPS(),
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getRightRPS()))
+                    .unless(() -> !feeder.getFirstBeambreak()))
             .asProxy());
 
     autoChooser.addDefaultOption("None", Commands.none());
