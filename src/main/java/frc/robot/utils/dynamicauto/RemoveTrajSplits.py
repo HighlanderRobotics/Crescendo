@@ -2,7 +2,7 @@ import json
 import os
 import urllib.parse
 
-folder_path = "C:\\Users\\Robotics\\Desktop\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\deploy\\choreo"
+folder_path = "C:\\Users\\stoopi_poopy\\Crescendo\\src\\main\\java\\frc\\robot\\utils\\dynamicauto\\deploy\choreo"
 files_in_folder = os.listdir(folder_path)
 
 print("Files in deploy/choreo folder:")
