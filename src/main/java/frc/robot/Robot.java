@@ -327,6 +327,7 @@ public class Robot extends LoggedRobot {
             .indexCmd()
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
+            .withTimeout(2.0)
             .andThen(
                 Commands.race(
                         feeder
@@ -379,7 +380,6 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
-    SmartDashboard.putData("Zero shooter", shooter.runPivotCurrentZeroing());
     SmartDashboard.putData(
         "manual zero shooter",
         shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
@@ -519,7 +519,7 @@ public class Robot extends LoggedRobot {
   public Command staticAutoAim() {
     var headingController =
         new ProfiledPIDController(
-            8.0,
+            5.0,
             0.0,
             0.01,
             new Constraints(
