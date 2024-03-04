@@ -224,7 +224,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 false, false) // Default path replanning config. See the API for the options
             // here
             ),
-        () -> false,
+        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this // Reference to this subsystem to set requirements
         );
 
