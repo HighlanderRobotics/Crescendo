@@ -37,8 +37,6 @@ public class Module {
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   public static final double DRIVE_SUPPLY_CURRENT_LIMIT = 40.0;
-  public static final double DRIVE_SUPPLY_TIME_CURRENT_LIMIT = 20.0;
-  public static final double DRIVE_SUPPLY_TIME_CUTOFF = 0.5;
   public static final double TURN_STATOR_CURRENT_LIMIT = 20.0;
 
   private final ModuleIO io;

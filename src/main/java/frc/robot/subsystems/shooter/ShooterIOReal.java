@@ -82,9 +82,9 @@ public class ShooterIOReal implements ShooterIO {
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
     flywheelConfig.Slot0.kA = 0.0051316;
-    flywheelConfig.Slot0.kV = 0.1;
-    flywheelConfig.Slot0.kS = 0.26;
-    flywheelConfig.Slot0.kP = 0.057995;
+    flywheelConfig.Slot0.kV = 0.095;
+    flywheelConfig.Slot0.kS = 0.3;
+    flywheelConfig.Slot0.kP = 0.1;
     flywheelConfig.Slot0.kD = 0.0;
 
     flywheelLeftMotor.getConfigurator().apply(flywheelConfig);
