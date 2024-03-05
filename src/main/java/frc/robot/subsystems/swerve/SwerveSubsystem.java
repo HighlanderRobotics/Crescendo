@@ -429,7 +429,6 @@ public class SwerveSubsystem extends SubsystemBase {
         Logger.recordOutput(
             "Vision/Vision Std Devs from " + camera.getName(),
             VisionHelper.findVisionMeasurementStdDevs(estPose.get()).getData());
-        pose = pose.interpolate(visionPose.toPose2d(), 0.5);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -665,6 +664,14 @@ public class SwerveSubsystem extends SubsystemBase {
                 .getRotations());
   }
 
+  public double getDistanceToSpeaker() {
+    return this
+    .getPose()
+    .minus(FieldConstants.getSpeaker())
+    .getTranslation()
+    .getNorm();
+  }
+
   /**
    * Faces the robot towards a translation on the field Keeps the robot in a linear drive motion for
    * time seconds while rotating
@@ -770,7 +777,7 @@ public class SwerveSubsystem extends SubsystemBase {
             () ->
                 Choreo.choreoSwerveCommand(
                     traj.get().get(),
-                    this::getPose,
+                    () -> getPose(),
                     new PIDController(6.0, 0.0, 0.0),
                     new PIDController(6.0, 0.0, 0.0),
                     new PIDController(1.0, 0.0, 0.0),

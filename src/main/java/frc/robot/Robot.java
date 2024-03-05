@@ -105,7 +105,6 @@ public class Robot extends LoggedRobot {
   private boolean justShotWNote = false;
   private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
 
-  private double distance = 0;
   private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
   private LoggedDashboardNumber leftRPS =
       new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
@@ -377,29 +376,17 @@ public class Robot extends LoggedRobot {
                             () ->
                                 AutoAim.shotMap
                                     .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
+                                        swerve.getDistanceToSpeaker())
                                     .getRotation(),
                             () ->
                                 AutoAim.shotMap
                                     .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
+                                        swerve.getDistanceToSpeaker())
                                     .getLeftRPS(),
                             () ->
                                 AutoAim.shotMap
                                     .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
+                                        swerve.getDistanceToSpeaker())
                                     .getRightRPS()))
                     .unless(() -> !feeder.getFirstBeambreak()))
             .asProxy());
@@ -662,30 +649,15 @@ public class Robot extends LoggedRobot {
                 shooter.runStateCmd(
                     () ->
                         AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .getPose()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
+                            .get(swerve.getDistanceToSpeaker())
                             .getRotation(),
                     () ->
                         AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .getPose()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
+                            .get(swerve.getDistanceToSpeaker())
                             .getLeftRPS(),
                     () ->
                         AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .getPose()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
+                            .get(swerve.getDistanceToSpeaker())
                             .getRightRPS())));
   }
 
@@ -792,9 +764,9 @@ public class Robot extends LoggedRobot {
                             Commands.race(
                                 DynamicAuto.noteToShoot(swerve),
                                 shooter.runStateCmd(
-                                    () -> AutoAim.shotMap.get(distance).getRotation(),
-                                    () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                    () -> AutoAim.shotMap.get(distance).getRightRPS()),
+                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()),
                                 feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
@@ -814,16 +786,16 @@ public class Robot extends LoggedRobot {
                         Commands.race(
                             DynamicAuto.DynamicToShoot(swerve::getPose),
                             shooter.runStateCmd(
-                                () -> AutoAim.shotMap.get(distance).getRotation(),
-                                () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                () -> AutoAim.shotMap.get(distance).getRightRPS()))),
+                                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))),
                     Map.entry(
                         AutoStepSelector.SHOOT,
                         Commands.parallel(
                                 shooter.runStateCmd(
-                                    () -> AutoAim.shotMap.get(distance).getRotation(),
-                                    () -> AutoAim.shotMap.get(distance).getLeftRPS(),
-                                    () -> AutoAim.shotMap.get(distance).getRightRPS()),
+                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()),
                                 feeder.indexCmd())
                             .withTimeout(0.75)),
                     Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),
@@ -834,7 +806,6 @@ public class Robot extends LoggedRobot {
                   DynamicAuto.updateWhitelistCount();
                   System.out.println(dynamicAutoCounter);
                   System.out.println(DynamicAuto.whitelistCount);
-                  distance = 0;
                 }),
             Commands.race(Commands.waitSeconds(0.5), intake.runVelocityCmd(80, 30)))
         .beforeStarting(
