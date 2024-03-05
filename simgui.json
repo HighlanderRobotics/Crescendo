@@ -38,8 +38,10 @@
       "/SmartDashboard/VisionSystemSim-Right_Camera/Sim Field": "Field2d",
       "/SmartDashboard/Whitelist All": "Command",
       "/SmartDashboard/Whitelist Note": "Command",
+      "/SmartDashboard/Zero shooter": "Command",
       "/SmartDashboard/gleeb": "Command",
-      "/SmartDashboard/gloob": "Command"
+      "/SmartDashboard/gloob": "Command",
+      "/SmartDashboard/manual zero shooter": "Command"
     },
     "windows": {
       "/SmartDashboard/Auto Chooser": {

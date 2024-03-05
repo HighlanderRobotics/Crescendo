@@ -59,7 +59,6 @@ import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
@@ -840,7 +839,7 @@ public class Robot extends LoggedRobot {
             Commands.race(Commands.waitSeconds(0.5), intake.runVelocityCmd(80, 30)))
         .beforeStarting(
             () -> {
-              //   swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific());
+              swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific());
               DynamicAuto.updateWhitelistCount();
             })
         .asProxy();
