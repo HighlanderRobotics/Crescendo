@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DynamicAuto {
@@ -50,6 +51,15 @@ public class DynamicAuto {
     new ShootingLocation(new Pose2d(4.263, 3.000, Rotation2d.fromRadians(-0.566)), "S3"), // Middle
     new ShootingLocation(new Pose2d(5.176, 1.620, Rotation2d.fromRadians(2.961)), "S4") // Right
   };
+
+  public static final LoggedDashboardBoolean[] shootingLocationBlacklistChoosers;
+
+  static {
+    shootingLocationBlacklistChoosers = new LoggedDashboardBoolean[shootingLocations.length];
+    for (int i = 0; i < shootingLocations.length; i++) {
+      shootingLocationBlacklistChoosers[i] = new LoggedDashboardBoolean(shootingLocations[i].getName(), true);
+    }
+  }
 
   public static final ShootingLocation[] startingLocations = {
     new ShootingLocation(
@@ -123,8 +133,12 @@ public class DynamicAuto {
       Supplier<Pose2d> curPose, ShootingLocation[] shootingLocations) {
 
     ShootingLocation closestLocation = new ShootingLocation("shooting shooting");
-    double shortestDistance = 9999999;
-    for (ShootingLocation location : shootingLocations) {
+    double shortestDistance = Double.MAX_VALUE;
+    for (int i = 0; i < shootingLocations.length; i++) {
+      if (!shootingLocationBlacklistChoosers[i].get()) {
+        continue;
+      }
+      var location = shootingLocations[i];
       if (shortestDistance
           > curPose.get().minus(location.getPoseAllianceSpecific()).getTranslation().getNorm()) {
         closestLocation = location;

@@ -51,4 +51,8 @@ public class ShootingLocation {
   public String getName() {
     return name;
   }
+
+  public boolean equals(ShootingLocation other) {
+    return getName().equals(other.getName());
+  }
 }
