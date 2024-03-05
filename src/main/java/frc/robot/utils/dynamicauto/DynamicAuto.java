@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DynamicAuto {
 
@@ -31,12 +31,16 @@ public class DynamicAuto {
     new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), true, -1, "C5", true) // c5
   };
 
-  public static final LoggedDashboardNumber[] noteChoosers;
+  public static final LoggedDashboardChooser<Integer>[] noteChoosers;
 
   static {
-    noteChoosers = new LoggedDashboardNumber[notes.length];
+    noteChoosers = new LoggedDashboardChooser[notes.length];
     for (int i = 0; i < noteChoosers.length; i++) {
-      noteChoosers[i] = new LoggedDashboardNumber(notes[i].getName() + " Priority", notes[i].getPriority());
+      noteChoosers[i] = new LoggedDashboardChooser<Integer>(notes[i].getName() + " Priority");
+      noteChoosers[i].addDefaultOption("Blacklist", -1);
+      for (int j = 0; j < notes.length; j++) {
+        noteChoosers[i].addOption(String.valueOf(j), j);
+      }
     }
   }
 
@@ -71,7 +75,7 @@ public class DynamicAuto {
 
   public static void initializeNotePriorities() {
     for (int i = 0; i < noteChoosers.length; i++) {
-      notes[i].setPriority((int) Math.floor(noteChoosers[i].get()));
+      notes[i].setPriority(noteChoosers[i].get());
       if (noteChoosers[i].get() < 0) {
         notes[i].blacklist();
       } else {

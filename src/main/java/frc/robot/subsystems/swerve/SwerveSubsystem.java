@@ -847,8 +847,12 @@ public class SwerveSubsystem extends SubsystemBase {
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
               && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.25)
-              && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.25)
-              && Math.abs((poseSupplier.get().getRotation().getDegrees() - finalPose.getRotation().getDegrees()) % 360) < 4.0);
+                  && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.25)
+                  && Math.abs(
+                          (poseSupplier.get().getRotation().getDegrees()
+                                  - finalPose.getRotation().getDegrees())
+                              % 360)
+                      < 4.0);
         },
         requirements);
   }
