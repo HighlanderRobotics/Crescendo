@@ -868,10 +868,12 @@ public class Robot extends LoggedRobot {
             intake.runVelocityCmd(80, 30).withTimeout(0.5).asProxy())
         .beforeStarting(
             () -> {
+              DynamicAuto.initializeNotePriorities();
               swerve.setPose(
                   DynamicAuto.startingLocations[1]
                       .getPoseAllianceSpecific()); // TODO MAKE DASHOBARD CONFIG
               DynamicAuto.updateWhitelistCount();
+              dynamicAutoCounter = 0;
             });
   }
 

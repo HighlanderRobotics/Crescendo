@@ -16,19 +16,29 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 3, "W1", false), // w1
-    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 2, "W2", true), // w2
-    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 0, "W3", true), // w3
-    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, 3, "C1", true), // c1
-    new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C2", true), // c2
-    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), true, 1, "C3", true), // c3
-    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), true, 2, "C4", true), // c4
-    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C5", true) // c5
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, -1, "W1", true), // w1
+    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, -1, "W2", true), // w2
+    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, -1, "W3", true), // w3
+    new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, -1, "C1", true), // c1
+    new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), true, -1, "C2", true), // c2
+    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), true, -1, "C3", true), // c3
+    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), true, -1, "C4", true), // c4
+    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), true, -1, "C5", true) // c5
   };
+
+  public static final LoggedDashboardNumber[] noteChoosers;
+
+  static {
+    noteChoosers = new LoggedDashboardNumber[notes.length];
+    for (int i = 0; i < noteChoosers.length; i++) {
+      noteChoosers[i] = new LoggedDashboardNumber(notes[i].getName() + " Priority", notes[i].getPriority());
+    }
+  }
 
   public static final ShootingLocation[] shootingLocations = {
     new ShootingLocation(new Pose2d(5.639, 6.463, Rotation2d.fromRadians(-3.04)), "S1"), // Left
@@ -56,6 +66,17 @@ public class DynamicAuto {
     whitelistCount = 0;
     for (Note note : notes) {
       whitelistCount += note.getBlacklist() ? 0 : 1;
+    }
+  }
+
+  public static void initializeNotePriorities() {
+    for (int i = 0; i < noteChoosers.length; i++) {
+      notes[i].setPriority((int) Math.floor(noteChoosers[i].get()));
+      if (noteChoosers[i].get() < 0) {
+        notes[i].blacklist();
+      } else {
+        notes[i].whitelist();
+      }
     }
   }
 
