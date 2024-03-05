@@ -7,6 +7,8 @@ package frc.robot;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -57,6 +59,7 @@ import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
@@ -87,8 +90,10 @@ public class Robot extends LoggedRobot {
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
-  public static final boolean USE_SOTM = true;
+  public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
+  private LoggedDashboardChooser<Command> autoChooser =
+      new LoggedDashboardChooser<>("Auto Chooser");
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
@@ -247,7 +252,7 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
+    controller.leftTrigger().whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -298,14 +303,15 @@ public class Robot extends LoggedRobot {
         .y()
         .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
         .onTrue(
-            Commands.sequence(
-                    climber
-                        .retractClimbCmd()
-                        .until(() -> climber.getRotations() < 0.1), // TODO find actual tolerances
-                    Commands.waitUntil(() -> controller.y().getAsBoolean()),
-                    Commands.parallel(
-                        carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
-                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)))
+            // Commands.sequence(
+            climber
+                .retractClimbCmd()
+                .until(() -> climber.getRotations() < 0.1) // TODO find actual tolerances
+                // Commands.waitUntil(() -> controller.y().getAsBoolean()),
+                // Commands.parallel(
+                //     carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
+                //     elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS))
+                // )
                 .alongWith(
                     leds.setRainbowCmd(),
                     shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0)));
@@ -350,6 +356,60 @@ public class Robot extends LoggedRobot {
         // thing
         .whileTrue(elevator.runCurrentZeroing());
     operator.back().whileTrue(climber.runClimberCurrentZeroing());
+    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
+    NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
+    NamedCommands.registerCommand(
+        "shoot",
+        feeder
+            .indexCmd()
+            .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
+            .until(() -> feeder.getFirstBeambreak())
+            .withTimeout(2.0)
+            .andThen(
+                Commands.race(
+                        feeder
+                            .runVelocityCmd(0.0)
+                            .until(() -> shooter.isAtGoal())
+                            .andThen(
+                                feeder
+                                    .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                                    .withTimeout(0.5)),
+                        shooter.runStateCmd(
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getRotation(),
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getLeftRPS(),
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getRightRPS()))
+                    .unless(() -> !feeder.getFirstBeambreak()))
+            .asProxy());
+
+    autoChooser.addDefaultOption("None", Commands.none());
+    autoChooser.addOption("Shoot Preload", teleopAutoAim());
+    autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
+    autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
+
     SmartDashboard.putData(
         "Whitelist Note",
         Commands.runOnce(
@@ -556,7 +616,7 @@ public class Robot extends LoggedRobot {
   public Command staticAutoAim() {
     var headingController =
         new ProfiledPIDController(
-            8.0,
+            5.0,
             0.0,
             0.01,
             new Constraints(
@@ -791,8 +851,11 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     dynamicAutoCounter = 0;
-    autonomousCommand = dynamicAuto();
-    autonomousCommand.schedule();
+    autonomousCommand = autoChooser.get();
+
+    if (autonomousCommand != null) {
+      autonomousCommand.schedule();
+    }
   }
 
   @Override

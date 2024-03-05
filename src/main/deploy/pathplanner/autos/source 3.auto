@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.7470832467079163,
-      "y": 6.625458717346191
+      "x": 0.7040935158729553,
+      "y": 4.236670017242432
     },
-    "rotation": 60.53273310724105
+    "rotation": -59.53446605704806
   },
   "command": {
     "type": "sequential",
@@ -18,13 +18,13 @@
           }
         },
         {
-          "type": "deadline",
+          "type": "race",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local.1"
+                  "pathName": "source 3.1"
                 }
               },
               {
@@ -43,38 +43,13 @@
           }
         },
         {
-          "type": "deadline",
+          "type": "race",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local.2"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "intake"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "shoot"
-          }
-        },
-        {
-          "type": "deadline",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "amp 4 local.3"
+                  "pathName": "source 3.2"
                 }
               },
               {

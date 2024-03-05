@@ -225,7 +225,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 false, false) // Default path replanning config. See the API for the options
             // here
             ),
-        () -> false,
+        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this // Reference to this subsystem to set requirements
         );
 
@@ -481,15 +481,14 @@ public class SwerveSubsystem extends SubsystemBase {
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
-  public Command runVelocityFieldRelativeTeleopCmd(Supplier<ChassisSpeeds> speeds) {
+  public Command runVelocityFieldRelativeTeleop(Supplier<ChassisSpeeds> speeds) {
     return this.runVelocityCmd(
         () ->
             ChassisSpeeds.fromFieldRelativeSpeeds(
                 speeds.get(),
-                DriverStation.getAlliance().isPresent()
-                        && DriverStation.getAlliance().get() == Alliance.Blue
+                DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
                     ? getPose().getRotation()
-                    : getPose().getRotation().plus(Rotation2d.fromDegrees(180))));
+                    : getPose().getRotation().minus(Rotation2d.fromDegrees(180))));
   }
 
   /**
