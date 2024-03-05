@@ -3,6 +3,7 @@ package frc.robot.utils.dynamicauto;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.google.common.base.Supplier;
+import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -10,6 +11,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
@@ -45,8 +47,6 @@ public class DynamicAuto {
   };
 
   public static int whitelistCount = notes.length;
-
-  public static Note noteClosest = new Note();
 
   public static Optional<ChoreoTrajectory> curTrajectory = Optional.empty();
 
@@ -96,6 +96,17 @@ public class DynamicAuto {
     return closestLocation;
   }
 
+  public static boolean isAtShootingLocation(Pose2d pose) {
+    return Streams.concat(
+            Arrays.stream(shootingLocations),
+            Arrays.stream(shootingLocations).filter(n -> n.getName().contains("W")))
+        .map(
+            (ShootingLocation l) ->
+                Boolean.valueOf(
+                    l.getPose().getTranslation().getDistance(pose.getTranslation()) < 1.0))
+        .anyMatch(b -> b);
+  }
+
   public static Optional<ChoreoTrajectory> makeStartToNote(Supplier<Pose2d> startingPose) {
     ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
     startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
@@ -117,7 +128,6 @@ public class DynamicAuto {
   public static Optional<ChoreoTrajectory> makeNoteToShooting(Supplier<Pose2d> startingPose) {
 
     Note closestNote = getAbsoluteClosestNote(startingPose);
-    noteClosest = closestNote;
     ShootingLocation startingLocation = closestShootingLocation(startingPose, shootingLocations);
     if (closestNote.getName().equals("Uninitialized")) {
       System.out.println("No more avaliable notes!");
@@ -149,7 +159,6 @@ public class DynamicAuto {
 
   public static Optional<ChoreoTrajectory> makeNoteToNote(Supplier<Pose2d> startingPose) {
     Note closestNote = getAbsoluteClosestNote(startingPose);
-    noteClosest = closestNote;
     Note nextClosest = new Note();
     if (!closestNote.getBlacklist()) {
       closestNote.blacklist();

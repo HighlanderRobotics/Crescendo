@@ -101,7 +101,6 @@ public class Robot extends LoggedRobot {
   private double flywheelIdleSpeed = 0.0;
 
   private int dynamicAutoCounter = 0;
-  private boolean atShootingLocation = false;
   private boolean justShotWNote = false;
   private ChoreoTrajectory curTrajectory = Choreo.getTrajectory("Amp Side To C1");
 
@@ -660,13 +659,13 @@ public class Robot extends LoggedRobot {
     } else if (DynamicAuto.whitelistCount == 0) {
       return AutoStepSelector.END;
       // If we are at a shooting location, we just shot and should get another note
-    } else if (atShootingLocation) {
-      atShootingLocation = false;
+    } else if (DynamicAuto.isAtShootingLocation(swerve.getPose())) {
       System.out.println("shoot to note");
       return AutoStepSelector.SHOOT_TO_NOTE;
       // If we have a note
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
+            && !DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getBlacklist()
             && swerve
                     .getPose()
                     .minus(
@@ -678,24 +677,24 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
       // If we are at a close note
       if (!justShotWNote
-          && (DynamicAuto.noteClosest.getName().equals("W1")
-              || DynamicAuto.noteClosest.getName().equals("W2")
-              || DynamicAuto.noteClosest.getName().equals("W3"))) {
+          && (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getName().equals("W1")
+              || DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getName().equals("W2")
+              || DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getName().equals("W3"))) {
         System.out.println("Shoot note");
         justShotWNote = true;
+        DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
         return AutoStepSelector.SHOOT;
         // If we are at a center note
       } else {
         System.out.println("note to shoot");
-        atShootingLocation = true;
         justShotWNote = false;
-        System.out.println(atShootingLocation);
         DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
         return AutoStepSelector.NOTE_TO_SHOOT;
       }
       // If we dont have a note but are at a note, go to a different note
     } else if ((!(carriage.getBeambreak() || feeder.getFirstBeambreak()) && Robot.isReal())
-        || (!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
+        || ((!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
+                || DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getBlacklist())
             && swerve
                     .getPose()
                     .minus(
@@ -707,7 +706,7 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
       System.out.println("note to note");
       justShotWNote = false;
-      DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
+      // DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return AutoStepSelector.NOTE_TO_NOTE;
       // If we have a note and didnt catch the other case somehow, run an otf path to shoot it
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
@@ -741,21 +740,22 @@ public class Robot extends LoggedRobot {
                         AutoStepSelector.NOTE_TO_SHOOT,
                         Commands.sequence(
                             Commands.race(
-                                DynamicAuto.noteToShoot(swerve),
-                                shooter.runStateCmd(
-                                    () ->
-                                        AutoAim.shotMap
-                                            .get(swerve.getDistanceToSpeaker())
-                                            .getRotation(),
-                                    () ->
-                                        AutoAim.shotMap
-                                            .get(swerve.getDistanceToSpeaker())
-                                            .getLeftRPS(),
-                                    () ->
-                                        AutoAim.shotMap
-                                            .get(swerve.getDistanceToSpeaker())
-                                            .getRightRPS()),
-                                feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))),
+                                    DynamicAuto.noteToShoot(swerve),
+                                    shooter.runStateCmd(
+                                        () ->
+                                            AutoAim.shotMap
+                                                .get(swerve.getDistanceToSpeaker())
+                                                .getRotation(),
+                                        () ->
+                                            AutoAim.shotMap
+                                                .get(swerve.getDistanceToSpeaker())
+                                                .getLeftRPS(),
+                                        () ->
+                                            AutoAim.shotMap
+                                                .get(swerve.getDistanceToSpeaker())
+                                                .getRightRPS()),
+                                    feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE))
+                                .asProxy())),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
                         Commands.race(
@@ -803,7 +803,11 @@ public class Robot extends LoggedRobot {
                                 feeder.indexCmd())
                             .withTimeout(0.75)),
                     Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),
-                this::selectAuto),
+                () -> {
+                  var auto = selectAuto();
+                  Logger.recordOutput("DynamicAuto/Step", auto);
+                  return auto;
+                }),
             Commands.runOnce(
                 () -> {
                   dynamicAutoCounter++;
