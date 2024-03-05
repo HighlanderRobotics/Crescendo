@@ -869,9 +869,7 @@ public class Robot extends LoggedRobot {
         .beforeStarting(
             () -> {
               DynamicAuto.initializeNotePriorities();
-              swerve.setPose(
-                  DynamicAuto.startingLocations[1]
-                      .getPoseAllianceSpecific()); // TODO MAKE DASHOBARD CONFIG
+              swerve.setPose(DynamicAuto.getStartingLocation().getPoseAllianceSpecific());
               DynamicAuto.updateWhitelistCount();
               dynamicAutoCounter = 0;
             });

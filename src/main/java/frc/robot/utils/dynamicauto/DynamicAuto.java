@@ -60,6 +60,16 @@ public class DynamicAuto {
         new Pose2d(0.71, 4.36, Rotation2d.fromRadians(-1.04)), "Stage Side") // Speaker (Stage Side)
   };
 
+  public static final LoggedDashboardChooser<ShootingLocation> startingLocationChooser;
+
+  static {
+    startingLocationChooser = new LoggedDashboardChooser<>("Starting Location");
+    startingLocationChooser.addDefaultOption(startingLocations[0].getName(), startingLocations[0]);
+    for (int i = 1; i < startingLocations.length; i++) {
+      startingLocationChooser.addOption(startingLocations[i].getName(), startingLocations[i]);
+    }
+  }
+
   public static int whitelistCount = notes.length;
 
   public static Optional<ChoreoTrajectory> curTrajectory = Optional.empty();
@@ -82,6 +92,10 @@ public class DynamicAuto {
         notes[i].whitelist();
       }
     }
+  }
+
+  public static ShootingLocation getStartingLocation() {
+    return startingLocationChooser.get();
   }
 
   public static void updateNote(Note note, BooleanSupplier blacklist, IntSupplier priority) {

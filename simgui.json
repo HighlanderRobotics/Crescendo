@@ -34,6 +34,7 @@
       "/SmartDashboard/Shoot To Note": "Command",
       "/SmartDashboard/Shooter shoot": "Command",
       "/SmartDashboard/Start To Note": "Command",
+      "/SmartDashboard/Starting Location": "String Chooser",
       "/SmartDashboard/Update Note": "Command",
       "/SmartDashboard/VisionSystemSim-Left Camera Sim System/Sim Field": "Field2d",
       "/SmartDashboard/VisionSystemSim-Left Camera/Sim Field": "Field2d",
