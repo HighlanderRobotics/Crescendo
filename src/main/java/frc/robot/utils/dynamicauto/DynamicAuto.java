@@ -181,7 +181,7 @@ public class DynamicAuto {
 
   public static Note getAbsoluteClosestNote(Supplier<Pose2d> curPose) {
     Note closestNote = new Note();
-    double shortestDistance = 99999999;
+    double shortestDistance = Double.MAX_VALUE;
     for (Note note : notes) {
       if (shortestDistance
           > curPose.get().minus(note.getPoseAllianceSpicific()).getTranslation().getNorm()) {

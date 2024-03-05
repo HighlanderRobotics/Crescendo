@@ -42,7 +42,7 @@ public class ShootingLocation {
         return new Pose2d(
             16.5410515 - this.pose.getX(),
             this.pose.getY(),
-            Rotation2d.fromRadians(Math.PI - this.pose.getRotation().getRadians()));
+            this.pose.getRotation().minus(Rotation2d.fromDegrees(180)));
       }
     }
     return this.pose;

@@ -783,7 +783,7 @@ public class SwerveSubsystem extends SubsystemBase {
                     Choreo.choreoSwerveController(
                         new PIDController(6.0, 0.0, 0.0),
                         new PIDController(6.0, 0.0, 0.0),
-                        new PIDController(1.0, 0.0, 0.0)),
+                        new PIDController(6.0, 0.0, 0.0)),
                     (ChassisSpeeds speeds) -> this.runVelocity(speeds),
                     () -> {
                       Optional<Alliance> alliance = DriverStation.getAlliance();
@@ -826,7 +826,6 @@ public class SwerveSubsystem extends SubsystemBase {
     return new FunctionalCommand(
         timer::restart,
         () -> {
-          ;
           outputChassisSpeeds.accept(
               controller.apply(
                   poseSupplier.get(),
@@ -840,14 +839,17 @@ public class SwerveSubsystem extends SubsystemBase {
             outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
           }
         },
-        () ->
-            MathUtil.isNear(trajectory.getFinalPose().getX(), poseSupplier.get().getX(), 0.25)
-                && MathUtil.isNear(
-                    trajectory.getFinalPose().getY(), poseSupplier.get().getY(), 0.25)
-                && MathUtil.isNear(
-                    trajectory.getFinalPose().getRotation().getDegrees(),
-                    poseSupplier.get().getRotation().getDegrees(),
-                    2.0),
+        () -> {
+          var finalPose =
+              mirrorTrajectory.getAsBoolean()
+                  ? trajectory.getFinalState().flipped().getPose()
+                  : trajectory.getFinalState().getPose();
+          Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
+          return timer.hasElapsed(trajectory.getTotalTime())
+              && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.25)
+              && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.25)
+              && Math.abs((poseSupplier.get().getRotation().getDegrees() - finalPose.getRotation().getDegrees()) % 360) < 4.0);
+        },
         requirements);
   }
 
