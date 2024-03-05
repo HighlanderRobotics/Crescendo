@@ -46,10 +46,12 @@ public class DynamicAuto {
   }
 
   public static final ShootingLocation[] shootingLocations = {
-    new ShootingLocation(new Pose2d(5.639, 6.463, Rotation2d.fromRadians(-3.04)), "S1"), // Left
+    // new ShootingLocation(new Pose2d(5.639, 6.463, Rotation2d.fromRadians(-3.04)), "S1"), // Left
+    // disabled due to long distance shots not being tuned yet
     new ShootingLocation(new Pose2d(4.216, 5.216, Rotation2d.fromRadians(-Math.PI)), "S2"),
     new ShootingLocation(new Pose2d(4.263, 3.000, Rotation2d.fromRadians(-0.566)), "S3"), // Middle
-    new ShootingLocation(new Pose2d(5.176, 1.620, Rotation2d.fromRadians(2.961)), "S4") // Right
+    // new ShootingLocation(new Pose2d(5.176, 1.620, Rotation2d.fromRadians(2.961)), "S4") // Right
+    // disabled due to long distance shots not being tuned yet
   };
 
   public static final LoggedDashboardBoolean[] shootingLocationBlacklistChoosers;
@@ -57,7 +59,8 @@ public class DynamicAuto {
   static {
     shootingLocationBlacklistChoosers = new LoggedDashboardBoolean[shootingLocations.length];
     for (int i = 0; i < shootingLocations.length; i++) {
-      shootingLocationBlacklistChoosers[i] = new LoggedDashboardBoolean(shootingLocations[i].getName(), true);
+      shootingLocationBlacklistChoosers[i] =
+          new LoggedDashboardBoolean(shootingLocations[i].getName(), true);
     }
   }
 
@@ -149,6 +152,24 @@ public class DynamicAuto {
     return closestLocation;
   }
 
+  public static ShootingLocation closestStartingLocation(
+      Supplier<Pose2d> curPose, ShootingLocation[] shootingLocations) {
+
+    ShootingLocation closestLocation = new ShootingLocation("shooting shooting");
+    double shortestDistance = Double.MAX_VALUE;
+    for (int i = 0; i < shootingLocations.length; i++) {
+
+      var location = shootingLocations[i];
+      if (shortestDistance
+          > curPose.get().minus(location.getPoseAllianceSpecific()).getTranslation().getNorm()) {
+        closestLocation = location;
+        shortestDistance =
+            curPose.get().minus(location.getPoseAllianceSpecific()).getTranslation().getNorm();
+      }
+    }
+    return closestLocation;
+  }
+
   public static boolean isAtShootingLocation(Pose2d pose) {
     return Streams.concat(
             Arrays.stream(shootingLocations),
@@ -161,7 +182,7 @@ public class DynamicAuto {
   }
 
   public static Optional<ChoreoTrajectory> makeStartToNote(Supplier<Pose2d> startingPose) {
-    ShootingLocation startingLocation = closestShootingLocation(startingPose, startingLocations);
+    ShootingLocation startingLocation = closestStartingLocation(startingPose, startingLocations);
     startingLocation.setPose(startingLocation.getPoseAllianceSpecific());
     Note closestNote = getClosestNote(startingPose);
 
