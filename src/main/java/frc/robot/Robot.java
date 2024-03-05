@@ -738,12 +738,19 @@ public class Robot extends LoggedRobot {
                             DynamicAuto.noteToNote(swerve), intake.runVelocityCmd(80.0, 30.0).asProxy())),
                     Map.entry(
                         AutoStepSelector.NOTE_TO_SHOOT,
-                        Commands.sequence(
-                            Commands.race(
-                                    DynamicAuto.noteToShoot(swerve),
+                            Commands.deadline(
+                                    DynamicAuto.noteToShoot(swerve).andThen(Commands.waitSeconds(0.5)),
+                                    Commands.waitUntil(() -> MathUtil.isNear(
+                        swerve
+                        .getPose()
+                        .getTranslation()
+                        .minus(FieldConstants.getSpeaker().getTranslation())
+                        .getAngle()
+                        .getDegrees(),
+                        swerve.getPose().getRotation().getDegrees(),
+                        1.5)).andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.25).asProxy()),
                                     shooter.runStateCmd(
                                         () ->
-                                        // Doesnt use end state distance. should be able to track fine? TODO fix
                                             AutoAim.shotMap
                                                 .get(swerve.getDistanceToSpeaker())
                                                 .getRotation(),
@@ -754,21 +761,8 @@ public class Robot extends LoggedRobot {
                                         () ->
                                             AutoAim.shotMap
                                                 .get(swerve.getDistanceToSpeaker())
-                                                .getRightRPS()).asProxy()),
-                                    feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE).alongWith(shooter.runStateCmd(
-                                        () ->
-                                            AutoAim.shotMap
-                                                .get(swerve.getDistanceToSpeaker())
-                                                .getRotation(),
-                                        () ->
-                                            AutoAim.shotMap
-                                                .get(swerve.getDistanceToSpeaker())
-                                                .getLeftRPS(),
-                                        () ->
-                                            AutoAim.shotMap
-                                                .get(swerve.getDistanceToSpeaker())
-                                                .getRightRPS())).withTimeout(0.5)
-                                .asProxy())),
+                                                .getRightRPS()).asProxy()
+                    )),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
                         Commands.sequence(

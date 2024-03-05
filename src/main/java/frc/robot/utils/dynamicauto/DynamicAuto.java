@@ -20,14 +20,14 @@ import org.littletonrobotics.junction.Logger;
 public class DynamicAuto {
 
   public static final Note[] notes = {
-    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), false, 1, "W1", true), // w1
-    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), false, 2, "W2", true), // w2
-    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), false, 0, "W3", true), // w3
+    new Note(new Pose2d(2.204, 7.0, Rotation2d.fromRadians(Math.PI)), true, 1, "W1", true), // w1
+    new Note(new Pose2d(2.204, 5.5, Rotation2d.fromRadians(Math.PI)), true, 2, "W2", true), // w2
+    new Note(new Pose2d(2.204, 4.1, Rotation2d.fromRadians(Math.PI)), true, 0, "W3", true), // w3
     new Note(new Pose2d(7.538, 7.3, Rotation2d.fromRadians(Math.PI)), true, 3, "C1", true), // c1
-    new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C2", true), // c2
-    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), true, 1, "C3", true), // c3
-    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), true, 2, "C4", true), // c4
-    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), true, 0, "C5", true) // c5
+    new Note(new Pose2d(7.538, 5.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C2", true), // c2
+    new Note(new Pose2d(7.538, 4.1, Rotation2d.fromRadians(Math.PI)), false, 1, "C3", true), // c3
+    new Note(new Pose2d(7.538, 2.5, Rotation2d.fromRadians(Math.PI)), false, 2, "C4", true), // c4
+    new Note(new Pose2d(7.538, 0.7, Rotation2d.fromRadians(Math.PI)), false, 0, "C5", true) // c5
   };
 
   public static final ShootingLocation[] shootingLocations = {
@@ -309,15 +309,6 @@ public class DynamicAuto {
             () -> {
               curTrajectory = DynamicAuto.makeNoteToShooting(swerve::getPose);
               return DynamicAuto.makeNoteToShooting(swerve::getPose);
-            })
-        .onlyIf(
-            () -> {
-              if (DynamicAuto.whitelistCount > 0) {
-                return true;
-              } else {
-                System.out.println("No more avalible notes!!!!! >:(");
-                return false;
-              }
             });
   }
 }
