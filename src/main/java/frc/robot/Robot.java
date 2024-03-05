@@ -409,6 +409,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
     autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
+    autoChooser.addOption("Dynamic", dynamicAuto());
 
     SmartDashboard.putData(
         "Whitelist Note",

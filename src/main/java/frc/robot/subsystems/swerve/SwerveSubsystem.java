@@ -481,7 +481,7 @@ public class SwerveSubsystem extends SubsystemBase {
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
-  public Command runVelocityFieldRelativeTeleop(Supplier<ChassisSpeeds> speeds) {
+  public Command runVelocityFieldRelativeTeleopCmd(Supplier<ChassisSpeeds> speeds) {
     return this.runVelocityCmd(
         () ->
             ChassisSpeeds.fromFieldRelativeSpeeds(
