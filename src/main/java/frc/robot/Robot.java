@@ -229,8 +229,14 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
-    shooter.setDefaultCommand(shooter.runStateCmd(() -> ShooterSubsystem.PIVOT_MIN_ANGLE, () -> flywheelIdleSpeed, () -> flywheelIdleSpeed).until(() -> shooter.isAtGoal()).andThen(
-        shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed)));
+    shooter.setDefaultCommand(
+        shooter
+            .runStateCmd(
+                () -> ShooterSubsystem.PIVOT_MIN_ANGLE,
+                () -> flywheelIdleSpeed,
+                () -> flywheelIdleSpeed)
+            .until(() -> shooter.isAtGoal())
+            .andThen(shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed)));
     climber.setDefaultCommand(climber.runVoltageCmd(0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
@@ -605,34 +611,35 @@ public class Robot extends LoggedRobot {
         .andThen(
             Commands.deadline(
                 feeder
-                .runVelocityCmd(0.0)
-                .until(
-                    () ->
-                    shooter.isAtGoal()
-                    && MathUtil.isNear(
-                        swerve
-                        .getPose()
-                        .getTranslation()
-                        .minus(FieldConstants.getSpeaker().getTranslation())
-                        .getAngle()
-                        .getDegrees(),
-                        swerve.getPose().getRotation().getDegrees(),
-                        3.0))
-                        .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.25)),
-                    swerve.runVelocityFieldRelative(
-                        () -> {
-                            var pidOut =
-                                headingController.calculate(
-                                    swerve.getPose().getRotation().getRadians(),
+                    .runVelocityCmd(0.0)
+                    .until(
+                        () ->
+                            shooter.isAtGoal()
+                                && MathUtil.isNear(
                                     swerve
                                         .getPose()
                                         .getTranslation()
                                         .minus(FieldConstants.getSpeaker().getTranslation())
                                         .getAngle()
-                                        .getRadians());
-                            return new ChassisSpeeds(
-                                0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
-                        }),
+                                        .getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
+                                    3.0))
+                    .andThen(
+                        feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.25)),
+                swerve.runVelocityFieldRelative(
+                    () -> {
+                      var pidOut =
+                          headingController.calculate(
+                              swerve.getPose().getRotation().getRadians(),
+                              swerve
+                                  .getPose()
+                                  .getTranslation()
+                                  .minus(FieldConstants.getSpeaker().getTranslation())
+                                  .getAngle()
+                                  .getRadians());
+                      return new ChassisSpeeds(
+                          0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
+                    }),
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
@@ -706,7 +713,7 @@ public class Robot extends LoggedRobot {
             && mode == RobotMode.SIM)) {
       System.out.println("note to note");
       justShotWNote = false;
-      // DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
+      DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return AutoStepSelector.NOTE_TO_NOTE;
       // If we have a note and didnt catch the other case somehow, run an otf path to shoot it
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
@@ -735,20 +742,47 @@ public class Robot extends LoggedRobot {
                     Map.entry(
                         AutoStepSelector.NOTE_TO_NOTE,
                         Commands.deadline(
-                            DynamicAuto.noteToNote(swerve), intake.runVelocityCmd(80.0, 30.0).asProxy())),
+                            DynamicAuto.noteToNote(swerve),
+                            intake.runVelocityCmd(80.0, 30.0).asProxy())),
                     Map.entry(
                         AutoStepSelector.NOTE_TO_SHOOT,
-                            Commands.deadline(
-                                    DynamicAuto.noteToShoot(swerve).andThen(Commands.waitSeconds(0.5)),
-                                    Commands.waitUntil(() -> MathUtil.isNear(
-                        swerve
-                        .getPose()
-                        .getTranslation()
-                        .minus(FieldConstants.getSpeaker().getTranslation())
-                        .getAngle()
-                        .getDegrees(),
-                        swerve.getPose().getRotation().getDegrees(),
-                        1.5)).andThen(feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE).withTimeout(0.25).asProxy()),
+                        Commands.deadline(
+                            DynamicAuto.noteToShoot(swerve).andThen(Commands.waitSeconds(0.5)),
+                            Commands.waitUntil(
+                                    () ->
+                                        MathUtil.isNear(
+                                            swerve
+                                                .getPose()
+                                                .getTranslation()
+                                                .minus(FieldConstants.getSpeaker().getTranslation())
+                                                .getAngle()
+                                                .getDegrees(),
+                                            swerve.getPose().getRotation().getDegrees(),
+                                            1.5))
+                                .andThen(
+                                    feeder
+                                        .runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)
+                                        .withTimeout(0.25)
+                                        .asProxy()),
+                            shooter
+                                .runStateCmd(
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getRotation(),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getLeftRPS(),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getRightRPS())
+                                .asProxy())),
+                    Map.entry(
+                        AutoStepSelector.START_TO_NOTE,
+                        Commands.sequence(
+                            Commands.parallel(
                                     shooter.runStateCmd(
                                         () ->
                                             AutoAim.shotMap
@@ -761,13 +795,30 @@ public class Robot extends LoggedRobot {
                                         () ->
                                             AutoAim.shotMap
                                                 .get(swerve.getDistanceToSpeaker())
-                                                .getRightRPS()).asProxy()
-                    )),
+                                                .getRightRPS()),
+                                    Commands.waitUntil(() -> shooter.isAtGoal())
+                                        .andThen(feeder.indexCmd().withTimeout(0.25)))
+                                .withTimeout(1.75)
+                                .asProxy(),
+                            Commands.deadline(
+                                DynamicAuto.startToNote(swerve),
+                                intake.runVelocityCmd(80.0, 30.0).asProxy()))),
                     Map.entry(
-                        AutoStepSelector.START_TO_NOTE,
-                        Commands.sequence(
-                            Commands.parallel(
-                                shooter.runStateCmd(
+                        AutoStepSelector.SHOOT_TO_NOTE,
+                        Commands.deadline(
+                            DynamicAuto.shootToNote(swerve),
+                            intake.runVelocityCmd(80.0, 30.0).asProxy())),
+                    Map.entry(
+                        AutoStepSelector.DYNAMIC_TO_NOTE,
+                        Commands.deadline(
+                            DynamicAuto.DynamicToNote(swerve::getPose),
+                            intake.runVelocityCmd(80.0, 30.0).asProxy())),
+                    Map.entry(
+                        AutoStepSelector.DYNAMIC_TO_SHOOT,
+                        Commands.race(
+                            DynamicAuto.DynamicToShoot(swerve::getPose),
+                            shooter
+                                .runStateCmd(
                                     () ->
                                         AutoAim.shotMap
                                             .get(swerve.getDistanceToSpeaker())
@@ -779,35 +830,8 @@ public class Robot extends LoggedRobot {
                                     () ->
                                         AutoAim.shotMap
                                             .get(swerve.getDistanceToSpeaker())
-                                            .getRightRPS()),
-                                Commands.waitUntil(() -> shooter.isAtGoal()).andThen(feeder.indexCmd().withTimeout(0.25)))
-                            .withTimeout(1.75).asProxy(),
-                            Commands.deadline(
-                                DynamicAuto.startToNote(swerve), intake.runVelocityCmd(80.0, 30.0).asProxy()))),
-                    Map.entry(
-                        AutoStepSelector.SHOOT_TO_NOTE,
-                        Commands.deadline(
-                            DynamicAuto.shootToNote(swerve), intake.runVelocityCmd(80.0, 30.0).asProxy())),
-                    Map.entry(
-                        AutoStepSelector.DYNAMIC_TO_NOTE,
-                        Commands.deadline(
-                            DynamicAuto.DynamicToNote(swerve::getPose),
-                            intake.runVelocityCmd(80.0, 30.0).asProxy())),
-                    Map.entry(
-                        AutoStepSelector.DYNAMIC_TO_SHOOT,
-                        Commands.race(
-                            DynamicAuto.DynamicToShoot(swerve::getPose),
-                            shooter.runStateCmd(
-                                () ->
-                                    AutoAim.shotMap
-                                        .get(swerve.getDistanceToSpeaker())
-                                        .getRotation(),
-                                () ->
-                                    AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                                () ->
-                                    AutoAim.shotMap
-                                        .get(swerve.getDistanceToSpeaker())
-                                        .getRightRPS()).asProxy())),
+                                            .getRightRPS())
+                                .asProxy())),
                     Map.entry(
                         AutoStepSelector.SHOOT,
                         Commands.parallel(
@@ -824,8 +848,10 @@ public class Robot extends LoggedRobot {
                                         AutoAim.shotMap
                                             .get(swerve.getDistanceToSpeaker())
                                             .getRightRPS()),
-                                Commands.waitUntil(() -> shooter.isAtGoal()).andThen(feeder.indexCmd().withTimeout(0.25)))
-                            .withTimeout(1.75).asProxy()),
+                                Commands.waitUntil(() -> shooter.isAtGoal())
+                                    .andThen(feeder.indexCmd().withTimeout(0.25)))
+                            .withTimeout(1.75)
+                            .asProxy()),
                     Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),
                 () -> {
                   var auto = selectAuto();
@@ -842,7 +868,9 @@ public class Robot extends LoggedRobot {
             intake.runVelocityCmd(80, 30).withTimeout(0.5).asProxy())
         .beforeStarting(
             () -> {
-              swerve.setPose(DynamicAuto.startingLocations[1].getPoseAllianceSpecific()); // TODO MAKE DASHOBARD CONFIG
+              swerve.setPose(
+                  DynamicAuto.startingLocations[1]
+                      .getPoseAllianceSpecific()); // TODO MAKE DASHOBARD CONFIG
               DynamicAuto.updateWhitelistCount();
             });
   }

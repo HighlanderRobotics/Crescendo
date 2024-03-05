@@ -59,8 +59,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
@@ -780,9 +780,10 @@ public class SwerveSubsystem extends SubsystemBase {
                 choreoFullFollowSwerveCommand(
                     traj.get().get(),
                     () -> getPose(),
-                    Choreo.choreoSwerveController(new PIDController(6.0, 0.0, 0.0),
-                    new PIDController(6.0, 0.0, 0.0),
-                    new PIDController(1.0, 0.0, 0.0)),
+                    Choreo.choreoSwerveController(
+                        new PIDController(6.0, 0.0, 0.0),
+                        new PIDController(6.0, 0.0, 0.0),
+                        new PIDController(1.0, 0.0, 0.0)),
                     (ChassisSpeeds speeds) -> this.runVelocity(speeds),
                     () -> {
                       Optional<Alliance> alliance = DriverStation.getAlliance();
@@ -839,7 +840,14 @@ public class SwerveSubsystem extends SubsystemBase {
             outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
           }
         },
-        () -> MathUtil.isNear(trajectory.getFinalPose().getX(), poseSupplier.get().getX(), 0.25) && MathUtil.isNear(trajectory.getFinalPose().getY(), poseSupplier.get().getY(), 0.25) && MathUtil.isNear(trajectory.getFinalPose().getRotation().getDegrees(), poseSupplier.get().getRotation().getDegrees(), 2.0),
+        () ->
+            MathUtil.isNear(trajectory.getFinalPose().getX(), poseSupplier.get().getX(), 0.25)
+                && MathUtil.isNear(
+                    trajectory.getFinalPose().getY(), poseSupplier.get().getY(), 0.25)
+                && MathUtil.isNear(
+                    trajectory.getFinalPose().getRotation().getDegrees(),
+                    poseSupplier.get().getRotation().getDegrees(),
+                    2.0),
         requirements);
   }
 
