@@ -373,21 +373,9 @@ public class Robot extends LoggedRobot {
                                     .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
                                     .withTimeout(0.5)),
                         shooter.runStateCmd(
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve.getDistanceToSpeaker())
-                                    .getRotation(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve.getDistanceToSpeaker())
-                                    .getLeftRPS(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve.getDistanceToSpeaker())
-                                    .getRightRPS()))
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
                     .unless(() -> !feeder.getFirstBeambreak()))
             .asProxy());
 
@@ -647,18 +635,9 @@ public class Robot extends LoggedRobot {
                                     3.0))
                     .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
                 shooter.runStateCmd(
-                    () ->
-                        AutoAim.shotMap
-                            .get(swerve.getDistanceToSpeaker())
-                            .getRotation(),
-                    () ->
-                        AutoAim.shotMap
-                            .get(swerve.getDistanceToSpeaker())
-                            .getLeftRPS(),
-                    () ->
-                        AutoAim.shotMap
-                            .get(swerve.getDistanceToSpeaker())
-                            .getRightRPS())));
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())));
   }
 
   public Command updateNote() {
@@ -673,24 +652,19 @@ public class Robot extends LoggedRobot {
   }
 
   public AutoStepSelector selectAuto() {
+    // If no notes scored, at start of auto
     if (dynamicAutoCounter == 0) {
-
       System.out.println("start to note");
       return AutoStepSelector.START_TO_NOTE;
+      // If no notes left, end auto
     } else if (DynamicAuto.whitelistCount == 0) {
       return AutoStepSelector.END;
+      // If we are at a shooting location, we just shot and should get another note
     } else if (atShootingLocation) {
       atShootingLocation = false;
       System.out.println("shoot to note");
-
       return AutoStepSelector.SHOOT_TO_NOTE;
-    } else if (!justShotWNote
-        && (DynamicAuto.noteClosest.getName().equals("W1")
-            || DynamicAuto.noteClosest.getName().equals("W2")
-            || DynamicAuto.noteClosest.getName().equals("W3"))) {
-      System.out.println("Shoot note");
-      justShotWNote = true;
-      return AutoStepSelector.SHOOT;
+      // If we have a note
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -702,12 +676,24 @@ public class Robot extends LoggedRobot {
                     .getNorm()
                 < 1.5
             && mode == RobotMode.SIM)) {
-      System.out.println("note to shoot");
-      atShootingLocation = true;
-      justShotWNote = false;
-      System.out.println(atShootingLocation);
-      DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
-      return AutoStepSelector.NOTE_TO_SHOOT;
+      // If we are at a close note
+      if (!justShotWNote
+          && (DynamicAuto.noteClosest.getName().equals("W1")
+              || DynamicAuto.noteClosest.getName().equals("W2")
+              || DynamicAuto.noteClosest.getName().equals("W3"))) {
+        System.out.println("Shoot note");
+        justShotWNote = true;
+        return AutoStepSelector.SHOOT;
+        // If we are at a center note
+      } else {
+        System.out.println("note to shoot");
+        atShootingLocation = true;
+        justShotWNote = false;
+        System.out.println(atShootingLocation);
+        DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
+        return AutoStepSelector.NOTE_TO_SHOOT;
+      }
+      // If we dont have a note but are at a note, go to a different note
     } else if ((!(carriage.getBeambreak() || feeder.getFirstBeambreak()) && Robot.isReal())
         || (!DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -719,11 +705,11 @@ public class Robot extends LoggedRobot {
                     .getNorm()
                 < 1.5
             && mode == RobotMode.SIM)) {
-
-      System.out.println("note to note 1");
+      System.out.println("note to note");
       justShotWNote = false;
       DynamicAuto.getAbsoluteClosestNote(swerve::getPose).blacklist();
       return AutoStepSelector.NOTE_TO_NOTE;
+      // If we have a note and didnt catch the other case somehow, run an otf path to shoot it
     } else if ((carriage.getBeambreak() || feeder.getFirstBeambreak())
         || (DynamicAuto.getAbsoluteClosestNote(swerve::getPose).getExistence()
             && swerve
@@ -734,19 +720,12 @@ public class Robot extends LoggedRobot {
                     .getTranslation()
                     .getNorm()
                 > 1.5)) {
-
       System.out.println("dynamic to note");
       justShotWNote = false;
-      return AutoStepSelector.DYNAMIC_TO_NOTE;
-    }
-    if (DynamicAuto.whitelistCount <= 0) {
-      System.out.println("END");
-      return AutoStepSelector.END;
-    } else {
-      atShootingLocation = true;
-      justShotWNote = false;
-      System.out.println("dynamoci to shoot");
       return AutoStepSelector.DYNAMIC_TO_SHOOT;
+      // Otherwise end for safety
+    } else {
+      return AutoStepSelector.END;
     }
   }
 
@@ -764,9 +743,18 @@ public class Robot extends LoggedRobot {
                             Commands.race(
                                 DynamicAuto.noteToShoot(swerve),
                                 shooter.runStateCmd(
-                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getRotation(),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getLeftRPS(),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getRightRPS()),
                                 feeder.runVoltageCmd(FeederSubsystem.INDEXING_VOLTAGE)))),
                     Map.entry(
                         AutoStepSelector.START_TO_NOTE,
@@ -786,16 +774,32 @@ public class Robot extends LoggedRobot {
                         Commands.race(
                             DynamicAuto.DynamicToShoot(swerve::getPose),
                             shooter.runStateCmd(
-                                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))),
+                                () ->
+                                    AutoAim.shotMap
+                                        .get(swerve.getDistanceToSpeaker())
+                                        .getRotation(),
+                                () ->
+                                    AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                                () ->
+                                    AutoAim.shotMap
+                                        .get(swerve.getDistanceToSpeaker())
+                                        .getRightRPS()))),
                     Map.entry(
                         AutoStepSelector.SHOOT,
                         Commands.parallel(
                                 shooter.runStateCmd(
-                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getRotation(),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getLeftRPS(),
+                                    () ->
+                                        AutoAim.shotMap
+                                            .get(swerve.getDistanceToSpeaker())
+                                            .getRightRPS()),
                                 feeder.indexCmd())
                             .withTimeout(0.75)),
                     Map.entry(AutoStepSelector.END, swerve.stopWithXCmd())),

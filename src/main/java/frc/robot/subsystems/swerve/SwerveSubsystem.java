@@ -665,11 +665,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public double getDistanceToSpeaker() {
-    return this
-    .getPose()
-    .minus(FieldConstants.getSpeaker())
-    .getTranslation()
-    .getNorm();
+    return this.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm();
   }
 
   /**
