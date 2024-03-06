@@ -261,8 +261,7 @@ public class Robot extends LoggedRobot {
     // Prep climb
     operator
         .rightTrigger(0.5)
-        .whileTrue(
-            elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS));
+        .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS));
     // Heading reset
     controller
         .leftStick()
@@ -276,15 +275,9 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
-    operator
-        .start()
-        .whileTrue(elevator.runCurrentZeroing());
+    operator.start().whileTrue(elevator.runCurrentZeroing());
     // removing current zeroing for now because backlash is a thing
-    operator.back()
-        .whileTrue(
-            shooter.resetPivotPosition(
-                ShooterSubsystem
-                    .PIVOT_MIN_ANGLE));
+    operator.back().whileTrue(shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
     NamedCommands.registerCommand(
