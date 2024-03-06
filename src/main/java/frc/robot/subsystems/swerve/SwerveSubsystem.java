@@ -56,6 +56,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -128,8 +129,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
 
   private final Vision[] cameras;
-  public static final AprilTagFieldLayout fieldTags =
-      AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+  public static AprilTagFieldLayout fieldTags;
+
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
@@ -266,6 +267,10 @@ public class SwerveSubsystem extends SubsystemBase {
                 (Measure<Voltage> volts) -> runDriveCharacterizationVolts(volts.in(Volts)),
                 null,
                 this));
+    try {
+      fieldTags = new AprilTagFieldLayout(Filesystem.getDeployDirectory().toPath().resolve("vision\2024-crescendo.json"));
+    } catch (Exception e) {
+    }
   }
 
   /**
