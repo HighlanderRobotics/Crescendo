@@ -868,6 +868,7 @@ public class Robot extends LoggedRobot {
             intake.runVelocityCmd(80, 30).withTimeout(0.5).asProxy())
         .beforeStarting(
             () -> {
+              justShotWNote = false;
               DynamicAuto.initializeNotePriorities();
               swerve.setPose(DynamicAuto.getStartingLocation().getPoseAllianceSpecific());
               DynamicAuto.updateWhitelistCount();
