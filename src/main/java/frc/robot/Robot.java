@@ -26,8 +26,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
-import frc.robot.subsystems.climber.ClimberIOReal;
-import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
@@ -110,7 +108,6 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
-  private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
 
   @Override
   public void robotInit() {
@@ -195,7 +192,6 @@ public class Robot extends LoggedRobot {
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
         shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
-    climber.setDefaultCommand(climber.runVoltageCmd(0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -262,41 +258,11 @@ public class Robot extends LoggedRobot {
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
 
-    controller
-        .y()
-        .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
-        .onTrue(
-            // Commands.sequence(
-            climber
-                .retractClimbCmd()
-                .until(() -> climber.getRotations() < 0.1) // TODO find actual tolerances
-                // Commands.waitUntil(() -> controller.y().getAsBoolean()),
-                // Commands.parallel(
-                //     carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
-                //     elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS))
-                // )
-                .alongWith(
-                    leds.setRainbowCmd(),
-                    shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0)));
-
     // Prep climb
     operator
         .rightTrigger(0.5)
-        .debounce(0.25)
-        .toggleOnFalse(
-            Commands.parallel(
-                Commands.waitUntil(operator.rightBumper())
-                    .andThen(
-                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)),
-                Commands.waitUntil(() -> shooter.getAngle().getDegrees() > 80.0)
-                    .andThen(
-                        climber.extendRotationsCmd(
-                            () -> ClimberSubsystem.CLIMB_ROTATIONS + (-operator.getLeftY() * 2.0))),
-                shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 10.0)
-                    .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS * 0.9)
-                    .andThen(
-                        leds.setBlinkingCmd(new Color("#777700"), new Color("#ffffff"), 10.0))));
+        .whileTrue(
+            elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS));
     // Heading reset
     controller
         .leftStick()
@@ -312,13 +278,13 @@ public class Robot extends LoggedRobot {
 
     operator
         .start()
+        .whileTrue(elevator.runCurrentZeroing());
+    // removing current zeroing for now because backlash is a thing
+    operator.back()
         .whileTrue(
             shooter.resetPivotPosition(
                 ShooterSubsystem
-                    .PIVOT_MIN_ANGLE)) // removing current zeroing for now because backlash is a
-        // thing
-        .whileTrue(elevator.runCurrentZeroing());
-    operator.back().whileTrue(climber.runClimberCurrentZeroing());
+                    .PIVOT_MIN_ANGLE));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
     NamedCommands.registerCommand(
