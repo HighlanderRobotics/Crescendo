@@ -14,7 +14,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
@@ -26,8 +28,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
-import frc.robot.subsystems.climber.ClimberIOReal;
-import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
@@ -49,6 +49,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.List;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -110,7 +111,6 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
-  private final ClimberSubsystem climber = new ClimberSubsystem(new ClimberIOReal());
 
   @Override
   public void robotInit() {
@@ -136,7 +136,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -195,7 +195,6 @@ public class Robot extends LoggedRobot {
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
         shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
-    climber.setDefaultCommand(climber.runVoltageCmd(0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -204,23 +203,23 @@ public class Robot extends LoggedRobot {
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
 
     // Robot state management bindings
+    new Trigger(() -> carriage.getBeambreak())
+        .debounce(0.5)
+        .onTrue(intake.runVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
         .debounce(0.25)
-        .whileTrue(
+        .onTrue(
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
                     leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(60.0, 30.0));
+    // Prevent intaking when elevator isnt down
     controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .whileTrue(
-            Commands.parallel(
-                shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
-                Commands.waitSeconds(0.5).andThen(feeder.runVelocityCmd(24.0)))); // TODO tune
+        .leftTrigger()
+        .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
+        .whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -245,39 +244,33 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
+        .and(operator.leftBumper().negate().debounce(0.5))
+        .and(operator.leftTrigger().negate().debounce(0.5))
         .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
         .onFalse(
             Commands.parallel(
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
-    controller.rightBumper().whileTrue(swerve.stopWithXCmd());
+    controller.leftBumper().whileTrue(swerve.stopWithXCmd());
+    controller
+        .rightBumper()
+        .whileTrue(
+            ampHeadingSnap(
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftX())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     controller
         .x()
         .whileTrue(
             Commands.parallel(
-                shooter.runFlywheelVoltageCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, -5.0),
+                shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(60.0), -5.0),
                 feeder.runVoltageCmd(-5.0),
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
-
-    controller
-        .y()
-        .and(() -> climber.getRotations() > 0.9 * ClimberSubsystem.CLIMB_ROTATIONS)
-        .onTrue(
-            // Commands.sequence(
-            climber
-                .retractClimbCmd()
-                .until(() -> climber.getRotations() < 0.1) // TODO find actual tolerances
-                // Commands.waitUntil(() -> controller.y().getAsBoolean()),
-                // Commands.parallel(
-                //     carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE),
-                //     elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS))
-                // )
-                .alongWith(
-                    leds.setRainbowCmd(),
-                    shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0)));
 
     // Prep climb
     operator
@@ -285,18 +278,8 @@ public class Robot extends LoggedRobot {
         .debounce(0.25)
         .toggleOnFalse(
             Commands.parallel(
-                Commands.waitUntil(operator.rightBumper())
-                    .andThen(
-                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)),
-                Commands.waitUntil(() -> shooter.getAngle().getDegrees() > 80.0)
-                    .andThen(
-                        climber.extendRotationsCmd(
-                            () -> ClimberSubsystem.CLIMB_ROTATIONS + (-operator.getLeftY() * 2.0))),
-                shooter.runStateCmd(Rotation2d.fromDegrees(90.0), 0.0, 0.0),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 10.0)
-                    .until(() -> climber.getRotations() > ClimberSubsystem.CLIMB_ROTATIONS * 0.9)
-                    .andThen(
-                        leds.setBlinkingCmd(new Color("#777700"), new Color("#ffffff"), 10.0))));
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0)));
     // Heading reset
     controller
         .leftStick()
@@ -310,17 +293,23 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
+    operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
-        .start()
-        .whileTrue(
-            shooter.resetPivotPosition(
-                ShooterSubsystem
-                    .PIVOT_MIN_ANGLE)) // removing current zeroing for now because backlash is a
-        // thing
-        .whileTrue(elevator.runCurrentZeroing());
-    operator.back().whileTrue(climber.runClimberCurrentZeroing());
-    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
+        .back()
+        .onTrue(
+            shooter
+                .resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)
+                .alongWith(
+                    leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
+                        .withTimeout(0.25)));
+    NamedCommands.registerCommand("stop", swerve.stopWithXCmd());
+    NamedCommands.registerCommand(
+        "intake",
+        Commands.parallel(
+            intake.runVelocityCmd(90.0, 30.0),
+            feeder.indexCmd(),
+            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
+            shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80)));
     NamedCommands.registerCommand(
         "shoot",
         feeder
@@ -328,45 +317,8 @@ public class Robot extends LoggedRobot {
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
             .withTimeout(2.0)
-            .andThen(
-                Commands.race(
-                        feeder
-                            .runVelocityCmd(0.0)
-                            .until(() -> shooter.isAtGoal())
-                            .andThen(
-                                feeder
-                                    .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                                    .withTimeout(0.5)),
-                        shooter.runStateCmd(
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getRotation(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getLeftRPS(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getRightRPS()))
-                    .unless(() -> !feeder.getFirstBeambreak()))
-            .asProxy());
+            .andThen(staticAutoAim(5.0))
+            .withTimeout(2.0));
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
@@ -516,12 +468,12 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  public Command staticAutoAim() {
+  public Command staticAutoAim(double rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
             5.0,
             0.0,
-            0.01,
+            0.0,
             new Constraints(
                 SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
@@ -532,7 +484,31 @@ public class Robot extends LoggedRobot {
                         swerve.getPose().getRotation().getRadians(),
                         swerve.getVelocity().omegaRadiansPerSecond)))
         .andThen(
-            Commands.parallel(
+            Commands.deadline(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(
+                        () ->
+                            shooter.isAtGoal()
+                                && MathUtil.isNear(
+                                    swerve
+                                        .getPose()
+                                        .getTranslation()
+                                        .minus(FieldConstants.getSpeaker().getTranslation())
+                                        .getAngle()
+                                        .getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
+                                    rotationTolerance)
+                                && MathUtil.isNear(
+                                    0.0,
+                                    swerve.getVelocity().omegaRadiansPerSecond,
+                                    Units.degreesToRadians(90.0)))
+                    .andThen(
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .raceWith(
+                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                    .andThen(Commands.waitSeconds(0.25)))),
                 swerve.runVelocityFieldRelative(
                     () -> {
                       var pidOut =
@@ -547,21 +523,6 @@ public class Robot extends LoggedRobot {
                       return new ChassisSpeeds(
                           0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
                     }),
-                feeder
-                    .runVelocityCmd(0.0)
-                    .until(
-                        () ->
-                            shooter.isAtGoal()
-                                && MathUtil.isNear(
-                                    swerve
-                                        .getPose()
-                                        .getTranslation()
-                                        .minus(FieldConstants.getSpeaker().getTranslation())
-                                        .getAngle()
-                                        .getDegrees(),
-                                    swerve.getPose().getRotation().getDegrees(),
-                                    3.0))
-                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
                 shooter.runStateCmd(
                     () ->
                         AutoAim.shotMap
@@ -590,6 +551,32 @@ public class Robot extends LoggedRobot {
                                     .getTranslation()
                                     .getNorm())
                             .getRightRPS())));
+  }
+
+  public Command staticAutoAim() {
+    return staticAutoAim(3.0);
+  }
+
+  private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
+    var headingController =
+        new ProfiledPIDController(
+            3.0,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    return swerve.runVelocityTeleopFieldRelative(
+        () -> {
+          double pidOut =
+              headingController.calculate(
+                  swerve.getRotation().getRadians(),
+                  DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                      ? -Math.PI / 2
+                      : Math.PI / 2);
+          return new ChassisSpeeds(
+              x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
+        });
   }
 
   @Override
