@@ -17,6 +17,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -255,7 +256,8 @@ public class Robot extends LoggedRobot {
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(60.0, 30.0));
+    // Prevent intaking when elevator isnt down
+    controller.leftTrigger().and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0)).whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -298,7 +300,7 @@ public class Robot extends LoggedRobot {
         .x()
         .whileTrue(
             Commands.parallel(
-                shooter.runFlywheelVoltageCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, -5.0),
+                shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(60.0), -5.0),
                 feeder.runVoltageCmd(-5.0),
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
