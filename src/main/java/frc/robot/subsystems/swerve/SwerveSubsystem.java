@@ -24,6 +24,7 @@ import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -271,6 +272,8 @@ public class SwerveSubsystem extends SubsystemBase {
           new AprilTagFieldLayout(
               Filesystem.getDeployDirectory().toPath().resolve("vision\2024-crescendo.json"));
     } catch (Exception e) {
+      System.err.println("Failed to load tag map");
+      fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
     }
   }
 
