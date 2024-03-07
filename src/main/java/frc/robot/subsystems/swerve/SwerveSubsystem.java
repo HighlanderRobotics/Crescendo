@@ -216,7 +216,7 @@ public class SwerveSubsystem extends SubsystemBase {
     VisionIOSim.pose = this::getPose3d;
 
     AutoBuilder.configureHolonomic(
-        this::getPose, // Robot pose supplier
+        () -> pose, // Robot pose supplier
         this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
         this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
         this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
@@ -559,7 +559,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return pose;
+    return estimator.getEstimatedPosition();
   }
 
   public Pose3d getPose3d() {
@@ -779,7 +779,7 @@ public class SwerveSubsystem extends SubsystemBase {
             () ->
                 choreoFullFollowSwerveCommand(
                     traj.get().get(),
-                    () -> getPose(),
+                    () -> pose,
                     Choreo.choreoSwerveController(
                         new PIDController(6.0, 0.0, 0.0),
                         new PIDController(6.0, 0.0, 0.0),

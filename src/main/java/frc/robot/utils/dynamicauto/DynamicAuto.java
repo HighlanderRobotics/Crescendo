@@ -314,7 +314,9 @@ public class DynamicAuto {
     return swerve
         .runChoreoTraj(
             () -> {
-              curTrajectory = DynamicAuto.makeStartToNote(swerve::getPose);
+              curTrajectory =
+                  DynamicAuto.makeStartToNote(
+                      () -> startingLocationChooser.get().getPoseAllianceSpecific());
               // forwardLookingTrajectory =
               //     DynamicAuto.addTwoTrajectories(
               //         curTrajectory,

@@ -169,7 +169,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         break;
       case REPLAY:
         setUseTiming(false); // Run as fast as possible
@@ -257,7 +257,10 @@ public class Robot extends LoggedRobot {
 
     // ---- Controller bindings here ----
     // Prevent intaking when elevator isnt down
-    controller.leftTrigger().and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0)).whileTrue(intake.runVelocityCmd(60.0, 30.0));
+    controller
+        .leftTrigger()
+        .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
+        .whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
