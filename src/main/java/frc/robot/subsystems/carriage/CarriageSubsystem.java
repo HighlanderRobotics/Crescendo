@@ -48,9 +48,9 @@ public class CarriageSubsystem extends SubsystemBase {
   public Command indexBackwardsCmd() {
     return Commands.sequence(
         runVoltageCmd(-INDEXING_VOLTAGE).until(() -> inputs.beambreak),
-        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.25),
+        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.1),
         runVoltageCmd(-INDEXING_VOLTAGE).until(() -> !inputs.beambreak),
-        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.25),
+        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.1),
         indexForwardsCmd());
   }
 

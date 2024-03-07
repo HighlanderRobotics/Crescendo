@@ -503,7 +503,9 @@ public class SwerveSubsystem extends SubsystemBase {
             headings[i] = getModuleTranslations()[i].getAngle();
           }
           kinematics.resetHeadings(headings);
-          stopCmd();
+          for (int i = 0; i < modules.length; i++) {
+            modules[i].runSetpoint(new SwerveModuleState(0.0, headings[i]));
+          }
         });
   }
 

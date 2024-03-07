@@ -16,6 +16,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
@@ -48,6 +49,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.List;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -134,7 +136,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -201,9 +203,11 @@ public class Robot extends LoggedRobot {
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
 
     // Robot state management bindings
+    new Trigger(() -> carriage.getBeambreak())
+        .debounce(0.5)
+        .onTrue(intake.runVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
         .debounce(0.25)
-        .onTrue(intake.runVelocityCmd(-50.0, -30.0).withTimeout(1.0))
         .onTrue(
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
@@ -216,13 +220,6 @@ public class Robot extends LoggedRobot {
         .leftTrigger()
         .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
         .whileTrue(intake.runVelocityCmd(60.0, 30.0));
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .whileTrue(
-            Commands.parallel(
-                shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
-                Commands.waitSeconds(0.5).andThen(feeder.runVelocityCmd(24.0)))); // TODO tune
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -255,7 +252,16 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
-    controller.rightBumper().whileTrue(swerve.stopWithXCmd());
+    controller.leftBumper().whileTrue(swerve.stopWithXCmd());
+    controller
+        .rightBumper()
+        .whileTrue(
+            ampHeadingSnap(
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftX())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     controller
         .x()
@@ -305,8 +311,48 @@ public class Robot extends LoggedRobot {
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
             .withTimeout(2.0)
-            .andThen(staticAutoAim().unless(() -> !feeder.getFirstBeambreak()))
-            .asProxy());
+            .andThen(
+                Commands.deadline(
+                        feeder
+                            .runVelocityCmd(0.0)
+                            .until(() -> shooter.isAtGoal())
+                            .andThen(
+                                feeder
+                                    .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                                    .raceWith(
+                                        Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                            .andThen(Commands.waitSeconds(0.25)))),
+                        shooter.runStateCmd(
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getRotation(),
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getLeftRPS(),
+                            () ->
+                                AutoAim.shotMap
+                                    .get(
+                                        swerve
+                                            .getPose()
+                                            .minus(FieldConstants.getSpeaker())
+                                            .getTranslation()
+                                            .getNorm())
+                                    .getRightRPS()))
+                    .unless(() -> !feeder.getFirstBeambreak()))
+            .asProxy()
+            .withTimeout(2.0));
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
@@ -456,12 +502,12 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  public Command staticAutoAim() {
+  public Command staticAutoAim(double rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
             5.0,
             0.0,
-            0.01,
+            0.0,
             new Constraints(
                 SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
@@ -472,7 +518,31 @@ public class Robot extends LoggedRobot {
                         swerve.getPose().getRotation().getRadians(),
                         swerve.getVelocity().omegaRadiansPerSecond)))
         .andThen(
-            Commands.parallel(
+            Commands.deadline(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(
+                        () ->
+                            shooter.isAtGoal()
+                                && MathUtil.isNear(
+                                    swerve
+                                        .getPose()
+                                        .getTranslation()
+                                        .minus(FieldConstants.getSpeaker().getTranslation())
+                                        .getAngle()
+                                        .getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
+                                    rotationTolerance)
+                                && MathUtil.isNear(
+                                    0.0,
+                                    swerve.getVelocity().omegaRadiansPerSecond,
+                                    Units.degreesToRadians(90.0)))
+                    .andThen(
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .raceWith(
+                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                    .andThen(Commands.waitSeconds(0.25)))),
                 swerve.runVelocityFieldRelative(
                     () -> {
                       var pidOut =
@@ -487,22 +557,6 @@ public class Robot extends LoggedRobot {
                       return new ChassisSpeeds(
                           0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
                     }),
-                feeder
-                    .runVelocityCmd(0.0)
-                    .until(
-                        () ->
-                            shooter.isAtGoal()
-                                && MathUtil.isNear(
-                                    swerve
-                                        .getPose()
-                                        .getTranslation()
-                                        .minus(FieldConstants.getSpeaker().getTranslation())
-                                        .getAngle()
-                                        .getDegrees(),
-                                    swerve.getPose().getRotation().getDegrees(),
-                                    3.0))
-                    .andThen(
-                        feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.25)),
                 shooter.runStateCmd(
                     () ->
                         AutoAim.shotMap
@@ -531,6 +585,32 @@ public class Robot extends LoggedRobot {
                                     .getTranslation()
                                     .getNorm())
                             .getRightRPS())));
+  }
+
+  public Command staticAutoAim() {
+    return staticAutoAim(3.0);
+  }
+
+  private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
+    var headingController =
+        new ProfiledPIDController(
+            3.0,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    return swerve.runVelocityTeleopFieldRelative(
+        () -> {
+          double pidOut =
+              headingController.calculate(
+                  swerve.getRotation().getRadians(),
+                  DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                      ? -Math.PI / 2
+                      : Math.PI / 2);
+          return new ChassisSpeeds(
+              x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
+        });
   }
 
   @Override
