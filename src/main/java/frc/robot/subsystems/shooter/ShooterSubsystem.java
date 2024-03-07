@@ -158,7 +158,7 @@ public class ShooterSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           io.setFlywheelVoltage(voltage, voltage);
-          io.setPivotSetpoint(new Rotation2d());
+          io.setPivotSetpoint(rotation);
         });
   }
 
