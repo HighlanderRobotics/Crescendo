@@ -129,7 +129,7 @@ public class ModuleIOReal implements ModuleIO {
     turnConfig.Slot0.kV = 2.7935;
     turnConfig.Slot0.kA = 0.031543;
     turnConfig.Slot0.kS = 0.28;
-    turnConfig.Slot0.kP = 28.579;
+    turnConfig.Slot0.kP = 100.0;
     turnConfig.Slot0.kD = 0.68275;
     turnConfig.MotionMagic.MotionMagicCruiseVelocity = 5500 / Module.TURN_GEAR_RATIO;
     turnConfig.MotionMagic.MotionMagicAcceleration = (5500 * 0.1) / Module.TURN_GEAR_RATIO;
