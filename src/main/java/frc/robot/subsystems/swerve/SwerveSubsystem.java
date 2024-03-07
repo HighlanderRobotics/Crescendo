@@ -56,6 +56,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -71,6 +72,8 @@ import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
+
+import java.io.File;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.function.DoubleSupplier;
@@ -128,8 +131,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
 
   private final Vision[] cameras;
-  public static final AprilTagFieldLayout fieldTags =
-      AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+  public static AprilTagFieldLayout fieldTags;
+
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
@@ -266,6 +269,14 @@ public class SwerveSubsystem extends SubsystemBase {
                 (Measure<Voltage> volts) -> runDriveCharacterizationVolts(volts.in(Volts)),
                 null,
                 this));
+    try {
+      fieldTags =
+          new AprilTagFieldLayout(
+              Filesystem.getDeployDirectory().toPath().resolve("vision" + File.pathSeparator + "2024-crescendo.json"));
+    } catch (Exception e) {
+      System.err.println("Failed to load tag map");
+      fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+    }
   }
 
   /**
