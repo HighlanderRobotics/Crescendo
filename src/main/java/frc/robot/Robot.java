@@ -302,8 +302,14 @@ public class Robot extends LoggedRobot {
                 .alongWith(
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
                         .withTimeout(0.25)));
-    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
+    NamedCommands.registerCommand("stop", swerve.stopWithXCmd());
+    NamedCommands.registerCommand(
+        "intake",
+        Commands.parallel(
+            intake.runVelocityCmd(90.0, 30.0),
+            feeder.indexCmd(),
+            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
+            shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80)));
     NamedCommands.registerCommand(
         "shoot",
         feeder
@@ -311,47 +317,7 @@ public class Robot extends LoggedRobot {
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
             .withTimeout(2.0)
-            .andThen(
-                Commands.deadline(
-                        feeder
-                            .runVelocityCmd(0.0)
-                            .until(() -> shooter.isAtGoal())
-                            .andThen(
-                                feeder
-                                    .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                                    .raceWith(
-                                        Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                            .andThen(Commands.waitSeconds(0.25)))),
-                        shooter.runStateCmd(
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getRotation(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getLeftRPS(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getRightRPS()))
-                    .unless(() -> !feeder.getFirstBeambreak()))
-            .asProxy()
+            .andThen(staticAutoAim(5.0))
             .withTimeout(2.0));
 
     autoChooser.addDefaultOption("None", Commands.none());

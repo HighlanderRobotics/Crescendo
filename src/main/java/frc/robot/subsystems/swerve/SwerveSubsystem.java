@@ -215,8 +215,8 @@ public class SwerveSubsystem extends SubsystemBase {
         // ChassisSpeeds
         new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in
             // your Constants class
-            new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
-            new PIDConstants(5.0, 0.0, 0.0), // Rotation PID constants
+            new PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
+            new PIDConstants(20.0, 0.0, 0.0), // Rotation PID constants
             MAX_LINEAR_SPEED, // Max module speed, in m/s
             DRIVE_BASE_RADIUS, // Drive base radius in meters. Distance from robot center to
             // furthest module.
@@ -246,7 +246,7 @@ public class SwerveSubsystem extends SubsystemBase {
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null, // Default ramp rate is acceptable
-                Volts.of(8),
+                Volts.of(8.0),
                 Seconds.of(6.0), // Default timeout is acceptable
                 // Log state with Phoenix SignalLogger class
                 (state) -> SignalLogger.writeString("state", state.toString())),

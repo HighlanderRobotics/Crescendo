@@ -60,6 +60,19 @@ public class FeederSubsystem extends SubsystemBase {
         });
   }
 
+  public Command indexSlowCmd() {
+    return this.run(
+        () -> {
+          if (inputs.lastBeambreak) {
+            io.setVelocity(-8.0 * 0.75);
+          } else if (inputs.firstBeambreak) {
+            io.setVelocity(0.0);
+          } else {
+            io.setVelocity(8.0);
+          }
+        });
+  }
+
   public boolean getFirstBeambreak() {
     return inputs.firstBeambreak;
   }
