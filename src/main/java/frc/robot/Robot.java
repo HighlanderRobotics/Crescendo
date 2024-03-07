@@ -288,7 +288,14 @@ public class Robot extends LoggedRobot {
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
     operator.start().whileTrue(elevator.runCurrentZeroing());
-    operator.back().onTrue(shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE));
+    operator
+        .back()
+        .onTrue(
+            shooter
+                .resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)
+                .alongWith(
+                    leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
+                        .withTimeout(0.25)));
     NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
     NamedCommands.registerCommand("intake", intake.runVelocityCmd(60.0, 30.0).asProxy());
     NamedCommands.registerCommand(
@@ -298,44 +305,7 @@ public class Robot extends LoggedRobot {
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
             .withTimeout(2.0)
-            .andThen(
-                Commands.race(
-                        feeder
-                            .runVelocityCmd(0.0)
-                            .until(() -> shooter.isAtGoal())
-                            .andThen(
-                                feeder
-                                    .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                                    .withTimeout(0.5)),
-                        shooter.runStateCmd(
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getRotation(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getLeftRPS(),
-                            () ->
-                                AutoAim.shotMap
-                                    .get(
-                                        swerve
-                                            .getPose()
-                                            .minus(FieldConstants.getSpeaker())
-                                            .getTranslation()
-                                            .getNorm())
-                                    .getRightRPS()))
-                    .unless(() -> !feeder.getFirstBeambreak()))
+            .andThen(staticAutoAim().unless(() -> !feeder.getFirstBeambreak()))
             .asProxy());
 
     autoChooser.addDefaultOption("None", Commands.none());
@@ -531,7 +501,8 @@ public class Robot extends LoggedRobot {
                                         .getDegrees(),
                                     swerve.getPose().getRotation().getDegrees(),
                                     3.0))
-                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)),
+                    .andThen(
+                        feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.25)),
                 shooter.runStateCmd(
                     () ->
                         AutoAim.shotMap

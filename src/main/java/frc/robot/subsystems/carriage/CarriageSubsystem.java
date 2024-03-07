@@ -39,7 +39,9 @@ public class CarriageSubsystem extends SubsystemBase {
   public Command indexForwardsCmd() {
     return runVoltageCmd(INDEXING_VOLTAGE)
         .until(() -> inputs.beambreak)
-        .andThen(runVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12), runVoltageCmd(0.0));
+        .andThen(runVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12), runVoltageCmd(0.0))
+        .until(() -> !getBeambreak())
+        .repeatedly();
   }
 
   /** Run the amp mech backwards until the beambreak cycles, then forward index. */
