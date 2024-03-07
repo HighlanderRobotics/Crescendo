@@ -215,7 +215,10 @@ public class Robot extends LoggedRobot {
 
     // ---- Controller bindings here ----
     // Prevent intaking when elevator isnt down
-    controller.leftTrigger().and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0)).whileTrue(intake.runVelocityCmd(60.0, 30.0));
+    controller
+        .leftTrigger()
+        .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
+        .whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
