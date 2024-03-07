@@ -72,7 +72,6 @@ import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -272,7 +271,9 @@ public class SwerveSubsystem extends SubsystemBase {
     try {
       fieldTags =
           new AprilTagFieldLayout(
-              Filesystem.getDeployDirectory().toPath().resolve("vision" + File.pathSeparator + "2024-crescendo.json"));
+              Filesystem.getDeployDirectory()
+                  .toPath()
+                  .resolve("vision" + File.pathSeparator + "2024-crescendo.json"));
     } catch (Exception e) {
       System.err.println("Failed to load tag map");
       fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
