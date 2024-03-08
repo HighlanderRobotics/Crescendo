@@ -316,9 +316,9 @@ public class Robot extends LoggedRobot {
             .indexCmd()
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
-            .withTimeout(2.0)
-            .andThen(staticAutoAim(5.0))
-            .withTimeout(2.0));
+            .withTimeout(1.0)
+            .andThen(staticAutoAim(5.0)
+            .withTimeout(2.0)));
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
