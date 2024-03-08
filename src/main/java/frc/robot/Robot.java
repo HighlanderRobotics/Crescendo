@@ -324,6 +324,8 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
     autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
+    autoChooser.addOption("Amp 5", new PathPlannerAuto("amp 5"));
+    autoChooser.addOption("Source 4", new PathPlannerAuto("source 4"));
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
