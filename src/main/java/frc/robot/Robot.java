@@ -136,7 +136,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -317,8 +317,7 @@ public class Robot extends LoggedRobot {
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0)
-            .andThen(staticAutoAim(5.0)
-            .withTimeout(2.0)));
+            .andThen(staticAutoAim(5.0).withTimeout(2.0)));
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
