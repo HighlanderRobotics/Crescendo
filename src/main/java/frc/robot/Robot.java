@@ -325,6 +325,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
     autoChooser.addOption("Amp 5", new PathPlannerAuto("amp 5"));
     autoChooser.addOption("Source 4", new PathPlannerAuto("source 4"));
+    autoChooser.addOption("Line Test Repeatedly", new PathPlannerAuto("line test").repeatedly());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
