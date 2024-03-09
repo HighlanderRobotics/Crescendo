@@ -573,8 +573,8 @@ public class Robot extends LoggedRobot {
               headingController.calculate(
                   swerve.getRotation().getRadians(),
                   DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
-                      ? -Math.PI / 2
-                      : Math.PI / 2);
+                      ? Math.PI / 2
+                      : -Math.PI / 2);
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });
