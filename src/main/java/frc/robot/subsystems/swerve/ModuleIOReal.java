@@ -99,7 +99,7 @@ public class ModuleIOReal implements ModuleIO {
         (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
     // Controls Gains
     driveConfig.Slot0.kV = 2.0733;
-    driveConfig.Slot0.kA = 1.0;
+    driveConfig.Slot0.kA = 0.75;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 1.9855;
     driveConfig.Slot0.kD = 0.0;
