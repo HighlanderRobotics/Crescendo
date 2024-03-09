@@ -136,7 +136,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -310,6 +310,18 @@ public class Robot extends LoggedRobot {
             feeder.indexCmd(),
             carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
             shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80)));
+    NamedCommands.registerCommand(
+        "fender",
+        shooter
+            .runStateCmd(
+                AutoAim.shotMap.get(1.5).getRotation(),
+                AutoAim.shotMap.get(1.5).getLeftRPS(),
+                AutoAim.shotMap.get(1.5).getRightRPS())
+            .raceWith(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(() -> shooter.isAtGoal())
+                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5))));
     NamedCommands.registerCommand(
         "shoot",
         feeder
