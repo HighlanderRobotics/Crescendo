@@ -321,7 +321,10 @@ public class Robot extends LoggedRobot {
                 feeder
                     .runVelocityCmd(0.0)
                     .until(() -> shooter.isAtGoal())
-                    .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5))));
+                    .andThen(
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .withTimeout(0.5))));
     NamedCommands.registerCommand(
         "shoot",
         feeder
