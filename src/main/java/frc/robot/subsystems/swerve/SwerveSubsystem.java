@@ -493,7 +493,7 @@ public class SwerveSubsystem extends SubsystemBase {
           // Calculate module setpoints
           ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(allianceSpeeds, 0.02);
           SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, 12.0);
 
           Logger.recordOutput("Swerve/Target Speeds", discreteSpeeds);
           Logger.recordOutput("Swerve/Speed Error", discreteSpeeds.minus(getVelocity()));
