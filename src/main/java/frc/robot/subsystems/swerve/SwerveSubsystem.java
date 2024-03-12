@@ -494,13 +494,37 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Command runVelocityTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
-    return this.runVelocityCmd(
-        () ->
-            ChassisSpeeds.fromFieldRelativeSpeeds(
-                speeds.get(),
-                DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
-                    ? getPose().getRotation()
-                    : getPose().getRotation().minus(Rotation2d.fromDegrees(180))));
+    return this.run(
+        () -> {
+          var allianceSpeeds =
+              ChassisSpeeds.fromFieldRelativeSpeeds(
+                  speeds.get(),
+                  DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                      ? getPose().getRotation()
+                      : getPose().getRotation().minus(Rotation2d.fromDegrees(180)));
+          // Calculate module setpoints
+          ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(allianceSpeeds, 0.02);
+          SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, 12.0);
+
+          Logger.recordOutput("Swerve/Target Speeds", discreteSpeeds);
+          Logger.recordOutput("Swerve/Speed Error", discreteSpeeds.minus(getVelocity()));
+          Logger.recordOutput(
+              "Swerve/Target Chassis Speeds Field Relative",
+              ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
+
+          // Send setpoints to modules
+          SwerveModuleState[] optimizedSetpointStates =
+              Streams.zip(
+                      Arrays.stream(modules),
+                      Arrays.stream(setpointStates),
+                      (m, s) -> m.runVoltageSetpoint(s))
+                  .toArray(SwerveModuleState[]::new);
+
+          // Log setpoint states
+          Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+          Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+        });
   }
 
   /**

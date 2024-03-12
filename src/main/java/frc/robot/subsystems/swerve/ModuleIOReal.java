@@ -17,8 +17,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -72,7 +72,8 @@ public class ModuleIOReal implements ModuleIO {
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final VelocityVoltage drivePIDF = new VelocityVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicVelocityVoltage drivePIDF =
+      new MotionMagicVelocityVoltage(0.0).withEnableFOC(true);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   public ModuleIOReal(ModuleConstants constants) {
@@ -98,9 +99,9 @@ public class ModuleIOReal implements ModuleIO {
         (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
     // Controls Gains
     driveConfig.Slot0.kV = 2.0733;
-    driveConfig.Slot0.kA = 0.4;
+    driveConfig.Slot0.kA = 0.75;
     driveConfig.Slot0.kS = 0.04;
-    driveConfig.Slot0.kP = 1.9855;
+    driveConfig.Slot0.kP = 1.9855 * 1.15;
     driveConfig.Slot0.kD = 0.0;
 
     driveConfig.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;

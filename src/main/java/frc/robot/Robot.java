@@ -163,10 +163,9 @@ public class Robot extends LoggedRobot {
         swerve.runVelocityTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getRightX())
-                        * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    -teleopAxisAdjustment(controller.getLeftY()) * 12.0,
+                    -teleopAxisAdjustment(controller.getLeftX()) * 12.0,
+                    -teleopAxisAdjustment(controller.getRightX()) * 12.0)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
@@ -311,19 +310,36 @@ public class Robot extends LoggedRobot {
             carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
             shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80)));
     NamedCommands.registerCommand(
+        "fender",
+        shooter
+            .runStateCmd(
+                AutoAim.shotMap.get(1.5).getRotation(),
+                AutoAim.shotMap.get(1.5).getLeftRPS(),
+                AutoAim.shotMap.get(1.5).getRightRPS())
+            .raceWith(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(() -> shooter.isAtGoal())
+                    .andThen(
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .withTimeout(0.5))));
+    NamedCommands.registerCommand(
         "shoot",
         feeder
             .indexCmd()
             .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
             .until(() -> feeder.getFirstBeambreak())
-            .withTimeout(2.0)
-            .andThen(staticAutoAim(5.0))
-            .withTimeout(2.0));
+            .withTimeout(1.0)
+            .andThen(staticAutoAim(5.0).withTimeout(2.0)));
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
     autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
+    autoChooser.addOption("Amp 5", new PathPlannerAuto("amp 5"));
+    autoChooser.addOption("Source 4", new PathPlannerAuto("source 4"));
+    autoChooser.addOption("Line Test Repeatedly", new PathPlannerAuto("line test").repeatedly());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -572,8 +588,8 @@ public class Robot extends LoggedRobot {
               headingController.calculate(
                   swerve.getRotation().getRadians(),
                   DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
-                      ? -Math.PI / 2
-                      : Math.PI / 2);
+                      ? Math.PI / 2
+                      : -Math.PI / 2);
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });

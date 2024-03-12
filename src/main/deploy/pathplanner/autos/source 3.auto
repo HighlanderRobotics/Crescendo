@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.7040935158729553,
-      "y": 4.236670017242432
+      "x": 0.7778744697570801,
+      "y": 4.333664894104004
     },
-    "rotation": -59.53446605704806
+    "rotation": -60.25511547726754
   },
   "command": {
     "type": "sequential",
@@ -14,7 +14,7 @@
         {
           "type": "named",
           "data": {
-            "name": "shoot"
+            "name": "fender"
           }
         },
         {
