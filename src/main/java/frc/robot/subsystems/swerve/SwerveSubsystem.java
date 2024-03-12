@@ -25,6 +25,7 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -493,7 +494,7 @@ public class SwerveSubsystem extends SubsystemBase {
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
-  public Command runVelocityTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
+  public Command runVoltageTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
     return this.run(
         () -> {
           var allianceSpeeds =
@@ -505,7 +506,7 @@ public class SwerveSubsystem extends SubsystemBase {
           // Calculate module setpoints
           ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(allianceSpeeds, 0.02);
           SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
-          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, 12.0);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
           Logger.recordOutput("Swerve/Target Speeds", discreteSpeeds);
           Logger.recordOutput("Swerve/Speed Error", discreteSpeeds.minus(getVelocity()));
@@ -518,7 +519,7 @@ public class SwerveSubsystem extends SubsystemBase {
               Streams.zip(
                       Arrays.stream(modules),
                       Arrays.stream(setpointStates),
-                      (m, s) -> m.runVoltageSetpoint(s))
+                      (m, s) -> m.runVoltageSetpoint(new SwerveModuleState(s.speedMetersPerSecond * RoboRioDataJNI.getVInVoltage() / MAX_LINEAR_SPEED, s.angle)))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states

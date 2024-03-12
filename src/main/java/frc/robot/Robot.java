@@ -160,12 +160,12 @@ public class Robot extends LoggedRobot {
 
     // Default Commands here
     swerve.setDefaultCommand(
-        swerve.runVelocityTeleopFieldRelative(
+        swerve.runVoltageTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -teleopAxisAdjustment(controller.getLeftY()) * 12.0,
-                    -teleopAxisAdjustment(controller.getLeftX()) * 12.0,
-                    -teleopAxisAdjustment(controller.getRightX()) * 12.0)));
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getRightX()) * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
@@ -582,7 +582,7 @@ public class Robot extends LoggedRobot {
             new Constraints(
                 SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
-    return swerve.runVelocityTeleopFieldRelative(
+    return swerve.runVoltageTeleopFieldRelative(
         () -> {
           double pidOut =
               headingController.calculate(
