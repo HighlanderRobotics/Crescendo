@@ -95,7 +95,7 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     // Sensor
     // Meters per second
-    driveConfig.Feedback.SensorToMechanismRatio = 10.8;
+    driveConfig.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
     // Voltage Controls Gains
     driveConfig.Slot0.kV = 2.0733;
     driveConfig.Slot0.kA = 0.75;
