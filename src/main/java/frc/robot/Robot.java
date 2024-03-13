@@ -9,6 +9,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -80,6 +81,9 @@ public class Robot extends LoggedRobot {
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
+
+  private final SlewRateLimiter omegaLimiter =
+      new SlewRateLimiter(SwerveSubsystem.MAX_ANGULAR_ACCELERATION);
 
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = 30.0;
@@ -160,12 +164,14 @@ public class Robot extends LoggedRobot {
 
     // Default Commands here
     swerve.setDefaultCommand(
-        swerve.runVoltageTeleopFieldRelative(
+        swerve.runVelocityTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
                     -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getRightX()) * SwerveSubsystem.MAX_ANGULAR_SPEED)));
+                    omegaLimiter.calculate(
+                        -teleopAxisAdjustment(controller.getRightX())
+                            * SwerveSubsystem.MAX_ANGULAR_SPEED))));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(

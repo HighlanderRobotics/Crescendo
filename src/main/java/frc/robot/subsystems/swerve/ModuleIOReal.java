@@ -17,7 +17,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -72,8 +72,8 @@ public class ModuleIOReal implements ModuleIO {
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final MotionMagicVelocityVoltage drivePIDF =
-      new MotionMagicVelocityVoltage(0.0).withEnableFOC(true);
+  private final MotionMagicVelocityTorqueCurrentFOC driveCurrentVelocity =
+      new MotionMagicVelocityTorqueCurrentFOC(0.0).withEnableFOC(true).withSlot(1);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   public ModuleIOReal(ModuleConstants constants) {
@@ -87,7 +87,7 @@ public class ModuleIOReal implements ModuleIO {
     // Current limits
     // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.SupplyCurrentLimit = Module.DRIVE_SUPPLY_CURRENT_LIMIT;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = false;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
@@ -95,17 +95,23 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     // Sensor
     // Meters per second
-    driveConfig.Feedback.SensorToMechanismRatio =
-        (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
-    // Controls Gains
+    driveConfig.Feedback.SensorToMechanismRatio = 10.8;
+    // Voltage Controls Gains
     driveConfig.Slot0.kV = 2.0733;
     driveConfig.Slot0.kA = 0.75;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 1.9855 * 1.15;
     driveConfig.Slot0.kD = 0.0;
 
+    // Current control gains
+    driveConfig.Slot1.kV = 10.0;
+    driveConfig.Slot1.kA = 40.0;
+    driveConfig.Slot1.kS = 14.0;
+    driveConfig.Slot1.kP = 10.0;
+    driveConfig.Slot1.kD = 0.0;
+
     driveConfig.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
-    driveConfig.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_SPEED / 0.75;
+    driveConfig.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_ACCELERATION;
 
     driveTalon.getConfigurator().apply(driveConfig);
 
@@ -227,7 +233,7 @@ public class ModuleIOReal implements ModuleIO {
 
   @Override
   public void setDriveSetpoint(final double metersPerSecond) {
-    driveTalon.setControl(drivePIDF.withVelocity(metersPerSecond));
+    driveTalon.setControl(driveCurrentVelocity.withVelocity(metersPerSecond));
   }
 
   @Override

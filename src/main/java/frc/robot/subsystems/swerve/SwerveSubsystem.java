@@ -95,12 +95,14 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   // Drivebase constants
-  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(18.9);
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(16);
+  public static final double MAX_LINEAR_ACCELERATION = 2.0;
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
   public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  public static final double MAX_ANGULAR_ACCELERATION = MAX_LINEAR_ACCELERATION / DRIVE_BASE_RADIUS;
   public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 4;
   // Hardware constants
   public static final int PIGEON_ID = 0;
@@ -529,7 +531,13 @@ public class SwerveSubsystem extends SubsystemBase {
               Streams.zip(
                       Arrays.stream(modules),
                       Arrays.stream(setpointStates),
-                      (m, s) -> m.runVoltageSetpoint(new SwerveModuleState(s.speedMetersPerSecond * RoboRioDataJNI.getVInVoltage() / MAX_LINEAR_SPEED, s.angle)))
+                      (m, s) ->
+                          m.runVoltageSetpoint(
+                              new SwerveModuleState(
+                                  s.speedMetersPerSecond
+                                      * RoboRioDataJNI.getVInVoltage()
+                                      / MAX_LINEAR_SPEED,
+                                  s.angle)))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
