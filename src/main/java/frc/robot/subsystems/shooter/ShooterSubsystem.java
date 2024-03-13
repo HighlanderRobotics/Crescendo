@@ -223,6 +223,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public boolean isAtGoal() {
     return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivotRotation.getDegrees(), 0.5)
         && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0)
-        && MathUtil.isNear(rightGoal, inputs.flywheelRightVelocityRotationsPerSecond, 1.0);
+        && MathUtil.isNear(rightGoal, inputs.flywheelRightVelocityRotationsPerSecond, 1.0)
+        && MathUtil.isNear(0.0, inputs.pivotVelocityRotationsPerSecond, 0.05);
   }
 }
