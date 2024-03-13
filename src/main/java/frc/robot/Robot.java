@@ -82,6 +82,10 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
+  private final SlewRateLimiter vxLimiter =
+      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION);
+  private final SlewRateLimiter vyLimiter =
+      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION);
   private final SlewRateLimiter omegaLimiter =
       new SlewRateLimiter(SwerveSubsystem.MAX_ANGULAR_ACCELERATION);
 
@@ -167,8 +171,12 @@ public class Robot extends LoggedRobot {
         swerve.runVelocityTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    vxLimiter.calculate(
+                        -teleopAxisAdjustment(controller.getLeftY())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED),
+                    vyLimiter.calculate(
+                        -teleopAxisAdjustment(controller.getLeftX())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED),
                     omegaLimiter.calculate(
                         -teleopAxisAdjustment(controller.getRightX())
                             * SwerveSubsystem.MAX_ANGULAR_SPEED))));

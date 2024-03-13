@@ -104,14 +104,15 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Slot0.kD = 0.0;
 
     // Current control gains
-    driveConfig.Slot1.kV = 10.0;
-    driveConfig.Slot1.kA = 40.0;
+    driveConfig.Slot1.kV = 0.0;
+    driveConfig.Slot1.kA = 30.0;
     driveConfig.Slot1.kS = 14.0;
-    driveConfig.Slot1.kP = 10.0;
-    driveConfig.Slot1.kD = 0.0;
+    driveConfig.Slot1.kP = 100.0;
+    driveConfig.Slot1.kD = 1.0;
 
     driveConfig.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
     driveConfig.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_ACCELERATION;
+    driveConfig.MotionMagic.MotionMagicJerk = SwerveSubsystem.MAX_LINEAR_ACCELERATION / 0.1;
 
     driveTalon.getConfigurator().apply(driveConfig);
 

@@ -96,7 +96,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   // Drivebase constants
   public static final double MAX_LINEAR_SPEED = Units.feetToMeters(16);
-  public static final double MAX_LINEAR_ACCELERATION = 2.0;
+  public static final double MAX_LINEAR_ACCELERATION = 6.0;
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
   public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
