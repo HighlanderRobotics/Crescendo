@@ -459,6 +459,10 @@ public class SwerveSubsystem extends SubsystemBase {
         secondProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
         thirdProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
     });
+      this.runUntil(() -> {
+       Pose2d pose = new Pose2d();
+       });
+        
    
   }
 }
