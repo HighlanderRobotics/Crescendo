@@ -444,22 +444,21 @@ public class SwerveSubsystem extends SubsystemBase {
         this.runOnce(() -> SignalLogger.stop()));
 
   public Command PoseLockDriveCmd(){
-   Profiled FirstProfiledPIDControllers =
-   new ProfiledPIDController(1.0, 0.0, 0.0);
-   Profiled SecondProfiledPIDControllers =
-   new ProfiledPIDController(1.0, 0.0, 0.0); 
-   Profiled ThirdProfiledPIDControllers =
-   new ProfiledPIDController(1.0, 0.0, 0.0);        
+    ProfiledPIDController firstProfiledPIDController =
+      new ProfiledPIDController(1.0, 0.0, 0.0);
+    ProfiledPIDController secondProfiledPIDController =
+      new ProfiledPIDController(1.0, 0.0, 0.0);
+    ProfiledPIDController thirdProfiledPIDController =
+       new ProfiledPIDController(1.0, 0.0, 0.0);    
    
-   this.run (
-    controllers.calculate(this.runVelocity)
-    );
-   
+  this.run(controllers.calculate(this.runVelocity));
   
-    this.runOnce(() -> ProfiledPIDControllers.reset(
-    new State(setPose(new Pose2d().getPose().getVelocity().RadiansPerSecond))));
-    
+     this.runOnce(() -> {
+        Pose2d pose = new Pose2d(); 
+        firstProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
+        secondProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
+        thirdProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
+    });
    
   }
-}
 }
