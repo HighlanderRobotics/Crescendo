@@ -83,11 +83,11 @@ public class Robot extends LoggedRobot {
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   private final SlewRateLimiter vxLimiter =
-      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION);
+      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION * 0.9);
   private final SlewRateLimiter vyLimiter =
-      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION);
+      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION * 0.9);
   private final SlewRateLimiter omegaLimiter =
-      new SlewRateLimiter(SwerveSubsystem.MAX_ANGULAR_ACCELERATION);
+      new SlewRateLimiter(SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.9);
 
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = 30.0;

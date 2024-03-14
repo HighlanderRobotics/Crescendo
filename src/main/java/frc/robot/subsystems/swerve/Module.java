@@ -48,6 +48,8 @@ public class Module {
   private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
+  private SwerveModuleState lastSetpoint = new SwerveModuleState();
+
   public Module(final ModuleIO io) {
     this.io = io;
   }
@@ -82,8 +84,10 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
+            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
 
+    lastSetpoint = optimizedState;
     return optimizedState;
   }
 

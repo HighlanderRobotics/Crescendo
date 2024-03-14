@@ -101,7 +101,7 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Slot0.kA = 0.75;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 2.0;
-    driveConfig.Slot0.kD = 0.0;
+    driveConfig.Slot0.kD = 0.1;
 
     // Current control gains
     driveConfig.Slot1.kV = 0.0;
@@ -235,8 +235,11 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void setDriveSetpoint(final double metersPerSecond) {
-    driveTalon.setControl(driveCurrentVelocity.withVelocity(metersPerSecond));
+  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
+    driveTalon.setControl(
+        driveCurrentVelocity
+            .withVelocity(metersPerSecond)
+            .withAcceleration(metersPerSecondSquared));
   }
 
   @Override
