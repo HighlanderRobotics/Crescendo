@@ -171,15 +171,10 @@ public class Robot extends LoggedRobot {
         swerve.runVelocityTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    vxLimiter.calculate(
-                        -teleopAxisAdjustment(controller.getLeftY())
-                            * SwerveSubsystem.MAX_LINEAR_SPEED),
-                    vyLimiter.calculate(
-                        -teleopAxisAdjustment(controller.getLeftX())
-                            * SwerveSubsystem.MAX_LINEAR_SPEED),
-                    omegaLimiter.calculate(
-                        -teleopAxisAdjustment(controller.getRightX())
-                            * SwerveSubsystem.MAX_ANGULAR_SPEED))));
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getRightX())
+                        * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
