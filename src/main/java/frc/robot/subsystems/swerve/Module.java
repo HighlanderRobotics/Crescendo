@@ -13,6 +13,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -64,6 +65,9 @@ public class Module {
 
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
+    Logger.recordOutput(
+        String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
+        Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
 
     // Calculate positions for odometry
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together

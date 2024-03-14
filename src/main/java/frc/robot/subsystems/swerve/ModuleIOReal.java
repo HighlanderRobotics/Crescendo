@@ -27,6 +27,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.google.common.collect.ImmutableSet;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
@@ -87,7 +88,7 @@ public class ModuleIOReal implements ModuleIO {
     // Current limits
     // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.SupplyCurrentLimit = Module.DRIVE_SUPPLY_CURRENT_LIMIT;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = false;
+    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
@@ -98,10 +99,10 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
     // Voltage Controls Gains
     driveConfig.Slot0.kV = 2.0733;
-    driveConfig.Slot0.kA = 0.75;
+    driveConfig.Slot0.kA = 0.65;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 2.0;
-    driveConfig.Slot0.kD = 0.1;
+    driveConfig.Slot0.kD = 0.2;
 
     // Current control gains
     driveConfig.Slot1.kV = 0.0;
@@ -236,10 +237,17 @@ public class ModuleIOReal implements ModuleIO {
 
   @Override
   public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
-    driveTalon.setControl(
-        driveCurrentVelocity
-            .withVelocity(metersPerSecond)
-            .withAcceleration(metersPerSecondSquared));
+    // Doesnt actually refresh drive velocity signal, but should be cached
+    if (metersPerSecond == 0
+        && metersPerSecondSquared == 0
+        && MathUtil.isNear(0.0, driveVelocity.getValueAsDouble(), 0.1)) {
+      setDriveVoltage(0.0);
+    } else {
+      driveTalon.setControl(
+          driveCurrentVelocity
+              .withVelocity(metersPerSecond)
+              .withAcceleration(metersPerSecondSquared));
+    }
   }
 
   @Override
