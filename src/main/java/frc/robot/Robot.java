@@ -7,7 +7,6 @@ package frc.robot;
 import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -45,7 +44,6 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
-import frc.robot.subsystems.swerve.Module;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
