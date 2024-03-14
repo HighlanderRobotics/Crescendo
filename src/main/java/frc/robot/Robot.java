@@ -4,8 +4,8 @@
 
 package frc.robot;
 
+import com.choreo.lib.Choreo;
 import com.ctre.phoenix6.SignalLogger;
-import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -49,6 +49,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -301,45 +302,14 @@ public class Robot extends LoggedRobot {
                 .alongWith(
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
                         .withTimeout(0.25)));
-    NamedCommands.registerCommand("stop", swerve.stopWithXCmd());
-    NamedCommands.registerCommand(
-        "intake",
-        Commands.parallel(
-            intake.runVelocityCmd(90.0, 30.0),
-            feeder.indexCmd(),
-            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
-            shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80)));
-    NamedCommands.registerCommand(
-        "fender",
-        shooter
-            .runStateCmd(
-                AutoAim.shotMap.get(1.5).getRotation(),
-                AutoAim.shotMap.get(1.5).getLeftRPS(),
-                AutoAim.shotMap.get(1.5).getRightRPS())
-            .raceWith(
-                feeder
-                    .runVelocityCmd(0.0)
-                    .until(() -> shooter.isAtGoal())
-                    .andThen(
-                        feeder
-                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                            .withTimeout(0.5))));
-    NamedCommands.registerCommand(
-        "shoot",
-        feeder
-            .indexCmd()
-            .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
-            .until(() -> feeder.getFirstBeambreak())
-            .withTimeout(1.0)
-            .andThen(staticAutoAim(5.0).withTimeout(2.0)));
 
     autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
-    autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
-    autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
-    autoChooser.addOption("Amp 5", new PathPlannerAuto("amp 5"));
-    autoChooser.addOption("Source 4", new PathPlannerAuto("source 4"));
-    autoChooser.addOption("Line Test Repeatedly", new PathPlannerAuto("line test").repeatedly());
+    autoChooser.addOption("Amp 4 Wing", autoAmp4Wing());
+    autoChooser.addOption("Source 3", autoSource3());
+    autoChooser.addOption("Amp 5", autoAmp5());
+    autoChooser.addOption("Source 4", autoSource4());
+    autoChooser.addOption("Line Test Repeatedly", swerve.runChoreoTraj(Choreo.getTrajectory("line test")).repeatedly());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -381,7 +351,7 @@ public class Robot extends LoggedRobot {
   private LoggedDashboardNumber rightRPS =
       new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
 
-  public Command shootWithDashboard() {
+  private Command shootWithDashboard() {
     return Commands.parallel(
         shooter.runStateCmd(
             () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
@@ -394,7 +364,7 @@ public class Robot extends LoggedRobot {
    * @param speeds
    * @return A command that takes the robot through an auto aim sequence
    */
-  public Command teleopAutoAim() {
+  private Command teleopAutoAim() {
     return Commands.sequence(
         swerve
             .runVelocityFieldRelative(
@@ -484,7 +454,7 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  public Command staticAutoAim(double rotationTolerance) {
+  private Command staticAutoAim(double rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
             5.0,
@@ -569,8 +539,89 @@ public class Robot extends LoggedRobot {
                             .getRightRPS())));
   }
 
-  public Command staticAutoAim() {
+  private Command staticAutoAim() {
     return staticAutoAim(3.0);
+  }
+
+  private Command autoStaticAutoAim() {
+    return feeder
+            .indexCmd()
+            .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
+            .until(() -> feeder.getFirstBeambreak())
+            .withTimeout(1.0)
+            .andThen(staticAutoAim(5.0).withTimeout(2.0)).asProxy();
+  }
+
+  private Command autoFenderShot() {
+    return shooter
+            .runStateCmd(
+                AutoAim.shotMap.get(1.5).getRotation(),
+                AutoAim.shotMap.get(1.5).getLeftRPS(),
+                AutoAim.shotMap.get(1.5).getRightRPS())
+            .raceWith(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(() -> shooter.isAtGoal())
+                    .andThen(
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .withTimeout(0.5))).asProxy();
+  }
+
+  private Command autoIntake() {
+    return Commands.parallel(
+            intake.runVelocityCmd(90.0, 30.0),
+            feeder.indexCmd(),
+            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
+            Commands.waitUntil(() -> feeder.getFirstBeambreak()).andThen(shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80))).asProxy();
+  }
+
+  private Command autoAmp4Wing() {
+    return Commands.sequence(
+      autoFenderShot(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 4 local.1")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 4 local.2")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 4 local.3")).deadlineWith(autoIntake()),
+      autoStaticAutoAim()
+    );
+  }
+
+  private Command autoAmp5() {
+    return Commands.sequence(
+      autoFenderShot(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.1")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.2")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).deadlineWith(autoIntake()),
+      autoStaticAutoAim()
+    );
+  }
+
+  private Command autoSource3() {
+    return Commands.sequence(
+      autoFenderShot(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("source 3.1")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("source 3.2")).deadlineWith(autoIntake()),
+      autoStaticAutoAim()
+    );
+  }
+
+  private Command autoSource4() {
+    return Commands.sequence(
+      autoFenderShot(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("source 4.1")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("source 4.2")).deadlineWith(autoIntake()),
+      autoStaticAutoAim(),
+      swerve.runChoreoTraj(Choreo.getTrajectory("source 4.3")).deadlineWith(autoIntake()),
+      autoStaticAutoAim()
+    );
   }
 
   private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
