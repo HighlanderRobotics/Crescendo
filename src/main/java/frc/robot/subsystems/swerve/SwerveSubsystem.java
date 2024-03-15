@@ -466,17 +466,29 @@ public class SwerveSubsystem extends SubsystemBase {
                   this.getVelocity();
                   thirdProfiledPIDController.reset(pose.getRotation().getRadians());
                 }),
-            this.runVelocityCmd(
+            this.runVelocityFieldRelative(
                 () ->
                     new ChassisSpeeds(
-                        firstProfiledPIDController.calculate(this.getVelocity().vxMetersPerSecond),
-                        secondProfiledPIDController.calculate(this.getVelocity().vyMetersPerSecond),
-                        thirdProfiledPIDController.calculate(
-                            this.getVelocity().omegaRadiansPerSecond))))
-        .until(
+                        firstProfiledPIDController.calculate(
+                        this.getPose().getX(),
+                        FieldConstants.getAmp().getX()
+                        )+ firstProfiledPIDController.getSetpoint().velocity,
+                        secondProfiledPIDController.calculate(
+                          this.getPose().getY(),
+                          FieldConstants.getAmp().getY()
+                          )+ secondProfiledPIDController.getSetpoint().velocity,
+                          thirdProfiledPIDController.calculate(
+                            90.0, getPose().getRotation().getDegrees()
+                            )+ thirdProfiledPIDController.getSetpoint().velocity
+                          
+                          )
+                        )
+                        
+        ).until(
             () ->
                 MathUtil.isNear(FieldConstants.getAmp().getX(), getPose().getX(), 0.05)
                     && MathUtil.isNear(FieldConstants.getAmp().getY(), getPose().getY(), 0.05)
                     && MathUtil.isNear(90.0, getPose().getRotation().getDegrees(), 3.0));
+            
   }
 }
