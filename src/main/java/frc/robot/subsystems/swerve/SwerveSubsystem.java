@@ -23,6 +23,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -442,28 +443,40 @@ public class SwerveSubsystem extends SubsystemBase {
         Commands.waitSeconds(1.0),
         driveRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
-
-  public Command PoseLockDriveCmd(){
-    ProfiledPIDController firstProfiledPIDController =
-      new ProfiledPIDController(1.0, 0.0, 0.0);
-    ProfiledPIDController secondProfiledPIDController =
-      new ProfiledPIDController(1.0, 0.0, 0.0);
-    ProfiledPIDController thirdProfiledPIDController =
-       new ProfiledPIDController(1.0, 0.0, 0.0);    
-   
-  this.run(controllers.calculate(this.runVelocity));
-  
-     this.runOnce(() -> {
-        Pose2d pose = new Pose2d(); 
-        firstProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
-        secondProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
-        thirdProfiledPIDController.reset(pose.getVelocity().getRadiansPerSecond());
-    });
-      this.runUntil(() -> {
-       Pose2d pose = new Pose2d();
-       });
-        
-   
   }
-}
+
+  public Command PoseLockDriveCmd() {
+    ProfiledPIDController firstProfiledPIDController =
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+    ProfiledPIDController secondProfiledPIDController =
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+    ProfiledPIDController thirdProfiledPIDController =
+        new ProfiledPIDController(
+            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+
+    return Commands.sequence(
+            this.runOnce(
+                () -> {
+                  Pose2d pose = this.getPose();
+                  firstProfiledPIDController.reset(pose.getX());
+                  this.getVelocity();
+                  secondProfiledPIDController.reset(pose.getY());
+                  this.getVelocity();
+                  thirdProfiledPIDController.reset(pose.getRotation().getRadians());
+                }),
+            this.runVelocityCmd(
+                () ->
+                    new ChassisSpeeds(
+                        firstProfiledPIDController.calculate(this.getVelocity().vxMetersPerSecond),
+                        secondProfiledPIDController.calculate(this.getVelocity().vyMetersPerSecond),
+                        thirdProfiledPIDController.calculate(
+                            this.getVelocity().omegaRadiansPerSecond))))
+        .until(
+            () ->
+                MathUtil.isNear(FieldConstants.getAmp().getX(), getPose().getX(), 0.05)
+                    && MathUtil.isNear(FieldConstants.getAmp().getY(), getPose().getY(), 0.05)
+                    && MathUtil.isNear(90.0, getPose().getRotation().getDegrees(), 3.0));
+  }
 }
