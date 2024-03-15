@@ -394,7 +394,10 @@ public class Robot extends LoggedRobot {
     return Commands.parallel(
         shooter.runStateCmd(
             () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
-        feeder.indexCmd());
+        feeder
+            .runVelocityCmd(0)
+            .withTimeout(1)
+            .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)));
   }
 
   /**
