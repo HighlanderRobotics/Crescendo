@@ -15,6 +15,7 @@ package frc.robot.subsystems.swerve;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
@@ -43,7 +44,7 @@ public class PhoenixOdometryThread extends Thread {
 
   public record Samples(double timestamp, Map<StatusSignal<Double>, Double> values) {}
 
-  private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
+  private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
 
   private final Set<StatusSignal<Double>> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
@@ -136,7 +137,12 @@ public class PhoenixOdometryThread extends Thread {
           journal.add(
               new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
         } else {
-          // System.out.println("Odo thread error: " + status.toString());
+          journal.add(
+              new Samples(
+                  timestampFor(signals),
+                  signals.stream()
+                      .filter(s -> s.getStatus().equals(StatusCode.OK))
+                      .collect(Collectors.toUnmodifiableMap(s -> s, s -> s.getValueAsDouble()))));
         }
       } finally {
         writeLock.unlock();
