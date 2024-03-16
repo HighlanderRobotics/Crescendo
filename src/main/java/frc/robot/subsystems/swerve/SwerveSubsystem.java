@@ -445,14 +445,14 @@ public class SwerveSubsystem extends SubsystemBase {
         this.runOnce(() -> SignalLogger.stop()));
   }
 
-  public Command PoseLockDriveCmd() {
-    ProfiledPIDController firstProfiledPIDController =
+  public Command ampAutoAlignCmd() {
+    ProfiledPIDController xController =
         new ProfiledPIDController(
             1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5)); 
-    ProfiledPIDController secondProfiledPIDController =
+    ProfiledPIDController yController =
         new ProfiledPIDController(
             1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
-    ProfiledPIDController thirdProfiledPIDController =
+    ProfiledPIDController rotationController =
         new ProfiledPIDController(
             1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
 
@@ -460,24 +460,24 @@ public class SwerveSubsystem extends SubsystemBase {
             this.runOnce(
                 () -> {
                   Pose2d pose = this.getPose();
-                  firstProfiledPIDController.reset(pose.getX(), this.getVelocity().vxMetersPerSecond);
+                  xController.reset(pose.getX(), this.getVelocity().vxMetersPerSecond);
               
-                  secondProfiledPIDController.reset(pose.getY(), this.getVelocity().vyMetersPerSecond);
+                  yController.reset(pose.getY(), this.getVelocity().vyMetersPerSecond);
                 
-                  thirdProfiledPIDController.reset(pose.getRotation().getRadians(), this.getVelocity().omegaRadiansPerSecond);
+                  rotationController.reset(pose.getRotation().getRadians(), this.getVelocity().omegaRadiansPerSecond);
                 }),
             this.runVelocityFieldRelative(
                 () ->
                     new ChassisSpeeds(
-                        firstProfiledPIDController.calculate(
+                        xController.calculate(
                                 this.getPose().getX(), FieldConstants.getAmp().getX())
-                            + firstProfiledPIDController.getSetpoint().velocity,
-                        secondProfiledPIDController.calculate(
+                            + xController.getSetpoint().velocity,
+                        yController.calculate(
                                 this.getPose().getY(), FieldConstants.getAmp().getY())
-                            + secondProfiledPIDController.getSetpoint().velocity,
-                        thirdProfiledPIDController.calculate(
+                            + yController.getSetpoint().velocity,
+                        rotationController.calculate(
                                 90.0, getPose().getRotation().getDegrees())
-                            + thirdProfiledPIDController.getSetpoint().velocity)))
+                            + rotationController.getSetpoint().velocity)))
         .until(
             () ->
                 MathUtil.isNear(FieldConstants.getAmp().getX(), getPose().getX(), 0.05)
