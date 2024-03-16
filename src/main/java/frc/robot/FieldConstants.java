@@ -14,8 +14,8 @@ public class FieldConstants {
   public static final Translation2d BLUE_SPEAKER_POSE = new Translation2d(-0.086473, 5.757474);
   public static final Translation2d RED_SPEAKER_POSE = new Translation2d(16.389722, 5.757474);
 
-  public static final Translation2d BLUE_AMP_POSE = new Translation2d(-0.086473, 5.757474);
-  public static final Translation2d RED_AMP_POSE = new Translation2d(16.389722, 5.757474);
+  public static final Translation2d BLUE_AMP_POSE = new Translation2d(2.338, 7.530);
+  public static final Translation2d RED_AMP_POSE = new Translation2d(14.218, 7.490);
 
   public static Translation2d getAmp() {
     if (DriverStation.getAlliance().isPresent()) {

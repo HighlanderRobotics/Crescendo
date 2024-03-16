@@ -448,10 +448,10 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command PoseLockDriveCmd() {
     ProfiledPIDController firstProfiledPIDController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+            1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5)); 
     ProfiledPIDController secondProfiledPIDController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+            1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
     ProfiledPIDController thirdProfiledPIDController =
         new ProfiledPIDController(
             1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
@@ -460,35 +460,28 @@ public class SwerveSubsystem extends SubsystemBase {
             this.runOnce(
                 () -> {
                   Pose2d pose = this.getPose();
-                  firstProfiledPIDController.reset(pose.getX());
-                  this.getVelocity();
-                  secondProfiledPIDController.reset(pose.getY());
-                  this.getVelocity();
-                  thirdProfiledPIDController.reset(pose.getRotation().getRadians());
+                  firstProfiledPIDController.reset(pose.getX(), this.getVelocity().vxMetersPerSecond);
+              
+                  secondProfiledPIDController.reset(pose.getY(), this.getVelocity().vyMetersPerSecond);
+                
+                  thirdProfiledPIDController.reset(pose.getRotation().getRadians(), this.getVelocity().omegaRadiansPerSecond);
                 }),
             this.runVelocityFieldRelative(
                 () ->
                     new ChassisSpeeds(
                         firstProfiledPIDController.calculate(
-                        this.getPose().getX(),
-                        FieldConstants.getAmp().getX()
-                        )+ firstProfiledPIDController.getSetpoint().velocity,
+                                this.getPose().getX(), FieldConstants.getAmp().getX())
+                            + firstProfiledPIDController.getSetpoint().velocity,
                         secondProfiledPIDController.calculate(
-                          this.getPose().getY(),
-                          FieldConstants.getAmp().getY()
-                          )+ secondProfiledPIDController.getSetpoint().velocity,
-                          thirdProfiledPIDController.calculate(
-                            90.0, getPose().getRotation().getDegrees()
-                            )+ thirdProfiledPIDController.getSetpoint().velocity
-                          
-                          )
-                        )
-                        
-        ).until(
+                                this.getPose().getY(), FieldConstants.getAmp().getY())
+                            + secondProfiledPIDController.getSetpoint().velocity,
+                        thirdProfiledPIDController.calculate(
+                                90.0, getPose().getRotation().getDegrees())
+                            + thirdProfiledPIDController.getSetpoint().velocity)))
+        .until(
             () ->
                 MathUtil.isNear(FieldConstants.getAmp().getX(), getPose().getX(), 0.05)
                     && MathUtil.isNear(FieldConstants.getAmp().getY(), getPose().getY(), 0.05)
                     && MathUtil.isNear(90.0, getPose().getRotation().getDegrees(), 3.0));
-            
   }
 }
