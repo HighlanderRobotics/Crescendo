@@ -12,9 +12,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class ShooterIOReal implements ShooterIO {
-  private final TalonFX pivotMotor = new TalonFX(10); // TODO add right id
-  private final TalonFX flywheelLeftMotor = new TalonFX(11); // TODO add right id
-  private final TalonFX flywheelRightMotor = new TalonFX(12); // TODO add right id
+  private final TalonFX pivotMotor = new TalonFX(10, "canivore");
+  private final TalonFX flywheelLeftMotor = new TalonFX(11, "canivore");
+  private final TalonFX flywheelRightMotor = new TalonFX(12, "canivore");
 
   private final StatusSignal<Double> pivotVelocity = pivotMotor.getVelocity();
   private final StatusSignal<Double> pivotVoltage = pivotMotor.getMotorVoltage();
@@ -48,46 +48,47 @@ public class ShooterIOReal implements ShooterIO {
 
     pivotConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    pivotConfig.Feedback.SensorToMechanismRatio =
-        ShooterSubystem.PIVOT_RATIO; // TODO add in once cad is done
+    pivotConfig.Feedback.SensorToMechanismRatio = ShooterSubsystem.PIVOT_RATIO;
 
     pivotConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     pivotConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
     pivotConfig.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
-    pivotConfig.Slot0.kG = 0.0; // TODO: Find using sysid or hand tuning
-    pivotConfig.Slot0.kA = 0.0;
+    pivotConfig.Slot0.kG = 0.5;
+    pivotConfig.Slot0.kV = 7.2;
+    pivotConfig.Slot0.kA = 0.1;
     pivotConfig.Slot0.kS = 0.0;
-    pivotConfig.Slot0.kP = 0.0;
+    pivotConfig.Slot0.kP = 400.0;
     pivotConfig.Slot0.kD = 0.0;
 
     pivotConfig.MotionMagic.MotionMagicAcceleration = 1.0;
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
+    pivotMotor.setPosition(
+        ShooterSubsystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
+        250.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
     pivotMotor.optimizeBusUtilization();
 
     var flywheelConfig = new TalonFXConfiguration();
 
-    flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     flywheelConfig.Feedback.SensorToMechanismRatio =
-        ShooterSubystem.FLYWHEEL_RATIO; // TODO add in once cad is done
+        ShooterSubsystem.FLYWHEEL_RATIO; // TODO add in once cad is done
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
-    flywheelConfig.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
-    flywheelConfig.Slot0.kG = 0.0; // TODO: Find using sysid or hand tuning
-    flywheelConfig.Slot0.kA = 0.0;
-    flywheelConfig.Slot0.kS = 0.0;
-    flywheelConfig.Slot0.kP = 0.0;
+    flywheelConfig.Slot0.kA = 0.0051316;
+    flywheelConfig.Slot0.kV = 0.095;
+    flywheelConfig.Slot0.kS = 0.3;
+    flywheelConfig.Slot0.kP = 0.1;
     flywheelConfig.Slot0.kD = 0.0;
 
     flywheelLeftMotor.getConfigurator().apply(flywheelConfig);
-    flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     flywheelRightMotor.getConfigurator().apply(flywheelConfig);
 
     BaseStatusSignal.setUpdateFrequencyForAll(
@@ -156,7 +157,7 @@ public class ShooterIOReal implements ShooterIO {
     flywheelRightMotor.setControl(flywheelRightVelocityVoltage.withVelocity(right));
   }
 
-  public void resetPivotPostion(final Rotation2d rotation) {
+  public void resetPivotPosition(final Rotation2d rotation) {
     pivotMotor.setPosition(rotation.getRotations());
   }
 }

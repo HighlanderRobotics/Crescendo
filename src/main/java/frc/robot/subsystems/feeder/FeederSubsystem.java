@@ -10,6 +10,9 @@ import org.littletonrobotics.junction.Logger;
 
 /** Feeder motor for shooter and associated beambreaks for indexing */
 public class FeederSubsystem extends SubsystemBase {
+  public static final double INDEXING_VOLTAGE = 4.0;
+  public static final double INDEXING_VELOCITY = 20.0;
+
   private final FeederIO io;
   private final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
 
@@ -29,17 +32,48 @@ public class FeederSubsystem extends SubsystemBase {
     return this.run(() -> io.setVoltage(volts));
   }
 
+  public Command runVelocityCmd(double velocity) {
+    return this.run(() -> io.setVelocity(velocity));
+  }
+
   /** Run the feeder to place the ring between the beambreaks. */
   public Command indexCmd() {
+    // return this.run(
+    //     () -> {
+    //       if (inputs.lastBeambreak) {
+    //         io.setVoltage(-INDEXING_VOLTAGE);
+    //       } else if (inputs.firstBeambreak) {
+    //         io.setVoltage(0.0);
+    //       } else {
+    //         io.setVoltage(INDEXING_VOLTAGE);
+    //       }
+    //     });
     return this.run(
         () -> {
           if (inputs.lastBeambreak) {
-            io.setVoltage(-3.0);
+            io.setVelocity(-INDEXING_VELOCITY * 0.75);
           } else if (inputs.firstBeambreak) {
-            io.setVoltage(0.0);
+            io.setVelocity(0.0);
           } else {
-            io.setVoltage(3.0);
+            io.setVelocity(INDEXING_VELOCITY);
           }
         });
+  }
+
+  public Command indexSlowCmd() {
+    return this.run(
+        () -> {
+          if (inputs.lastBeambreak) {
+            io.setVelocity(-8.0 * 0.75);
+          } else if (inputs.firstBeambreak) {
+            io.setVelocity(0.0);
+          } else {
+            io.setVelocity(8.0);
+          }
+        });
+  }
+
+  public boolean getFirstBeambreak() {
+    return inputs.firstBeambreak;
   }
 }

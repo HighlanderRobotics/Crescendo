@@ -21,7 +21,7 @@ public class ShooterIOSim implements ShooterIO {
   SingleJointedArmSim pivotSim =
       new SingleJointedArmSim(
           DCMotor.getKrakenX60Foc(1),
-          ShooterSubystem.PIVOT_RATIO,
+          ShooterSubsystem.PIVOT_RATIO,
           0.85,
           Units.feetToMeters(12),
           -1.0,
@@ -30,20 +30,22 @@ public class ShooterIOSim implements ShooterIO {
           0);
 
   DCMotorSim leftFlywheelSim =
-      new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubystem.FLYWHEEL_RATIO, 0.001);
+      new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubsystem.FLYWHEEL_RATIO, 0.001);
   DCMotorSim rightFlywheelSim =
-      new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubystem.FLYWHEEL_RATIO, 0.001);
+      new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubsystem.FLYWHEEL_RATIO, 0.001);
 
   ProfiledPIDController pivotController =
       new ProfiledPIDController(1.0, 0.0, 1.0, new Constraints(10.0, 10.0));
   ArmFeedforward pivotFF = new ArmFeedforward(0.0, 0.12, 0.8);
 
-  PIDController flywheelController = new PIDController(0.5, 0.0, 0.0);
+  private final PIDController leftFlywheelController = new PIDController(0.5, 0.0, 0.0);
+  private final PIDController rightFlywheelController = new PIDController(0.5, 0.0, 0.0);
   SimpleMotorFeedforward flywheelFF = new SimpleMotorFeedforward(0.0, 0.0925);
 
   @Override
   public void updateInputs(ShooterIOInputsAutoLogged inputs) {
     leftFlywheelSim.update(0.020);
+    rightFlywheelSim.update(0.020);
     pivotSim.update(0.020);
 
     inputs.pivotRotation = Rotation2d.fromRadians(pivotSim.getAngleRads());
@@ -78,10 +80,10 @@ public class ShooterIOSim implements ShooterIO {
 
   public void setFlywheelVelocity(final double left, final double right) {
     setFlywheelVoltage(
-        flywheelController.calculate(
+        leftFlywheelController.calculate(
                 leftFlywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), left)
             + flywheelFF.calculate(left),
-        flywheelController.calculate(
+        rightFlywheelController.calculate(
                 rightFlywheelSim.getAngularVelocityRadPerSec() / (Math.PI * 2), right)
             + flywheelFF.calculate(right));
   }
@@ -92,7 +94,7 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   @Override
-  public void resetPivotPostion(Rotation2d rotation) {
+  public void resetPivotPosition(Rotation2d rotation) {
     pivotSim.setState(rotation.getRadians(), 0.0);
   }
 }

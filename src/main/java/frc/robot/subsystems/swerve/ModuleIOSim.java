@@ -18,7 +18,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 
 /**
  * Physics sim implementation of module IO.
@@ -46,15 +49,15 @@ public class ModuleIOSim implements ModuleIO {
   private double turnAppliedVolts = 0.0;
 
   private final PIDController turnController = new PIDController(100.0, 0.0, 0.0);
-  private final PIDController driveController = new PIDController(1.0, 0.0, 0.0);
-  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 2.6);
+  private final PIDController driveController = new PIDController(0.3, 0.0, 0.0);
+  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 2.0);
 
   public ModuleIOSim(final String name) {
     this.name = name;
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs) {
+  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
 
@@ -70,6 +73,7 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnAppliedVolts = turnAppliedVolts;
     inputs.turnCurrentAmps = new double[] {Math.abs(turnSim.getCurrentDrawAmps())};
 
+    inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
     inputs.odometryDrivePositionsMeters = new double[] {inputs.drivePositionMeters};
     inputs.odometryTurnPositions = new Rotation2d[] {inputs.turnPosition};
   }
