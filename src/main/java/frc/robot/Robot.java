@@ -50,6 +50,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.List;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -73,11 +74,18 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = true;
+  public static final boolean USE_AUTO_AIM = false;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
   private LoggedDashboardChooser<Command> autoChooser =
       new LoggedDashboardChooser<>("Auto Chooser");
+
+  private LoggedDashboardNumber dashShotDegrees =
+      new LoggedDashboardNumber("Rotation (degrees)", 37.0);
+  private LoggedDashboardNumber dashShotLeftRPS =
+      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
+  private LoggedDashboardNumber dashShotRightRPS =
+      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
@@ -244,7 +252,7 @@ public class Robot extends LoggedRobot {
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> !USE_AUTO_AIM)
-        .whileTrue(shootWithDashboard())
+        .whileTrue(shooter.runStateCmd(AutoAim.FENDER_SHOT.getRotation(), AutoAim.FENDER_SHOT.getLeftRPS(), AutoAim.FENDER_SHOT.getRightRPS()))
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
@@ -322,9 +330,9 @@ public class Robot extends LoggedRobot {
         "fender",
         shooter
             .runStateCmd(
-                AutoAim.shotMap.get(1.5).getRotation(),
-                AutoAim.shotMap.get(1.5).getLeftRPS(),
-                AutoAim.shotMap.get(1.5).getRightRPS())
+                AutoAim.FENDER_SHOT.getRotation(),
+                AutoAim.FENDER_SHOT.getLeftRPS(),
+                AutoAim.FENDER_SHOT.getRightRPS())
             .raceWith(
                 feeder
                     .runVelocityCmd(0.0)
@@ -380,24 +388,18 @@ public class Robot extends LoggedRobot {
             FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
             FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
     Logger.recordOutput(
-        "AutoAIm/Actual Distance",
+        "AutoAim/Actual Distance",
         swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
   }
 
-  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
-  private LoggedDashboardNumber leftRPS =
-      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
-  private LoggedDashboardNumber rightRPS =
-      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
-
   public Command shootWithDashboard() {
-    return Commands.parallel(
-        shooter.runStateCmd(
-            () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
-        feeder
-            .runVelocityCmd(0)
-            .withTimeout(1)
-            .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)));
+    return Commands.defer(
+        () ->
+            shooter.runStateCmd(
+                () -> Rotation2d.fromDegrees(dashShotDegrees.get()),
+                () -> dashShotLeftRPS.get(),
+                () -> dashShotRightRPS.get()),
+        Set.of(shooter));
   }
 
   /**
