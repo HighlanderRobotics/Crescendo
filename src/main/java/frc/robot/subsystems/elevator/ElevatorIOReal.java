@@ -13,6 +13,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
@@ -36,6 +37,8 @@ public class ElevatorIOReal implements ElevatorIO {
 
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
+
+    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
     config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
@@ -61,7 +64,7 @@ public class ElevatorIOReal implements ElevatorIO {
 
     motor.getConfigurator().apply(config);
     motor.setPosition(0.0); // Assume we boot 0ed
-    follower.getConfigurator().apply(new TalonFXConfiguration());
+    follower.getConfigurator().apply(config);
     follower.setControl(new Follower(motor.getDeviceID(), true));
 
     BaseStatusSignal.setUpdateFrequencyForAll(

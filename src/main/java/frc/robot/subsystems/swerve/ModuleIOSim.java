@@ -21,6 +21,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 
 /**
  * Physics sim implementation of module IO.
@@ -49,14 +51,14 @@ public class ModuleIOSim implements ModuleIO {
 
   private final PIDController turnController = new PIDController(100.0, 0.0, 0.0);
   private final PIDController driveController = new PIDController(0.3, 0.0, 0.0);
-  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 3.2);
+  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 2.0);
 
   public ModuleIOSim(final String name) {
     this.name = name;
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs) {
+  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
 

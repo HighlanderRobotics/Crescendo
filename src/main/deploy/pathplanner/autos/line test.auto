@@ -2,19 +2,19 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.7470832465334709,
-      "y": 6.625458718233556
+      "x": 1.452175259590149,
+      "y": 5.548182010650635
     },
-    "rotation": 60.53273310463171
+    "rotation": 0.0
   },
   "command": {
     "type": "sequential",
     "data": {
       "commands": [
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "auto aim"
+            "pathName": "line test"
           }
         }
       ]

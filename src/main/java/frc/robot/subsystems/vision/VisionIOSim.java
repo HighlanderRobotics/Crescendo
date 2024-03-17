@@ -29,7 +29,7 @@ public class VisionIOSim implements VisionIO {
     var cameraProp = new SimCameraProperties();
     // TODO Fix these constants
     cameraProp.setCalibration(1080, 960, constants.intrinsicsMatrix(), constants.distCoeffs());
-    cameraProp.setCalibError(1.0, 0.3);
+    cameraProp.setCalibError(0.0, 0.0);
     cameraProp.setFPS(50.0);
     cameraProp.setAvgLatencyMs(30.0);
     cameraProp.setLatencyStdDevMs(5.0);
@@ -68,7 +68,7 @@ public class VisionIOSim implements VisionIO {
     sim.update(pose.get().toPose2d());
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    inputs.targets = result.targets;
+    inputs.targets = result.targets; // TODO aaaaaaa
     inputs.constants = constants;
   }
 

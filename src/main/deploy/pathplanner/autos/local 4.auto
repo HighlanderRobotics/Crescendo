@@ -2,10 +2,10 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 0.7470832465334709,
-      "y": 6.625458718233556
+      "x": 0.7470832467079163,
+      "y": 6.625458717346191
     },
-    "rotation": 60.53273310463171
+    "rotation": 60.53273310724105
   },
   "command": {
     "type": "sequential",
@@ -24,26 +24,32 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local sgmt 1"
+                  "pathName": "amp 4 local.1"
                 }
               },
               {
-                "type": "race",
+                "type": "named",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "intake"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 2.0
-                      }
-                    }
-                  ]
+                  "name": "intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 0.5
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "intake"
                 }
               }
             ]
@@ -52,7 +58,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         },
         {
@@ -62,26 +68,32 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local sgmt 2"
+                  "pathName": "amp 4 local.2"
                 }
               },
               {
-                "type": "race",
+                "type": "named",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "intake"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 1.5
-                      }
-                    }
-                  ]
+                  "name": "intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 0.5
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "intake"
                 }
               }
             ]
@@ -90,7 +102,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         },
         {
@@ -100,26 +112,32 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "amp 4 local sgmt 3"
+                  "pathName": "amp 4 local.3"
                 }
               },
               {
-                "type": "race",
+                "type": "named",
                 "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "intake"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 1.5
-                      }
-                    }
-                  ]
+                  "name": "intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 1.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "intake"
                 }
               }
             ]
@@ -128,7 +146,7 @@
         {
           "type": "named",
           "data": {
-            "name": "fender"
+            "name": "shoot"
           }
         }
       ]

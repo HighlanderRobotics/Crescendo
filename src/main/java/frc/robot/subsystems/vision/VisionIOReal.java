@@ -47,6 +47,7 @@ public class VisionIOReal implements VisionIO {
     inputs.targets = result.targets;
     inputs.numTags = result.targets.size();
     inputs.constants = constants;
+    inputs.coprocPNPTransform = result.getMultiTagResult().estimatedPose.best;
   }
 
   @Override

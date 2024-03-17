@@ -55,7 +55,7 @@ public class ShooterIOReal implements ShooterIO {
 
     pivotConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-    pivotConfig.Feedback.SensorToMechanismRatio = ShooterSubystem.PIVOT_RATIO;
+    pivotConfig.Feedback.SensorToMechanismRatio = ShooterSubsystem.PIVOT_RATIO;
 
     pivotConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     pivotConfig.CurrentLimits.StatorCurrentLimit = 40.0;
@@ -73,7 +73,7 @@ public class ShooterIOReal implements ShooterIO {
 
     pivotMotor.getConfigurator().apply(pivotConfig);
     pivotMotor.setPosition(
-        ShooterSubystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
+        ShooterSubsystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
         pivotVelocity,
@@ -89,15 +89,15 @@ public class ShooterIOReal implements ShooterIO {
     flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     flywheelConfig.Feedback.SensorToMechanismRatio =
-        ShooterSubystem.FLYWHEEL_RATIO; // TODO add in once cad is done
+        ShooterSubsystem.FLYWHEEL_RATIO; // TODO add in once cad is done
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
     flywheelConfig.Slot0.kA = 0.0051316;
-    flywheelConfig.Slot0.kV = 0.1;
-    flywheelConfig.Slot0.kS = 0.26;
-    flywheelConfig.Slot0.kP = 0.057995;
+    flywheelConfig.Slot0.kV = 0.095;
+    flywheelConfig.Slot0.kS = 0.3;
+    flywheelConfig.Slot0.kP = 0.1;
     flywheelConfig.Slot0.kD = 0.0;
 
     flywheelLeftMotor.getConfigurator().apply(flywheelConfig);
@@ -178,7 +178,7 @@ public class ShooterIOReal implements ShooterIO {
     flywheelRightMotor.setControl(flywheelRightVelocityVoltage.withVelocity(right));
   }
 
-  public void resetPivotPostion(final Rotation2d rotation) {
+  public void resetPivotPosition(final Rotation2d rotation) {
     pivotMotor.setPosition(rotation.getRotations());
   }
 }

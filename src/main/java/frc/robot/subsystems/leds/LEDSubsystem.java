@@ -22,8 +22,6 @@ public class LEDSubsystem extends SubsystemBase {
   private final LEDIO io;
   private final LEDIOInputsAutoLogged inputs = new LEDIOInputsAutoLogged();
 
-  // Marks the start of rainbow or dash
-  // Used to keep persistent state between loops
   private double rainbowStart = 0;
   private double dashStart = 0;
 

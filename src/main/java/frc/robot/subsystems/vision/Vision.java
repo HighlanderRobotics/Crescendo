@@ -19,7 +19,7 @@ import org.photonvision.targeting.PhotonPipelineResult;
 /** Add your docs here. */
 public class Vision {
   public static final Matrix<N3, N1> visionPointBlankDevs =
-      new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[] {0.25, 0.25, 1.0});
+      new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[] {0.25, 0.25, 0.25});
   public static final double distanceFactor = 0.5;
 
   public record VisionConstants(
@@ -59,8 +59,9 @@ public class Vision {
             inputs.constants.intrinsicsMatrix(),
             inputs.constants.distCoeffs(),
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            inputs.constants.robotToCamera());
-    // Reject if estimated pose is in the air or ground
+            inputs.constants.robotToCamera(),
+            inputs.coprocPNPTransform);
+    // // Reject if estimated pose is in the air or ground
     if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {
       return Optional.empty();
     }

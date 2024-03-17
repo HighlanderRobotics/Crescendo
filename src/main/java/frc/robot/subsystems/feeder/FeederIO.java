@@ -22,4 +22,6 @@ public interface FeederIO {
   public void updateInputs(final FeederIOInputsAutoLogged inputs);
 
   public void setVoltage(final double volts);
+
+  public void setVelocity(final double velocity);
 }

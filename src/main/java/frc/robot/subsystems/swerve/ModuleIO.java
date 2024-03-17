@@ -15,6 +15,8 @@ package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
@@ -31,7 +33,7 @@ public interface ModuleIO {
   }
 
   /** Updates the set of loggable inputs. */
-  public void updateInputs(final ModuleIOInputs inputs);
+  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples);
 
   /** Run the drive motor at the specified voltage. */
   public void setDriveVoltage(final double volts);
