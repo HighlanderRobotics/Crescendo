@@ -455,7 +455,7 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
-        pose = pose.interpolate(visionPose.toPose2d(), 0.25);
+        // pose = pose.interpolate(visionPose.toPose2d(), 0.25);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -577,26 +577,41 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Command runChoreoTraj(ChoreoTrajectory traj) {
-    return this.runChoreoTraj(() -> Optional.of(traj));
+    return this.runChoreoTraj(() -> Optional.of(traj), false);
   }
 
-  public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj) {
+  public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
+    return this.runChoreoTraj(() -> Optional.of(traj), resetPose);
+  }
+
+  public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj, boolean resetPose) {
     return Commands.either(
         Commands.defer(
             () ->
                 choreoFullFollowSwerveCommand(
-                    traj.get().get(),
-                    () -> pose,
-                    Choreo.choreoSwerveController(
-                        new PIDController(6.0, 0.0, 0.0),
-                        new PIDController(6.0, 0.0, 0.0),
-                        new PIDController(6.0, 0.0, 0.0)),
-                    (ChassisSpeeds speeds) -> this.runVelocity(speeds),
-                    () -> {
-                      Optional<Alliance> alliance = DriverStation.getAlliance();
-                      return alliance.isPresent() && alliance.get() == Alliance.Red;
-                    },
-                    this),
+                        traj.get().get(),
+                        () -> pose,
+                        Choreo.choreoSwerveController(
+                            new PIDController(8.0, 0.0, 0.0),
+                            new PIDController(8.0, 0.0, 0.0),
+                            new PIDController(6.0, 0.0, 0.0)),
+                        (ChassisSpeeds speeds) -> this.runVelocity(speeds),
+                        () -> {
+                          Optional<Alliance> alliance = DriverStation.getAlliance();
+                          return alliance.isPresent() && alliance.get() == Alliance.Red;
+                        },
+                        this)
+                    .beforeStarting(
+                        Commands.runOnce(
+                                () -> {
+                                  if (DriverStation.getAlliance().isPresent()
+                                      && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                                    setPose(traj.get().get().flipped().getInitialPose());
+                                  } else {
+                                    setPose(traj.get().get().getInitialPose());
+                                  }
+                                })
+                            .onlyIf(() -> resetPose)),
             Set.of(this)),
         stopWithXCmd(),
         () -> traj.get().isPresent());
@@ -631,8 +646,19 @@ public class SwerveSubsystem extends SubsystemBase {
       Subsystem... requirements) {
     var timer = new Timer();
     return new FunctionalCommand(
-        timer::restart,
         () -> {
+          timer.restart();
+          Logger.recordOutput(
+              "Choreo/Active Traj",
+              (mirrorTrajectory.getAsBoolean() ? trajectory.flipped() : trajectory).getPoses());
+        },
+        () -> {
+          Logger.recordOutput(
+              "Choreo/Target Pose",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getPose());
+          Logger.recordOutput(
+              "Choreo/Target Speeds",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getChassisSpeeds());
           outputChassisSpeeds.accept(
               controller.apply(
                   poseSupplier.get(),
