@@ -6,14 +6,12 @@ package frc.robot.subsystems.carriage;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+
 public interface CarriageIO {
   @AutoLog
   public static class CarriageIOInputs {
-    public double velocityRotationsPerSecond = 0.0;
-    public double appliedVolts = 0.0;
-    public double statorCurrentAmps = 0.0;
-    public double supplyCurrentAmps = 0.0;
-    public double temperatureCelsius = 0.0;
+    public TalonFXLog carriage = new TalonFXLog(0, 0, 0, 0, 0, 0);
     public boolean beambreak = false;
   }
 
