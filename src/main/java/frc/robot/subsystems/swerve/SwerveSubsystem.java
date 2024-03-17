@@ -577,11 +577,34 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Command runChoreoTraj(ChoreoTrajectory traj) {
-    return this.runChoreoTraj(() -> Optional.of(traj), false);
+    return this.runChoreoTraj(traj, false);
   }
 
   public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
-    return this.runChoreoTraj(() -> Optional.of(traj), resetPose);
+    return choreoFullFollowSwerveCommand(
+            traj,
+            () -> pose,
+            Choreo.choreoSwerveController(
+                new PIDController(8.0, 0.0, 0.0),
+                new PIDController(8.0, 0.0, 0.0),
+                new PIDController(6.0, 0.0, 0.0)),
+            (ChassisSpeeds speeds) -> this.runVelocity(speeds),
+            () -> {
+              Optional<Alliance> alliance = DriverStation.getAlliance();
+              return alliance.isPresent() && alliance.get() == Alliance.Red;
+            },
+            this)
+        .beforeStarting(
+            Commands.runOnce(
+                    () -> {
+                      if (DriverStation.getAlliance().isPresent()
+                          && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                        setPose(traj.flipped().getInitialPose());
+                      } else {
+                        setPose(traj.getInitialPose());
+                      }
+                    })
+                .onlyIf(() -> resetPose));
   }
 
   public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj, boolean resetPose) {

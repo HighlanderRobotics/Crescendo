@@ -88,7 +88,7 @@ public class ModuleIOReal implements ModuleIO {
     // Current limits
     // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.SupplyCurrentLimit = Module.DRIVE_SUPPLY_CURRENT_LIMIT;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = false;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
