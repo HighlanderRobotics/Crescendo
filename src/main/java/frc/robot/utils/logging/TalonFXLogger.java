@@ -21,6 +21,27 @@ public class TalonFXLogger {
     public double position = 0.0;
     public double velocity = 0.0;
 
+    // Faults
+    public boolean licenseFault = false;
+
+    public TalonFXLog(
+        double appliedVolts,
+        double statorCurrentAmps,
+        double supplyCurrentAmps,
+        double temperatureCelsius,
+        double position,
+        double velocityRotationsPerSecond,
+        boolean licenseFault) {
+      this.appliedVolts = appliedVolts;
+      this.statorCurrentAmps = statorCurrentAmps;
+      this.supplyCurrentAmps = supplyCurrentAmps;
+      this.temperatureCelsius = temperatureCelsius;
+      this.position = position;
+      this.velocity = velocityRotationsPerSecond;
+
+      licenseFault = false;
+    }
+
     public TalonFXLog(
         double appliedVolts,
         double statorCurrentAmps,
@@ -28,12 +49,7 @@ public class TalonFXLogger {
         double temperatureCelsius,
         double position,
         double velocityRotationsPerSecond) {
-      this.appliedVolts = appliedVolts;
-      this.statorCurrentAmps = statorCurrentAmps;
-      this.supplyCurrentAmps = supplyCurrentAmps;
-      this.temperatureCelsius = temperatureCelsius;
-      this.position = position;
-      this.velocity = velocityRotationsPerSecond;
+      this(appliedVolts, statorCurrentAmps, supplyCurrentAmps, temperatureCelsius, position, velocityRotationsPerSecond, false);
     }
 
     public static TalonFXLogStruct struct = new TalonFXLogStruct();
@@ -52,12 +68,12 @@ public class TalonFXLogger {
 
       @Override
       public int getSize() {
-        return kSizeDouble * 6;
+        return kSizeDouble * 6 + kSizeBool * 1;
       }
 
       @Override
       public String getSchema() {
-        return "double voltage;double statorAmps;double supplyAmps;double temp;double position;double velocity";
+        return "double voltage;double statorAmps;double supplyAmps;double temp;double position;double velocity;boolean licenseFault";
       }
 
       @Override
@@ -68,7 +84,8 @@ public class TalonFXLogger {
         double temp = bb.getDouble();
         double rotation = bb.getDouble();
         double velocity = bb.getDouble();
-        return new TalonFXLog(voltage, statorAmps, supplyAmps, temp, rotation, velocity);
+        boolean licenseFault = bb.get() != 0;
+        return new TalonFXLog(voltage, statorAmps, supplyAmps, temp, rotation, velocity, licenseFault);
       }
 
       @Override
@@ -79,6 +96,7 @@ public class TalonFXLogger {
         bb.putDouble(value.temperatureCelsius);
         bb.putDouble(value.position);
         bb.putDouble(value.velocity);
+        bb.put(value.licenseFault ? (byte)0 : (byte)1);
       }
     }
   }
@@ -89,16 +107,20 @@ public class TalonFXLogger {
   private final StatusSignal<Double> statorCurrentSignal;
   private final StatusSignal<Double> supplyCurrentSignal;
   private final StatusSignal<Double> temperatureSignal;
-  private final StatusSignal<Double> rotationSignal;
+  private final StatusSignal<Double> positionSignal;
   private final StatusSignal<Double> velocitySignal;
+
+  private final StatusSignal<Boolean> licenseFaultSignal;
 
   public TalonFXLogger(TalonFX talon, double updateFrequencyHz, boolean shouldOptimizeBusUsage) {
     voltageSignal = talon.getMotorVoltage();
     statorCurrentSignal = talon.getStatorCurrent();
     supplyCurrentSignal = talon.getSupplyCurrent();
     temperatureSignal = talon.getDeviceTemp();
-    rotationSignal = talon.getPosition();
+    positionSignal = talon.getPosition();
     velocitySignal = talon.getVelocity();
+
+    licenseFaultSignal = talon.getFault_UnlicensedFeatureInUse();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         updateFrequencyHz,
@@ -106,8 +128,9 @@ public class TalonFXLogger {
         statorCurrentSignal,
         supplyCurrentSignal,
         temperatureSignal,
-        rotationSignal,
-        velocitySignal);
+        positionSignal,
+        velocitySignal,
+        licenseFaultSignal);
     if (shouldOptimizeBusUsage) talon.optimizeBusUtilization();
   }
 
@@ -117,13 +140,14 @@ public class TalonFXLogger {
 
   public TalonFXLog update() {
     BaseStatusSignal.refreshAll(
-        voltageSignal, statorCurrentSignal, supplyCurrentSignal, temperatureSignal);
+        voltageSignal, statorCurrentSignal, supplyCurrentSignal, temperatureSignal, positionSignal, velocitySignal);
     log.appliedVolts = voltageSignal.getValueAsDouble();
     log.statorCurrentAmps = statorCurrentSignal.getValueAsDouble();
     log.supplyCurrentAmps = supplyCurrentSignal.getValueAsDouble();
     log.temperatureCelsius = temperatureSignal.getValueAsDouble();
-    log.position = rotationSignal.getValueAsDouble();
-    log.velocity = rotationSignal.getValueAsDouble();
+    log.position = positionSignal.getValueAsDouble();
+    log.velocity = velocitySignal.getValueAsDouble();
+    log.licenseFault = licenseFaultSignal.getValue();
 
     return log;
   }
