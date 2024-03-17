@@ -100,7 +100,7 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveVoltage(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
+            * Math.cos(optimizedState.angle.minus(Rotation2d.fromRotations(inputs.turn.position)).getRadians()));
 
     return optimizedState;
   }

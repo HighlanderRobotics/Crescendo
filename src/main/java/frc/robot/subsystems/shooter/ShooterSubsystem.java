@@ -164,7 +164,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public Command runPivotCurrentZeroing() {
     return this.run(() -> io.setPivotVoltage(-1.0))
-        .until(() -> inputs.pivotAmps > 40.0)
+        .until(() -> inputs.pivotStatorCurrentAmps > 40.0)
         .finallyDo(() -> io.resetPivotPosition(PIVOT_MIN_ANGLE));
   }
 

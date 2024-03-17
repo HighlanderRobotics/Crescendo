@@ -30,8 +30,8 @@ import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
-import frc.robot.utils.logging.TalonFXLogger;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.logging.TalonFXLogger;
 import java.util.List;
 
 /**
@@ -168,7 +168,7 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(ModuleIOInputs inputs) {
+  public void updateInputs(ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
     BaseStatusSignal.refreshAll(turnAbsolutePosition);
     driveLogger.update();
     turnLogger.update();
