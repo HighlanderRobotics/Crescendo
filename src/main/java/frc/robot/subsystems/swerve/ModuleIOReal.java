@@ -170,13 +170,11 @@ public class ModuleIOReal implements ModuleIO {
   @Override
   public void updateInputs(ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
     BaseStatusSignal.refreshAll(turnAbsolutePosition);
-    driveLogger.update();
-    turnLogger.update();
 
-    inputs.drive = driveLogger.log;
+    inputs.drive = driveLogger.update();
 
     inputs.turnAbsolutePosition = Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
-    inputs.turn = turnLogger.log;
+    inputs.turn = turnLogger.update();
 
     inputs.odometryTimestamps =
         asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();

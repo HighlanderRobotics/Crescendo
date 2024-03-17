@@ -6,14 +6,12 @@ package frc.robot.subsystems.feeder;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+
 public interface FeederIO {
   @AutoLog
   public static class FeederIOInputs {
-    public double feederVelocityRotationsPerSec = 0.0;
-    public double feederAppliedVolts = 0.0;
-    public double feederStatorCurrentAmps = 0.0;
-    public double feederSupplyCurrentAmps = 0.0;
-    public double feederTempC = 0.0;
+    public TalonFXLog feeder = new TalonFXLog(0, 0, 0, 0, 0, 0);
 
     public boolean firstBeambreak = false;
     public boolean lastBeambreak = false;

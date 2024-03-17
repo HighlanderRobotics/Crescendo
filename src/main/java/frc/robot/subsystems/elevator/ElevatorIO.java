@@ -6,15 +6,13 @@ package frc.robot.subsystems.elevator;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+
 public interface ElevatorIO {
   @AutoLog
   public static class ElevatorIOInputs {
-    public double elevatorPositionMeters = 0.0;
-    public double elevatorVelocityMetersPerSec = 0.0;
-    public double elevatorAppliedVolts = 0.0;
-    public double[] elevatorStatorCurrentAmps = new double[] {};
-    public double[] elevatorSupplyCurrentAmps = new double[] {};
-    public double[] elevatorTempCelsius = new double[] {};
+    public TalonFXLog leader;
+    public TalonFXLog follower;
   }
 
   public void updateInputs(final ElevatorIOInputsAutoLogged inputs);

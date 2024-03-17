@@ -15,6 +15,8 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import frc.robot.utils.logging.TalonFXLogger;
+
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
   private final TalonFX motor = new TalonFX(16, "canivore");
@@ -24,16 +26,9 @@ public class ElevatorIOReal implements ElevatorIO {
   private final MotionMagicVoltage positionVoltage =
       new MotionMagicVoltage(0.0).withEnableFOC(true);
 
-  private final StatusSignal<Double> position = motor.getPosition();
-  private final StatusSignal<Double> velocity = motor.getVelocity();
-  private final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  private final StatusSignal<Double> statorCurrent = motor.getStatorCurrent();
-  private final StatusSignal<Double> supplyCurrent = motor.getSupplyCurrent();
-  private final StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final TalonFXLogger leaderLogger = new TalonFXLogger(motor);
 
-  private final StatusSignal<Double> followerStatorCurrent = follower.getStatorCurrent();
-  private final StatusSignal<Double> followerSupplyCurrent = follower.getSupplyCurrent();
-  private final StatusSignal<Double> followerTemp = follower.getDeviceTemp();
+  private final TalonFXLogger followerLogger = new TalonFXLogger(follower);
 
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
@@ -66,43 +61,12 @@ public class ElevatorIOReal implements ElevatorIO {
     motor.setPosition(0.0); // Assume we boot 0ed
     follower.getConfigurator().apply(config);
     follower.setControl(new Follower(motor.getDeviceID(), true));
-
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        position,
-        velocity,
-        voltage,
-        statorCurrent,
-        supplyCurrent,
-        temp,
-        followerStatorCurrent,
-        followerSupplyCurrent,
-        followerTemp);
-    motor.optimizeBusUtilization();
-    follower.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(
-        position,
-        velocity,
-        voltage,
-        statorCurrent,
-        supplyCurrent,
-        temp,
-        followerStatorCurrent,
-        followerSupplyCurrent,
-        followerTemp);
-    inputs.elevatorPositionMeters = position.getValueAsDouble();
-    inputs.elevatorVelocityMetersPerSec = velocity.getValueAsDouble();
-    inputs.elevatorAppliedVolts = voltage.getValueAsDouble();
-    inputs.elevatorStatorCurrentAmps =
-        new double[] {statorCurrent.getValueAsDouble(), followerStatorCurrent.getValueAsDouble()};
-    inputs.elevatorSupplyCurrentAmps =
-        new double[] {supplyCurrent.getValueAsDouble(), followerSupplyCurrent.getValueAsDouble()};
-    inputs.elevatorTempCelsius =
-        new double[] {temp.getValueAsDouble(), followerTemp.getValueAsDouble()};
+    inputs.leader = leaderLogger.update();
+    inputs.follower = followerLogger.update();
   }
 
   @Override

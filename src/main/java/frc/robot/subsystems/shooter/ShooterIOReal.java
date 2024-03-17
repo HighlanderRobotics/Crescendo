@@ -85,15 +85,11 @@ public class ShooterIOReal implements ShooterIO {
 
   @Override
   public void updateInputs(ShooterIOInputsAutoLogged inputs) {
-    pivotLogger.update();
-    flywheelLeftLogger.update();
-    flywheelRightLogger.update();
+    inputs.pivot = pivotLogger.update();
 
-    inputs.pivot = pivotLogger.log;
+    inputs.leftFlywheel = flywheelLeftLogger.update();
 
-    inputs.leftFlywheel = flywheelLeftLogger.log;
-
-    inputs.rightFlywheel = flywheelRightLogger.log;
+    inputs.rightFlywheel = flywheelRightLogger.update();
   }
 
   public void setPivotVoltage(final double voltage) {
