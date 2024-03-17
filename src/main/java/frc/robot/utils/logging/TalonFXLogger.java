@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
  * rotations or meters, depending on how the mechanism is configured.
  */
 public class TalonFXLogger {
+  // Use generics for units
   public static class TalonFXLog implements StructSerializable {
     public double appliedVolts = 0.0;
     public double statorCurrentAmps = 0.0;
@@ -114,7 +115,7 @@ public class TalonFXLogger {
     this(talon, 50.0, true);
   }
 
-  public void update() {
+  public TalonFXLog update() {
     BaseStatusSignal.refreshAll(
         voltageSignal, statorCurrentSignal, supplyCurrentSignal, temperatureSignal);
     log.appliedVolts = voltageSignal.getValueAsDouble();
@@ -123,5 +124,7 @@ public class TalonFXLogger {
     log.temperatureCelsius = temperatureSignal.getValueAsDouble();
     log.position = rotationSignal.getValueAsDouble();
     log.velocity = rotationSignal.getValueAsDouble();
+
+    return log;
   }
 }

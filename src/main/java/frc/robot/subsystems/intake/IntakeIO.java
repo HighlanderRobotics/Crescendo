@@ -6,20 +6,15 @@ package frc.robot.subsystems.intake;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+
 public interface IntakeIO {
   @AutoLog
   public static class IntakeIOInputs {
-    public double intakeVelocityRotationsPerSecond = 0.0;
-    public double intakeAppliedVolts = 0.0;
-    public double intakeStatorCurrentAmps = 0.0;
-    public double intakeSupplyCurrentAmps = 0.0;
-    public double intakeTemperatureCelsius = 0.0;
+    public TalonFXLog intake = new TalonFXLog(0, 0, 0, 0, 0, 0);
 
-    public double centeringVelocityRotationsPerSecond = 0.0;
-    public double centeringAppliedVolts = 0.0;
-    public double centeringStatorCurrentAmps = 0.0;
-    public double centeringSupplyCurrentAmps = 0.0;
-    public double centeringTemperatureCelsius = 0.0;
+    public TalonFXLog centering = new TalonFXLog(0, 0, 0, 0, 0, 0);
+
   }
 
   /** Updates the set of loggable inputs. */

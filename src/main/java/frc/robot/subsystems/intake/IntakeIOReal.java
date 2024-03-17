@@ -12,6 +12,8 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import frc.robot.utils.logging.TalonFXLogger;
+
 /** Intake IO implementation for TalonFX motors. */
 public class IntakeIOReal implements IntakeIO {
   private final TalonFX intakeMotor = new TalonFX(14, "canivore");
@@ -24,17 +26,9 @@ public class IntakeIOReal implements IntakeIO {
   private final VelocityVoltage centeringVelocityVoltage =
       new VelocityVoltage(0.0).withEnableFOC(true);
 
-  private final StatusSignal<Double> intakeVelocity = intakeMotor.getVelocity();
-  private final StatusSignal<Double> intakeVoltage = intakeMotor.getMotorVoltage();
-  private final StatusSignal<Double> intakeStatorCurrentAmps = intakeMotor.getStatorCurrent();
-  private final StatusSignal<Double> intakeSupplyCurrentAmps = intakeMotor.getSupplyCurrent();
-  private final StatusSignal<Double> intakeTemp = intakeMotor.getDeviceTemp();
+  private final TalonFXLogger intakeLogger = new TalonFXLogger(intakeMotor);
 
-  private final StatusSignal<Double> centeringVelocity = centeringMotor.getVelocity();
-  private final StatusSignal<Double> centeringVoltage = centeringMotor.getMotorVoltage();
-  private final StatusSignal<Double> centeringStatorCurrentAmps = centeringMotor.getStatorCurrent();
-  private final StatusSignal<Double> centeringSupplyCurrentAmps = centeringMotor.getSupplyCurrent();
-  private final StatusSignal<Double> centeringTemp = centeringMotor.getDeviceTemp();
+  private final TalonFXLogger centeringLogger = new TalonFXLogger(centeringMotor);
 
   public IntakeIOReal() {
     var intakeConfig = new TalonFXConfiguration();
@@ -58,48 +52,13 @@ public class IntakeIOReal implements IntakeIO {
     centeringConfig.Slot0.kP = 0.1;
 
     centeringMotor.getConfigurator().apply(centeringConfig);
-
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        intakeVelocity,
-        intakeVoltage,
-        intakeStatorCurrentAmps,
-        intakeSupplyCurrentAmps,
-        intakeTemp,
-        centeringVelocity,
-        centeringVoltage,
-        centeringStatorCurrentAmps,
-        centeringSupplyCurrentAmps,
-        centeringTemp);
-    intakeMotor.optimizeBusUtilization();
-    centeringMotor.optimizeBusUtilization();
   }
 
   /** Updates the set of loggable inputs. */
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
-    BaseStatusSignal.refreshAll(
-        intakeVelocity,
-        intakeVoltage,
-        intakeStatorCurrentAmps,
-        intakeSupplyCurrentAmps,
-        intakeTemp,
-        centeringVelocity,
-        centeringVoltage,
-        centeringStatorCurrentAmps,
-        centeringSupplyCurrentAmps,
-        centeringTemp);
-    inputs.intakeVelocityRotationsPerSecond = intakeVelocity.getValueAsDouble();
-    inputs.intakeAppliedVolts = intakeVoltage.getValueAsDouble();
-    inputs.intakeStatorCurrentAmps = intakeStatorCurrentAmps.getValueAsDouble();
-    inputs.intakeSupplyCurrentAmps = intakeSupplyCurrentAmps.getValueAsDouble();
-    inputs.intakeTemperatureCelsius = intakeTemp.getValueAsDouble();
-
-    inputs.centeringVelocityRotationsPerSecond = centeringVelocity.getValueAsDouble();
-    inputs.centeringAppliedVolts = centeringVoltage.getValueAsDouble();
-    inputs.centeringStatorCurrentAmps = centeringStatorCurrentAmps.getValueAsDouble();
-    inputs.centeringSupplyCurrentAmps = centeringSupplyCurrentAmps.getValueAsDouble();
-    inputs.centeringTemperatureCelsius = centeringTemp.getValueAsDouble();
+    inputs.intake = intakeLogger.update();
+    inputs.centering = centeringLogger.update();
   }
 
   /** Run the intake at a specified voltage */
