@@ -112,7 +112,7 @@ public class TalonFXLogger {
 
   private final StatusSignal<Boolean> licenseFaultSignal;
 
-  public TalonFXLogger(TalonFX talon, double updateFrequencyHz, boolean shouldOptimizeBusUsage) {
+  public TalonFXLogger(TalonFX talon, double updateFrequencyHz, double faultFrequencyHz, boolean shouldOptimizeBusUsage) {
     voltageSignal = talon.getMotorVoltage();
     statorCurrentSignal = talon.getStatorCurrent();
     supplyCurrentSignal = talon.getSupplyCurrent();
@@ -129,13 +129,13 @@ public class TalonFXLogger {
         supplyCurrentSignal,
         temperatureSignal,
         positionSignal,
-        velocitySignal,
-        licenseFaultSignal);
+        velocitySignal);
+    BaseStatusSignal.setUpdateFrequencyForAll(faultFrequencyHz, licenseFaultSignal);
     if (shouldOptimizeBusUsage) talon.optimizeBusUtilization();
   }
 
   public TalonFXLogger(TalonFX talon) {
-    this(talon, 50.0, true);
+    this(talon, 50.0, 1.0, true);
   }
 
   public TalonFXLog update() {
