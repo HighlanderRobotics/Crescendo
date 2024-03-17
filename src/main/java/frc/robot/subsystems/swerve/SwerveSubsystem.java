@@ -376,14 +376,9 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput(
           "Swerve/Updates Since Last " + i, modules[i].getOdometryTimestamps().length);
     }
-    double[] sampleTimestamps =
+    double[] moduleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
-    int sampleCount =
-        Arrays.stream(modules).mapToInt(m -> m.getOdometryTimestamps().length).min().getAsInt();
-    // if the gyro isnt connected, dont worry about it
-    if (gyroInputs.connected) {
-      sampleCount = Math.min(sampleCount, gyroInputs.odometryTimestamps.length);
-    }
+    int sampleCount = moduleTimestamps.length;
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
@@ -391,6 +386,8 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] estPositions = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
+        // we can't do any odo updates if we are not getting module data
+        if (modulePositions[moduleIndex] == null) continue;
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
@@ -409,21 +406,19 @@ public class SwerveSubsystem extends SubsystemBase {
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(modulePositions);
-      if (gyroInputs.connected) {
-        // If the gyro is connected, replace the theta component of the twist
-        // with the change in angle since the last sample.
+      if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex] == null) {
+        // We don't have a complete set of data, so just use the module rotations
+        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+      } else {
         rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
-      } else {
-        // Use the angle delta from the kinematics and module deltas
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
       // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
-      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
+      estimator.updateWithTime(moduleTimestamps[deltaIndex], rawGyroRotation, estPositions);
     }
   }
 
@@ -440,7 +435,7 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
-        pose = pose.interpolate(visionPose.toPose2d(), 0.25);
+        // pose = pose.interpolate(visionPose.toPose2d(), 0.25);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,

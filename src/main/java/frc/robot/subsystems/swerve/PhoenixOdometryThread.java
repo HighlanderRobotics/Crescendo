@@ -19,7 +19,6 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.List;
@@ -128,22 +127,19 @@ public class PhoenixOdometryThread extends Thread {
       var writeLock = journalLock.writeLock();
       // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
       // but keeping up a symmetric array is too and it's probably negligible on latency.
-      var status =
-          BaseStatusSignal.waitForAll(
-              2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
+      BaseStatusSignal.waitForAll(
+          2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
       try {
         writeLock.lock();
-        if (status.isOK()) {
-          journal.add(
-              new Samples(timestampFor(signals), Maps.asMap(signals, s -> s.getValueAsDouble())));
-        } else {
-          journal.add(
-              new Samples(
-                  timestampFor(signals),
-                  signals.stream()
-                      .filter(s -> s.getStatus().equals(StatusCode.OK))
-                      .collect(Collectors.toUnmodifiableMap(s -> s, s -> s.getValueAsDouble()))));
-        }
+        var filteredSignals =
+            signals.stream()
+                .filter(s -> s.getStatus().equals(StatusCode.OK))
+                .collect(Collectors.toSet());
+        journal.add(
+            new Samples(
+                timestampFor(filteredSignals),
+                filteredSignals.stream()
+                    .collect(Collectors.toUnmodifiableMap(s -> s, s -> s.getValueAsDouble()))));
       } finally {
         writeLock.unlock();
       }
