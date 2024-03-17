@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
  * rotations or meters, depending on how the mechanism is configured.
  */
 public class TalonFXLogger {
-  // No position or velocity, use subclasses instead depending on mechanism type
   public static class TalonFXLog implements StructSerializable {
     public double appliedVolts = 0.0;
     public double statorCurrentAmps = 0.0;

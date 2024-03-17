@@ -10,34 +10,18 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.utils.logging.TalonFXLogger;
 
 public class ShooterIOReal implements ShooterIO {
   private final TalonFX pivotMotor = new TalonFX(10, "canivore");
   private final TalonFX flywheelLeftMotor = new TalonFX(11, "canivore");
   private final TalonFX flywheelRightMotor = new TalonFX(12, "canivore");
 
-  private final StatusSignal<Double> pivotVelocity = pivotMotor.getVelocity();
-  private final StatusSignal<Double> pivotVoltage = pivotMotor.getMotorVoltage();
-  private final StatusSignal<Double> pivotStatorCurrentAmps = pivotMotor.getStatorCurrent();
-  private final StatusSignal<Double> pivotSupplyCurrentAmps = pivotMotor.getSupplyCurrent();
-  private final StatusSignal<Double> pivotTempC = pivotMotor.getDeviceTemp();
-  private final StatusSignal<Double> pivotRotations = pivotMotor.getPosition();
+  private final TalonFXLogger pivotLogger = new TalonFXLogger(pivotMotor);
 
-  private final StatusSignal<Double> flywheelLeftStatorCurrentAmps =
-      flywheelLeftMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelLeftSupplyCurrentAmps =
-      flywheelLeftMotor.getSupplyCurrent();
-  private final StatusSignal<Double> flywheelLeftVoltage = flywheelLeftMotor.getMotorVoltage();
-  private final StatusSignal<Double> flywheelLeftTempC = flywheelLeftMotor.getDeviceTemp();
-  private final StatusSignal<Double> flywheelLeftVelocity = flywheelLeftMotor.getVelocity();
+  private final TalonFXLogger flywheelLeftLogger = new TalonFXLogger(flywheelLeftMotor);
 
-  private final StatusSignal<Double> flywheelRightStatorCurrentAmps =
-      flywheelRightMotor.getStatorCurrent();
-  private final StatusSignal<Double> flywheelRightSupplyCurrentAmps =
-      flywheelRightMotor.getSupplyCurrent();
-  private final StatusSignal<Double> flywheelRightVoltage = flywheelRightMotor.getMotorVoltage();
-  private final StatusSignal<Double> flywheelRightTempC = flywheelRightMotor.getDeviceTemp();
-  private final StatusSignal<Double> flywheelRightVelocity = flywheelRightMotor.getVelocity();
+  private final TalonFXLogger flywheelRightLogger = new TalonFXLogger(flywheelRightMotor);
 
   private final VoltageOut pivotVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut flywheelLeftVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
@@ -74,14 +58,6 @@ public class ShooterIOReal implements ShooterIO {
     pivotMotor.getConfigurator().apply(pivotConfig);
     pivotMotor.setPosition(
         ShooterSubsystem.PIVOT_MIN_ANGLE.getRotations()); // Assume we boot at hard stop
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        pivotVelocity,
-        pivotVoltage,
-        pivotStatorCurrentAmps,
-        pivotSupplyCurrentAmps,
-        pivotTempC,
-        pivotRotations);
     pivotMotor.optimizeBusUtilization();
 
     var flywheelConfig = new TalonFXConfiguration();
@@ -103,61 +79,21 @@ public class ShooterIOReal implements ShooterIO {
     flywheelLeftMotor.getConfigurator().apply(flywheelConfig);
     flywheelConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     flywheelRightMotor.getConfigurator().apply(flywheelConfig);
-
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        flywheelLeftVelocity,
-        flywheelLeftVoltage,
-        flywheelLeftStatorCurrentAmps,
-        flywheelLeftSupplyCurrentAmps,
-        flywheelLeftTempC,
-        flywheelRightVelocity,
-        flywheelRightVoltage,
-        flywheelRightStatorCurrentAmps,
-        flywheelRightSupplyCurrentAmps,
-        flywheelRightTempC);
     flywheelLeftMotor.optimizeBusUtilization();
     flywheelRightMotor.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(ShooterIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(
-        pivotRotations,
-        pivotVelocity,
-        pivotVoltage,
-        pivotStatorCurrentAmps,
-        pivotSupplyCurrentAmps,
-        pivotTempC,
-        flywheelLeftVelocity,
-        flywheelLeftVoltage,
-        flywheelLeftStatorCurrentAmps,
-        flywheelLeftSupplyCurrentAmps,
-        flywheelLeftTempC,
-        flywheelRightVelocity,
-        flywheelRightVoltage,
-        flywheelRightStatorCurrentAmps,
-        flywheelRightSupplyCurrentAmps,
-        flywheelRightTempC);
+    pivotLogger.update();
+    flywheelLeftLogger.update();
+    flywheelRightLogger.update();
 
-    inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValueAsDouble());
-    inputs.pivotVelocityRotationsPerSecond = pivotVelocity.getValueAsDouble();
-    inputs.pivotVoltage = pivotVoltage.getValueAsDouble();
-    inputs.pivotStatorCurrentAmps = pivotStatorCurrentAmps.getValueAsDouble();
-    inputs.pivotSupplyCurrentAmps = pivotSupplyCurrentAmps.getValueAsDouble();
-    inputs.pivotTempC = pivotTempC.getValueAsDouble();
+    inputs.pivot = pivotLogger.log;
 
-    inputs.flywheelLeftVelocityRotationsPerSecond = flywheelLeftVelocity.getValueAsDouble();
-    inputs.flywheelLeftVoltage = flywheelLeftVoltage.getValueAsDouble();
-    inputs.flywheelLeftStatorCurrentAmps = flywheelLeftStatorCurrentAmps.getValueAsDouble();
-    inputs.flywheelLeftSupplyCurrentAmps = flywheelLeftSupplyCurrentAmps.getValueAsDouble();
-    inputs.flywheelLeftTempC = flywheelLeftTempC.getValueAsDouble();
+    inputs.leftFlywheel = flywheelLeftLogger.log;
 
-    inputs.flywheelRightVelocityRotationsPerSecond = flywheelRightVelocity.getValueAsDouble();
-    inputs.flywheelRightVoltage = flywheelRightVoltage.getValueAsDouble();
-    inputs.flywheelRightStatorCurrentAmps = flywheelRightStatorCurrentAmps.getValueAsDouble();
-    inputs.flywheelRightSupplyCurrentAmps = flywheelRightSupplyCurrentAmps.getValueAsDouble();
-    inputs.flywheelRightTempC = flywheelRightTempC.getValueAsDouble();
+    inputs.rightFlywheel = flywheelRightLogger.log;
   }
 
   public void setPivotVoltage(final double voltage) {

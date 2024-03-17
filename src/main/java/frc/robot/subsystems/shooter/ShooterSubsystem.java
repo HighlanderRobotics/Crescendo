@@ -79,18 +79,18 @@ public class ShooterSubsystem extends SubsystemBase {
     io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
 
-    shooterLig.setAngle(inputs.pivotRotation.unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
+    shooterLig.setAngle(Rotation2d.fromRotations(inputs.pivot.position).unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);
     Logger.recordOutput("Shooter/Root Pose", getMechanismPose());
   }
 
   public Pose3d getMechanismPose() {
     return new Pose3d(
-        0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
+        0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, Rotation2d.fromRotations(inputs.pivot.position).getRadians(), 0.0));
   }
 
   public Rotation2d getAngle() {
-    return inputs.pivotRotation;
+    return Rotation2d.fromRotations(inputs.pivot.position);
   }
 
   public Command runStateCmd(
@@ -105,19 +105,19 @@ public class ShooterSubsystem extends SubsystemBase {
           Logger.recordOutput(
               "Shooter/Left At Target",
               MathUtil.isNear(
-                  left.getAsDouble(), inputs.flywheelLeftVelocityRotationsPerSecond, 1.0));
+                  left.getAsDouble(), inputs.leftFlywheel.velocity, 1.0));
           Logger.recordOutput(
               "Shooter/Right At Target",
               MathUtil.isNear(
-                  right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
+                  right.getAsDouble(), inputs.rightFlywheel.velocity, 1.0));
           Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get().getRadians());
           Logger.recordOutput(
               "Shooter/Pivot Error Degrees",
-              inputs.pivotRotation.getDegrees() - rotation.get().getDegrees());
+              (inputs.pivot.position * 360.0) - rotation.get().getDegrees());
           Logger.recordOutput(
               "Shooter/Pivot At Target",
               MathUtil.isNear(
-                  rotation.get().getDegrees(), inputs.pivotRotation.getDegrees(), 0.25));
+                  rotation.get().getDegrees(), (inputs.pivot.position * 360.0), 0.25));
           io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
           io.setPivotSetpoint(rotation.get());
         });
@@ -134,16 +134,16 @@ public class ShooterSubsystem extends SubsystemBase {
           Logger.recordOutput(
               "Shooter/Left At Target",
               MathUtil.isNear(
-                  left.getAsDouble(), inputs.flywheelLeftVelocityRotationsPerSecond, 1.0));
+                  left.getAsDouble(), inputs.leftFlywheel.velocity, 1.0));
           Logger.recordOutput(
               "Shooter/Right At Target",
               MathUtil.isNear(
-                  right.getAsDouble(), inputs.flywheelRightVelocityRotationsPerSecond, 1.0));
+                  right.getAsDouble(), inputs.rightFlywheel.velocity, 1.0));
           Logger.recordOutput(
               "Shooter/Pivot At Target",
               MathUtil.isNear(
-                  right.getAsDouble(),
-                  inputs.flywheelRightVelocityRotationsPerSecond,
+                  PIVOT_MIN_ANGLE.getRotations(),
+                  inputs.pivot.position,
                   Units.degreesToRotations(0.5)));
           io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
           io.setPivotVoltage(0.0);
@@ -164,7 +164,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public Command runPivotCurrentZeroing() {
     return this.run(() -> io.setPivotVoltage(-1.0))
-        .until(() -> inputs.pivotStatorCurrentAmps > 40.0)
+        .until(() -> inputs.pivot.statorCurrentAmps > 40.0)
         .finallyDo(() -> io.resetPivotPosition(PIVOT_MIN_ANGLE));
   }
 
@@ -185,41 +185,13 @@ public class ShooterSubsystem extends SubsystemBase {
         this.runOnce(() -> SignalLogger.stop()));
   }
 
-  public Command runPivotSysidCmd() {
-    return Commands.sequence(
-        this.runOnce(() -> SignalLogger.start()),
-        // Stop when we get close to vertical so it falls back
-        pivotRoutine
-            .quasistatic(Direction.kForward)
-            .until(() -> inputs.pivotRotation.getDegrees() > 80.0),
-        this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
-        Commands.waitSeconds(0.25),
-        // Stop when near horizontal so we avoid hard stop
-        pivotRoutine
-            .quasistatic(Direction.kReverse)
-            .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
-        this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
-        Commands.waitSeconds(0.25),
-        // Stop when we get close to vertical so it falls back
-        pivotRoutine
-            .dynamic(Direction.kForward)
-            .until(() -> inputs.pivotRotation.getDegrees() > 80.0),
-        this.runOnce(() -> io.setFlywheelVoltage(0.0, 0.0)),
-        Commands.waitSeconds(0.25),
-        // Stop when near horizontal so we avoid hard stop
-        pivotRoutine
-            .dynamic(Direction.kReverse)
-            .until(() -> inputs.pivotRotation.getDegrees() < 10.0),
-        this.runOnce(() -> SignalLogger.stop()));
-  }
-
   public Command resetPivotPosition(Rotation2d rotation) {
     return this.runOnce(() -> io.resetPivotPosition(rotation));
   }
 
   public boolean isAtGoal() {
-    return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivotRotation.getDegrees(), 0.5)
-        && MathUtil.isNear(leftGoal, inputs.flywheelLeftVelocityRotationsPerSecond, 1.0)
-        && MathUtil.isNear(rightGoal, inputs.flywheelRightVelocityRotationsPerSecond, 1.0);
+    return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivot.position * 360.0, 0.5)
+        && MathUtil.isNear(leftGoal, inputs.leftFlywheel.velocity, 1.0)
+        && MathUtil.isNear(rightGoal, inputs.rightFlywheel.velocity, 1.0);
   }
 }

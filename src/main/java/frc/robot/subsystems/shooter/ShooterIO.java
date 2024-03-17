@@ -5,29 +5,18 @@
 package frc.robot.subsystems.shooter;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ShooterIO {
   @AutoLog
   public static class ShooterIOInputs {
-    public Rotation2d pivotRotation = new Rotation2d();
-    public double pivotVelocityRotationsPerSecond = 0.0;
-    public double pivotVoltage = 0.0;
-    public double pivotStatorCurrentAmps = 0.0;
-    public double pivotSupplyCurrentAmps = 0.0;
-    public double pivotTempC = 0.0;
+    public TalonFXLog pivot = new TalonFXLog(0, 0, 0, 0, 0, 0);
 
-    public double flywheelLeftVoltage = 0.0;
-    public double flywheelLeftVelocityRotationsPerSecond = 0.0;
-    public double flywheelLeftStatorCurrentAmps = 0.0;
-    public double flywheelLeftSupplyCurrentAmps = 0.0;
-    public double flywheelLeftTempC = 0.0;
+    public TalonFXLog leftFlywheel = new TalonFXLog(0, 0, 0, 0, 0, 0);
 
-    public double flywheelRightVoltage = 0.0;
-    public double flywheelRightVelocityRotationsPerSecond = 0.0;
-    public double flywheelRightStatorCurrentAmps = 0.0;
-    public double flywheelRightSupplyCurrentAmps = 0.0;
-    public double flywheelRightTempC = 0.0;
+    public TalonFXLog rightFlywheel = new TalonFXLog(0, 0, 0, 0, 0, 0);
   }
 
   public void updateInputs(final ShooterIOInputsAutoLogged inputs);

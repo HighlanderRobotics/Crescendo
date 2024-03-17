@@ -15,6 +15,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
 
 /** Add your docs here. */
 public class ShooterIOSim implements ShooterIO {
@@ -48,23 +49,11 @@ public class ShooterIOSim implements ShooterIO {
     rightFlywheelSim.update(0.020);
     pivotSim.update(0.020);
 
-    inputs.pivotRotation = Rotation2d.fromRadians(pivotSim.getAngleRads());
-    inputs.pivotVelocityRotationsPerSecond =
-        Units.rotationsToRadians(pivotSim.getVelocityRadPerSec());
-    inputs.pivotVoltage = 0.0;
-    inputs.pivotStatorCurrentAmps = pivotSim.getCurrentDrawAmps();
-    inputs.pivotTempC = 0.0;
+    inputs.pivot = new TalonFXLog(0.0, pivotSim.getCurrentDrawAmps(), pivotSim.getCurrentDrawAmps(), 0.0, pivotSim.getAngleRads() / (2 * Math.PI), pivotSim.getVelocityRadPerSec() / (2 * Math.PI));
 
-    inputs.flywheelLeftVelocityRotationsPerSecond = leftFlywheelSim.getAngularVelocityRPM() / 60.0;
-    inputs.flywheelLeftVoltage = 0.0;
-    inputs.flywheelLeftStatorCurrentAmps = leftFlywheelSim.getCurrentDrawAmps();
-    inputs.flywheelLeftTempC = 0.0;
+    inputs.leftFlywheel = new TalonFXLog(0.0, leftFlywheelSim.getCurrentDrawAmps(), leftFlywheelSim.getCurrentDrawAmps(), 0.0, leftFlywheelSim.getAngularPositionRotations(), leftFlywheelSim.getAngularVelocityRPM() / 60.0);
 
-    inputs.flywheelRightVelocityRotationsPerSecond =
-        rightFlywheelSim.getAngularVelocityRPM() / 60.0;
-    inputs.flywheelRightVoltage = 0.0;
-    inputs.flywheelRightStatorCurrentAmps = rightFlywheelSim.getCurrentDrawAmps();
-    inputs.flywheelRightTempC = 0.0;
+    inputs.rightFlywheel = new TalonFXLog(0.0, rightFlywheelSim.getCurrentDrawAmps(), rightFlywheelSim.getCurrentDrawAmps(), 0.0, rightFlywheelSim.getAngularPositionRotations(), rightFlywheelSim.getAngularVelocityRPM() / 60.0);
   }
 
   public void setPivotVoltage(final double voltage) {
