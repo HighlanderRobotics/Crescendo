@@ -85,7 +85,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
@@ -585,9 +584,9 @@ public class SwerveSubsystem extends SubsystemBase {
             traj,
             () -> pose,
             Choreo.choreoSwerveController(
-                new PIDController(8.0, 0.0, 0.0),
-                new PIDController(8.0, 0.0, 0.0),
-                new PIDController(6.0, 0.0, 0.0)),
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(3.0, 0.0, 0.0)),
             (ChassisSpeeds speeds) -> this.runVelocity(speeds),
             () -> {
               Optional<Alliance> alliance = DriverStation.getAlliance();
@@ -605,39 +604,6 @@ public class SwerveSubsystem extends SubsystemBase {
                       }
                     })
                 .onlyIf(() -> resetPose));
-  }
-
-  public Command runChoreoTraj(Supplier<Optional<ChoreoTrajectory>> traj, boolean resetPose) {
-    return Commands.either(
-        Commands.defer(
-            () ->
-                choreoFullFollowSwerveCommand(
-                        traj.get().get(),
-                        () -> pose,
-                        Choreo.choreoSwerveController(
-                            new PIDController(8.0, 0.0, 0.0),
-                            new PIDController(8.0, 0.0, 0.0),
-                            new PIDController(6.0, 0.0, 0.0)),
-                        (ChassisSpeeds speeds) -> this.runVelocity(speeds),
-                        () -> {
-                          Optional<Alliance> alliance = DriverStation.getAlliance();
-                          return alliance.isPresent() && alliance.get() == Alliance.Red;
-                        },
-                        this)
-                    .beforeStarting(
-                        Commands.runOnce(
-                                () -> {
-                                  if (DriverStation.getAlliance().isPresent()
-                                      && DriverStation.getAlliance().get().equals(Alliance.Red)) {
-                                    setPose(traj.get().get().flipped().getInitialPose());
-                                  } else {
-                                    setPose(traj.get().get().getInitialPose());
-                                  }
-                                })
-                            .onlyIf(() -> resetPose)),
-            Set.of(this)),
-        stopWithXCmd(),
-        () -> traj.get().isPresent());
   }
 
   /**

@@ -329,9 +329,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Source 3", autoSource3());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
-    autoChooser.addOption(
-        "Line Test Repeatedly",
-        swerve.runChoreoTraj(Choreo.getTrajectory("line test")).repeatedly());
+    autoChooser.addOption("Line Test Repeatedly", lineTest());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -489,7 +487,7 @@ public class Robot extends LoggedRobot {
             () ->
                 headingController.reset(
                     new State(
-                        swerve.getPose().getRotation().getRadians(),
+                        swerve.estimator.getEstimatedPosition().getRotation().getRadians(),
                         swerve.getVelocity().omegaRadiansPerSecond)))
         .andThen(
             Commands.deadline(
@@ -500,12 +498,17 @@ public class Robot extends LoggedRobot {
                             shooter.isAtGoal()
                                 && MathUtil.isNear(
                                     swerve
-                                        .getPose()
+                                        .estimator
+                                        .getEstimatedPosition()
                                         .getTranslation()
                                         .minus(FieldConstants.getSpeaker().getTranslation())
                                         .getAngle()
                                         .getDegrees(),
-                                    swerve.getPose().getRotation().getDegrees(),
+                                    swerve
+                                        .estimator
+                                        .getEstimatedPosition()
+                                        .getRotation()
+                                        .getDegrees(),
                                     rotationTolerance)
                                 && MathUtil.isNear(
                                     0.0,
@@ -521,9 +524,10 @@ public class Robot extends LoggedRobot {
                     () -> {
                       var pidOut =
                           headingController.calculate(
-                              swerve.getPose().getRotation().getRadians(),
+                              swerve.estimator.getEstimatedPosition().getRotation().getRadians(),
                               swerve
-                                  .getPose()
+                                  .estimator
+                                  .getEstimatedPosition()
                                   .getTranslation()
                                   .minus(FieldConstants.getSpeaker().getTranslation())
                                   .getAngle()
@@ -536,7 +540,8 @@ public class Robot extends LoggedRobot {
                         AutoAim.shotMap
                             .get(
                                 swerve
-                                    .getPose()
+                                    .estimator
+                                    .getEstimatedPosition()
                                     .minus(FieldConstants.getSpeaker())
                                     .getTranslation()
                                     .getNorm())
@@ -545,7 +550,8 @@ public class Robot extends LoggedRobot {
                         AutoAim.shotMap
                             .get(
                                 swerve
-                                    .getPose()
+                                    .estimator
+                                    .getEstimatedPosition()
                                     .minus(FieldConstants.getSpeaker())
                                     .getTranslation()
                                     .getNorm())
@@ -554,7 +560,8 @@ public class Robot extends LoggedRobot {
                         AutoAim.shotMap
                             .get(
                                 swerve
-                                    .getPose()
+                                    .estimator
+                                    .getEstimatedPosition()
                                     .minus(FieldConstants.getSpeaker())
                                     .getTranslation()
                                     .getNorm())
@@ -652,6 +659,21 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim(),
         swerve.runChoreoTraj(Choreo.getTrajectory("source 4.3")).deadlineWith(autoIntake()),
         autoStaticAutoAim());
+  }
+
+  private Command lineTest() {
+    ChoreoTrajectory traj = Choreo.getTrajectory("line test");
+    return Commands.sequence(
+        Commands.runOnce(
+            () -> {
+              if (DriverStation.getAlliance().isPresent()
+                  && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                swerve.setPose(traj.flipped().getInitialPose());
+              } else {
+                swerve.setPose(traj.getInitialPose());
+              }
+            }),
+        swerve.runChoreoTraj(traj).repeatedly());
   }
 
   private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
