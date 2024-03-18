@@ -49,11 +49,32 @@ public class ShooterIOSim implements ShooterIO {
     rightFlywheelSim.update(0.020);
     pivotSim.update(0.020);
 
-    inputs.pivot = new TalonFXLog(0.0, pivotSim.getCurrentDrawAmps(), pivotSim.getCurrentDrawAmps(), 0.0, pivotSim.getAngleRads() / (2 * Math.PI), pivotSim.getVelocityRadPerSec() / (2 * Math.PI));
+    inputs.pivot =
+        new TalonFXLog(
+            0.0,
+            pivotSim.getCurrentDrawAmps(),
+            pivotSim.getCurrentDrawAmps(),
+            0.0,
+            pivotSim.getAngleRads() / (2 * Math.PI),
+            pivotSim.getVelocityRadPerSec() / (2 * Math.PI));
 
-    inputs.leftFlywheel = new TalonFXLog(0.0, leftFlywheelSim.getCurrentDrawAmps(), leftFlywheelSim.getCurrentDrawAmps(), 0.0, leftFlywheelSim.getAngularPositionRotations(), leftFlywheelSim.getAngularVelocityRPM() / 60.0);
+    inputs.leftFlywheel =
+        new TalonFXLog(
+            0.0,
+            leftFlywheelSim.getCurrentDrawAmps(),
+            leftFlywheelSim.getCurrentDrawAmps(),
+            0.0,
+            leftFlywheelSim.getAngularPositionRotations(),
+            leftFlywheelSim.getAngularVelocityRPM() / 60.0);
 
-    inputs.rightFlywheel = new TalonFXLog(0.0, rightFlywheelSim.getCurrentDrawAmps(), rightFlywheelSim.getCurrentDrawAmps(), 0.0, rightFlywheelSim.getAngularPositionRotations(), rightFlywheelSim.getAngularVelocityRPM() / 60.0);
+    inputs.rightFlywheel =
+        new TalonFXLog(
+            0.0,
+            rightFlywheelSim.getCurrentDrawAmps(),
+            rightFlywheelSim.getCurrentDrawAmps(),
+            0.0,
+            rightFlywheelSim.getAngularPositionRotations(),
+            rightFlywheelSim.getAngularVelocityRPM() / 60.0);
   }
 
   public void setPivotVoltage(final double voltage) {

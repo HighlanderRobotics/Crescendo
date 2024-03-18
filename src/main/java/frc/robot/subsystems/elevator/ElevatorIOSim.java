@@ -37,7 +37,14 @@ public class ElevatorIOSim implements ElevatorIO {
       stop();
     }
     physicsSim.update(0.020);
-    inputs.leader = new TalonFXLog(volts, physicsSim.getCurrentDrawAmps(), physicsSim.getCurrentDrawAmps(), 0.0, physicsSim.getPositionMeters(), physicsSim.getVelocityMetersPerSecond());
+    inputs.leader =
+        new TalonFXLog(
+            volts,
+            physicsSim.getCurrentDrawAmps(),
+            physicsSim.getCurrentDrawAmps(),
+            0.0,
+            physicsSim.getPositionMeters(),
+            physicsSim.getVelocityMetersPerSecond());
   }
 
   @Override

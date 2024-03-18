@@ -4,9 +4,8 @@
 
 package frc.robot.subsystems.intake;
 
-import org.littletonrobotics.junction.AutoLog;
-
 import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+import org.littletonrobotics.junction.AutoLog;
 
 public interface IntakeIO {
   @AutoLog
@@ -14,7 +13,6 @@ public interface IntakeIO {
     public TalonFXLog intake = new TalonFXLog(0, 0, 0, 0, 0, 0);
 
     public TalonFXLog centering = new TalonFXLog(0, 0, 0, 0, 0, 0);
-
   }
 
   /** Updates the set of loggable inputs. */
