@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.utils.logging.TalonFXFaultManager;
+
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -72,6 +74,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Elevator", inputs);
+    TalonFXFaultManager.getInstance().addLog("Elevator Leader", inputs.leader);
+    TalonFXFaultManager.getInstance().addLog("Elevator Follower", inputs.follower);
 
     carriage.setLength(inputs.leader.position);
     Logger.recordOutput("Elevator/Mechanism2d", mech2d);

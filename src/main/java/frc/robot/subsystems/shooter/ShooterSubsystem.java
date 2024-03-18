@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.utils.logging.TalonFXFaultManager;
+
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -78,6 +80,9 @@ public class ShooterSubsystem extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
+    TalonFXFaultManager.getInstance().addLog("Shooter Pivot", inputs.pivot);
+    TalonFXFaultManager.getInstance().addLog("Shooter Left Flywheel", inputs.leftFlywheel);
+    TalonFXFaultManager.getInstance().addLog("Shooter Right Flywheel", inputs.rightFlywheel);
 
     shooterLig.setAngle(Rotation2d.fromRotations(inputs.pivot.position).unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);

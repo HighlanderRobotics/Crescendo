@@ -48,6 +48,8 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.logging.TalonFXFaultManager;
+
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -354,6 +356,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    // Update fault checker
+    TalonFXFaultManager.getInstance().periodic();
     // Update ascope mechanism visualization
     Logger.recordOutput(
         "Mechanism Poses",
