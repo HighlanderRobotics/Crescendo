@@ -273,7 +273,8 @@ public class SwerveSubsystem extends SubsystemBase {
           new AprilTagFieldLayout(
               Filesystem.getDeployDirectory()
                   .toPath()
-                  .resolve("vision" + File.pathSeparator + "2024-crescendo.json"));
+                  .resolve("vision" + File.separator + "2024-crescendo.json"));
+      System.out.println("Successfully loaded tag map");
     } catch (Exception e) {
       System.err.println("Failed to load tag map");
       fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();

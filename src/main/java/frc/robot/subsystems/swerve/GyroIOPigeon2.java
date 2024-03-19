@@ -53,7 +53,7 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.odometryYawPositions =
         asyncOdometrySamples.stream()
             .map(s -> s.values().get(yaw))
-            .map(Rotation2d::fromDegrees)
+            .map(d -> d == null ? null : Rotation2d.fromDegrees(d))
             .toArray(Rotation2d[]::new);
   }
 
