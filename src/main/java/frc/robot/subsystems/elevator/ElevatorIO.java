@@ -4,9 +4,8 @@
 
 package frc.robot.subsystems.elevator;
 
-import org.littletonrobotics.junction.AutoLog;
-
 import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+import org.littletonrobotics.junction.AutoLog;
 
 public interface ElevatorIO {
   @AutoLog

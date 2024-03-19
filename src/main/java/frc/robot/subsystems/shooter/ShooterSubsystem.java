@@ -84,14 +84,20 @@ public class ShooterSubsystem extends SubsystemBase {
     TalonFXFaultManager.getInstance().addLog("Shooter Left Flywheel", inputs.leftFlywheel);
     TalonFXFaultManager.getInstance().addLog("Shooter Right Flywheel", inputs.rightFlywheel);
 
-    shooterLig.setAngle(Rotation2d.fromRotations(inputs.pivot.position).unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
+    shooterLig.setAngle(
+        Rotation2d.fromRotations(inputs.pivot.position)
+            .unaryMinus()
+            .minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);
     Logger.recordOutput("Shooter/Root Pose", getMechanismPose());
   }
 
   public Pose3d getMechanismPose() {
     return new Pose3d(
-        0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, Rotation2d.fromRotations(inputs.pivot.position).getRadians(), 0.0));
+        0.0437896,
+        0.0,
+        0.3274568,
+        new Rotation3d(0.0, Rotation2d.fromRotations(inputs.pivot.position).getRadians(), 0.0));
   }
 
   public Rotation2d getAngle() {
@@ -109,20 +115,17 @@ public class ShooterSubsystem extends SubsystemBase {
           Logger.recordOutput("Shooter/Right Velocity Setpoint", right.getAsDouble());
           Logger.recordOutput(
               "Shooter/Left At Target",
-              MathUtil.isNear(
-                  left.getAsDouble(), inputs.leftFlywheel.velocity, 1.0));
+              MathUtil.isNear(left.getAsDouble(), inputs.leftFlywheel.velocity, 1.0));
           Logger.recordOutput(
               "Shooter/Right At Target",
-              MathUtil.isNear(
-                  right.getAsDouble(), inputs.rightFlywheel.velocity, 1.0));
+              MathUtil.isNear(right.getAsDouble(), inputs.rightFlywheel.velocity, 1.0));
           Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get().getRadians());
           Logger.recordOutput(
               "Shooter/Pivot Error Degrees",
               (inputs.pivot.position * 360.0) - rotation.get().getDegrees());
           Logger.recordOutput(
               "Shooter/Pivot At Target",
-              MathUtil.isNear(
-                  rotation.get().getDegrees(), (inputs.pivot.position * 360.0), 0.25));
+              MathUtil.isNear(rotation.get().getDegrees(), (inputs.pivot.position * 360.0), 0.25));
           io.setFlywheelVelocity(left.getAsDouble(), right.getAsDouble());
           io.setPivotSetpoint(rotation.get());
         });
@@ -138,12 +141,10 @@ public class ShooterSubsystem extends SubsystemBase {
           Logger.recordOutput("Shooter/Rotation Setpoint", 0.0);
           Logger.recordOutput(
               "Shooter/Left At Target",
-              MathUtil.isNear(
-                  left.getAsDouble(), inputs.leftFlywheel.velocity, 1.0));
+              MathUtil.isNear(left.getAsDouble(), inputs.leftFlywheel.velocity, 1.0));
           Logger.recordOutput(
               "Shooter/Right At Target",
-              MathUtil.isNear(
-                  right.getAsDouble(), inputs.rightFlywheel.velocity, 1.0));
+              MathUtil.isNear(right.getAsDouble(), inputs.rightFlywheel.velocity, 1.0));
           Logger.recordOutput(
               "Shooter/Pivot At Target",
               MathUtil.isNear(

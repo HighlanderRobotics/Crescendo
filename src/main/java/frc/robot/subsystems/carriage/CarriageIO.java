@@ -4,9 +4,8 @@
 
 package frc.robot.subsystems.carriage;
 
-import org.littletonrobotics.junction.AutoLog;
-
 import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
+import org.littletonrobotics.junction.AutoLog;
 
 public interface CarriageIO {
   @AutoLog

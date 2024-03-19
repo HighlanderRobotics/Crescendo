@@ -49,7 +49,14 @@ public class TalonFXLogger {
         double temperatureCelsius,
         double position,
         double velocityRotationsPerSecond) {
-      this(appliedVolts, statorCurrentAmps, supplyCurrentAmps, temperatureCelsius, position, velocityRotationsPerSecond, false);
+      this(
+          appliedVolts,
+          statorCurrentAmps,
+          supplyCurrentAmps,
+          temperatureCelsius,
+          position,
+          velocityRotationsPerSecond,
+          false);
     }
 
     public static TalonFXLogStruct struct = new TalonFXLogStruct();
@@ -85,7 +92,8 @@ public class TalonFXLogger {
         double rotation = bb.getDouble();
         double velocity = bb.getDouble();
         boolean licenseFault = bb.get() != 0;
-        return new TalonFXLog(voltage, statorAmps, supplyAmps, temp, rotation, velocity, licenseFault);
+        return new TalonFXLog(
+            voltage, statorAmps, supplyAmps, temp, rotation, velocity, licenseFault);
       }
 
       @Override
@@ -96,7 +104,7 @@ public class TalonFXLogger {
         bb.putDouble(value.temperatureCelsius);
         bb.putDouble(value.position);
         bb.putDouble(value.velocity);
-        bb.put(value.licenseFault ? (byte)0 : (byte)1);
+        bb.put(value.licenseFault ? (byte) 0 : (byte) 1);
       }
     }
   }
@@ -112,7 +120,11 @@ public class TalonFXLogger {
 
   private final StatusSignal<Boolean> licenseFaultSignal;
 
-  public TalonFXLogger(TalonFX talon, double updateFrequencyHz, double faultFrequencyHz, boolean shouldOptimizeBusUsage) {
+  public TalonFXLogger(
+      TalonFX talon,
+      double updateFrequencyHz,
+      double faultFrequencyHz,
+      boolean shouldOptimizeBusUsage) {
     voltageSignal = talon.getMotorVoltage();
     statorCurrentSignal = talon.getStatorCurrent();
     supplyCurrentSignal = talon.getSupplyCurrent();
@@ -140,7 +152,12 @@ public class TalonFXLogger {
 
   public TalonFXLog update() {
     BaseStatusSignal.refreshAll(
-        voltageSignal, statorCurrentSignal, supplyCurrentSignal, temperatureSignal, positionSignal, velocitySignal);
+        voltageSignal,
+        statorCurrentSignal,
+        supplyCurrentSignal,
+        temperatureSignal,
+        positionSignal,
+        velocitySignal);
     log.appliedVolts = voltageSignal.getValueAsDouble();
     log.statorCurrentAmps = statorCurrentSignal.getValueAsDouble();
     log.supplyCurrentAmps = supplyCurrentSignal.getValueAsDouble();

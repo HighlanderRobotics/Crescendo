@@ -6,7 +6,6 @@ package frc.robot.subsystems.shooter;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
-
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ShooterIO {
