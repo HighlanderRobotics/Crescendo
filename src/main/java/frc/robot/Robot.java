@@ -198,7 +198,7 @@ public class Robot extends LoggedRobot {
         shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER, () -> TalonFXFaultManager.getInstance().isOk()));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
