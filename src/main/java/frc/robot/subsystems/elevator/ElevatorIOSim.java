@@ -12,6 +12,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import frc.robot.utils.logging.TalonFXLogger.TalonFXLog;
 
 /** WPILib physics model based elevator sim. */
 public class ElevatorIOSim implements ElevatorIO {
@@ -36,11 +37,14 @@ public class ElevatorIOSim implements ElevatorIO {
       stop();
     }
     physicsSim.update(0.020);
-    inputs.elevatorPositionMeters = physicsSim.getPositionMeters();
-    inputs.elevatorVelocityMetersPerSec = physicsSim.getVelocityMetersPerSecond();
-    inputs.elevatorAppliedVolts = volts;
-    inputs.elevatorCurrentAmps = new double[] {physicsSim.getCurrentDrawAmps()};
-    inputs.elevatorTempCelsius = new double[] {20.0};
+    inputs.leader =
+        new TalonFXLog(
+            volts,
+            physicsSim.getCurrentDrawAmps(),
+            physicsSim.getCurrentDrawAmps(),
+            0.0,
+            physicsSim.getPositionMeters(),
+            physicsSim.getVelocityMetersPerSecond());
   }
 
   @Override

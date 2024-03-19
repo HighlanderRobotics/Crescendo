@@ -28,10 +28,10 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.logging.TalonFXLogger;
 import java.util.List;
 
 /**
@@ -58,16 +58,16 @@ public class ModuleIOReal implements ModuleIO {
   private final CANcoder cancoder;
 
   // Signals
-  private final StatusSignal<Double> drivePosition;
-  private final StatusSignal<Double> driveVelocity;
-  private final StatusSignal<Double> driveAppliedVolts;
-  private final StatusSignal<Double> driveCurrent;
+  private final TalonFXLogger driveLogger;
 
   private final StatusSignal<Double> turnAbsolutePosition;
-  private final StatusSignal<Double> turnPosition;
-  private final StatusSignal<Double> turnVelocity;
-  private final StatusSignal<Double> turnAppliedVolts;
-  private final StatusSignal<Double> turnCurrent;
+  private final TalonFXLogger turnLogger;
+
+  // Keep separate for async odometry
+  StatusSignal<Double> drivePosition;
+  StatusSignal<Double> turnPosition;
+
+  private double lastUpdate = 0;
 
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
@@ -146,16 +146,13 @@ public class ModuleIOReal implements ModuleIO {
             : SensorDirectionValue.Clockwise_Positive;
     cancoder.getConfigurator().apply(cancoderConfig);
 
-    drivePosition = driveTalon.getPosition();
-    driveVelocity = driveTalon.getVelocity();
-    driveAppliedVolts = driveTalon.getMotorVoltage();
-    driveCurrent = driveTalon.getStatorCurrent();
+    driveLogger = new TalonFXLogger(driveTalon);
 
     turnAbsolutePosition = cancoder.getAbsolutePosition();
+    turnLogger = new TalonFXLogger(turnTalon);
+
+    drivePosition = driveTalon.getPosition();
     turnPosition = turnTalon.getPosition();
-    turnVelocity = turnTalon.getVelocity();
-    turnAppliedVolts = turnTalon.getMotorVoltage();
-    turnCurrent = turnTalon.getStatorCurrent();
 
     PhoenixOdometryThread.getInstance()
         .registerSignals(
@@ -164,43 +161,20 @@ public class ModuleIOReal implements ModuleIO {
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        driveVelocity,
-        driveAppliedVolts,
-        driveCurrent,
-        turnAbsolutePosition,
-        turnVelocity,
-        turnAppliedVolts,
-        turnCurrent);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, turnAbsolutePosition);
     driveTalon.optimizeBusUtilization();
     turnTalon.optimizeBusUtilization();
     cancoder.optimizeBusUtilization();
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
-    BaseStatusSignal.refreshAll(
-        drivePosition,
-        driveVelocity,
-        driveAppliedVolts,
-        driveCurrent,
-        turnAbsolutePosition,
-        turnPosition,
-        turnVelocity,
-        turnAppliedVolts,
-        turnCurrent);
+  public void updateInputs(ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
+    BaseStatusSignal.refreshAll(turnAbsolutePosition);
 
-    inputs.drivePositionMeters = drivePosition.getValueAsDouble();
-    inputs.driveVelocityMetersPerSec = driveVelocity.getValueAsDouble();
-    inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
-    inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
+    inputs.drive = driveLogger.update();
 
     inputs.turnAbsolutePosition = Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
-    inputs.turnPosition = Rotation2d.fromRotations(turnPosition.getValueAsDouble());
-    inputs.turnVelocityRadPerSec = Units.rotationsToRadians(turnVelocity.getValueAsDouble());
-    inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
-    inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
+    inputs.turn = turnLogger.update();
 
     inputs.odometryTimestamps =
         asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();

@@ -10,6 +10,7 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ClimberIO {
   @AutoLog
   public static class ClimberIOInputs {
+    // Not refactored bc removed
     public double climberVelocityRotationsPerSec = 0.0;
     public double climberAppliedVolts = 0.0;
     public double climberCurrentAmps = 0.0;

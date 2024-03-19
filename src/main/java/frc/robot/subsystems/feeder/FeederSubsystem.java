@@ -6,6 +6,7 @@ package frc.robot.subsystems.feeder;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utils.logging.TalonFXFaultManager;
 import org.littletonrobotics.junction.Logger;
 
 /** Feeder motor for shooter and associated beambreaks for indexing */
@@ -25,6 +26,7 @@ public class FeederSubsystem extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Feeder", inputs);
+    TalonFXFaultManager.getInstance().addLog("Feeder", inputs.feeder);
   }
 
   /** Run the feeder at a set voltage */

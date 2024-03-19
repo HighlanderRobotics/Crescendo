@@ -4,14 +4,13 @@
 
 package frc.robot.subsystems.feeder;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import frc.robot.utils.components.InvertedDigitalInput;
+import frc.robot.utils.logging.TalonFXLogger;
 
 /** Feeder IO using a TalonFX. */
 public class FeederIOReal implements FeederIO {
@@ -20,10 +19,7 @@ public class FeederIOReal implements FeederIO {
   private final InvertedDigitalInput firstBeambreak = new InvertedDigitalInput(0);
   private final InvertedDigitalInput lastBeambreak = new InvertedDigitalInput(1);
 
-  private final StatusSignal<Double> velocity = motor.getVelocity();
-  private final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  private final StatusSignal<Double> current = motor.getStatorCurrent();
-  private final StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final TalonFXLogger logger = new TalonFXLogger(motor);
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityVoltage velocityVoltage = new VelocityVoltage(0.0).withEnableFOC(true);
@@ -40,19 +36,11 @@ public class FeederIOReal implements FeederIO {
     config.Slot0.kP = 0.1;
 
     motor.getConfigurator().apply(config);
-
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, current, temp);
-    motor.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(final FeederIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(velocity, voltage, current, temp);
-
-    inputs.feederVelocityRotationsPerSec = velocity.getValue();
-    inputs.feederAppliedVolts = voltage.getValue();
-    inputs.feederCurrentAmps = current.getValue();
-    inputs.feederTempC = temp.getValue();
+    inputs.feeder = logger.update();
 
     inputs.firstBeambreak = firstBeambreak.get();
     inputs.lastBeambreak = lastBeambreak.get();
