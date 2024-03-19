@@ -88,7 +88,8 @@ public class LEDSubsystem extends SubsystemBase {
         });
   }
 
-  public Command defaultStateDisplayCmd(BooleanSupplier enabled, BooleanSupplier targetIsSpeaker, BooleanSupplier faultsAreOk) {
+  public Command defaultStateDisplayCmd(
+      BooleanSupplier enabled, BooleanSupplier targetIsSpeaker, BooleanSupplier faultsAreOk) {
     return Commands.either(
             Commands.either(
                 this.setBlinkingCmd(new Color("#ffff00"), new Color(), 10.0)

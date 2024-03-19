@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.logging.TalonFXFaultManager;
-
 import org.littletonrobotics.junction.Logger;
 
 /** Drainpipe style amp/trap mechanism on the elevator */

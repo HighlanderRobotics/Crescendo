@@ -19,7 +19,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.utils.logging.TalonFXFaultManager;
-
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
@@ -62,8 +61,10 @@ public class Module {
 
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
-    TalonFXFaultManager.getInstance().addLog(String.format("Swerve/%s Module Drive", io.getModuleName()), inputs.drive);
-    TalonFXFaultManager.getInstance().addLog(String.format("Swerve/%s Module Turn", io.getModuleName()), inputs.turn);
+    TalonFXFaultManager.getInstance()
+        .addLog(String.format("Swerve/%s Module Drive", io.getModuleName()), inputs.drive);
+    TalonFXFaultManager.getInstance()
+        .addLog(String.format("Swerve/%s Module Turn", io.getModuleName()), inputs.turn);
 
     // Calculate positions for odometry
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together

@@ -49,7 +49,6 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.logging.TalonFXFaultManager;
-
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -198,7 +197,9 @@ public class Robot extends LoggedRobot {
         shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER, () -> TalonFXFaultManager.getInstance().isOk()));
+            () -> DriverStation.isEnabled(),
+            () -> currentTarget == Target.SPEAKER,
+            () -> TalonFXFaultManager.getInstance().isOk()));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
