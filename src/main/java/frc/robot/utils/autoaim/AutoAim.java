@@ -25,7 +25,7 @@ public class AutoAim {
   static {
 
     angleMap.put(0.0, Rotation2d.fromDegrees(0));
-    
+
     angleMap.put(Math.PI/6, Rotation2d.fromDegrees(0));
     angleMap.put(Math.PI/4, Rotation2d.fromDegrees(0));
     angleMap.put(Math.PI/3, Rotation2d.fromDegrees(0));

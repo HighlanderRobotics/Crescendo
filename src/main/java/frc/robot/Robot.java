@@ -531,7 +531,15 @@ public class Robot extends LoggedRobot {
                                   .getTranslation()
                                   .minus(FieldConstants.getSpeaker().getTranslation())
                                   .getAngle()
-                                  .getRadians());
+                                  .getRadians() + 
+                                  AutoAim.angleMap.get(swerve
+                                    .estimator
+                                    .getEstimatedPosition()
+                                    .minus(FieldConstants.getSpeaker())
+                                    .getTranslation()
+                                    .getAngle()
+                                    .getDegrees()).getRadians()
+                                  );
                       return new ChassisSpeeds(
                           0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
                     }),
