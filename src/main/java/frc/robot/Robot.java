@@ -570,7 +570,7 @@ public class Robot extends LoggedRobot {
             feeder
                 .runVelocityCmd(0.0)
                 .until(() -> shooter.isAtGoal())
-                .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5)))
+                .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).raceWith(Commands.waitUntil(() -> feeder.getLastBeambreak()).andThen(Commands.waitSeconds(0.1)))))
         .asProxy();
   }
 
@@ -578,9 +578,8 @@ public class Robot extends LoggedRobot {
     return Commands.parallel(
             intake.runVelocityCmd(90.0, 30.0),
             feeder.indexCmd(),
-            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
-            Commands.waitUntil(() -> feeder.getFirstBeambreak())
-                .andThen(shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 60, 80)))
+            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
+            )
         .asProxy();
   }
 
@@ -590,7 +589,7 @@ public class Robot extends LoggedRobot {
         swerve
             .runChoreoTraj(Choreo.getTrajectory("amp 4 local.1"), true)
             .asProxy()
-            .deadlineWith(autoIntake().andThen(Commands.print("done with intake"))),
+            .deadlineWith(autoIntake()),
         autoStaticAutoAim()
             .andThen(Commands.print("Done with auto static auto aim"))
             .beforeStarting(Commands.print("Before auto static auto aim!!!")),
