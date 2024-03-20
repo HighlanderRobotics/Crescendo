@@ -15,6 +15,7 @@ import frc.robot.FieldConstants;
 public class AutoAim {
 
   public static final InterpolatingShotTree shotMap = new InterpolatingShotTree();
+  public static final InterpolatingAngleMap angleMap = new InterpolatingAngleMap();
 
   public static final double LOOKAHEAD_TIME_SECONDS = 1.0;
 
@@ -22,6 +23,17 @@ public class AutoAim {
       new ShotData(Rotation2d.fromDegrees(61.0), 50.0, 60.0, 0.25); // ToF is an estimate
 
   static {
+
+    angleMap.put(0.0, Rotation2d.fromDegrees(0));
+    
+    angleMap.put(Math.PI/6, Rotation2d.fromDegrees(0));
+    angleMap.put(Math.PI/4, Rotation2d.fromDegrees(0));
+    angleMap.put(Math.PI/3, Rotation2d.fromDegrees(0));
+
+    angleMap.put(-Math.PI/6, Rotation2d.fromDegrees(0));
+    angleMap.put(-Math.PI/4, Rotation2d.fromDegrees(0));
+    angleMap.put(-Math.PI/3, Rotation2d.fromDegrees(0));
+
     shotMap.put(
         1.0 + Units.inchesToMeters(13.5 + 3.25),
         new ShotData(Rotation2d.fromDegrees(55), 60, 80, 0.25));
