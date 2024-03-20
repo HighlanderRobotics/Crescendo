@@ -841,6 +841,15 @@ public class SwerveSubsystem extends SubsystemBase {
                 .getRotations());
   }
 
+  @AutoLogOutput(key = "AutoAim/Distance to Target")
+  public double getDistanceToSpeaker() {
+    return this.estimator
+        .getEstimatedPosition()
+        .minus(FieldConstants.getSpeaker())
+        .getTranslation()
+        .getNorm();
+  }
+
   /**
    * Faces the robot towards a translation on the field Keeps the robot in a linear drive motion for
    * time seconds while rotating

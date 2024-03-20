@@ -210,7 +210,16 @@ public class Robot extends LoggedRobot {
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(
-        shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
+        Commands.repeatingSequence(
+            shooter
+                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+            shooter.runStateCmd(
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
+        )
+                    );
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -365,16 +374,12 @@ public class Robot extends LoggedRobot {
         swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
   }
 
-  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
-  private LoggedDashboardNumber leftRPS =
-      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
-  private LoggedDashboardNumber rightRPS =
-      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
-
   private Command shootWithDashboard() {
     return Commands.parallel(
         shooter.runStateCmd(
-            () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
+            () -> Rotation2d.fromDegrees(dashShotDegrees.get()),
+            () -> dashShotLeftRPS.get(),
+            () -> dashShotRightRPS.get()),
         feeder.indexCmd());
   }
 
@@ -536,36 +541,9 @@ public class Robot extends LoggedRobot {
                           0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
                     }),
                 shooter.runStateCmd(
-                    () ->
-                        AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .estimator
-                                    .getEstimatedPosition()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
-                            .getRotation(),
-                    () ->
-                        AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .estimator
-                                    .getEstimatedPosition()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
-                            .getLeftRPS(),
-                    () ->
-                        AutoAim.shotMap
-                            .get(
-                                swerve
-                                    .estimator
-                                    .getEstimatedPosition()
-                                    .minus(FieldConstants.getSpeaker())
-                                    .getTranslation()
-                                    .getNorm())
-                            .getRightRPS())));
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())));
   }
 
   private Command staticAutoAim() {
