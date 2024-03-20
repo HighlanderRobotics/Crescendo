@@ -678,7 +678,7 @@ public class SwerveSubsystem extends SubsystemBase {
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
                               % 360)
-                      < 4.0);
+                      < 20.0);
         },
         requirements);
   }
