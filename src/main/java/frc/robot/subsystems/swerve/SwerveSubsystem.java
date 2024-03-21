@@ -744,19 +744,10 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
     this.pose = pose;
-    // This is in a try-catch because it is possible lastModulePositions hasn't been updated yet
     try {
       estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
-      estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
-      odometry.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
     } catch (Exception e) {
       System.out.println("odo reset sad :(");
-      // resets the position with the positions reported by the module inputs and not the
-      // thread so it will technically be less accurate, but i'm assuming this will not be used
-      // unless
-      // the thread/robot hasn't started yet in which case it should not really matter
-      estimator.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
-      odometry.resetPosition(lastGyroRotation, getModulePositions(), pose);
     }
   }
 
