@@ -73,7 +73,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = false;
+  public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
   private ChoreoTrajectory activeChoreoTrajectory;
@@ -209,17 +209,7 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
-    shooter.setDefaultCommand(
-        Commands.repeatingSequence(
-            shooter
-                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-            shooter.runStateCmd(
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
-        )
-                    );
+    shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0, () -> 0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -364,14 +354,14 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
-    Logger.recordOutput(
-        "Angle to target",
-        Math.atan2(
-            FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
-            FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
-    Logger.recordOutput(
-        "AutoAim/Actual Distance",
-        swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
+    // Logger.recordOutput(
+    //     "Angle to target",
+    //     Math.atan2(
+    //         FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
+    //         FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
+    // Logger.recordOutput(
+    //     "AutoAim/Actual Distance",
+    //     swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
   }
 
   private Command shootWithDashboard() {
@@ -482,7 +472,7 @@ public class Robot extends LoggedRobot {
   private Command staticAutoAim(double rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
-            5.0,
+            6.0,
             0.0,
             0.0,
             new Constraints(
@@ -556,8 +546,9 @@ public class Robot extends LoggedRobot {
         .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
         .until(() -> feeder.getFirstBeambreak())
         .withTimeout(1.0)
-        .andThen(staticAutoAim(5.0).withTimeout(2.0).unless(() -> !feeder.getFirstBeambreak()))
-        .asProxy();
+        .andThen(staticAutoAim(8.0).withTimeout(2.0).unless(() -> !feeder.getFirstBeambreak()))
+        .asProxy()
+        .withTimeout(4.0);
   }
 
   private Command autoFenderShot() {
@@ -570,7 +561,12 @@ public class Robot extends LoggedRobot {
             feeder
                 .runVelocityCmd(0.0)
                 .until(() -> shooter.isAtGoal())
-                .andThen(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY).raceWith(Commands.waitUntil(() -> feeder.getLastBeambreak()).andThen(Commands.waitSeconds(0.1)))))
+                .andThen(
+                    feeder
+                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        .raceWith(
+                            Commands.waitUntil(() -> feeder.getLastBeambreak())
+                                .andThen(Commands.waitSeconds(0.1)))))
         .asProxy();
   }
 
@@ -578,8 +574,17 @@ public class Robot extends LoggedRobot {
     return Commands.parallel(
             intake.runVelocityCmd(90.0, 30.0),
             feeder.indexCmd(),
-            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
-            )
+            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
+            Commands.repeatingSequence(
+                shooter
+                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                shooter
+                    .runStateCmd(
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                    .until(() -> !feeder.getFirstBeambreak())))
         .asProxy();
   }
 
@@ -590,6 +595,9 @@ public class Robot extends LoggedRobot {
             .runChoreoTraj(Choreo.getTrajectory("amp 4 local.1"), true)
             .asProxy()
             .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim()
             .andThen(Commands.print("Done with auto static auto aim"))
             .beforeStarting(Commands.print("Before auto static auto aim!!!")),
@@ -597,11 +605,15 @@ public class Robot extends LoggedRobot {
             .runChoreoTraj(Choreo.getTrajectory("amp 4 local.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim(),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("amp 4 local.3"))
             .asProxy()
             .deadlineWith(autoIntake()),
+        autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
         autoStaticAutoAim());
   }
 

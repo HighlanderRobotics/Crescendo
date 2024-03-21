@@ -584,7 +584,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
     return choreoFullFollowSwerveCommand(
             traj,
-            () -> pose,
+            this::getPose,
             Choreo.choreoSwerveController(
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(1.5, 0.0, 0.0),
@@ -641,7 +641,7 @@ public class SwerveSubsystem extends SubsystemBase {
           timer.restart();
           if (Robot.mode != RobotMode.REAL) {
             Logger.recordOutput(
-            "Choreo/Active Traj",
+                "Choreo/Active Traj",
                 (mirrorTrajectory.getAsBoolean() ? trajectory.flipped() : trajectory).getPoses());
           }
         },
@@ -659,11 +659,11 @@ public class SwerveSubsystem extends SubsystemBase {
         },
         (interrupted) -> {
           timer.stop();
-          if (interrupted) {
-            outputChassisSpeeds.accept(new ChassisSpeeds());
-          } else {
-            outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
-          }
+          // if (interrupted) {
+          outputChassisSpeeds.accept(new ChassisSpeeds());
+          // } else {
+          // outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
+          // }
         },
         () -> {
           var finalPose =
@@ -672,8 +672,8 @@ public class SwerveSubsystem extends SubsystemBase {
                   : trajectory.getFinalState().getPose();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
-              && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.5)
-                  && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.5)
+              && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.25)
+                  && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.25)
                   && Math.abs(
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
@@ -729,7 +729,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return pose;
+    return estimator.getEstimatedPosition();
   }
 
   public Pose3d getPose3d() {
