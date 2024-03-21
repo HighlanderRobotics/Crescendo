@@ -34,7 +34,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public static final double MAX_EXTENSION_METERS = Units.inchesToMeters(30);
 
-  public static final double CLIMB_EXTENSION_METERS = 0.65;
+  public static final double CLIMB_EXTENSION_METERS = Units.inchesToMeters(29);
   public static final double TRAP_EXTENSION_METERS = Units.inchesToMeters(29);
   public static final double AMP_EXTENSION_METERS = 0.6;
 

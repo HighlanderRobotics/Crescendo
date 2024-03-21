@@ -14,6 +14,8 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
@@ -36,13 +38,18 @@ public interface ModuleIO {
   }
 
   /** Updates the set of loggable inputs. */
-  public void updateInputs(final ModuleIOInputs inputs);
+  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples);
 
   /** Run the drive motor at the specified voltage. */
   public void setDriveVoltage(final double volts);
 
   /** Use onboard PIDF to run the drive motor at the specified speed */
-  public void setDriveSetpoint(final double metersPerSecond);
+  public default void setDriveSetpoint(final double metersPerSecond) {
+    setDriveSetpoint(metersPerSecond, 0.0);
+  }
+
+  /** Use onboard PIDF to run the drive motor at the specified speed */
+  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared);
 
   /** Run the turn motor at the specified voltage. */
   public void setTurnVoltage(final double volts);

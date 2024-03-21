@@ -17,7 +17,8 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.choreo.lib.Choreo;
-import com.choreo.lib.ChoreoTrajectoryState;
+import com.choreo.lib.ChoreoControlFunction;
+import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -27,11 +28,14 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -57,13 +61,19 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.FieldConstants;
+import frc.robot.Robot;
+import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
@@ -73,10 +83,12 @@ import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
+import java.io.File;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -86,29 +98,24 @@ import org.photonvision.targeting.PhotonPipelineResult;
 public class SwerveSubsystem extends SubsystemBase {
 
   public class AutoAimStates {
+    public static double lookaheadTime = AutoAim.LOOKAHEAD_TIME_SECONDS;
 
     public static ShotData curShotData = new ShotData(new Rotation2d(), 0, 0, 0);
     public static ChassisSpeeds curShotSpeeds = new ChassisSpeeds();
+
     public static Pose2d endingPose = new Pose2d();
-    public static double polarVelocity = 0.0;
     public static Pose2d virtualTarget = new Pose2d();
-    public static double polarRadians = 0.0;
-    public static ChassisSpeeds inputSpeeds = new ChassisSpeeds(0, 0, 0);
-    public static Rotation2d rotationsToTranslation = new Rotation2d();
-    public static ChoreoTrajectoryState curState = null;
-    public static double elapsedAutonomousSeconds = 0;
-    public static double startingAutonomousSeconds = 0;
-    public static double pathTotalTime = 0;
-    public static String pathName = "";
   }
 
   // Drivebase constants
-  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(18.9);
+  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(16);
+  public static final double MAX_LINEAR_ACCELERATION = 8.0;
   public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
   public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
   public static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
+  public static final double MAX_ANGULAR_ACCELERATION = MAX_LINEAR_ACCELERATION / DRIVE_BASE_RADIUS;
   public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 4;
   // Hardware constants
   public static final int PIGEON_ID = 0;
@@ -122,7 +129,6 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final ModuleConstants backRight =
       new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
 
-  public static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules; // FL, FR, BL, BR
@@ -143,12 +149,13 @@ public class SwerveSubsystem extends SubsystemBase {
   private Rotation2d lastGyroRotation = new Rotation2d();
 
   private final Vision[] cameras;
-  public static final AprilTagFieldLayout fieldTags =
-      AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+  public static AprilTagFieldLayout fieldTags;
+
   public SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
-  private double lastEstTimestamp = 0;
+  private double lastEstTimestamp = 0.0;
+  private double lastOdometryUpdateTimestamp = 0.0;
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
@@ -222,15 +229,15 @@ public class SwerveSubsystem extends SubsystemBase {
     VisionIOSim.pose = this::getPose3d;
 
     AutoBuilder.configureHolonomic(
-        this::getPose, // Robot pose supplier
+        () -> pose, // Robot pose supplier
         this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
         this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
         this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
         // ChassisSpeeds
         new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in
             // your Constants class
-            new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
-            new PIDConstants(5.0, 0.0, 0.0), // Rotation PID constants
+            new PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
+            new PIDConstants(20.0, 0.0, 0.0), // Rotation PID constants
             MAX_LINEAR_SPEED, // Max module speed, in m/s
             DRIVE_BASE_RADIUS, // Drive base radius in meters. Distance from robot center to
             // furthest module.
@@ -238,7 +245,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 false, false) // Default path replanning config. See the API for the options
             // here
             ),
-        () -> false,
+        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         this // Reference to this subsystem to set requirements
         );
 
@@ -260,7 +267,7 @@ public class SwerveSubsystem extends SubsystemBase {
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null, // Default ramp rate is acceptable
-                Volts.of(8),
+                Volts.of(8.0),
                 Seconds.of(6.0), // Default timeout is acceptable
                 // Log state with Phoenix SignalLogger class
                 (state) -> SignalLogger.writeString("state", state.toString())),
@@ -280,6 +287,16 @@ public class SwerveSubsystem extends SubsystemBase {
                 (Measure<Voltage> volts) -> runDriveCharacterizationVolts(volts.in(Volts)),
                 null,
                 this));
+    try {
+      fieldTags =
+          new AprilTagFieldLayout(
+              Filesystem.getDeployDirectory()
+                  .toPath()
+                  .resolve("vision" + File.pathSeparator + "2024-crescendo.json"));
+    } catch (Exception e) {
+      System.err.println("Failed to load tag map");
+      fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+    }
   }
 
   /**
@@ -333,12 +350,15 @@ public class SwerveSubsystem extends SubsystemBase {
       camera.updateInputs();
       camera.processInputs();
     }
-    odometryLock.lock(); // Prevents odometry updates while reading data
-    gyroIO.updateInputs(gyroInputs);
-    for (var module : modules) {
-      module.updateInputs();
+    var odometrySamples =
+        PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp);
+    if (!odometrySamples.isEmpty()) {
+      lastOdometryUpdateTimestamp = odometrySamples.get(odometrySamples.size() - 1).timestamp();
     }
-    odometryLock.unlock();
+    gyroIO.updateInputs(gyroInputs, odometrySamples);
+    for (var module : modules) {
+      module.updateInputs(odometrySamples);
+    }
     Logger.processInputs("Swerve/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
@@ -360,6 +380,7 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
     Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
+    Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
     updateOdometry();
     updateVision();
@@ -370,9 +391,18 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   private void updateOdometry() {
+    for (int i = 0; i < modules.length; i++) {
+      Logger.recordOutput(
+          "Swerve/Updates Since Last " + i, modules[i].getOdometryTimestamps().length);
+    }
     double[] sampleTimestamps =
         modules[0].getOdometryTimestamps(); // All signals are sampled together
-    int sampleCount = sampleTimestamps.length;
+    int sampleCount =
+        Arrays.stream(modules).mapToInt(m -> m.getOdometryTimestamps().length).min().getAsInt();
+    // if the gyro isnt connected, dont worry about it
+    if (gyroInputs.connected) {
+      sampleCount = Math.min(sampleCount, gyroInputs.odometryTimestamps.length);
+    }
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
@@ -425,6 +455,7 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
+        pose = pose.interpolate(visionPose.toPose2d(), 0.25);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -477,6 +508,56 @@ public class SwerveSubsystem extends SubsystemBase {
         () -> ChassisSpeeds.fromFieldRelativeSpeeds(speeds.get(), getPose().getRotation()));
   }
 
+  public Command runVelocityTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
+    return this.runVelocityCmd(
+        () ->
+            ChassisSpeeds.fromFieldRelativeSpeeds(
+                speeds.get(),
+                DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                    ? getPose().getRotation()
+                    : getPose().getRotation().minus(Rotation2d.fromDegrees(180))));
+  }
+
+  public Command runVoltageTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
+    return this.run(
+        () -> {
+          var allianceSpeeds =
+              ChassisSpeeds.fromFieldRelativeSpeeds(
+                  speeds.get(),
+                  DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                      ? getPose().getRotation()
+                      : getPose().getRotation().minus(Rotation2d.fromDegrees(180)));
+          // Calculate module setpoints
+          ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(allianceSpeeds, 0.02);
+          SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
+          SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+
+          Logger.recordOutput("Swerve/Target Speeds", discreteSpeeds);
+          Logger.recordOutput("Swerve/Speed Error", discreteSpeeds.minus(getVelocity()));
+          Logger.recordOutput(
+              "Swerve/Target Chassis Speeds Field Relative",
+              ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
+
+          // Send setpoints to modules
+          SwerveModuleState[] optimizedSetpointStates =
+              Streams.zip(
+                      Arrays.stream(modules),
+                      Arrays.stream(setpointStates),
+                      (m, s) ->
+                          m.runVoltageSetpoint(
+                              new SwerveModuleState(
+                                  s.speedMetersPerSecond
+                                      * RoboRioDataJNI.getVInVoltage()
+                                      / MAX_LINEAR_SPEED,
+                                  s.angle)))
+                  .toArray(SwerveModuleState[]::new);
+
+          // Log setpoint states
+          Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+          Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+        });
+  }
+
   /**
    * Stops the drive and turns the modules to an X arrangement to resist movement. The modules will
    * return to their normal orientations the next time a nonzero velocity is requested.
@@ -489,8 +570,116 @@ public class SwerveSubsystem extends SubsystemBase {
             headings[i] = getModuleTranslations()[i].getAngle();
           }
           kinematics.resetHeadings(headings);
-          stopCmd();
+          for (int i = 0; i < modules.length; i++) {
+            modules[i].runSetpoint(new SwerveModuleState(0.0, headings[i]));
+          }
         });
+  }
+
+  public Command runChoreoTraj(ChoreoTrajectory traj) {
+    return this.runChoreoTraj(traj, false);
+  }
+
+  public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
+    return choreoFullFollowSwerveCommand(
+            traj,
+            () -> pose,
+            Choreo.choreoSwerveController(
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(3.0, 0.0, 0.0)),
+            (ChassisSpeeds speeds) -> this.runVelocity(speeds),
+            () -> {
+              Optional<Alliance> alliance = DriverStation.getAlliance();
+              return alliance.isPresent() && alliance.get() == Alliance.Red;
+            },
+            this)
+        .beforeStarting(
+            Commands.runOnce(
+                    () -> {
+                      if (DriverStation.getAlliance().isPresent()
+                          && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                        setPose(traj.getInitialState().flipped().getPose());
+                      } else {
+                        setPose(traj.getInitialPose());
+                      }
+                    })
+                .onlyIf(() -> resetPose));
+  }
+
+  /**
+   * Create a command to follow a Choreo path.
+   *
+   * @param trajectory The trajectory to follow. Use Choreo.getTrajectory(String trajName) to load
+   *     this from the deploy directory.
+   * @param poseSupplier A function that returns the current field-relative pose of the robot.
+   * @param controller A ChoreoControlFunction to follow the current trajectory state. Use
+   *     ChoreoCommands.choreoSwerveController(PIDController xController, PIDController yController,
+   *     PIDController rotationController) to create one using PID controllers for each degree of
+   *     freedom. You can also pass in a function with the signature (Pose2d currentPose,
+   *     ChoreoTrajectoryState referenceState) -&gt; ChassisSpeeds to implement a custom follower
+   *     (i.e. for logging).
+   * @param outputChassisSpeeds A function that consumes the target robot-relative chassis speeds
+   *     and commands them to the robot.
+   * @param mirrorTrajectory If this returns true, the path will be mirrored to the opposite side,
+   *     while keeping the same coordinate system origin. This will be called every loop during the
+   *     command.
+   * @param requirements The subsystem(s) to require, typically your drive subsystem only.
+   * @return A command that follows a Choreo path.
+   */
+  public static Command choreoFullFollowSwerveCommand(
+      ChoreoTrajectory trajectory,
+      Supplier<Pose2d> poseSupplier,
+      ChoreoControlFunction controller,
+      Consumer<ChassisSpeeds> outputChassisSpeeds,
+      BooleanSupplier mirrorTrajectory,
+      Subsystem... requirements) {
+    var timer = new Timer();
+    return new FunctionalCommand(
+        () -> {
+          timer.restart();
+          if (Robot.mode != RobotMode.REAL) {
+            Logger.recordOutput(
+                "Choreo/Active Traj",
+                (mirrorTrajectory.getAsBoolean() ? trajectory.flipped() : trajectory).getPoses());
+          }
+        },
+        () -> {
+          Logger.recordOutput(
+              "Choreo/Target Pose",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getPose());
+          Logger.recordOutput(
+              "Choreo/Target Speeds",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getChassisSpeeds());
+          outputChassisSpeeds.accept(
+              controller.apply(
+                  poseSupplier.get(),
+                  trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean())));
+        },
+        (interrupted) -> {
+          timer.stop();
+          // if (interrupted) {
+          outputChassisSpeeds.accept(new ChassisSpeeds());
+          // } else {
+          // outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
+          // }
+        },
+        () -> {
+          var finalPose =
+              mirrorTrajectory.getAsBoolean()
+                  ? trajectory.getFinalState().flipped().getPose()
+                  : trajectory.getFinalState().getPose();
+          Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
+          return timer.hasElapsed(trajectory.getTotalTime())
+              && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.25)
+                  && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.25)
+                  && Math.abs(
+                          (poseSupplier.get().getRotation().getDegrees()
+                                  - finalPose.getRotation().getDegrees())
+                              % 360)
+                      < 20.0);
+        },
+        requirements);
   }
 
   /** Runs forwards at the commanded voltage. */
@@ -523,7 +712,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new)),
             getRotation());
     return new ChassisSpeeds(
-        -speeds.vxMetersPerSecond, -speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+        speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   @AutoLogOutput(key = "Odometry/RobotRelativeVelocity")
@@ -544,12 +733,12 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public Pose3d getPose3d() {
-    return new Pose3d(pose);
+    return new Pose3d(getPose());
   }
 
   /** Returns the current odometry rotation. */
   public Rotation2d getRotation() {
-    return pose.getRotation();
+    return getPose().getRotation();
   }
 
   /** Sets the current odometry pose. */
@@ -557,15 +746,17 @@ public class SwerveSubsystem extends SubsystemBase {
     this.pose = pose;
     // This is in a try-catch because it is possible lastModulePositions hasn't been updated yet
     try {
+      estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
       estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
       odometry.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
     } catch (Exception e) {
+      System.out.println("odo reset sad :(");
       // resets the position with the positions reported by the module inputs and not the
       // thread so it will technically be less accurate, but i'm assuming this will not be used
       // unless
       // the thread/robot hasn't started yet in which case it should not really matter
       estimator.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
-      odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
+      odometry.resetPosition(lastGyroRotation, getModulePositions(), pose);
     }
   }
 
@@ -596,72 +787,40 @@ public class SwerveSubsystem extends SubsystemBase {
     return Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
   }
 
-  public Rotation2d getFutureRotationToTranslation(Pose2d translation, Pose2d pose) {
+  public Rotation2d getInstantRotationToTranslation(Pose2d translation, Pose2d pose) {
     double angle = Math.atan2(translation.getY() - pose.getY(), translation.getX() - pose.getX());
     return Rotation2d.fromRadians(angle);
   }
 
-  public Rotation2d getRotationToTranslation(
+  public Rotation2d getLinearFutureRotationToTranslation(
       Pose2d translation, ChassisSpeeds speedsFieldRelative) {
     double angle =
         Math.atan2(
             translation.getY()
-                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS, speedsFieldRelative).getY(),
+                - getLinearFuturePose(AutoAimStates.lookaheadTime, speedsFieldRelative).getY(),
             translation.getX()
-                - getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS, speedsFieldRelative).getX());
+                - getLinearFuturePose(AutoAimStates.lookaheadTime, speedsFieldRelative).getX());
     return Rotation2d.fromRadians(angle);
-  }
-
-  /**
-   * Transforms the speaker pose by the robots current velocity (assumes constant velocity)
-   *
-   * @return The transformed pose
-   */
-  public Pose2d getVirtualTarget(ChassisSpeeds speedsRobotRelative) {
-
-    Pose2d target = FieldConstants.getSpeaker();
-
-    double distance =
-        getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS, speedsRobotRelative)
-            .minus(target)
-            .getTranslation()
-            .getNorm();
-
-    return target.transformBy(
-        new Transform2d(
-                speedsRobotRelative.vxMetersPerSecond
-                    * AutoAim.shotMap.get(distance).getFlightTimeSeconds(),
-                speedsRobotRelative.vyMetersPerSecond
-                    * AutoAim.shotMap.get(distance).getFlightTimeSeconds(),
-                target.getRotation())
-            .inverse());
-  }
-
-  public Pose2d getVirtualTarget() {
-    return getVirtualTarget(getVelocity());
-  }
-
-  public ChoreoTrajectoryState getAutoState(double timestamp) {
-    return Choreo.getTrajectory(AutoAimStates.pathName).sample(timestamp);
   }
 
   /**
    * Gets the pose at some time in the future, assuming constant velocity
    *
-   * @param robotRelativeSpeeds the robot relative speed to calculate from
+   * @param speedsFieldRelative the field relative speed to calculate from
    * @param time time in seconds
    * @return The future pose
    */
   public Pose2d getLinearFuturePose(double time, ChassisSpeeds speedsFieldRelative) {
-
     ChassisSpeeds speedsRobotRelative =
         ChassisSpeeds.fromFieldRelativeSpeeds(speedsFieldRelative, getRotation());
     return getPose()
-        .transformBy(
+        .plus(
             new Transform2d(
-                -speedsRobotRelative.vxMetersPerSecond * time,
-                -speedsRobotRelative.vyMetersPerSecond * time,
-                Rotation2d.fromRadians(speedsRobotRelative.omegaRadiansPerSecond * time)));
+                speedsRobotRelative.vxMetersPerSecond * time,
+                speedsRobotRelative.vyMetersPerSecond * time,
+                new Rotation2d() // Rotation2d.fromRadians(speedsRobotRelative.omegaRadiansPerSecond
+                // * time)
+                ));
   }
 
   /**
@@ -683,7 +842,26 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   @AutoLogOutput(key = "AutoAim/FuturePose")
   public Pose2d getLinearFuturePose() {
-    return getLinearFuturePose(AutoAim.LOOKAHEAD_TIME_SECONDS);
+    return getLinearFuturePose(getLookaheadTime());
+  }
+
+  @AutoLogOutput(key = "AutoAim/Lookahead")
+  public double getLookaheadTime() {
+    return AutoAim.LOOKAHEAD_TIME_SECONDS
+        + Math.abs(
+            getInstantRotationToTranslation(FieldConstants.getSpeaker(), getPose())
+                .minus(getPose().getRotation())
+                .minus(Rotation2d.fromDegrees(180.0))
+                .getRotations());
+  }
+
+  @AutoLogOutput(key = "AutoAim/Distance to Target")
+  public double getDistanceToSpeaker() {
+    return this.estimator
+        .getEstimatedPosition()
+        .minus(FieldConstants.getSpeaker())
+        .getTranslation()
+        .getNorm();
   }
 
   /**
@@ -695,12 +873,12 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param time Time in the future to point from
    * @return A command reference that rotates the robot to a computed rotation
    */
-  public Command teleopPointTowardsTranslationCmd(
+  public Command teleopAimAtVirtualTargetCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            0.5, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED / 2));
+            0.5, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     ProfiledPIDController vxController =
         new ProfiledPIDController(
@@ -709,28 +887,16 @@ public class SwerveSubsystem extends SubsystemBase {
         new ProfiledPIDController(
             0.5, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
     return Commands.sequence(
-        Commands.runOnce(
-            () -> {
-              AutoAimStates.inputSpeeds =
-                  new ChassisSpeeds(
-                      xMetersPerSecond.getAsDouble(),
-                      yMetersPerSecond.getAsDouble(),
-                      getVelocity().omegaRadiansPerSecond);
-              AutoAimStates.virtualTarget =
-                  getVirtualTarget(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(
-                          AutoAimStates.inputSpeeds, getRotation()));
-              AutoAimStates.rotationsToTranslation =
-                  getRotationToTranslation(AutoAimStates.virtualTarget, AutoAimStates.inputSpeeds)
-                      .minus(Rotation2d.fromDegrees(180));
-            },
-            this),
         this.runVelocityFieldRelative(
                 () -> {
                   double feedbackOutput =
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
-                          AutoAimStates.rotationsToTranslation.getRadians());
+                          AutoAimStates.endingPose
+                              .getTranslation()
+                              .minus(AutoAimStates.virtualTarget.getTranslation())
+                              .getAngle()
+                              .getRadians());
                   double vxFeedbackOutput =
                       vxController.calculate(getPose().getX(), AutoAimStates.endingPose.getX());
                   double vyFeedbackOutput =
@@ -743,7 +909,6 @@ public class SwerveSubsystem extends SubsystemBase {
                       "AutoAim/Goal Rotation", headingController.getGoal().position);
                   Logger.recordOutput(
                       "AutoAim/Goal Velocity", headingController.getGoal().velocity);
-
                   Logger.recordOutput(
                       "AutoAim/Setpoint X Position", vxController.getSetpoint().position);
                   Logger.recordOutput(
@@ -774,15 +939,6 @@ public class SwerveSubsystem extends SubsystemBase {
                       new Constraints(xMetersPerSecond.getAsDouble(), MAX_AUTOAIM_SPEED));
                   vyController.setConstraints(
                       new Constraints(yMetersPerSecond.getAsDouble(), MAX_AUTOAIM_SPEED));
-                  AutoAimStates.endingPose =
-                      new Pose2d(
-                          getLinearFuturePose(
-                                  AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.inputSpeeds)
-                              .getX(),
-                          getLinearFuturePose(
-                                  AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.inputSpeeds)
-                              .getY(),
-                          AutoAimStates.rotationsToTranslation);
                   Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
                   headingController.reset(
                       new State(
@@ -790,85 +946,6 @@ public class SwerveSubsystem extends SubsystemBase {
                           getVelocity().omegaRadiansPerSecond));
                   vxController.reset(new State(getPose().getX(), getVelocity().vxMetersPerSecond));
                   vyController.reset(new State(getPose().getY(), getVelocity().vyMetersPerSecond));
-                  Logger.recordOutput("AutoAim/Translated Target", AutoAimStates.virtualTarget);
-                }));
-  }
-
-  /**
-   * Faces the robot towards a translation on the field Keeps the robot in a linear drive motion for
-   * time seconds while rotating
-   *
-   * @param xMetersPerSecond Requested X velocity
-   * @param yMetersPerSecond Requested Y velocity
-   * @param time Time in the future to point from
-   * @return A command refrence that rotates the robot to a computed rotation
-   */
-  public Command autonomousPointTowardsTranslationCmd() {
-    ProfiledPIDController headingController =
-        // assume we can accelerate to max in 2/3 of a second
-        new ProfiledPIDController(
-            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.666666));
-    headingController.enableContinuousInput(-Math.PI, Math.PI);
-
-    return Commands.sequence(
-        Commands.runOnce(
-            () -> {
-              AutoAimStates.startingAutonomousSeconds = Timer.getFPGATimestamp();
-
-              AutoAimStates.curState = getAutoState(AutoAim.LOOKAHEAD_TIME_SECONDS);
-              AutoAimStates.inputSpeeds =
-                  new ChassisSpeeds(
-                      AutoAimStates.curState.velocityX,
-                      AutoAimStates.curState.velocityY,
-                      getVelocity().omegaRadiansPerSecond);
-              AutoAimStates.virtualTarget =
-                  getVirtualTarget(
-                      ChassisSpeeds.fromFieldRelativeSpeeds(
-                          AutoAimStates.inputSpeeds, getRotation()));
-
-              AutoAimStates.rotationsToTranslation =
-                  getFutureRotationToTranslation(
-                      AutoAimStates.virtualTarget, AutoAimStates.curState.getPose());
-            },
-            this),
-        this.runVelocityFieldRelative(
-                () -> {
-                  double feedbackOutput =
-                      headingController.calculate(
-                          getPose().getRotation().getRadians(),
-                          AutoAimStates.rotationsToTranslation.getRadians());
-
-                  AutoAimStates.curState = getAutoState(AutoAimStates.elapsedAutonomousSeconds);
-                  AutoAimStates.elapsedAutonomousSeconds +=
-                      Timer.getFPGATimestamp()
-                          - AutoAimStates.elapsedAutonomousSeconds
-                          - AutoAimStates.startingAutonomousSeconds;
-                  System.out.println(AutoAimStates.elapsedAutonomousSeconds);
-                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
-                  Logger.recordOutput("AutoAim/Virtual Target", AutoAimStates.virtualTarget);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Velocity", headingController.getSetpoint().velocity);
-                  Logger.recordOutput(
-                      "AutoAim/Goal Rotation", headingController.getGoal().position);
-                  Logger.recordOutput(
-                      "AutoAim/Goal Velocity", headingController.getGoal().velocity);
-                  return new ChassisSpeeds(
-                      AutoAimStates.curState.velocityX,
-                      AutoAimStates.curState.velocityY,
-                      feedbackOutput + headingController.getSetpoint().velocity);
-                })
-            .beforeStarting(
-                () -> {
-                  AutoAimStates.endingPose =
-                      new Pose2d(
-                          AutoAimStates.curState.x,
-                          AutoAimStates.curState.y,
-                          AutoAimStates.rotationsToTranslation);
-                  Logger.recordOutput("AutoAim/Ending Pose", AutoAimStates.endingPose);
-                  headingController.reset(new State(getPose().getRotation().getRadians(), 0));
-                  Logger.recordOutput("AutoAim/Translated Target", AutoAimStates.virtualTarget);
                 }));
   }
 
@@ -880,10 +957,9 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param yMetersPerSecond Requested Y velocity
    * @return A command refrence that rotates the robot to a computed rotation
    */
-  public Command teleopPointTowardsTranslationCmd(
+  public Command teleopAimAtVirtualTargetCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
-    return teleopPointTowardsTranslationCmd(
-        xMetersPerSecond, yMetersPerSecond, AutoAim.LOOKAHEAD_TIME_SECONDS);
+    return teleopAimAtVirtualTargetCmd(xMetersPerSecond, yMetersPerSecond, getLookaheadTime());
   }
 
   public Command runModuleSteerCharacterizationCmd() {

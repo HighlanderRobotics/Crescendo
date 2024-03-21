@@ -37,5 +37,5 @@ public interface ShooterIO {
 
   public void setPivotSetpoint(final Rotation2d rotation);
 
-  public void resetPivotPostion(final Rotation2d rotation);
+  public void resetPivotPosition(final Rotation2d rotation);
 }

@@ -5,14 +5,19 @@
 package frc.robot;
 
 import com.choreo.lib.Choreo;
+import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
-import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
@@ -36,17 +41,20 @@ import frc.robot.subsystems.leds.LEDIOSim;
 import frc.robot.subsystems.leds.LEDSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
-import frc.robot.subsystems.shooter.ShooterSubystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
-import java.util.function.Supplier;
+import java.util.List;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
@@ -66,15 +74,31 @@ public class Robot extends LoggedRobot {
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
+  public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
+  private ChoreoTrajectory activeChoreoTrajectory;
+  private LoggedDashboardChooser<Command> autoChooser =
+      new LoggedDashboardChooser<>("Auto Chooser");
+
+  private LoggedDashboardNumber dashShotDegrees =
+      new LoggedDashboardNumber("Rotation (degrees)", 37.0);
+  private LoggedDashboardNumber dashShotLeftRPS =
+      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
+  private LoggedDashboardNumber dashShotRightRPS =
+      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
 
   private final CommandXboxControllerSubsystem controller = new CommandXboxControllerSubsystem(0);
   private final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
-  private final Boolean useAutoAim = true;
+  private final SlewRateLimiter vxLimiter =
+      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION * 0.9);
+  private final SlewRateLimiter vyLimiter =
+      new SlewRateLimiter(SwerveSubsystem.MAX_LINEAR_ACCELERATION * 0.9);
+  private final SlewRateLimiter omegaLimiter =
+      new SlewRateLimiter(SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.9);
 
   private Target currentTarget = Target.SPEAKER;
-  private double flywheelIdleSpeed = -0.1;
+  private double flywheelIdleSpeed = 30.0;
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -83,7 +107,7 @@ public class Robot extends LoggedRobot {
               : new GyroIO() {
                 // Blank implementation to mock gyro in sim
                 @Override
-                public void updateInputs(GyroIOInputs inputs) {}
+                public void updateInputs(GyroIOInputs inputs, List<Samples> asyncOdometrySamples) {}
 
                 @Override
                 public void setYaw(Rotation2d yaw) {}
@@ -98,11 +122,9 @@ public class Robot extends LoggedRobot {
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =
       new ElevatorSubsystem(mode == RobotMode.REAL ? new ElevatorIOReal() : new ElevatorIOSim());
-  private final ShooterSubystem shooter =
-      new ShooterSubystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final ShooterSubsystem shooter =
+      new ShooterSubsystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
-  // private final ReactionBarReleaseSubsystem reactionBarRelease =
-  //     new ReactionBarReleaseSubsystem(new ReactionBarReleaseIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
 
@@ -154,7 +176,7 @@ public class Robot extends LoggedRobot {
 
     // Default Commands here
     swerve.setDefaultCommand(
-        swerve.runVelocityFieldRelative(
+        swerve.runVelocityTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
                     -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
@@ -187,13 +209,7 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
-    shooter.setDefaultCommand(
-        shooter.runFlywheelsCmd(() -> flywheelIdleSpeed, () -> flywheelIdleSpeed));
-    // reactionBarRelease.setDefaultCommand(
-    //     reactionBarRelease.setRotationCmd(Rotation2d.fromDegrees(0.0)));
-    leds.setDefaultCommand(
-        leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+    shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0, () -> 0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -202,63 +218,44 @@ public class Robot extends LoggedRobot {
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
 
     // Robot state management bindings
+    new Trigger(() -> carriage.getBeambreak())
+        .debounce(0.5)
+        .onTrue(intake.runVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
         .debounce(0.25)
-        .whileTrue(
+        .onTrue(
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
                     leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
 
     // ---- Controller bindings here ----
-    controller.leftTrigger().whileTrue(intake.runVelocityCmd(80.0, 30.0));
+    // Prevent intaking when elevator isnt down
     controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .whileTrue(
-            Commands.parallel(
-                shooter.runStateCmd(Rotation2d.fromDegrees(80.0), 50.0, 40.0),
-                Commands.waitSeconds(0.5).andThen(feeder.runVelocityCmd(24.0)))); // TODO tune
+        .leftTrigger()
+        .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
+        .whileTrue(intake.runVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
-        .whileTrue(
-            Commands.parallel(
-                teleopAutoAim(
-                    () -> {
-                      double vx = swerve.getVelocity().vxMetersPerSecond;
-                      double vy = swerve.getVelocity().vyMetersPerSecond;
-                      double omega = swerve.getVelocity().omegaRadiansPerSecond;
-
-                      double polarVelocity =
-                          MathUtil.clamp(
-                              Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2)),
-                              -SwerveSubsystem.MAX_AUTOAIM_SPEED,
-                              SwerveSubsystem.MAX_AUTOAIM_SPEED);
-                      Logger.recordOutput("AutoAim/Polar Velocity", polarVelocity);
-                      double polarRadians = Math.atan2(vy, vx);
-                      ChassisSpeeds polarSpeeds =
-                          new ChassisSpeeds(
-                              polarVelocity * Math.cos(polarRadians),
-                              polarVelocity * Math.sin(polarRadians),
-                              omega);
-                      Logger.recordOutput("AutoAim/Polar Speeds", polarSpeeds);
-                      return polarSpeeds;
-                    }),
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS)
-                    .andThen(
-                        Commands.parallel(
-                            feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY),
-                            Commands.runOnce(
-                                () ->
-                                    Logger.recordOutput(
-                                        "AutoAim/Shooting Pose", swerve.getPose()))))));
+        .and(() -> USE_SOTM)
+        .whileTrue(teleopAutoAim());
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SPEAKER)
+        .and(() -> USE_AUTO_AIM)
+        .and(() -> !USE_SOTM)
+        .whileTrue(staticAutoAim());
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> !USE_AUTO_AIM)
-        .whileTrue(shootWithDashboard())
+        .whileTrue(
+            shooter.runStateCmd(
+                AutoAim.FENDER_SHOT.getRotation(),
+                AutoAim.FENDER_SHOT.getLeftRPS(),
+                AutoAim.FENDER_SHOT.getRightRPS()))
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
@@ -266,57 +263,48 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.AMP)
+        .and(operator.leftBumper().negate().debounce(0.5))
+        .and(operator.leftTrigger().negate().debounce(0.5))
         .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
         .onFalse(
             Commands.parallel(
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
-    controller.rightBumper().whileTrue(swerve.stopWithXCmd());
+    controller.leftBumper().whileTrue(swerve.stopWithXCmd());
+    controller
+        .rightBumper()
+        .whileTrue(
+            ampHeadingSnap(
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftX())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED));
+
+    controller
+        .x()
+        .whileTrue(
+            Commands.parallel(
+                shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(60.0), -5.0),
+                feeder.runVoltageCmd(-5.0),
+                carriage.runVoltageCmd(-5.0),
+                intake.runVelocityCmd(-50.0, -50.0)));
+
+    // Prep climb
+    operator
+        .rightTrigger(0.5)
+        .debounce(0.25)
+        .toggleOnFalse(
+            Commands.parallel(
+                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0)));
     // Heading reset
     controller
         .leftStick()
         .and(controller.rightStick())
         .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
 
-    controller
-        .y()
-        .and(() -> elevator.getExtensionMeters() > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
-        .onTrue(
-            Commands.sequence(
-                    elevator
-                        .setExtensionCmd(() -> 0.0)
-                        .until(() -> elevator.getExtensionMeters() < 0.05),
-                    Commands.waitUntil(() -> controller.y().getAsBoolean()),
-                    Commands.parallel(
-                        carriage
-                            .runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)
-                            .withTimeout(0.25)
-                            .andThen(
-                                Commands.parallel(
-                                    Commands.waitUntil(
-                                        () ->
-                                            elevator.getExtensionMeters()
-                                                > 0.95 * ElevatorSubsystem.TRAP_EXTENSION_METERS),
-                                    carriage.runVoltageCmd(0.0)),
-                                carriage.runVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE)),
-                        elevator.setExtensionCmd(() -> ElevatorSubsystem.TRAP_EXTENSION_METERS)))
-                .alongWith(leds.setRainbowCmd()));
-
-    // Prep climb
-    operator
-        .rightTrigger(0.5)
-        .and(operator.rightBumper())
-        .toggleOnFalse(
-            Commands.parallel(
-                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
-                leds.setBlinkingCmd(new Color("#ff0000"), new Color("#ffffff"), 15.0)
-                    .until(
-                        () ->
-                            elevator.getExtensionMeters()
-                                > 0.9 * ElevatorSubsystem.CLIMB_EXTENSION_METERS)
-                    .andThen(
-                        leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 15.0))));
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
     operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
@@ -324,14 +312,23 @@ public class Robot extends LoggedRobot {
     operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
     operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
+    operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
-        .start()
-        .whileTrue(shooter.runPivotCurrentZeroing())
-        .whileTrue(elevator.runCurrentZeroing());
+        .back()
+        .onTrue(
+            shooter
+                .resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)
+                .alongWith(
+                    leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
+                        .withTimeout(0.25)));
 
-    NamedCommands.registerCommand("stop", swerve.stopWithXCmd().asProxy());
-    NamedCommands.registerCommand(
-        "auto aim amp 4 local sgmt 1", autonomousAutoAim("amp 4 local sgmt 1"));
+    autoChooser.addDefaultOption("None", Commands.none());
+    autoChooser.addOption("Shoot Preload", teleopAutoAim());
+    autoChooser.addOption("Amp 4 Wing", autoAmp4Wing());
+    autoChooser.addOption("Source 3", autoSource3());
+    autoChooser.addOption("Amp 5", autoAmp5());
+    autoChooser.addOption("Source 4", autoSource4());
+    autoChooser.addOption("Line Test Repeatedly", lineTest());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -340,6 +337,9 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
     SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
+    SmartDashboard.putData(
+        "manual zero shooter",
+        shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
   }
 
   @Override
@@ -354,64 +354,70 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
+    // Logger.recordOutput(
+    //     "Angle to target",
+    //     Math.atan2(
+    //         FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
+    //         FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
+    // Logger.recordOutput(
+    //     "AutoAim/Actual Distance",
+    //     swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
   }
 
-  private LoggedDashboardNumber degrees = new LoggedDashboardNumber("Rotation (degrees)", 37.0);
-  private LoggedDashboardNumber leftRPS =
-      new LoggedDashboardNumber("Left RPS (Rotations Per Sec)", 60.0);
-  private LoggedDashboardNumber rightRPS =
-      new LoggedDashboardNumber("Right RPS (Rotations Per Sec)", 80.0);
-
-  public Command shootWithDashboard() {
+  private Command shootWithDashboard() {
     return Commands.parallel(
         shooter.runStateCmd(
-            () -> Rotation2d.fromDegrees(degrees.get()), () -> leftRPS.get(), () -> rightRPS.get()),
+            () -> Rotation2d.fromDegrees(dashShotDegrees.get()),
+            () -> dashShotLeftRPS.get(),
+            () -> dashShotRightRPS.get()),
         feeder.indexCmd());
   }
 
-  public Command drivePath() {
-    return swerve
-        .runVelocityFieldRelative(
-            () -> {
-              System.out.println(AutoAimStates.elapsedAutonomousSeconds);
-              AutoAimStates.curState = swerve.getAutoState(AutoAimStates.elapsedAutonomousSeconds);
-              AutoAimStates.elapsedAutonomousSeconds +=
-                  Timer.getFPGATimestamp()
-                      - AutoAimStates.elapsedAutonomousSeconds
-                      - AutoAimStates.startingAutonomousSeconds;
-              return new ChassisSpeeds(
-                  AutoAimStates.curState.velocityX,
-                  AutoAimStates.curState.velocityY,
-                  AutoAimStates.curState.angularVelocity);
-            })
-        .until(
-            () -> {
-              return AutoAimStates.elapsedAutonomousSeconds >= AutoAimStates.pathTotalTime;
-            })
-        .andThen(
-            () -> {
-              AutoAimStates.startingAutonomousSeconds = Timer.getFPGATimestamp();
-            },
-            swerve);
-  }
-
   /**
-   * A demo command that goes through all the steps of a shoot while moving algorithm Has print
-   * commands for any unimplemented functionality
+   * A demo command that goes through all the steps of a shoot while moving algorithm
    *
    * @param speeds
    * @return A command that takes the robot through an auto aim sequence
    */
-  public Command teleopAutoAim(Supplier<ChassisSpeeds> speeds) {
-    Command getInitialValues =
+  private Command teleopAutoAim() {
+    return Commands.sequence(
+        swerve
+            .runVelocityFieldRelative(
+                () -> {
+                  double velocity =
+                      Math.sqrt(
+                          Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
+                              + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
+                  Rotation2d direction =
+                      new Rotation2d(
+                          swerve.getVelocity().vxMetersPerSecond,
+                          swerve.getVelocity().vyMetersPerSecond);
+                  double clampedSpeed =
+                      MathUtil.clamp(
+                          velocity,
+                          -SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95,
+                          SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95);
+                  return new ChassisSpeeds(
+                      clampedSpeed * direction.getCos(), clampedSpeed * direction.getSin(), 0.0);
+                })
+            .until(
+                () ->
+                    Math.sqrt(
+                            Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
+                                + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2))
+                        < SwerveSubsystem.MAX_AUTOAIM_SPEED),
         Commands.runOnce(
             () -> {
-              AutoAimStates.curShotSpeeds = speeds.get();
-              Logger.recordOutput("AutoAim/cur shot speedd", AutoAimStates.curShotSpeeds);
+              AutoAimStates.curShotSpeeds =
+                  new ChassisSpeeds(
+                      swerve.getVelocity().vxMetersPerSecond,
+                      swerve.getVelocity().vyMetersPerSecond,
+                      0.0);
+              Logger.recordOutput("AutoAim/Current Shot Speed", AutoAimStates.curShotSpeeds);
+              AutoAimStates.lookaheadTime = swerve.getLookaheadTime();
               double distance =
                   swerve
-                      .getLinearFuturePose(
-                          AutoAim.LOOKAHEAD_TIME_SECONDS, AutoAimStates.curShotSpeeds)
+                      .getLinearFuturePose(AutoAimStates.lookaheadTime, AutoAimStates.curShotSpeeds)
                       .minus(FieldConstants.getSpeaker())
                       .getTranslation()
                       .getNorm();
@@ -421,56 +427,270 @@ public class Robot extends LoggedRobot {
                   "AutoAim/Desired Shooting Angle", AutoAim.shotMap.get(distance).getRotation());
               Logger.recordOutput(
                   "AutoAim/Actual Shooting Angle", AutoAimStates.curShotData.getRotation());
+              AutoAimStates.endingPose =
+                  swerve.getLinearFuturePose(
+                      AutoAimStates.lookaheadTime, AutoAimStates.curShotSpeeds);
+              AutoAimStates.virtualTarget =
+                  AutoAim.getVirtualTarget(AutoAimStates.endingPose, AutoAimStates.curShotSpeeds);
+              Logger.recordOutput("AutoAim/Virtual Target", AutoAimStates.virtualTarget);
               System.out.println(Timer.getFPGATimestamp());
-            });
-    Command runRobot =
-        Commands.parallel(
+            }),
+        Commands.deadline(
+            Commands.waitSeconds(AutoAimStates.lookaheadTime),
+            swerve.teleopAimAtVirtualTargetCmd(
+                () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
+                () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
+                AutoAimStates.lookaheadTime),
             shooter.runStateCmd(
                 () -> AutoAimStates.curShotData.getRotation(),
                 () -> AutoAimStates.curShotData.getLeftRPS(),
-                () -> AutoAimStates.curShotData.getRightRPS()),
-            swerve.teleopPointTowardsTranslationCmd(
-                () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                AutoAim.LOOKAHEAD_TIME_SECONDS));
-    return Commands.sequence(
-        getInitialValues,
-        Commands.deadline(
-            Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
-            runRobot,
-            Commands.print(String.valueOf(AutoAimStates.curShotSpeeds.vxMetersPerSecond))),
+                () -> AutoAimStates.curShotData.getRightRPS())),
         // keeps moving to prevent the robot from stopping and changing the velocity of the note
-        swerve
-            .runVelocityFieldRelative(
-                () ->
-                    new ChassisSpeeds(
-                        AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                        AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                        0))
-            .withTimeout(0));
+        Commands.either(
+            swerve
+                .runVelocityFieldRelative(
+                    () ->
+                        new ChassisSpeeds(
+                            AutoAimStates.curShotSpeeds.vxMetersPerSecond,
+                            AutoAimStates.curShotSpeeds.vyMetersPerSecond,
+                            0))
+                .alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                .withTimeout(0.25),
+            staticAutoAim(),
+            () ->
+                shooter.isAtGoal()
+                    && MathUtil.isNear(
+                        AutoAimStates.endingPose
+                            .getTranslation()
+                            .minus(AutoAimStates.virtualTarget.getTranslation())
+                            .getAngle()
+                            .getDegrees(),
+                        swerve.getRotation().getDegrees(),
+                        2.0)));
   }
 
-  public Command autonomousAutoAim(String pathName) {
+  private Command staticAutoAim(double rotationTolerance) {
+    var headingController =
+        new ProfiledPIDController(
+            6.0,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    return Commands.runOnce(
+            () ->
+                headingController.reset(
+                    new State(
+                        swerve.estimator.getEstimatedPosition().getRotation().getRadians(),
+                        swerve.getVelocity().omegaRadiansPerSecond)))
+        .andThen(
+            Commands.deadline(
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(
+                        () ->
+                            shooter.isAtGoal()
+                                && MathUtil.isNear(
+                                    swerve
+                                        .estimator
+                                        .getEstimatedPosition()
+                                        .getTranslation()
+                                        .minus(FieldConstants.getSpeaker().getTranslation())
+                                        .getAngle()
+                                        .getDegrees(),
+                                    swerve
+                                        .estimator
+                                        .getEstimatedPosition()
+                                        .getRotation()
+                                        .getDegrees(),
+                                    rotationTolerance)
+                                && MathUtil.isNear(
+                                    0.0,
+                                    swerve.getVelocity().omegaRadiansPerSecond,
+                                    Units.degreesToRadians(90.0)))
+                    .andThen(
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .raceWith(
+                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                    .andThen(Commands.waitSeconds(0.25)))),
+                swerve.runVelocityFieldRelative(
+                    () -> {
+                      var pidOut =
+                          headingController.calculate(
+                              swerve.estimator.getEstimatedPosition().getRotation().getRadians(),
+                              swerve
+                                  .estimator
+                                  .getEstimatedPosition()
+                                  .getTranslation()
+                                  .minus(FieldConstants.getSpeaker().getTranslation())
+                                  .getAngle()
+                                  .getRadians());
+                      return new ChassisSpeeds(
+                          0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
+                    }),
+                shooter.runStateCmd(
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())));
+  }
 
+  private Command staticAutoAim() {
+    return staticAutoAim(3.0);
+  }
+
+  private Command autoStaticAutoAim() {
+    return feeder
+        .indexCmd()
+        .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
+        .until(() -> feeder.getFirstBeambreak())
+        .withTimeout(1.0)
+        .andThen(staticAutoAim(8.0).withTimeout(2.0).unless(() -> !feeder.getFirstBeambreak()))
+        .asProxy()
+        .withTimeout(4.0);
+  }
+
+  private Command autoFenderShot() {
+    return shooter
+        .runStateCmd(
+            AutoAim.FENDER_SHOT.getRotation(),
+            AutoAim.FENDER_SHOT.getLeftRPS(),
+            AutoAim.FENDER_SHOT.getRightRPS())
+        .raceWith(
+            feeder
+                .runVelocityCmd(0.0)
+                .until(() -> shooter.isAtGoal())
+                .andThen(
+                    feeder
+                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        .raceWith(
+                            Commands.waitUntil(() -> feeder.getLastBeambreak())
+                                .andThen(Commands.waitSeconds(0.1)))))
+        .asProxy();
+  }
+
+  private Command autoIntake() {
+    return Commands.parallel(
+            intake.runVelocityCmd(90.0, 30.0),
+            feeder.indexCmd(),
+            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
+            Commands.repeatingSequence(
+                shooter
+                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                shooter
+                    .runStateCmd(
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                    .until(() -> !feeder.getFirstBeambreak())))
+        .asProxy();
+  }
+
+  private Command autoAmp4Wing() {
     return Commands.sequence(
-        Commands.deadline(
-                Commands.waitSeconds(AutoAim.LOOKAHEAD_TIME_SECONDS),
-                Commands.parallel(
-                    shooter.runStateCmd(
-                        AutoAimStates.curShotData::getRotation,
-                        AutoAimStates.curShotData::getLeftRPS,
-                        AutoAimStates.curShotData::getRightRPS),
-                    swerve.autonomousPointTowardsTranslationCmd()))
-            .beforeStarting(
-                () -> {
-                  AutoAimStates.pathName = pathName;
-                  AutoAimStates.pathTotalTime = Choreo.getTrajectory(pathName).getTotalTime();
-                },
-                swerve),
-        Commands.print("Whoosh!"),
-        drivePath());
-    // keeps moving to prevent the robot from stopping and changing the velocity of the note
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim()
+            .andThen(Commands.print("Done with auto static auto aim"))
+            .beforeStarting(Commands.print("Before auto static auto aim!!!")),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.3"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
+        autoStaticAutoAim());
+  }
 
+  private Command autoAmp5() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.1")).deadlineWith(autoIntake()),
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.2")).deadlineWith(autoIntake()),
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).deadlineWith(autoIntake()),
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).deadlineWith(autoIntake()),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource3() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoStaticAutoAim(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource4() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("source 4.1")).deadlineWith(autoIntake()),
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("source 4.2")).deadlineWith(autoIntake()),
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("source 4.3")).deadlineWith(autoIntake()),
+        autoStaticAutoAim());
+  }
+
+  private Command lineTest() {
+    ChoreoTrajectory traj = Choreo.getTrajectory("line test");
+    return Commands.sequence(
+        Commands.runOnce(
+            () -> {
+              if (DriverStation.getAlliance().isPresent()
+                  && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                swerve.setPose(traj.flipped().getInitialPose());
+              } else {
+                swerve.setPose(traj.getInitialPose());
+              }
+            }),
+        swerve.runChoreoTraj(traj).repeatedly());
+  }
+
+  private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
+    var headingController =
+        new ProfiledPIDController(
+            3.0,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    return swerve.runVoltageTeleopFieldRelative(
+        () -> {
+          double pidOut =
+              headingController.calculate(
+                  swerve.getRotation().getRadians(),
+                  DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                      ? Math.PI / 2
+                      : -Math.PI / 2);
+          return new ChassisSpeeds(
+              x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
+        });
   }
 
   @Override
@@ -478,7 +698,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousInit() {
-    autonomousCommand = new PathPlannerAuto("New Auto");
+    autonomousCommand = autoChooser.get();
 
     if (autonomousCommand != null) {
       autonomousCommand.schedule();

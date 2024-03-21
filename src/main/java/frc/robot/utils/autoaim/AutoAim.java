@@ -4,8 +4,12 @@
 
 package frc.robot.utils.autoaim;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import frc.robot.FieldConstants;
 
 /** Add your docs here. */
 public class AutoAim {
@@ -13,6 +17,9 @@ public class AutoAim {
   public static final InterpolatingShotTree shotMap = new InterpolatingShotTree();
 
   public static final double LOOKAHEAD_TIME_SECONDS = 1.0;
+
+  public static final ShotData FENDER_SHOT =
+      new ShotData(Rotation2d.fromDegrees(61.0), 50.0, 60.0, 0.25); // ToF is an estimate
 
   static {
     shotMap.put(
@@ -30,5 +37,25 @@ public class AutoAim {
     shotMap.put(
         5.0 + Units.inchesToMeters(13.5 + 3.25),
         new ShotData(Rotation2d.fromDegrees(27), 50, 100, 0.45)); // TODO check
+  }
+
+  /**
+   * Transforms the speaker pose by the robots current velocity (assumes constant velocity)
+   *
+   * @return The transformed pose
+   */
+  public static Pose2d getVirtualTarget(Pose2d pose, ChassisSpeeds speedsFieldRelative) {
+    Pose2d target = FieldConstants.getSpeaker();
+
+    double distance = pose.minus(target).getTranslation().getNorm();
+
+    return target.transformBy(
+        new Transform2d(
+                speedsFieldRelative.vxMetersPerSecond
+                    * AutoAim.shotMap.get(distance).getFlightTimeSeconds(),
+                speedsFieldRelative.vyMetersPerSecond
+                    * AutoAim.shotMap.get(distance).getFlightTimeSeconds(),
+                new Rotation2d())
+            .inverse());
   }
 }
