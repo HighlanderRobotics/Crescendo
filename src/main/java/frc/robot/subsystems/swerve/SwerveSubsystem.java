@@ -456,7 +456,7 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
-        // pose = pose.interpolate(visionPose.toPose2d(), 0.25);
+        pose = pose.interpolate(visionPose.toPose2d(), 0.25);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -584,7 +584,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
     return choreoFullFollowSwerveCommand(
             traj,
-            this::getPose,
+            () -> pose,
             Choreo.choreoSwerveController(
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(1.5, 0.0, 0.0),
