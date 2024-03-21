@@ -98,7 +98,7 @@ public class ModuleIOReal implements ModuleIO {
     // Meters per second
     driveConfig.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
     // Voltage Controls Gains
-    driveConfig.Slot0.kV = 2.0733;
+    driveConfig.Slot0.kV = 2.381;
     driveConfig.Slot0.kA = 0.65;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 2.0;
