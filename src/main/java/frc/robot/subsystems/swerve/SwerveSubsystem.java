@@ -600,7 +600,7 @@ public class SwerveSubsystem extends SubsystemBase {
                     () -> {
                       if (DriverStation.getAlliance().isPresent()
                           && DriverStation.getAlliance().get().equals(Alliance.Red)) {
-                        setPose(traj.flipped().getInitialPose());
+                        setPose(traj.getInitialState().flipped().getPose());
                       } else {
                         setPose(traj.getInitialPose());
                       }
@@ -745,10 +745,11 @@ public class SwerveSubsystem extends SubsystemBase {
   public void setPose(Pose2d pose) {
     this.pose = pose;
     try {
-      estimator.resetPosition(gyroInputs.yawPosition, lastModulePositions, pose);
+      estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
     } catch (Exception e) {
+      System.out.println("odo reset sad :(");
     }
-    odometry.resetPosition(gyroInputs.yawPosition, getModulePositions(), pose);
+    odometry.resetPosition(lastGyroRotation, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {

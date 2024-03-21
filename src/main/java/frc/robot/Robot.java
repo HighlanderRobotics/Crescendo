@@ -633,9 +633,15 @@ public class Robot extends LoggedRobot {
   private Command autoSource3() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("source 3.1")).deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("source 3.2")).deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoStaticAutoAim());
   }
 
