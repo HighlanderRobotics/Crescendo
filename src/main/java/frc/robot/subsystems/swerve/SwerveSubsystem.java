@@ -26,11 +26,11 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -835,7 +835,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command ampAutoAlignCmd() {
     ProfiledPIDController xController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5)); 
+            1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
     ProfiledPIDController yController =
         new ProfiledPIDController(
             1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
@@ -848,22 +848,20 @@ public class SwerveSubsystem extends SubsystemBase {
                 () -> {
                   Pose2d pose = this.getPose();
                   xController.reset(pose.getX(), this.getVelocity().vxMetersPerSecond);
-              
+
                   yController.reset(pose.getY(), this.getVelocity().vyMetersPerSecond);
-                
-                  rotationController.reset(pose.getRotation().getRadians(), this.getVelocity().omegaRadiansPerSecond);
+
+                  rotationController.reset(
+                      pose.getRotation().getRadians(), this.getVelocity().omegaRadiansPerSecond);
                 }),
             this.runVelocityFieldRelative(
                 () ->
                     new ChassisSpeeds(
-                        xController.calculate(
-                                this.getPose().getX(), FieldConstants.getAmp().getX())
+                        xController.calculate(this.getPose().getX(), FieldConstants.getAmp().getX())
                             + xController.getSetpoint().velocity,
-                        yController.calculate(
-                                this.getPose().getY(), FieldConstants.getAmp().getY())
+                        yController.calculate(this.getPose().getY(), FieldConstants.getAmp().getY())
                             + yController.getSetpoint().velocity,
-                        rotationController.calculate(
-                                90.0, getPose().getRotation().getDegrees())
+                        rotationController.calculate(90.0, getPose().getRotation().getDegrees())
                             + rotationController.getSetpoint().velocity)))
         .until(
             () ->

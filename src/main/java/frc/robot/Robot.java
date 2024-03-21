@@ -136,7 +136,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -252,15 +252,7 @@ public class Robot extends LoggedRobot {
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
     controller.leftBumper().whileTrue(swerve.stopWithXCmd());
-    controller
-        .rightBumper()
-        .whileTrue(
-            ampHeadingSnap(
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftX())
-                        * SwerveSubsystem.MAX_LINEAR_SPEED));
+    controller.rightBumper().whileTrue(swerve.ampAutoAlignCmd());
 
     controller
         .x()
@@ -337,7 +329,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addOption("Amp 4 Wing", new PathPlannerAuto("local 4"));
     autoChooser.addOption("Source 3", new PathPlannerAuto("source 3"));
-    autoChooser.addOption("Amp 5", new PathPlannerAuto("amp 5"));
+    // autoChooser.addOption("Amp 5", new PathPlannerAuto("amp 5"));
     autoChooser.addOption("Source 4", new PathPlannerAuto("source 4"));
     autoChooser.addOption("Line Test Repeatedly", new PathPlannerAuto("line test").repeatedly());
 
