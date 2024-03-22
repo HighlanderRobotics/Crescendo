@@ -287,7 +287,7 @@ public class Robot extends LoggedRobot {
         .x()
         .whileTrue(
             Commands.parallel(
-                shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(60.0), -5.0),
+                shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(30.0), -5.0),
                 feeder.runVoltageCmd(-5.0),
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
