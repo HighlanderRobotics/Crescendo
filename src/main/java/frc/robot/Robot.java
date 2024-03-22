@@ -209,7 +209,15 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
-    shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0, () -> 0));
+    shooter.setDefaultCommand(Commands.repeatingSequence(
+            shooter
+                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+            shooter.runStateCmd(
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
+        ));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
