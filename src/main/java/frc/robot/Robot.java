@@ -307,7 +307,7 @@ public class Robot extends LoggedRobot {
         .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
 
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
-    operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
+    operator.leftBumper().onTrue(Commands.waitUntil(() -> Math.abs(shooter.getAngle().minus(ShooterSubsystem.PIVOT_MIN_ANGLE).getDegrees()) < 10.0).andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
 
     operator.a().whileTrue(Commands.repeatingSequence(
             shooter
