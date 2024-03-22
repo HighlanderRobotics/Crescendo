@@ -209,15 +209,7 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> currentTarget != Target.SPEAKER)));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
-    shooter.setDefaultCommand(Commands.repeatingSequence(
-            shooter
-                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-            shooter.runStateCmd(
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
-        ));
+    shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
@@ -234,6 +226,7 @@ public class Robot extends LoggedRobot {
         .onTrue(
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
+                    operator.rumbleCmd(1.0, 1.0),
                     leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
 
@@ -315,6 +308,16 @@ public class Robot extends LoggedRobot {
 
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
+
+    operator.a().whileTrue(Commands.repeatingSequence(
+            shooter
+                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+            shooter.runStateCmd(
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
+        ));
 
     operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
