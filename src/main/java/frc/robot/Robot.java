@@ -315,10 +315,6 @@ public class Robot extends LoggedRobot {
 
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
-    operator.a().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = -0.1));
-    operator.b().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
-    operator.x().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 20.0));
-    operator.y().onTrue(Commands.runOnce(() -> flywheelIdleSpeed = 80.0));
 
     operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
@@ -693,9 +689,7 @@ public class Robot extends LoggedRobot {
           double pidOut =
               headingController.calculate(
                   swerve.getRotation().getRadians(),
-                  DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
-                      ? Math.PI / 2
-                      : -Math.PI / 2);
+                  Math.PI / 2);
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });
