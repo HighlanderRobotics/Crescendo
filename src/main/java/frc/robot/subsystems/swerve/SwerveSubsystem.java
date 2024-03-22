@@ -28,7 +28,6 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -547,10 +546,7 @@ public class SwerveSubsystem extends SubsystemBase {
                       (m, s) ->
                           m.runVoltageSetpoint(
                               new SwerveModuleState(
-                                  s.speedMetersPerSecond
-                                      * RoboRioDataJNI.getVInVoltage()
-                                      / MAX_LINEAR_SPEED,
-                                  s.angle)))
+                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle)))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
@@ -768,7 +764,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {leftCamConstants, rightCamConstants};
+    return new VisionConstants[] {rightCamConstants};
   }
 
   /** Returns the module positions (turn angles and drive velocities) for all of the modules. */

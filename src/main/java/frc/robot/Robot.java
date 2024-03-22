@@ -176,7 +176,7 @@ public class Robot extends LoggedRobot {
 
     // Default Commands here
     swerve.setDefaultCommand(
-        swerve.runVelocityTeleopFieldRelative(
+        swerve.runVoltageTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
                     -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
@@ -307,17 +307,32 @@ public class Robot extends LoggedRobot {
         .onTrue(Commands.runOnce(() -> swerve.setYaw(new Rotation2d())));
 
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
-    operator.leftBumper().onTrue(Commands.waitUntil(() -> Math.abs(shooter.getAngle().minus(ShooterSubsystem.PIVOT_MIN_ANGLE).getDegrees()) < 10.0).andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
+    operator
+        .leftBumper()
+        .onTrue(
+            Commands.waitUntil(
+                    () ->
+                        Math.abs(
+                                shooter
+                                    .getAngle()
+                                    .minus(ShooterSubsystem.PIVOT_MIN_ANGLE)
+                                    .getDegrees())
+                            < 10.0)
+                .andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
 
-    operator.a().whileTrue(Commands.repeatingSequence(
-            shooter
-                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-            shooter.runStateCmd(
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
-        ));
+    operator
+        .a()
+        .whileTrue(
+            Commands.repeatingSequence(
+                shooter
+                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                shooter
+                    .runStateCmd(
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                    .until(() -> !feeder.getFirstBeambreak())));
 
     operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
@@ -690,9 +705,7 @@ public class Robot extends LoggedRobot {
     return swerve.runVoltageTeleopFieldRelative(
         () -> {
           double pidOut =
-              headingController.calculate(
-                  swerve.getRotation().getRadians(),
-                  Math.PI / 2);
+              headingController.calculate(swerve.getRotation().getRadians(), Math.PI / 2);
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });
