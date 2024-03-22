@@ -827,7 +827,6 @@ public class SwerveSubsystem extends SubsystemBase {
         driveRoutine.quasistatic(Direction.kReverse),
         this.stopCmd().withTimeout(1.0),
         driveRoutine.dynamic(Direction.kForward),
-        this.stopCmd().withTimeout(1.0),
         driveRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
   }
@@ -835,15 +834,16 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command ampAutoAlignCmd() {
     ProfiledPIDController xController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
+            10.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
     ProfiledPIDController yController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
+            10.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
     ProfiledPIDController rotationController =
         new ProfiledPIDController(
             1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
-
+    rotationController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.sequence(
+            Commands.print("Jerry Yu"),
             this.runOnce(
                 () -> {
                   Pose2d pose = this.getPose();
