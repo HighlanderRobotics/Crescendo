@@ -309,15 +309,19 @@ public class Robot extends LoggedRobot {
     operator.leftTrigger().onTrue(Commands.runOnce(() -> currentTarget = Target.SPEAKER));
     operator.leftBumper().onTrue(Commands.runOnce(() -> currentTarget = Target.AMP));
 
-    operator.a().whileTrue(Commands.repeatingSequence(
-            shooter
-                .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-            shooter.runStateCmd(
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()).until(() -> !feeder.getFirstBeambreak())
-        ));
+    operator
+        .a()
+        .whileTrue(
+            Commands.repeatingSequence(
+                shooter
+                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                shooter
+                    .runStateCmd(
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                    .until(() -> !feeder.getFirstBeambreak())));
 
     operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
@@ -690,9 +694,7 @@ public class Robot extends LoggedRobot {
     return swerve.runVoltageTeleopFieldRelative(
         () -> {
           double pidOut =
-              headingController.calculate(
-                  swerve.getRotation().getRadians(),
-                  Math.PI / 2);
+              headingController.calculate(swerve.getRotation().getRadians(), Math.PI / 2);
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });
