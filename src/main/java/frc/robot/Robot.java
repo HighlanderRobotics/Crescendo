@@ -230,6 +230,7 @@ public class Robot extends LoggedRobot {
                     operator.rumbleCmd(1.0, 1.0),
                     leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
+    new Trigger(() -> DriverStation.isEnabled()).onTrue(elevator.unlockClimb());
 
     // ---- Controller bindings here ----
     // Prevent intaking when elevator isnt down

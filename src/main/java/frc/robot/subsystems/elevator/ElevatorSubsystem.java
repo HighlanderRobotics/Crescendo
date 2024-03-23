@@ -98,6 +98,15 @@ public class ElevatorSubsystem extends SubsystemBase {
         .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
 
+  public Command unlockClimb() {
+    return this.run(
+            () -> {
+              io.setLockServoRotation(0.2);
+              io.setVoltage(-1.0);
+            })
+        .withTimeout(0.25);
+  }
+
   public Command runCurrentZeroing() {
     return this.run(() -> io.setVoltage(-1.0))
         .until(() -> inputs.elevatorCurrentAmps[0] > 40.0)
