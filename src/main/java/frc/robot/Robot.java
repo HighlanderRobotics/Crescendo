@@ -351,9 +351,9 @@ public class Robot extends LoggedRobot {
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
                         .withTimeout(0.25)));
 
-    autoChooser.addDefaultOption("None", Commands.none());
+    autoChooser.addOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
-    autoChooser.addOption("Amp 4 Wing", autoAmp4Wing());
+    autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
@@ -527,10 +527,7 @@ public class Robot extends LoggedRobot {
                                         .minus(FieldConstants.getSpeaker().getTranslation())
                                         .getAngle()
                                         .getDegrees(),
-                                    swerve
-                                        .getPose()
-                                        .getRotation()
-                                        .getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
                                     rotationTolerance)
                                 && MathUtil.isNear(
                                     0.0,

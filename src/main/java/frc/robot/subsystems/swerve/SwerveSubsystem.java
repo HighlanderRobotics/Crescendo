@@ -155,8 +155,17 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(), Nat.N3(), 905.8460068929472, 0.0, 609.5597530043692, 0.0, 902.8748199030964,
-          404.79249985937037, 0.0, 0.0, 1.0);
+          Nat.N3(),
+          Nat.N3(),
+          905.8460068929472,
+          0.0,
+          609.5597530043692,
+          0.0,
+          902.8748199030964,
+          404.79249985937037,
+          0.0,
+          0.0,
+          1.0);
   public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(), Nat.N1(), 0.042, -0.055, -0.003, 0.001,
