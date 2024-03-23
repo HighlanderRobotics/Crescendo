@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -292,14 +293,19 @@ public class Robot extends LoggedRobot {
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
 
-    // Prep climb
+    // climb
     operator
-        .rightTrigger(0.5)
-        .debounce(0.25)
-        .toggleOnFalse(
+        .rightTrigger(0.75)
+        .and(() -> elevator.getExtensionMeters() < 0.25)
+        .onFalse(
             Commands.parallel(
-                elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
-                leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0)));
+                    elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
+                    leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0))
+                .until(() -> operator.getRightTriggerAxis() > 0.75)
+                .andThen(
+                    Commands.parallel(
+                            elevator.climbRetractAndLock().asProxy(), leds.setRainbowCmd())
+                        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)));
     // Heading reset
     controller
         .leftStick()

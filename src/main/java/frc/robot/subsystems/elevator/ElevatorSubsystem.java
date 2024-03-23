@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -68,6 +69,8 @@ public class ElevatorSubsystem extends SubsystemBase {
                 (Measure<Voltage> volts) -> io.setVoltage(volts.in(Volts)), null, this));
 
     root.append(carriage);
+
+    io.setLockServoRotation(0.2);
   }
 
   @Override
@@ -87,6 +90,12 @@ public class ElevatorSubsystem extends SubsystemBase {
           io.setTarget(meters.getAsDouble());
           Logger.recordOutput("Elevator/Setpoint", meters.getAsDouble());
         });
+  }
+
+  public Command climbRetractAndLock() {
+    return this.setExtensionCmd(() -> 0.0)
+        .alongWith(Commands.runOnce(() -> io.setLockServoRotation(0.5)))
+        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
 
   public Command runCurrentZeroing() {
