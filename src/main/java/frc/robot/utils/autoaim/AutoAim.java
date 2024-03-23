@@ -23,19 +23,19 @@ public class AutoAim {
 
   static {
     shotMap.put(
-        1.0 + Units.inchesToMeters(13.5 + 3.25),
+        1.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
         new ShotData(Rotation2d.fromDegrees(55), 60, 80, 0.25));
     shotMap.put(
-        2.0 + Units.inchesToMeters(13.5 + 3.25),
+        2.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
         new ShotData(Rotation2d.fromDegrees(44), 60, 80, 0.31));
     shotMap.put(
-        3.0 + Units.inchesToMeters(13.5 + 3.25),
+        3.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
         new ShotData(Rotation2d.fromDegrees(34), 60, 80, 0.36));
     shotMap.put(
-        4.0 + Units.inchesToMeters(13.5 + 3.25),
+        4.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
         new ShotData(Rotation2d.fromDegrees(30), 60, 100, 0.4));
     shotMap.put(
-        5.0 + Units.inchesToMeters(13.5 + 3.25),
+        5.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
         new ShotData(Rotation2d.fromDegrees(27), 50, 100, 0.45)); // TODO check
   }
 
