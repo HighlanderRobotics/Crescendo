@@ -527,10 +527,7 @@ public class Robot extends LoggedRobot {
                                         .minus(FieldConstants.getSpeaker().getTranslation())
                                         .getAngle()
                                         .getDegrees(),
-                                    swerve
-                                        .getPose()
-                                        .getRotation()
-                                        .getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
                                     rotationTolerance)
                                 && MathUtil.isNear(
                                     0.0,
