@@ -93,7 +93,7 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   public Command climbRetractAndLock() {
-    return this.setExtensionCmd(() -> 0.0)
+    return this.setExtensionCmd(() -> -0.01)
         .alongWith(Commands.runOnce(() -> io.setLockServoRotation(0.5)))
         .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
   }
