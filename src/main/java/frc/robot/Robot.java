@@ -566,11 +566,15 @@ public class Robot extends LoggedRobot {
   private Command autoStaticAutoAim() {
     return feeder
         .indexCmd()
-        .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).asProxy())
-        .alongWith(intake.runVelocityCmd(0.0, 0.0).asProxy())
+        .deadlineWith(shooter.run(() -> {}))
         .until(() -> feeder.getFirstBeambreak())
         .withTimeout(1.0)
-        .andThen(staticAutoAim(8.0).withTimeout(2.0).unless(() -> !feeder.getFirstBeambreak()))
+        .andThen(
+            staticAutoAim(8.0)
+                .deadlineWith(
+                    intake.runVoltageCmd(0, 0).asProxy(), carriage.runVoltageCmd(0).asProxy())
+                .withTimeout(2.0)
+                .unless(() -> !feeder.getFirstBeambreak()))
         .asProxy()
         .withTimeout(4.0);
   }
