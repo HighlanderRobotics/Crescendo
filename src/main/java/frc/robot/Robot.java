@@ -572,7 +572,8 @@ public class Robot extends LoggedRobot {
   private Command autoStaticAutoAim() {
     return feeder
         .indexCmd()
-        .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
+        .alongWith(carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).asProxy())
+        .alongWith(intake.runVelocityCmd(0.0, 0.0).asProxy())
         .until(() -> feeder.getFirstBeambreak())
         .withTimeout(1.0)
         .andThen(staticAutoAim(8.0).withTimeout(2.0).unless(() -> !feeder.getFirstBeambreak()))
@@ -601,7 +602,7 @@ public class Robot extends LoggedRobot {
 
   private Command autoIntake() {
     return Commands.parallel(
-            intake.runVelocityCmd(90.0, 30.0),
+            intake.runVelocityCmd(50.0, 30.0),
             feeder.indexCmd(),
             carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
             Commands.repeatingSequence(
