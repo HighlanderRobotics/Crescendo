@@ -840,7 +840,7 @@ public class SwerveSubsystem extends SubsystemBase {
             10.0, 0.0, 0.0, new Constraints(MAX_LINEAR_SPEED, MAX_LINEAR_SPEED / 0.5));
     ProfiledPIDController rotationController =
         new ProfiledPIDController(
-            1.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
+            2.0, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED / 0.5));
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.sequence(
             Commands.print("Jerry Yu"),
@@ -861,12 +861,12 @@ public class SwerveSubsystem extends SubsystemBase {
                             + xController.getSetpoint().velocity,
                         yController.calculate(this.getPose().getY(), FieldConstants.getAmp().getY())
                             + yController.getSetpoint().velocity,
-                        rotationController.calculate(90.0, getPose().getRotation().getDegrees())
+                        rotationController.calculate(getPose().getRotation().getRadians(),Math.PI/2)
                             + rotationController.getSetpoint().velocity)))
         .until(
             () ->
                 MathUtil.isNear(FieldConstants.getAmp().getX(), getPose().getX(), 0.05)
                     && MathUtil.isNear(FieldConstants.getAmp().getY(), getPose().getY(), 0.05)
-                    && MathUtil.isNear(90.0, getPose().getRotation().getDegrees(), 3.0));
+                    && MathUtil.isNear(Math.PI/2, getPose().getRotation().getRadians(), 3.0));
   }
 }
