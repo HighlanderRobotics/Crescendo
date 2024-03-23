@@ -566,7 +566,7 @@ public class Robot extends LoggedRobot {
   private Command autoStaticAutoAim() {
     return feeder
         .indexCmd()
-        .deadlineWith(shooter.run(() -> {}))
+        .deadlineWith(shooter.run(() -> {}), swerve.runVelocityCmd(() -> new ChassisSpeeds()))
         .until(() -> feeder.getFirstBeambreak())
         .withTimeout(1.0)
         .andThen(
@@ -593,7 +593,7 @@ public class Robot extends LoggedRobot {
                     feeder
                         .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
                         .raceWith(
-                            Commands.waitUntil(() -> feeder.getLastBeambreak())
+                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
                                 .andThen(Commands.waitSeconds(0.1)))))
         .asProxy();
   }
