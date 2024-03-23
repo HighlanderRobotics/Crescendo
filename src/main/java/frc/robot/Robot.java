@@ -511,7 +511,7 @@ public class Robot extends LoggedRobot {
             () ->
                 headingController.reset(
                     new State(
-                        swerve.estimator.getEstimatedPosition().getRotation().getRadians(),
+                        swerve.getPose().getRotation().getRadians(),
                         swerve.getVelocity().omegaRadiansPerSecond)))
         .andThen(
             Commands.deadline(
@@ -522,15 +522,13 @@ public class Robot extends LoggedRobot {
                             shooter.isAtGoal()
                                 && MathUtil.isNear(
                                     swerve
-                                        .estimator
-                                        .getEstimatedPosition()
+                                        .getPose()
                                         .getTranslation()
                                         .minus(FieldConstants.getSpeaker().getTranslation())
                                         .getAngle()
                                         .getDegrees(),
                                     swerve
-                                        .estimator
-                                        .getEstimatedPosition()
+                                        .getPose()
                                         .getRotation()
                                         .getDegrees(),
                                     rotationTolerance)
@@ -548,10 +546,9 @@ public class Robot extends LoggedRobot {
                     () -> {
                       var pidOut =
                           headingController.calculate(
-                              swerve.estimator.getEstimatedPosition().getRotation().getRadians(),
+                              swerve.getPose().getRotation().getRadians(),
                               swerve
-                                  .estimator
-                                  .getEstimatedPosition()
+                                  .getPose()
                                   .getTranslation()
                                   .minus(FieldConstants.getSpeaker().getTranslation())
                                   .getAngle()

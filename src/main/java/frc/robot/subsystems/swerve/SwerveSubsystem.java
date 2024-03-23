@@ -147,7 +147,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final Vision[] cameras;
   public static AprilTagFieldLayout fieldTags;
 
-  public SwerveDrivePoseEstimator estimator =
+  private SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   private double lastEstTimestamp = 0.0;
