@@ -512,58 +512,56 @@ public class Robot extends LoggedRobot {
                 SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75,
                 SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
-    return Commands.runOnce(
+    return Commands.deadline(
+            feeder
+                .runVelocityCmd(0.0)
+                .until(
+                    () ->
+                        shooter.isAtGoal()
+                            && MathUtil.isNear(
+                                swerve
+                                    .getPose()
+                                    .getTranslation()
+                                    .minus(FieldConstants.getSpeaker().getTranslation())
+                                    .getAngle()
+                                    .getDegrees(),
+                                swerve.getPose().getRotation().getDegrees(),
+                                rotationTolerance))
+                .andThen(
+                    feeder
+                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        .raceWith(
+                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                .andThen(Commands.waitSeconds(0.25)))),
+            swerve.runVelocityFieldRelative(
+                () -> {
+                  var pidOut =
+                      headingController.calculate(
+                          swerve.getPose().getRotation().getRadians(),
+                          swerve
+                              .getPose()
+                              .getTranslation()
+                              .minus(FieldConstants.getSpeaker().getTranslation())
+                              .getAngle()
+                              .getRadians());
+                  Logger.recordOutput(
+                      "AutoAim/Static Heading Setpoint", headingController.getSetpoint().position);
+                  Logger.recordOutput(
+                      "AutoAim/Static Heading Setpoint Vel",
+                      headingController.getSetpoint().velocity);
+                  return new ChassisSpeeds(
+                      0.0, 0.0, pidOut + (headingController.getSetpoint().velocity * 0.9));
+                }),
+            shooter.runStateCmd(
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
+        .beforeStarting(
             () ->
                 headingController.reset(
                     new State(
                         swerve.getPose().getRotation().getRadians(),
-                        swerve.getVelocity().omegaRadiansPerSecond)))
-        .andThen(
-            Commands.deadline(
-                feeder
-                    .runVelocityCmd(0.0)
-                    .until(
-                        () ->
-                            shooter.isAtGoal()
-                                && MathUtil.isNear(
-                                    swerve
-                                        .getPose()
-                                        .getTranslation()
-                                        .minus(FieldConstants.getSpeaker().getTranslation())
-                                        .getAngle()
-                                        .getDegrees(),
-                                    swerve.getPose().getRotation().getDegrees(),
-                                    rotationTolerance))
-                    .andThen(
-                        feeder
-                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                            .raceWith(
-                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                    .andThen(Commands.waitSeconds(0.25)))),
-                swerve.runVelocityFieldRelative(
-                    () -> {
-                      var pidOut =
-                          headingController.calculate(
-                              swerve.getPose().getRotation().getRadians(),
-                              swerve
-                                  .getPose()
-                                  .getTranslation()
-                                  .minus(FieldConstants.getSpeaker().getTranslation())
-                                  .getAngle()
-                                  .getRadians());
-                      Logger.recordOutput(
-                          "AutoAim/Static Heading Setpoint",
-                          headingController.getSetpoint().position);
-                      Logger.recordOutput(
-                          "AutoAim/Static Heading Setpoint Vel",
-                          headingController.getSetpoint().velocity);
-                      return new ChassisSpeeds(
-                          0.0, 0.0, pidOut + (headingController.getSetpoint().velocity * 0.9));
-                    }),
-                shooter.runStateCmd(
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())));
+                        swerve.getVelocity().omegaRadiansPerSecond)));
   }
 
   private Command staticAutoAim() {
@@ -617,9 +615,15 @@ public class Robot extends LoggedRobot {
 
   private Command autoIntake() {
     return Commands.parallel(
-        intake.runVelocityCmd(50.0, 30.0).asProxy(),
+        intake
+            .runVelocityCmd(50.0, 30.0)
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .asProxy(),
         feeder.indexCmd().asProxy(),
-        carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).asProxy(),
+        carriage
+            .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
+            .until(() -> feeder.getFirstBeambreak())
+            .asProxy(),
         Commands.sequence(
                 shooter
                     .runFlywheelsCmd(() -> 0.0, () -> 0.0)
@@ -667,11 +671,11 @@ public class Robot extends LoggedRobot {
             .runChoreoTraj(Choreo.getTrajectory("amp 5.1"), true)
             .asProxy()
             .deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.2")).asProxy().deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("amp 5.2"))
+            .asProxy()
+            .deadlineWith(Commands.waitSeconds(1.0).andThen(autoIntake())),
         autoStaticAutoAim(),
         swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).asProxy().deadlineWith(autoIntake()),
         autoIntake()
