@@ -576,6 +576,7 @@ public class Robot extends LoggedRobot {
             Commands.repeatingSequence(
                 shooter
                     .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                    .unless(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0)
                     .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
@@ -624,10 +625,22 @@ public class Robot extends LoggedRobot {
             .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
             .until(() -> feeder.getFirstBeambreak())
             .asProxy(),
-        Commands.sequence(
-                shooter
-                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .until(() -> feeder.getFirstBeambreak()),
+        shooter
+            .runStateCmd(
+                () ->
+                    Rotation2d.fromDegrees(
+                        MathUtil.clamp(
+                            AutoAim.shotMap
+                                .get(swerve.getDistanceToSpeaker())
+                                .getRotation()
+                                .getDegrees(),
+                            0,
+                            35)),
+                () -> 0.0,
+                () -> 0.0)
+            .until(() -> feeder.getFirstBeambreak())
+            .unless(() -> feeder.getFirstBeambreak())
+            .andThen(
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
