@@ -44,6 +44,7 @@ public class IntakeIOReal implements IntakeIO {
 
     intakeConfig.Slot0.kV = (12.0 * 60.0) / 5800;
     intakeConfig.Slot0.kP = 1.0;
+    intakeConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
 
     intakeMotor.getConfigurator().apply(intakeConfig);
 
@@ -54,6 +55,7 @@ public class IntakeIOReal implements IntakeIO {
 
     centeringConfig.Slot0.kV = (12.0 * 60.0) / 5800;
     centeringConfig.Slot0.kP = 0.1;
+    centeringConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
 
     centeringMotor.getConfigurator().apply(centeringConfig);
 
