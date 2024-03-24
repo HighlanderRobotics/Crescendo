@@ -566,7 +566,16 @@ public class Robot extends LoggedRobot {
   private Command autoStaticAutoAim() {
     return feeder
         .indexCmd()
-        .deadlineWith(shooter.run(() -> {}), swerve.runVelocityCmd(() -> new ChassisSpeeds()))
+        .deadlineWith(
+            swerve.runVelocityCmd(() -> new ChassisSpeeds()),
+            Commands.repeatingSequence(
+                shooter
+                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                shooter.runStateCmd(
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())))
         .until(() -> feeder.getFirstBeambreak())
         .withTimeout(1.0)
         .andThen(
@@ -607,12 +616,10 @@ public class Robot extends LoggedRobot {
                 shooter
                     .runFlywheelsCmd(() -> 0.0, () -> 0.0)
                     .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-                shooter
-                    .runStateCmd(
-                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
-                    .until(() -> !feeder.getFirstBeambreak())))
+                shooter.runStateCmd(
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())))
         .asProxy();
   }
 
