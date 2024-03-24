@@ -298,11 +298,15 @@ public class Robot extends LoggedRobot {
     operator
         .rightTrigger(0.75)
         .and(() -> elevator.getExtensionMeters() < 0.25)
+        .and(operator.rightBumper())
         .onFalse(
             Commands.parallel(
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0))
-                .until(() -> operator.getRightTriggerAxis() > 0.75)
+                .until(
+                    () ->
+                        operator.getRightTriggerAxis() > 0.75
+                            && operator.rightBumper().getAsBoolean())
                 .andThen(
                     Commands.parallel(
                             elevator.climbRetractAndLock().asProxy(), leds.setRainbowCmd())
