@@ -505,7 +505,7 @@ public class Robot extends LoggedRobot {
   private Command staticAutoAim(double rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
-            6.0,
+            3.0,
             0.0,
             0.0,
             new Constraints(
@@ -558,7 +558,7 @@ public class Robot extends LoggedRobot {
                           "AutoAim/Static Heading Setpoint Vel",
                           headingController.getSetpoint().velocity);
                       return new ChassisSpeeds(
-                          0.0, 0.0, pidOut + headingController.getSetpoint().velocity);
+                          0.0, 0.0, pidOut + (headingController.getSetpoint().velocity * 0.9));
                     }),
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
@@ -617,18 +617,18 @@ public class Robot extends LoggedRobot {
 
   private Command autoIntake() {
     return Commands.parallel(
-            intake.runVelocityCmd(50.0, 30.0),
-            feeder.indexCmd(),
-            carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE),
-            Commands.repeatingSequence(
+        intake.runVelocityCmd(50.0, 30.0).asProxy(),
+        feeder.indexCmd().asProxy(),
+        carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).asProxy(),
+        Commands.sequence(
                 shooter
                     .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    .until(() -> feeder.getFirstBeambreak()),
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())))
-        .asProxy();
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
+            .asProxy());
   }
 
   private Command autoAmp4Wing() {
