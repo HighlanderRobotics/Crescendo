@@ -655,13 +655,22 @@ public class Robot extends LoggedRobot {
   private Command autoAmp5() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.1")).deadlineWith(autoIntake()),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.1")).asProxy().deadlineWith(autoIntake()),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.2")).deadlineWith(autoIntake()),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.2")).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).deadlineWith(autoIntake()),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).deadlineWith(autoIntake()),
+        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim());
   }
 
