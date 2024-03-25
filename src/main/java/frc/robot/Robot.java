@@ -50,8 +50,6 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
-import frc.robot.utils.autoaim.ShotData;
-
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -256,7 +254,11 @@ public class Robot extends LoggedRobot {
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
         .and(operator.b())
-        .whileTrue(shooter.runStateCmd(AutoAim.FEED_SHOT.getRotation(), AutoAim.FEED_SHOT.getLeftRPS(), AutoAim.FEED_SHOT.getRightRPS()))
+        .whileTrue(
+            shooter.runStateCmd(
+                AutoAim.FEED_SHOT.getRotation(),
+                AutoAim.FEED_SHOT.getLeftRPS(),
+                AutoAim.FEED_SHOT.getRightRPS()))
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
@@ -791,7 +793,14 @@ public class Robot extends LoggedRobot {
     return swerve.runVoltageTeleopFieldRelative(
         () -> {
           double pidOut =
-              headingController.calculate(swerve.getRotation().getRadians(), swerve.getPose().getTranslation().minus(FieldConstants.getSpeaker().getTranslation()).getAngle().getRadians());
+              headingController.calculate(
+                  swerve.getRotation().getRadians(),
+                  swerve
+                      .getPose()
+                      .getTranslation()
+                      .minus(FieldConstants.getSpeaker().getTranslation())
+                      .getAngle()
+                      .getRadians());
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });
