@@ -74,7 +74,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = false;
+  public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
   private ChoreoTrajectory activeChoreoTrajectory;
@@ -287,13 +287,16 @@ public class Robot extends LoggedRobot {
     controller
         .rightBumper()
         .and(() -> currentTarget == Target.SPEAKER)
+        .and(controller.rightTrigger().negate())
         .whileTrue(
             speakerHeadingSnap(
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftX())
-                        * SwerveSubsystem.MAX_LINEAR_SPEED));
+                    () ->
+                        -teleopAxisAdjustment(controller.getLeftY())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    () ->
+                        -teleopAxisAdjustment(controller.getLeftX())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED)
+                .until(controller.rightTrigger()));
     controller
         .rightBumper()
         .and(() -> currentTarget == Target.AMP)
@@ -353,6 +356,7 @@ public class Robot extends LoggedRobot {
 
     operator
         .a()
+        .and(controller.rightTrigger().negate())
         .whileTrue(
             Commands.repeatingSequence(
                     shooter
@@ -589,7 +593,7 @@ public class Robot extends LoggedRobot {
   }
 
   private Command staticAutoAim() {
-    return staticAutoAim(3.0);
+    return staticAutoAim(6.0);
   }
 
   private Command autoStaticAutoAim() {
@@ -788,7 +792,7 @@ public class Robot extends LoggedRobot {
   private Command speakerHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            4.0,
             0.0,
             0.0,
             new Constraints(
@@ -806,7 +810,9 @@ public class Robot extends LoggedRobot {
                       .getAngle()
                       .getRadians());
           return new ChassisSpeeds(
-              x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
+              x.getAsDouble(),
+              y.getAsDouble(),
+              pidOut + (headingController.getSetpoint().velocity));
         });
   }
 

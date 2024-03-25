@@ -110,7 +110,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   public Command runCurrentZeroing() {
     return this.run(() -> io.setVoltage(-1.0))
         .until(() -> inputs.elevatorCurrentAmps[0] > 40.0)
-        .finallyDo(() -> io.resetEncoder(0.0));
+        .finallyDo(() -> io.resetEncoder(0.0))
+        .beforeStarting(() -> io.setLockServoRotation(0.2));
   }
 
   public Command runSysidCmd() {
