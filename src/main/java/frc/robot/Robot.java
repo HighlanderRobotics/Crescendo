@@ -355,15 +355,19 @@ public class Robot extends LoggedRobot {
         .a()
         .whileTrue(
             Commands.repeatingSequence(
-                shooter
-                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-                shooter
-                    .runStateCmd(
-                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                        () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
-                    .until(() -> !feeder.getFirstBeambreak())));
+                    shooter
+                        .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                        .until(
+                            () ->
+                                feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    shooter
+                        .runStateCmd(
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                        .until(() -> !feeder.getFirstBeambreak()))
+                .until(controller.rightTrigger())
+                .unless(controller.rightTrigger()));
 
     operator.start().whileTrue(elevator.runCurrentZeroing());
     operator
