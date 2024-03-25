@@ -737,11 +737,17 @@ public class Robot extends LoggedRobot {
             .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
             .asProxy()
             .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim(),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
         autoStaticAutoAim());
   }
 
