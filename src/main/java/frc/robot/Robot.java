@@ -593,7 +593,7 @@ public class Robot extends LoggedRobot {
   }
 
   private Command staticAutoAim() {
-    return staticAutoAim(6.0);
+    return staticAutoAim(swerve.getDistanceToSpeaker() < 2.5 ? 6.0 : 3.0);
   }
 
   private Command autoStaticAutoAim() {
@@ -614,7 +614,7 @@ public class Robot extends LoggedRobot {
         .unless(() -> feeder.getFirstBeambreak())
         .withTimeout(1.0)
         .andThen(
-            staticAutoAim(8.0)
+            staticAutoAim(6.0)
                 .deadlineWith(
                     intake.runVoltageCmd(0, 0).asProxy(), carriage.runVoltageCmd(0).asProxy())
                 .withTimeout(2.0)
