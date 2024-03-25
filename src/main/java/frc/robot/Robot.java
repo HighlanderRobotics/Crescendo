@@ -284,6 +284,17 @@ public class Robot extends LoggedRobot {
     controller.leftBumper().whileTrue(swerve.stopWithXCmd());
     controller
         .rightBumper()
+        .and(() -> currentTarget == Target.SPEAKER)
+        .whileTrue(
+            speakerHeadingSnap(
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                () ->
+                    -teleopAxisAdjustment(controller.getLeftX())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED));
+    controller
+        .rightBumper()
+        .and(() -> currentTarget == Target.AMP)
         .whileTrue(
             ampHeadingSnap(
                 () ->
@@ -763,6 +774,24 @@ public class Robot extends LoggedRobot {
         () -> {
           double pidOut =
               headingController.calculate(swerve.getRotation().getRadians(), Math.PI / 2);
+          return new ChassisSpeeds(
+              x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
+        });
+  }
+
+  private Command speakerHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
+    var headingController =
+        new ProfiledPIDController(
+            3.0,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75, SwerveSubsystem.MAX_ANGULAR_SPEED * 0.5));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    return swerve.runVoltageTeleopFieldRelative(
+        () -> {
+          double pidOut =
+              headingController.calculate(swerve.getRotation().getRadians(), swerve.getPose().getTranslation().minus(FieldConstants.getSpeaker().getTranslation()).getAngle().getRadians());
           return new ChassisSpeeds(
               x.getAsDouble(), y.getAsDouble(), pidOut + headingController.getSetpoint().velocity);
         });
