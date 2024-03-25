@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -15,9 +16,13 @@ import org.littletonrobotics.junction.AutoLogOutput;
 public class FieldConstants {
 
   public static final Pose2d BLUE_SPEAKER_POSE =
-      new Pose2d(new Translation2d(-0.0381, 5.547868), Rotation2d.fromDegrees(180));
+      new Pose2d(
+          new Translation2d(-0.0381 + Units.inchesToMeters(10), 5.547868),
+          Rotation2d.fromDegrees(180));
   public static final Pose2d RED_SPEAKER_POSE =
-      new Pose2d(new Translation2d(16.579342, 5.547868), Rotation2d.fromDegrees(0));
+      new Pose2d(
+          new Translation2d(16.579342 - Units.inchesToMeters(10), 5.547868),
+          Rotation2d.fromDegrees(0));
 
   @AutoLogOutput(key = "AutoAim/Speaker")
   public static Pose2d getSpeaker() {
