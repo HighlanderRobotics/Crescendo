@@ -220,8 +220,7 @@ public class ModuleIOReal implements ModuleIO {
         asyncOdometrySamples.stream()
             // should be after offset + gear ratio
             .map(s -> s.values().get(turnPosition))
-            .filter(s -> s != null)
-            .map(Rotation2d::fromRotations)
+            .map(d -> d == null ? null : Rotation2d.fromRotations(d))
             .toArray(Rotation2d[]::new);
   }
 
