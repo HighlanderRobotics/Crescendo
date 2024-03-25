@@ -80,6 +80,8 @@ public class ShooterIOReal implements ShooterIO {
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
+    flywheelConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    flywheelConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
 
     flywheelConfig.Slot0.kA = 0.0051316;
     flywheelConfig.Slot0.kV = 0.095;

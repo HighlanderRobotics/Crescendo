@@ -39,7 +39,6 @@ public class Module {
       (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
-  public static final double DRIVE_SUPPLY_CURRENT_LIMIT = 40.0;
   public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;
 
   private final ModuleIO io;
