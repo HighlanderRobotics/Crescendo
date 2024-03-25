@@ -50,6 +50,8 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.autoaim.ShotData;
+
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -74,7 +76,7 @@ public class Robot extends LoggedRobot {
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
-  public static final boolean USE_AUTO_AIM = true;
+  public static final boolean USE_AUTO_AIM = false;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
   private ChoreoTrajectory activeChoreoTrajectory;
@@ -253,12 +255,17 @@ public class Robot extends LoggedRobot {
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
+        .and(operator.b())
+        .whileTrue(shooter.runStateCmd(AutoAim.FEED_SHOT.getRotation(), AutoAim.FEED_SHOT.getLeftRPS(), AutoAim.FEED_SHOT.getRightRPS()))
+        .onFalse(
+            Commands.parallel(
+                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                .withTimeout(0.5));
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> !USE_AUTO_AIM)
-        .whileTrue(
-            shooter.runStateCmd(
-                AutoAim.FENDER_SHOT.getRotation(),
-                AutoAim.FENDER_SHOT.getLeftRPS(),
-                AutoAim.FENDER_SHOT.getRightRPS()))
+        .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(50.0), 50.0, 60.0))
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
