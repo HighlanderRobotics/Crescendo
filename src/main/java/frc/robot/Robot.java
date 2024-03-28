@@ -231,6 +231,7 @@ public class Robot extends LoggedRobot {
                     leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
                 .withTimeout(0.5));
     new Trigger(() -> DriverStation.isEnabled()).onTrue(elevator.unlockClimb());
+    new Trigger(() -> DriverStation.getMatchTime() < 30.0).onTrue(Commands.parallel(operator.rumbleCmd(1.0, 1.0), leds.setBlinkingCmd(new Color("#350868"), Color.kWhite, 25)).withTimeout(1.0));
 
     // ---- Controller bindings here ----
     // Prevent intaking when elevator isnt down
@@ -741,9 +742,8 @@ public class Robot extends LoggedRobot {
             .raceWith(
                 Commands.sequence(
                     Commands.waitSeconds(0.25),
-                    Commands.waitUntil(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-                )
-                )
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
@@ -754,9 +754,8 @@ public class Robot extends LoggedRobot {
             .raceWith(
                 Commands.sequence(
                     Commands.waitSeconds(0.25),
-                    Commands.waitUntil(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-                )
-                )
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim());
   }
