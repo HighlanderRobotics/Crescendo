@@ -738,7 +738,12 @@ public class Robot extends LoggedRobot {
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
-            .raceWith(Commands.waitSeconds(0.25), Commands.waitUntil(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()))
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+                )
+                )
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
@@ -746,7 +751,12 @@ public class Robot extends LoggedRobot {
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
-            .raceWith(Commands.waitSeconds(0.25), Commands.waitUntil(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()))
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+                )
+                )
             .withTimeout(1.0),
         autoStaticAutoAim());
   }
