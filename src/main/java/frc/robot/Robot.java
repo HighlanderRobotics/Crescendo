@@ -740,7 +740,7 @@ public class Robot extends LoggedRobot {
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim(),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
             .asProxy()
