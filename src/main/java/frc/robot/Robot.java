@@ -228,14 +228,14 @@ public class Robot extends LoggedRobot {
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
                     operator.rumbleCmd(1.0, 1.0),
-                    leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 25.0))
+                    leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 15.0))
                 .withTimeout(0.5));
     new Trigger(() -> DriverStation.isEnabled()).onTrue(elevator.unlockClimb());
     new Trigger(() -> DriverStation.getMatchTime() < 30.0)
         .onTrue(
             Commands.parallel(
                     operator.rumbleCmd(1.0, 1.0),
-                    leds.setBlinkingCmd(new Color("#350868"), Color.kWhite, 25))
+                    leds.setBlinkingCmd(new Color("#350868"), Color.kWhite, 10.0))
                 .withTimeout(1.0));
 
     // ---- Controller bindings here ----
@@ -386,7 +386,7 @@ public class Robot extends LoggedRobot {
             shooter
                 .resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)
                 .alongWith(
-                    leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 25.0)
+                    leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 10.0)
                         .withTimeout(0.25)));
 
     autoChooser.addOption("None", Commands.none());
