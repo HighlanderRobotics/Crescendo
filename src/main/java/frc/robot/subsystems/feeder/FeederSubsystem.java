@@ -78,4 +78,8 @@ public class FeederSubsystem extends SubsystemBase {
   public boolean getFirstBeambreak() {
     return inputs.firstBeambreak;
   }
+
+  public boolean getLastBeambreak() {
+    return inputs.lastBeambreak;
+  }
 }

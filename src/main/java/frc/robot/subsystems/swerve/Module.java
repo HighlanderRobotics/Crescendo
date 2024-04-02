@@ -34,11 +34,12 @@ public class Module {
   // Gear ratios for SDS MK4i L3.5, adjust as necessary
   // These numbers are taken from SDS's website
   // They are the gear tooth counts for each stage of the modules' gearboxes
-  public static final double DRIVE_GEAR_RATIO = (50.0 / 16.0) * (16.0 / 28.0) * (45.0 / 15.0);
+  public static final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (16.0 / 28.0) * (45.0 / 15.0);
+  public static final double DRIVE_ROTOR_TO_METERS =
+      (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
-  public static final double DRIVE_SUPPLY_CURRENT_LIMIT = 40.0;
-  public static final double TURN_STATOR_CURRENT_LIMIT = 20.0;
+  public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
@@ -46,6 +47,8 @@ public class Module {
   private double lastPositionMeters = 0.0; // Used for delta calculation
   private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
+
+  private SwerveModuleState lastSetpoint = new SwerveModuleState();
 
   public Module(final ModuleIO io) {
     this.io = io;
@@ -89,8 +92,10 @@ public class Module {
                 optimizedState
                     .angle
                     .minus(Rotation2d.fromRotations(inputs.turn.position))
-                    .getRadians()));
+                    .getRadians()),
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
 
+    lastSetpoint = optimizedState;
     return optimizedState;
   }
 

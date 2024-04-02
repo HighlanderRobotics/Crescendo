@@ -26,6 +26,9 @@ public class CarriageIOReal implements CarriageIO {
 
     config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
+    config.CurrentLimits.SupplyCurrentLimit = 10.0;
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+
     motor.getConfigurator().apply(config);
   }
 

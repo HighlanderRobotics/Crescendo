@@ -64,4 +64,7 @@ public class ElevatorIOSim implements ElevatorIO {
   public void resetEncoder(final double position) {
     physicsSim.setState(position, 0.0);
   }
+
+  @Override
+  public void setLockServoRotation(double position) {}
 }

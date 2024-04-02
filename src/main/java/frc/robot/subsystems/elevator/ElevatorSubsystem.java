@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.utils.logging.TalonFXFaultManager;
@@ -67,6 +69,8 @@ public class ElevatorSubsystem extends SubsystemBase {
                 (Measure<Voltage> volts) -> io.setVoltage(volts.in(Volts)), null, this));
 
     root.append(carriage);
+
+    io.setLockServoRotation(0.2);
   }
 
   @Override
@@ -90,10 +94,26 @@ public class ElevatorSubsystem extends SubsystemBase {
         });
   }
 
+  public Command climbRetractAndLock() {
+    return this.setExtensionCmd(() -> -0.01)
+        .alongWith(Commands.runOnce(() -> io.setLockServoRotation(0.5)))
+        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
+  }
+
+  public Command unlockClimb() {
+    return this.run(
+            () -> {
+              io.setLockServoRotation(0.2);
+              io.setVoltage(-1.0);
+            })
+        .withTimeout(0.25);
+  }
+
   public Command runCurrentZeroing() {
     return this.run(() -> io.setVoltage(-1.0))
         .until(() -> inputs.leader.statorCurrentAmps > 40.0)
-        .finallyDo(() -> io.resetEncoder(0.0));
+        .finallyDo(() -> io.resetEncoder(0.0))
+        .beforeStarting(() -> io.setLockServoRotation(0.2));
   }
 
   public Pose3d getCarriagePose() {

@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.utils.logging.TalonFXFaultManager;
 import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -194,9 +195,11 @@ public class ShooterSubsystem extends SubsystemBase {
     return this.runOnce(() -> io.resetPivotPosition(rotation));
   }
 
+  @AutoLogOutput(key = "Shooter/Is At Goal")
   public boolean isAtGoal() {
     return MathUtil.isNear(rotationGoal.getDegrees(), inputs.pivot.position * 360.0, 0.5)
         && MathUtil.isNear(leftGoal, inputs.leftFlywheel.velocity, 1.0)
-        && MathUtil.isNear(rightGoal, inputs.rightFlywheel.velocity, 1.0);
+        && MathUtil.isNear(rightGoal, inputs.rightFlywheel.velocity, 1.0)
+        && MathUtil.isNear(0.0, inputs.pivot.velocity, 0.05);
   }
 }
