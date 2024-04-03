@@ -214,7 +214,7 @@ public class ModuleIOReal implements ModuleIO {
     // Doesnt actually refresh drive velocity signal, but should be cached
     if (metersPerSecond == 0
         && metersPerSecondSquared == 0
-        && MathUtil.isNear(0.0, driveVelocity.getValueAsDouble(), 0.1)) {
+        && MathUtil.isNear(0.0, driveLogger.log.velocity, 0.1)) {
       setDriveVoltage(0.0);
     } else {
       driveTalon.setControl(
