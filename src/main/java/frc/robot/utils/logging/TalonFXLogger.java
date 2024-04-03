@@ -1,6 +1,7 @@
 package frc.robot.utils.logging;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.util.struct.Struct;
@@ -22,7 +23,7 @@ public class TalonFXLogger {
     public double velocity = 0.0;
 
     // StatusCode error value. Currently just checks one signal.
-    public int errorCode = 0;
+    public StatusCode errorCode = StatusCode.StatusCodeNotInitialized;
 
     // Faults
     public boolean licenseFault = false;
@@ -34,7 +35,7 @@ public class TalonFXLogger {
         double temperatureCelsius,
         double position,
         double velocityRotationsPerSecond,
-        int errorCode,
+        StatusCode errorCode,
         boolean licenseFault) {
       this.appliedVolts = appliedVolts;
       this.statorCurrentAmps = statorCurrentAmps;
@@ -55,7 +56,7 @@ public class TalonFXLogger {
         double temperatureCelsius,
         double position,
         double velocityRotationsPerSecond,
-        int errorCode) {
+        StatusCode errorCode) {
       this(
           appliedVolts,
           statorCurrentAmps,
@@ -81,7 +82,7 @@ public class TalonFXLogger {
           temperatureCelsius,
           position,
           velocityRotationsPerSecond,
-          0,
+          StatusCode.StatusCodeNotInitialized,
           false);
     }
 
@@ -117,7 +118,7 @@ public class TalonFXLogger {
         double temp = bb.getDouble();
         double rotation = bb.getDouble();
         double velocity = bb.getDouble();
-        int errorCode = bb.getInt();
+        var errorCode = StatusCode.valueOf(bb.getInt());
         boolean licenseFault = bb.get() != 0;
         return new TalonFXLog(
             voltage, statorAmps, supplyAmps, temp, rotation, velocity, errorCode, licenseFault);
@@ -136,7 +137,7 @@ public class TalonFXLogger {
     }
   }
 
-  public final TalonFXLog log = new TalonFXLog(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+  public final TalonFXLog log = new TalonFXLog(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
   private final StatusSignal<Double> voltageSignal;
   private final StatusSignal<Double> statorCurrentSignal;
@@ -192,7 +193,7 @@ public class TalonFXLogger {
     log.position = positionSignal.getValueAsDouble();
     log.velocity = velocitySignal.getValueAsDouble();
 
-    log.errorCode = voltageSignal.getStatus().value;
+    log.errorCode = voltageSignal.getStatus();
 
     log.licenseFault = licenseFaultSignal.getValue();
 
