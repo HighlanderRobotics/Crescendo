@@ -21,6 +21,9 @@ public class TalonFXLogger {
     public double position = 0.0;
     public double velocity = 0.0;
 
+    // StatusCode error value. Currently just checks one signal.
+    public int errorCode = 0;
+
     // Faults
     public boolean licenseFault = false;
 
@@ -31,6 +34,7 @@ public class TalonFXLogger {
         double temperatureCelsius,
         double position,
         double velocityRotationsPerSecond,
+        int errorCode,
         boolean licenseFault) {
       this.appliedVolts = appliedVolts;
       this.statorCurrentAmps = statorCurrentAmps;
@@ -39,7 +43,28 @@ public class TalonFXLogger {
       this.position = position;
       this.velocity = velocityRotationsPerSecond;
 
-      licenseFault = false;
+      this.errorCode = errorCode;
+
+      this.licenseFault = licenseFault;
+    }
+
+    public TalonFXLog(
+        double appliedVolts,
+        double statorCurrentAmps,
+        double supplyCurrentAmps,
+        double temperatureCelsius,
+        double position,
+        double velocityRotationsPerSecond,
+        int errorCode) {
+      this(
+          appliedVolts,
+          statorCurrentAmps,
+          supplyCurrentAmps,
+          temperatureCelsius,
+          position,
+          velocityRotationsPerSecond,
+          errorCode,
+          false);
     }
 
     public TalonFXLog(
@@ -56,6 +81,7 @@ public class TalonFXLogger {
           temperatureCelsius,
           position,
           velocityRotationsPerSecond,
+          0,
           false);
     }
 
@@ -75,12 +101,12 @@ public class TalonFXLogger {
 
       @Override
       public int getSize() {
-        return kSizeDouble * 6 + kSizeBool * 1;
+        return kSizeDouble * 6 + kSizeInt32 + kSizeBool * 1;
       }
 
       @Override
       public String getSchema() {
-        return "double voltage;double statorAmps;double supplyAmps;double temp;double position;double velocity;boolean licenseFault";
+        return "double voltage;double statorAmps;double supplyAmps;double temp;double position;double velocity;int errorCode;boolean licenseFault";
       }
 
       @Override
@@ -91,9 +117,10 @@ public class TalonFXLogger {
         double temp = bb.getDouble();
         double rotation = bb.getDouble();
         double velocity = bb.getDouble();
+        int errorCode = bb.getInt();
         boolean licenseFault = bb.get() != 0;
         return new TalonFXLog(
-            voltage, statorAmps, supplyAmps, temp, rotation, velocity, licenseFault);
+            voltage, statorAmps, supplyAmps, temp, rotation, velocity, errorCode, licenseFault);
       }
 
       @Override
@@ -109,7 +136,7 @@ public class TalonFXLogger {
     }
   }
 
-  public final TalonFXLog log = new TalonFXLog(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  public final TalonFXLog log = new TalonFXLog(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
   private final StatusSignal<Double> voltageSignal;
   private final StatusSignal<Double> statorCurrentSignal;
@@ -164,6 +191,9 @@ public class TalonFXLogger {
     log.temperatureCelsius = temperatureSignal.getValueAsDouble();
     log.position = positionSignal.getValueAsDouble();
     log.velocity = velocitySignal.getValueAsDouble();
+
+    log.errorCode = voltageSignal.getStatus().value;
+
     log.licenseFault = licenseFaultSignal.getValue();
 
     return log;
