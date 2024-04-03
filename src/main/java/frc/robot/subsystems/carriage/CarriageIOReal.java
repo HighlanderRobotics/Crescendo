@@ -4,26 +4,22 @@
 
 package frc.robot.subsystems.carriage;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import frc.robot.utils.components.InvertedDigitalInput;
+import frc.robot.utils.logging.TalonFXLogger;
 
 /** Create a CarriageIO that uses a real TalonFX. */
 public class CarriageIOReal implements CarriageIO {
-  final TalonFX motor = new TalonFX(18, "canivore");
+  private final TalonFX motor = new TalonFX(18, "canivore");
 
-  final InvertedDigitalInput beambreak = new InvertedDigitalInput(2);
+  private final InvertedDigitalInput beambreak = new InvertedDigitalInput(2);
 
-  final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-  final StatusSignal<Double> velocity = motor.getVelocity();
-  final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  final StatusSignal<Double> amperage = motor.getStatorCurrent();
-  final StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final TalonFXLogger logger = new TalonFXLogger(motor);
 
   public CarriageIOReal() {
     var config = new TalonFXConfiguration();
@@ -34,18 +30,12 @@ public class CarriageIOReal implements CarriageIO {
     config.CurrentLimits.SupplyCurrentLimitEnable = true;
 
     motor.getConfigurator().apply(config);
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, velocity, voltage, amperage, temp);
-    motor.optimizeBusUtilization();
   }
 
   /** Updates the set of loggable inputs. */
   @Override
   public void updateInputs(final CarriageIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(velocity, voltage, amperage, temp);
-    inputs.velocityRotationsPerSecond = velocity.getValueAsDouble();
-    inputs.appliedVolts = voltage.getValueAsDouble();
-    inputs.currentAmps = new double[] {amperage.getValueAsDouble()};
-    inputs.temperatureCelsius = new double[] {temp.getValueAsDouble()};
+    inputs.carriage = logger.update();
 
     inputs.beambreak = beambreak.get();
   }

@@ -50,6 +50,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.logging.TalonFXFaultManager;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -213,7 +214,9 @@ public class Robot extends LoggedRobot {
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+            () -> DriverStation.isEnabled(),
+            () -> currentTarget == Target.SPEAKER,
+            () -> TalonFXFaultManager.getInstance().isOk()));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -401,8 +404,6 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
     SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
     SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
-    SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
-    SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
     SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
     SmartDashboard.putData(
         "manual zero shooter",
@@ -412,6 +413,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    // Update fault checker
+    TalonFXFaultManager.getInstance().periodic();
     // Update ascope mechanism visualization
     Logger.recordOutput(
         "Mechanism Poses",

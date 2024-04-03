@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems.elevator;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -15,6 +13,7 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.Servo;
+import frc.robot.utils.logging.TalonFXLogger;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
@@ -27,11 +26,9 @@ public class ElevatorIOReal implements ElevatorIO {
   private final MotionMagicVoltage positionVoltage =
       new MotionMagicVoltage(0.0).withEnableFOC(true);
 
-  private final StatusSignal<Double> position = motor.getPosition();
-  private final StatusSignal<Double> velocity = motor.getVelocity();
-  private final StatusSignal<Double> voltage = motor.getMotorVoltage();
-  private final StatusSignal<Double> current = motor.getStatorCurrent();
-  private final StatusSignal<Double> temp = motor.getDeviceTemp();
+  private final TalonFXLogger leaderLogger = new TalonFXLogger(motor);
+
+  private final TalonFXLogger followerLogger = new TalonFXLogger(follower);
 
   public ElevatorIOReal() {
     var config = new TalonFXConfiguration();
@@ -64,20 +61,12 @@ public class ElevatorIOReal implements ElevatorIO {
     motor.setPosition(0.0); // Assume we boot 0ed
     follower.getConfigurator().apply(config);
     follower.setControl(new Follower(motor.getDeviceID(), true));
-
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, position, velocity, voltage, current, temp);
-    motor.optimizeBusUtilization();
-    follower.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(final ElevatorIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(position, velocity, voltage, current, temp);
-    inputs.elevatorPositionMeters = position.getValueAsDouble();
-    inputs.elevatorVelocityMetersPerSec = velocity.getValueAsDouble();
-    inputs.elevatorAppliedVolts = voltage.getValueAsDouble();
-    inputs.elevatorCurrentAmps = new double[] {current.getValueAsDouble()};
-    inputs.elevatorTempCelsius = new double[] {temp.getValueAsDouble()};
+    inputs.leader = leaderLogger.update();
+    inputs.follower = followerLogger.update();
   }
 
   @Override

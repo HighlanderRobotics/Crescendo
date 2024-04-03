@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.utils.logging.TalonFXFaultManager;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -77,8 +77,10 @@ public class ElevatorSubsystem extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Elevator", inputs);
+    TalonFXFaultManager.getInstance().addLog("Elevator Leader", inputs.leader);
+    TalonFXFaultManager.getInstance().addLog("Elevator Follower", inputs.follower);
 
-    carriage.setLength(inputs.elevatorPositionMeters);
+    carriage.setLength(inputs.leader.position);
     Logger.recordOutput("Elevator/Mechanism2d", mech2d);
 
     Logger.recordOutput("Elevator/Carriage Pose", getCarriagePose());
@@ -109,38 +111,9 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public Command runCurrentZeroing() {
     return this.run(() -> io.setVoltage(-1.0))
-        .until(() -> inputs.elevatorCurrentAmps[0] > 40.0)
+        .until(() -> inputs.leader.statorCurrentAmps > 40.0)
         .finallyDo(() -> io.resetEncoder(0.0))
         .beforeStarting(() -> io.setLockServoRotation(0.2));
-  }
-
-  public Command runSysidCmd() {
-    return Commands.sequence(
-        runCurrentZeroing(),
-        this.runOnce(() -> SignalLogger.start()),
-        // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine
-            .quasistatic(Direction.kForward)
-            .until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
-        this.runOnce(() -> io.setVoltage(0.0)),
-        Commands.waitSeconds(1.0),
-        // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine
-            .quasistatic(Direction.kReverse)
-            .until(() -> inputs.elevatorPositionMeters < 0.2),
-        this.runOnce(() -> io.setVoltage(0.0)),
-        Commands.waitSeconds(1.0),
-        // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine
-            .dynamic(Direction.kForward)
-            .until(() -> inputs.elevatorPositionMeters > MAX_EXTENSION_METERS - 0.2),
-        this.runOnce(() -> io.setVoltage(0.0)),
-        Commands.waitSeconds(1.0),
-        // Stop when we get close to max to avoid hitting hard stop
-        elevatorRoutine
-            .dynamic(Direction.kReverse)
-            .until(() -> inputs.elevatorPositionMeters < 0.2),
-        this.runOnce(() -> SignalLogger.stop()));
   }
 
   public Pose3d getCarriagePose() {
@@ -162,6 +135,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   public double getExtensionMeters() {
-    return inputs.elevatorPositionMeters;
+    return inputs.leader.position;
   }
 }

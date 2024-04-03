@@ -13,12 +13,12 @@
 
 package frc.robot.subsystems.swerve;
 
-import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.logging.TalonFXFaultManager;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
@@ -64,9 +64,10 @@ public class Module {
 
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
-    Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
-        Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
+    TalonFXFaultManager.getInstance()
+        .addLog(String.format("Swerve/%s Module Drive", io.getModuleName()), inputs.drive);
+    TalonFXFaultManager.getInstance()
+        .addLog(String.format("Swerve/%s Module Turn", io.getModuleName()), inputs.turn);
 
     // Calculate positions for odometry
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
@@ -87,7 +88,11 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
+            * Math.cos(
+                optimizedState
+                    .angle
+                    .minus(Rotation2d.fromRotations(inputs.turn.position))
+                    .getRadians()),
         (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
 
     lastSetpoint = optimizedState;
@@ -105,7 +110,11 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveVoltage(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
+            * Math.cos(
+                optimizedState
+                    .angle
+                    .minus(Rotation2d.fromRotations(inputs.turn.position))
+                    .getRadians()));
 
     return optimizedState;
   }
@@ -133,17 +142,17 @@ public class Module {
 
   /** Returns the current turn angle of the module. */
   public Rotation2d getAngle() {
-    return inputs.turnPosition;
+    return Rotation2d.fromRotations(inputs.turn.position);
   }
 
   /** Returns the current drive position of the module in meters. */
   public double getPositionMeters() {
-    return inputs.drivePositionMeters;
+    return inputs.drive.position;
   }
 
   /** Returns the current drive velocity of the module in meters per second. */
   public double getVelocityMetersPerSec() {
-    return inputs.driveVelocityMetersPerSec;
+    return inputs.drive.velocity;
   }
 
   /** Returns the module position (turn angle and drive position). */
@@ -163,7 +172,7 @@ public class Module {
 
   /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
-    return inputs.driveVelocityMetersPerSec;
+    return inputs.drive.velocity;
   }
 
   /** Returns the timestamps of the samples received this cycle. */
