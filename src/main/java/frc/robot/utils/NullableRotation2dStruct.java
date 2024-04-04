@@ -23,21 +23,21 @@ public class NullableRotation2dStruct implements Struct<NullableRotation2d>{
 
     @Override
     public int getSize() {
-      return kSizeDouble;
+      return kSizeDouble + kSizeBool;
     }
 
     @Override
     public String getSchema() {
-      return "double value";
+      return "boolean isNull; double value;";
     }
 
     @Override
     public NullableRotation2d unpack(ByteBuffer bb) {
       byte isNull = bb.get();
+      double value = bb.getDouble();
       if (isNull == 0) {
         return null;
       } else {
-        double value = bb.getDouble();
         return new NullableRotation2d(new Rotation2d(value));
       }
     }
@@ -46,6 +46,7 @@ public class NullableRotation2dStruct implements Struct<NullableRotation2d>{
     public void pack(ByteBuffer bb, NullableRotation2d value) {
       if (value.isNull) {
         bb.put((byte) 0); // i don't think i can put a boolean in a byte buffer
+        bb.putDouble(0); //not actually used but it needs to write a bool + a double each time
       } else {
         bb.put((byte) 1);
         bb.putDouble(value.get().getRadians());
