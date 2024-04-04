@@ -17,13 +17,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
+import frc.robot.utils.NullableRotation2d;
 
 public interface GyroIO {
   @AutoLog
   public static class GyroIOInputs {
     public boolean connected = false;
     public Rotation2d yawPosition = new Rotation2d();
-    public Rotation2d[] odometryYawPositions = new Rotation2d[] {};
+    public NullableRotation2d[] odometryYawPositions = new NullableRotation2d[] {};
     public double[] odometryTimestamps = new double[] {};
     public double yawVelocityRadPerSec = 0.0;
   }

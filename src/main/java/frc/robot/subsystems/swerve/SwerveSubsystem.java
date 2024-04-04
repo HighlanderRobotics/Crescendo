@@ -407,11 +407,11 @@ public class SwerveSubsystem extends SubsystemBase {
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(modulePositions);
-      if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex] == null) {
+      if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
-        rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
+        rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
       }

@@ -20,6 +20,7 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
+import frc.robot.utils.NullableRotation2d;
 
 public class Module {
   // Represents per-module constants
@@ -66,8 +67,12 @@ public class Module {
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
       double positionMeters = inputs.odometryDrivePositionsMeters[i];
-      Rotation2d angle = inputs.odometryTurnPositions[i];
-      odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
+      NullableRotation2d angle = inputs.odometryTurnPositions[i];
+      if (angle.get() == null) {
+        odometryPositions[i] = null; // SwerveSubsystem deals with this
+      } else {
+        odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle.get());
+      }
       lastPositionMeters = positionMeters;
     }
   }
