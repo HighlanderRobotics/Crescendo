@@ -16,9 +16,6 @@ public class NullableRotation2d implements StructSerializable {
       isNull = value == null ? true : false;
       this.value = value;
     }
-    public NullableRotation2d(boolean isNull) {
-      this.isNull = isNull;
-    }
 
     public Rotation2d get() {
       return isNull ? null : value;

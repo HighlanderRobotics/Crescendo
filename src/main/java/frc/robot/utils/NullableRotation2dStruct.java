@@ -36,7 +36,7 @@ public class NullableRotation2dStruct implements Struct<NullableRotation2d>{
       byte isNull = bb.get();
       double value = bb.getDouble();
       if (isNull == 0) {
-        return null;
+        return new NullableRotation2d(null);
       } else {
         return new NullableRotation2d(new Rotation2d(value));
       }
