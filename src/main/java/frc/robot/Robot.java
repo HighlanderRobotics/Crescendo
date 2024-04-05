@@ -70,7 +70,9 @@ public class Robot extends LoggedRobot {
 
   public static enum Target {
     AMP,
-    SPEAKER
+    SPEAKER,
+    FEED,
+    SUBWOOFER
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
@@ -213,7 +215,7 @@ public class Robot extends LoggedRobot {
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+            () -> DriverStation.isEnabled(), () -> currentTarget));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -258,17 +260,31 @@ public class Robot extends LoggedRobot {
         .whileTrue(staticAutoAim());
     controller
         .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .and(operator.b())
-        .whileTrue(
+        .and(() -> currentTarget == Target.FEED)
+        .whileTrue(Commands.parallel(
+            Commands.waitUntil(() -> shooter.isAtGoal()).andThen(controller.rumbleCmd(1.0, 1.0).withTimeout(0.25)).asProxy(),
             shooter.runStateCmd(
                 AutoAim.FEED_SHOT.getRotation(),
                 AutoAim.FEED_SHOT.getLeftRPS(),
-                AutoAim.FEED_SHOT.getRightRPS()))
+                AutoAim.FEED_SHOT.getRightRPS())))
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5));
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SUBWOOFER)
+        .whileTrue(Commands.parallel(
+            Commands.waitUntil(() -> shooter.isAtGoal()).andThen(controller.rumbleCmd(1.0, 1.0).withTimeout(0.25)).asProxy(),
+            shooter.runStateCmd(
+                AutoAim.FENDER_SHOT.getRotation(),
+                AutoAim.FENDER_SHOT.getLeftRPS(),
+                AutoAim.FENDER_SHOT.getRightRPS())))
+        .onFalse(
+            Commands.parallel(
+                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                .withTimeout(0.5));
+
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -292,7 +308,7 @@ public class Robot extends LoggedRobot {
     controller.leftBumper().whileTrue(swerve.stopWithXCmd());
     controller
         .rightBumper()
-        .and(() -> currentTarget == Target.SPEAKER)
+        .and(() -> currentTarget == Target.SPEAKER || currentTarget == Target.FEED || currentTarget == Target.SUBWOOFER)
         .and(controller.rightTrigger().negate())
         .whileTrue(
             speakerHeadingSnap(
@@ -359,6 +375,8 @@ public class Robot extends LoggedRobot {
                                     .getDegrees())
                             < 10.0)
                 .andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
+    operator.b().onTrue(Commands.runOnce(() -> currentTarget = Target.FEED));
+    operator.x().onTrue(Commands.runOnce(() -> currentTarget = Target.SUBWOOFER));
 
     operator
         .a()
