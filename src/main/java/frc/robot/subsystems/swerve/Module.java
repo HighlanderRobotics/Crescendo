@@ -13,6 +13,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -35,17 +36,19 @@ public class Module {
   // These numbers are taken from SDS's website
   // They are the gear tooth counts for each stage of the modules' gearboxes
   public static final double DRIVE_GEAR_RATIO = (50.0 / 16.0) * (16.0 / 28.0) * (45.0 / 15.0);
+  public static final double DRIVE_ROTOR_TO_METERS =
+      (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   public static final double DRIVE_SUPPLY_CURRENT_LIMIT = 40.0;
-  public static final double TURN_STATOR_CURRENT_LIMIT = 20.0;
+  public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
 
-  private double lastPositionMeters = 0.0; // Used for delta calculation
-  private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
+
+  private SwerveModuleState lastSetpoint = new SwerveModuleState();
 
   public Module(final ModuleIO io) {
     this.io = io;
@@ -61,6 +64,9 @@ public class Module {
 
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
+    Logger.recordOutput(
+        String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
+        Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
 
     // Calculate positions for odometry
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
@@ -71,9 +77,8 @@ public class Module {
       if (angle.get() == null) {
         odometryPositions[i] = null; // SwerveSubsystem deals with this
       } else {
-        odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle.get());
+        odometryPositions[i] = new SwerveModulePosition(positionMeters, angle.get());
       }
-      lastPositionMeters = positionMeters;
     }
   }
 
@@ -85,8 +90,10 @@ public class Module {
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
+            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
 
+    lastSetpoint = optimizedState;
     return optimizedState;
   }
 
@@ -127,34 +134,32 @@ public class Module {
     io.setDriveVoltage(0.0);
   }
 
-  /** Returns the current turn angle of the module. */
+  /** Returns the current turn angle of the module without PhoenixOdometryThread. */
   public Rotation2d getAngle() {
     return inputs.turnPosition;
   }
 
-  /** Returns the current drive position of the module in meters. */
+  /** Returns the current drive position of the module in meters without PhoenixOdometryThread. */
   public double getPositionMeters() {
     return inputs.drivePositionMeters;
   }
 
-  /** Returns the current drive velocity of the module in meters per second. */
+  /**
+   * Returns the current drive velocity of the module in meters per second without
+   * PhoenixOdometryThread.
+   */
   public double getVelocityMetersPerSec() {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  /** Returns the module position (turn angle and drive position). */
+  /** Returns the module position (turn angle and drive position) without PhoenixOdometryThread. */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(getPositionMeters(), getAngle());
   }
 
-  /** Returns the module state (turn angle and drive velocity). */
+  /** Returns the module state (turn angle and drive velocity) without PhoenixOdometryThread. */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
-  }
-
-  /** Returns the module position deltas received this cycle. */
-  public SwerveModulePosition[] getPositionDeltas() {
-    return positionDeltas;
   }
 
   /** Returns the drive velocity in meters/sec. */
@@ -162,12 +167,12 @@ public class Module {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  /** Returns the timestamps of the samples received this cycle. */
+  /** Returns the timestamps of the samples received this cycle from PhoenixOdometryThread. */
   public double[] getOdometryTimestamps() {
     return inputs.odometryTimestamps;
   }
 
-  /** Returns the module positions received this cycle. */
+  /** Returns the module positions received this cycle from PhoenixOdometryThread. */
   public SwerveModulePosition[] getOdometryPositions() {
     return odometryPositions;
   }

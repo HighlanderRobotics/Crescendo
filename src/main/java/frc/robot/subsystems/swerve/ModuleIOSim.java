@@ -93,7 +93,7 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void setDriveSetpoint(final double metersPerSecond) {
+  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
     setDriveVoltage(
         driveController.calculate(
                 driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS, metersPerSecond)
