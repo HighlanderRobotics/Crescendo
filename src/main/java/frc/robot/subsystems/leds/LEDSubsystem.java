@@ -96,17 +96,17 @@ public class LEDSubsystem extends SubsystemBase {
                 Map.of(
                     Target.SPEAKER,
                     this.setBlinkingCmd(new Color("#ffff00"), new Color(), 10.0)
-                        .until(() -> !(target.get() == Target.SPEAKER) || !enabled.getAsBoolean()),
+                        .until(() -> target.get() != Target.SPEAKER || !enabled.getAsBoolean()),
                     Target.AMP,
                     this.setBlinkingCmd(new Color("#ff7777"), new Color(), 10.0)
-                        .until(() -> !(target.get() == Target.AMP) || !enabled.getAsBoolean()),
+                        .until(() -> target.get() != Target.AMP || !enabled.getAsBoolean()),
                     Target.FEED,
                     this.setBlinkingCmd(new Color("#0000ff"), new Color(), 10.0)
-                        .until(() -> !(target.get() == Target.FEED) || !enabled.getAsBoolean()),
+                        .until(() -> target.get() != Target.FEED || !enabled.getAsBoolean()),
                     Target.SUBWOOFER,
                     this.setBlinkingCmd(new Color("#9900ff"), new Color(), 10.0)
                         .until(
-                            () -> !(target.get() == Target.SUBWOOFER) || !enabled.getAsBoolean())),
+                            () -> target.get() != Target.SUBWOOFER || !enabled.getAsBoolean())),
                 target),
             this.setRunAlongCmd(
                     // Set color to be purple with a moving dash corresponding to alliance color
