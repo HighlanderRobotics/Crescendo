@@ -428,9 +428,11 @@ public class SwerveSubsystem extends SubsystemBase {
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(moduleDeltas);
       if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
+        Logger.recordOutput("Odometry/Received Gyro Update", false);
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
+        Logger.recordOutput("Odometry/Received Gyro Update", true);
         rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());

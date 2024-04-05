@@ -9,8 +9,8 @@ import edu.wpi.first.util.struct.StructSerializable;
 
 /** Wrapper over WPILib's Rotation2d to allow serialization of nulls.*/
 public class NullableRotation2d implements StructSerializable {
-    boolean isNull;
-    Rotation2d value;
+    final boolean isNull;
+    final Rotation2d value;
 
     public NullableRotation2d(Rotation2d value) {
       isNull = value == null ? true : false;
@@ -19,6 +19,10 @@ public class NullableRotation2d implements StructSerializable {
 
     public Rotation2d get() {
       return isNull ? null : value;
+    }
+
+    public static NullableRotation2d fromDegrees(double degrees) {
+      return new NullableRotation2d(Rotation2d.fromDegrees(degrees));
     }
 
   public static final NullableRotation2dStruct struct = new NullableRotation2dStruct();

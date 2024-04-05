@@ -224,12 +224,6 @@ public class ModuleIOReal implements ModuleIO {
             .map(s -> s.values().get(turnPosition))
             .map(d -> d == null ? new NullableRotation2d(null) : new NullableRotation2d(Rotation2d.fromRotations(d)))
             .toArray(NullableRotation2d[]::new);
-
-        //     inputs.odometryYawPositions =
-        // asyncOdometrySamples.stream()
-        //     .map(s -> s.values().get(yaw))
-        //     .map(d -> d == null ? new NullableRotation2d(true) : new NullableRotation2d(new Rotation2d(d)))
-        //     .toArray(NullableRotation2d[]::new);
   }
 
   @Override
