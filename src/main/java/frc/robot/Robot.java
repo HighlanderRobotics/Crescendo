@@ -547,27 +547,11 @@ public class Robot extends LoggedRobot {
                 SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.deadline(
+        Commands.parallel(
+            
             feeder
-                .runVelocityCmd(0.0)
-                .until(
-                    () ->
-                        shooter.isAtGoal()
-                            && MathUtil.isNear(
-                                swerve
-                                    .getPose()
-                                    .getTranslation()
-                                    .minus(FieldConstants.getSpeaker().getTranslation())
-                                    .getAngle()
-                                    .getDegrees(),
-                                swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance))
-                .andThen(
-                    feeder
-                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                        .raceWith(
-                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                .andThen(Commands.waitSeconds(0.25)))),
-            swerve.runVelocityFieldRelative(
+                .runVelocityCmd(0.0),
+                swerve.runVelocityFieldRelative(
                 () -> {
                   var pidOut =
                       headingController.calculate(
@@ -585,7 +569,28 @@ public class Robot extends LoggedRobot {
                       headingController.getSetpoint().velocity);
                   return new ChassisSpeeds(
                       0.0, 0.0, pidOut + (headingController.getSetpoint().velocity * 0.9));
-                }),
+                })
+        )
+                .until(
+                    () ->
+                        shooter.isAtGoal()
+                            && MathUtil.isNear(
+                                swerve
+                                    .getPose()
+                                    .getTranslation()
+                                    .minus(FieldConstants.getSpeaker().getTranslation())
+                                    .getAngle()
+                                    .getDegrees(),
+                                swerve.getPose().getRotation().getDegrees(),
+                                rotationTolerance))
+                .andThen(
+                    Commands.parallel(
+                    feeder
+                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        .raceWith(
+                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                .andThen(Commands.waitSeconds(0.25))),
+                            swerve.runVelocityCmd(ChassisSpeeds::new))),
             shooter.runStateCmd(
                 () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                 () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
