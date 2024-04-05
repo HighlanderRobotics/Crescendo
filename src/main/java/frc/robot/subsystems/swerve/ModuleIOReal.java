@@ -34,7 +34,6 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.utils.NullableRotation2d;
-
 import java.util.List;
 
 /**
@@ -222,7 +221,11 @@ public class ModuleIOReal implements ModuleIO {
         asyncOdometrySamples.stream()
             // should be after offset + gear ratio
             .map(s -> s.values().get(turnPosition))
-            .map(d -> d == null ? new NullableRotation2d(null) : new NullableRotation2d(Rotation2d.fromRotations(d)))
+            .map(
+                d ->
+                    d == null
+                        ? new NullableRotation2d(null)
+                        : new NullableRotation2d(Rotation2d.fromRotations(d)))
             .toArray(NullableRotation2d[]::new);
   }
 

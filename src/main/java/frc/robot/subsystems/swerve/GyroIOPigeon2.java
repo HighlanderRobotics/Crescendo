@@ -24,7 +24,6 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.utils.NullableRotation2d;
-
 import java.util.List;
 
 /** IO implementation for Pigeon2 */

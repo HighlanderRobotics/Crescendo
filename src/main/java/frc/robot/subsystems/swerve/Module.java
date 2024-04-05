@@ -19,9 +19,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
-import frc.robot.utils.NullableRotation2d;
 
 public class Module {
   // Represents per-module constants

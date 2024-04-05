@@ -411,8 +411,8 @@ public class SwerveSubsystem extends SubsystemBase {
           new SwerveModulePosition[4]; // change in positions since the last update
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         modulePositions[moduleIndex] =
-        modules[moduleIndex]
-            .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
+            modules[moduleIndex]
+                .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
         // we can't do any odo updates if we are not getting module data
         if (modulePositions[moduleIndex] == null) continue;
         moduleDeltas[moduleIndex] =
@@ -436,13 +436,13 @@ public class SwerveSubsystem extends SubsystemBase {
         rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
+      }
       // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
     }
-  }
   }
 
   private void updateVision() {
