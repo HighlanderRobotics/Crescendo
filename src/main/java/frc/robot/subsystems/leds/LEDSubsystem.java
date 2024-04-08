@@ -105,8 +105,7 @@ public class LEDSubsystem extends SubsystemBase {
                         .until(() -> target.get() != Target.FEED || !enabled.getAsBoolean()),
                     Target.SUBWOOFER,
                     this.setBlinkingCmd(new Color("#ff0000"), new Color(), 10.0)
-                        .until(
-                            () -> target.get() != Target.SUBWOOFER || !enabled.getAsBoolean())),
+                        .until(() -> target.get() != Target.SUBWOOFER || !enabled.getAsBoolean())),
                 target),
             this.setRunAlongCmd(
                     // Set color to be purple with a moving dash corresponding to alliance color
