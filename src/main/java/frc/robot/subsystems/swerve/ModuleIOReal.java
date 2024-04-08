@@ -17,8 +17,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -73,9 +73,11 @@ public class ModuleIOReal implements ModuleIO {
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final MotionMagicVelocityVoltage driveCurrentVelocity =
-      new MotionMagicVelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
+  private final VelocityVoltage driveCurrentVelocity =
+      new VelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
+
+  private final double kAVoltsPerMeterPerSecondSquared;
 
   public ModuleIOReal(ModuleConstants constants) {
     name = constants.prefix();
@@ -99,7 +101,8 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
     // Voltage Controls Gains
     driveConfig.Slot0.kV = 2.381;
-    driveConfig.Slot0.kA = 0.65;
+    kAVoltsPerMeterPerSecondSquared = 0.65;
+    driveConfig.Slot0.kA = kAVoltsPerMeterPerSecondSquared;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 2.0;
     driveConfig.Slot0.kD = 0.2;
@@ -246,7 +249,7 @@ public class ModuleIOReal implements ModuleIO {
       driveTalon.setControl(
           driveCurrentVelocity
               .withVelocity(metersPerSecond)
-              .withAcceleration(metersPerSecondSquared));
+              .withFeedForward(metersPerSecondSquared * kAVoltsPerMeterPerSecondSquared));
     }
   }
 
