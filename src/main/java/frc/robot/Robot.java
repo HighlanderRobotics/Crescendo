@@ -334,6 +334,25 @@ public class Robot extends LoggedRobot {
                 .until(controller.rightTrigger()));
     controller
         .rightBumper()
+        .and(controller.rightTrigger().negate())
+        .and(operator.a().negate())
+        .whileTrue(
+            Commands.repeatingSequence(
+                    shooter
+                        .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                        .until(
+                            () ->
+                                feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    shooter
+                        .runStateCmd(
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                        .until(() -> !feeder.getFirstBeambreak()))
+                .until(controller.rightTrigger())
+                .unless(controller.rightTrigger()));
+    controller
+        .rightBumper()
         .and(() -> currentTarget == Target.AMP)
         .whileTrue(
             ampHeadingSnap(
