@@ -151,7 +151,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final Vision[] cameras;
   public static AprilTagFieldLayout fieldTags;
 
-  public SwerveDrivePoseEstimator estimator =
+  private SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   private double lastEstTimestamp = 0.0;
@@ -159,16 +159,21 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(), Nat.N3(), 906.2602005, 0, 671.984679, 0, 902.128407, 388.5381523, 0, 0, 1);
+          Nat.N3(),
+          Nat.N3(),
+          905.8460068929472,
+          0.0,
+          609.5597530043692,
+          0.0,
+          902.8748199030964,
+          404.79249985937037,
+          0.0,
+          0.0,
+          1.0);
   public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
-          Nat.N5(),
-          Nat.N1(),
-          0.04229355767,
-          -0.05532777359,
-          -0.002561333884,
-          0.001247279226,
-          0.01795026339); // Last 3 values have been truncated
+          Nat.N5(), Nat.N1(), 0.042, -0.055, -0.003, 0.001,
+          0.018); // Last 3 values have been truncated
   public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX =
       MatBuilder.fill(
           Nat.N3(), Nat.N3(), 911.3512229, 0, 613.8313639, 0, 907.3772729, 361.1892783, 0, 0, 1);
@@ -549,10 +554,7 @@ public class SwerveSubsystem extends SubsystemBase {
                       (m, s) ->
                           m.runVoltageSetpoint(
                               new SwerveModuleState(
-                                  s.speedMetersPerSecond
-                                      * RoboRioDataJNI.getVInVoltage()
-                                      / MAX_LINEAR_SPEED,
-                                  s.angle)))
+                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle)))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
@@ -674,8 +676,8 @@ public class SwerveSubsystem extends SubsystemBase {
                   : trajectory.getFinalState().getPose();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
-              && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.25)
-                  && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.25)
+              && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
+                  && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.4)
                   && Math.abs(
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
@@ -731,8 +733,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    // return estimator.getEstimatedPosition(); //Vision
-    return pose;
+    return estimator.getEstimatedPosition();
   }
 
   public Pose3d getPose3d() {
@@ -752,6 +753,7 @@ public class SwerveSubsystem extends SubsystemBase {
     } catch (Exception e) {
       System.out.println("odo reset sad :(");
     }
+    odometry.resetPosition(lastGyroRotation, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
@@ -770,7 +772,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {leftCamConstants, rightCamConstants};
+    return new VisionConstants[] {rightCamConstants};
   }
 
   /**

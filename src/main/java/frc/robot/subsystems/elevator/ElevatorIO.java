@@ -31,4 +31,6 @@ public interface ElevatorIO {
   public default void resetEncoder() {
     resetEncoder(0.0);
   }
+
+  public void setLockServoRotation(double position);
 }

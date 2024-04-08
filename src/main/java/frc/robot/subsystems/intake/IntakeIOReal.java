@@ -36,14 +36,15 @@ public class IntakeIOReal implements IntakeIO {
 
   public IntakeIOReal() {
     var intakeConfig = new TalonFXConfiguration();
-    intakeConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
+    intakeConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
     intakeConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    intakeConfig.CurrentLimits.StatorCurrentLimit = 80.0;
+    intakeConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     intakeConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     intakeConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
     intakeConfig.Slot0.kV = (12.0 * 60.0) / 5800;
     intakeConfig.Slot0.kP = 1.0;
+    intakeConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
 
     intakeMotor.getConfigurator().apply(intakeConfig);
 
@@ -54,6 +55,7 @@ public class IntakeIOReal implements IntakeIO {
 
     centeringConfig.Slot0.kV = (12.0 * 60.0) / 5800;
     centeringConfig.Slot0.kP = 0.1;
+    centeringConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.05;
 
     centeringMotor.getConfigurator().apply(centeringConfig);
 

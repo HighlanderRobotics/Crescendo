@@ -14,11 +14,14 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.wpilibj.Servo;
 
 /** Elevator IO using TalonFXs. */
 public class ElevatorIOReal implements ElevatorIO {
   private final TalonFX motor = new TalonFX(16, "canivore");
   private final TalonFX follower = new TalonFX(17, "canivore");
+
+  private final Servo servo = new Servo(1);
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
   private final MotionMagicVoltage positionVoltage =
@@ -42,13 +45,13 @@ public class ElevatorIOReal implements ElevatorIO {
     config.Slot0.kS = 0.16898;
     config.Slot0.kV = 11.3;
     config.Slot0.kA = 0.0;
-    config.Slot0.kP = 69.785;
+    config.Slot0.kP = 150.0;
     config.Slot0.kD = 17.53;
 
     config.CurrentLimits.StatorCurrentLimit = 60.0;
     config.CurrentLimits.StatorCurrentLimitEnable = true;
 
-    config.MotionMagic.MotionMagicAcceleration = 4.0;
+    config.MotionMagic.MotionMagicAcceleration = 8.0;
     // Estimated from slightly less than motor free speed
     config.MotionMagic.MotionMagicCruiseVelocity =
         50.0 / (ElevatorSubsystem.GEAR_RATIO * 2 * Math.PI * ElevatorSubsystem.DRUM_RADIUS_METERS);
@@ -90,5 +93,10 @@ public class ElevatorIOReal implements ElevatorIO {
   @Override
   public void resetEncoder(final double position) {
     motor.setPosition(position);
+  }
+
+  @Override
+  public void setLockServoRotation(double position) {
+    servo.setPosition(position);
   }
 }
