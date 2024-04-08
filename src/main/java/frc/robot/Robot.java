@@ -589,7 +589,7 @@ public class Robot extends LoggedRobot {
   private Command staticAutoAim(DoubleSupplier rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            SwerveSubsystem.HEADING_VELOCITY_KP,
             0.0,
             0.0,
             new Constraints(
@@ -878,7 +878,7 @@ public class Robot extends LoggedRobot {
   private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            SwerveSubsystem.HEADING_VOLTAGE_KP,
             0.0,
             0.0,
             new Constraints(
@@ -896,7 +896,7 @@ public class Robot extends LoggedRobot {
   private Command speakerHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            4.0,
+            SwerveSubsystem.HEADING_VOLTAGE_KP,
             0.0,
             0.0,
             new Constraints(

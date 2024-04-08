@@ -120,6 +120,9 @@ public class SwerveSubsystem extends SubsystemBase {
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
+  public static final double HEADING_VELOCITY_KP = 4.0;
+  public static final double HEADING_VOLTAGE_KP = 4.0;
+
   public static final ModuleConstants frontLeft =
       new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
