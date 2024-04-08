@@ -75,9 +75,7 @@ public class Robot extends LoggedRobot {
     SUBWOOFER;
 
     public boolean isSpeakerAlike() {
-        return this == Target.SPEAKER
-                            || this == Target.FEED
-                            || this == Target.SUBWOOFER;
+      return this == Target.SPEAKER || this == Target.FEED || this == Target.SUBWOOFER;
     }
   }
 
@@ -195,11 +193,7 @@ public class Robot extends LoggedRobot {
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
-            feeder
-                .indexCmd()
-                .until(
-                    () ->
-                        !currentTarget.isSpeakerAlike()),
+            feeder.indexCmd().until(() -> !currentTarget.isSpeakerAlike()),
             Commands.sequence(
                     feeder
                         .runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
@@ -220,9 +214,7 @@ public class Robot extends LoggedRobot {
                         .until(() -> feeder.getFirstBeambreak()),
                     carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
-                .until(
-                    () ->
-                        !currentTarget.isSpeakerAlike())));
+                .until(() -> !currentTarget.isSpeakerAlike())));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
@@ -327,8 +319,8 @@ public class Robot extends LoggedRobot {
         .rightBumper()
         .and(
             () ->
-                currentTarget.isSpeakerAlike())
-        .and(controller.rightTrigger().negate())
+                (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
+                    || currentTarget.isSpeakerAlike())
         .whileTrue(
             speakerHeadingSnap(
                     () ->
