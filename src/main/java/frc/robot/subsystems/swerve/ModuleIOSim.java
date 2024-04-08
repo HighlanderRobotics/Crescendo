@@ -76,7 +76,8 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnCurrentAmps = new double[] {Math.abs(turnSim.getCurrentDrawAmps())};
 
     inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsMeters = new NullableDouble[] {new NullableDouble(inputs.drivePositionMeters)};
+    inputs.odometryDrivePositionsMeters =
+        new NullableDouble[] {new NullableDouble(inputs.drivePositionMeters)};
     inputs.odometryTurnPositions =
         new NullableRotation2d[] {new NullableRotation2d(inputs.turnPosition)};
   }

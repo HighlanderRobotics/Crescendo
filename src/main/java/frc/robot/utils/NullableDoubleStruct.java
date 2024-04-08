@@ -4,13 +4,12 @@
 
 package frc.robot.utils;
 
-import java.nio.ByteBuffer;
-
 import edu.wpi.first.util.struct.Struct;
+import java.nio.ByteBuffer;
 
 /** Silly */
 public class NullableDoubleStruct implements Struct<NullableDouble> {
-    @Override
+  @Override
   public Class<NullableDouble> getTypeClass() {
     return NullableDouble.class;
   }
