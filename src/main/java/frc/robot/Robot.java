@@ -220,7 +220,10 @@ public class Robot extends LoggedRobot {
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
-        leds.defaultStateDisplayCmd(() -> DriverStation.isEnabled(), () -> currentTarget));
+        leds.defaultStateDisplayCmd(
+            () -> DriverStation.isEnabled(),
+            () -> swerve.getDistanceToSpeaker() < AutoAim.shotMap.maxKey(),
+            () -> currentTarget));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
