@@ -155,10 +155,27 @@ public class SwerveSubsystem extends SubsystemBase {
   private double lastOdometryUpdateTimestamp = 0.0;
 
   public static final Matrix<N3, N3> LEFT_CAMERA_MATRIX =
-      MatBuilder.fill(Nat.N3(), Nat.N3(), 912.58, 0.0, 829.49, 0.0, 912.97, 650.11, 0.0, 0.0, 1.0);
+      MatBuilder.fill(
+          Nat.N3(),
+          Nat.N3(),
+          915.2126592056358,
+          0.0,
+          841.560216921862,
+          0.0,
+          913.9556728013187,
+          648.2330358379004,
+          0.0,
+          0.0,
+          1.0);
   public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
-          Nat.N5(), Nat.N1(), 0.013, -0.031, 0, -0.002, 0.115); // Last 3 values have been truncated
+          Nat.N5(),
+          Nat.N1(),
+          0.0576413369828492,
+          -0.07356597379196807,
+          -6.669129885790735E-4,
+          6.491281122640802E-4,
+          0.03731824873787814); // Last 3 values have been truncated
   public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX =
       MatBuilder.fill(
           Nat.N3(),
