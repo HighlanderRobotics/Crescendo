@@ -72,7 +72,13 @@ public class Robot extends LoggedRobot {
     AMP,
     SPEAKER,
     FEED,
-    SUBWOOFER
+    SUBWOOFER;
+
+    public boolean isSpeakerAlike() {
+        return this == Target.SPEAKER
+                            || this == Target.FEED
+                            || this == Target.SUBWOOFER;
+    }
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
@@ -193,9 +199,7 @@ public class Robot extends LoggedRobot {
                 .indexCmd()
                 .until(
                     () ->
-                        currentTarget != Target.SPEAKER
-                            || currentTarget != Target.FEED
-                            || currentTarget != Target.SUBWOOFER),
+                        !currentTarget.isSpeakerAlike()),
             Commands.sequence(
                     feeder
                         .runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
@@ -218,9 +222,7 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(
                     () ->
-                        currentTarget != Target.SPEAKER
-                            || currentTarget != Target.FEED
-                            || currentTarget != Target.SUBWOOFER)));
+                        !currentTarget.isSpeakerAlike())));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
@@ -325,9 +327,7 @@ public class Robot extends LoggedRobot {
         .rightBumper()
         .and(
             () ->
-                currentTarget == Target.SPEAKER
-                    || currentTarget == Target.FEED
-                    || currentTarget == Target.SUBWOOFER)
+                currentTarget.isSpeakerAlike())
         .and(controller.rightTrigger().negate())
         .whileTrue(
             speakerHeadingSnap(
