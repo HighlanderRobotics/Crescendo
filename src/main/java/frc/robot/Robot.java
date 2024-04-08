@@ -7,6 +7,7 @@ package frc.robot;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -137,6 +138,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    RoboRioDataJNI.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
     Logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -260,7 +262,7 @@ public class Robot extends LoggedRobot {
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
         .and(() -> !USE_SOTM)
-        .whileTrue(staticAutoAim());
+        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 10.0 : 3.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.FEED)
@@ -565,7 +567,7 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  private Command staticAutoAim(double rotationTolerance) {
+  private Command staticAutoAim(DoubleSupplier rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
             3.0,
@@ -589,7 +591,7 @@ public class Robot extends LoggedRobot {
                                     .getAngle()
                                     .getDegrees(),
                                 swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance))
+                                rotationTolerance.getAsDouble()))
                 .andThen(
                     feeder
                         .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
@@ -628,7 +630,11 @@ public class Robot extends LoggedRobot {
   }
 
   private Command staticAutoAim() {
-    return staticAutoAim(swerve.getDistanceToSpeaker() < 2.5 ? 6.0 : 3.0);
+    return staticAutoAim(() -> 3.0);
+  }
+
+  private Command staticAutoAim(double tolerance) {
+    return staticAutoAim(() -> tolerance);
   }
 
   private Command autoStaticAutoAim() {
