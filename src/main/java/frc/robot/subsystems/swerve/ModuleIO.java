@@ -41,7 +41,12 @@ public interface ModuleIO {
   public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples);
 
   /** Run the drive motor at the specified voltage. */
-  public void setDriveVoltage(final double volts);
+  public default void setDriveVoltage(final double volts) {
+    setDriveVoltage(volts, true);
+  }
+
+  /** Run the drive motor at the specified voltage. */
+  public void setDriveVoltage(final double volts, final boolean focEnabled);
 
   /** Use onboard PIDF to run the drive motor at the specified speed */
   public default void setDriveSetpoint(final double metersPerSecond) {

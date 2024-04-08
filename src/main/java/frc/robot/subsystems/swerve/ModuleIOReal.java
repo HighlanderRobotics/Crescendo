@@ -229,8 +229,8 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void setDriveVoltage(final double volts) {
-    driveTalon.setControl(driveVoltage.withOutput(volts));
+  public void setDriveVoltage(final double volts, final boolean focEnabled) {
+    driveTalon.setControl(driveVoltage.withOutput(volts).withEnableFOC(focEnabled));
   }
 
   @Override

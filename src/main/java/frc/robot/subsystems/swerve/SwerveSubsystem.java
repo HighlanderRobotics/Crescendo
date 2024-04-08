@@ -559,6 +559,12 @@ public class SwerveSubsystem extends SubsystemBase {
               "Swerve/Target Chassis Speeds Field Relative",
               ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
 
+          final boolean focEnable =
+              Math.sqrt(
+                      Math.pow(this.getVelocity().vxMetersPerSecond, 2)
+                          + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
+                  < MAX_LINEAR_SPEED * 0.9;
+
           // Send setpoints to modules
           SwerveModuleState[] optimizedSetpointStates =
               Streams.zip(
@@ -567,7 +573,8 @@ public class SwerveSubsystem extends SubsystemBase {
                       (m, s) ->
                           m.runVoltageSetpoint(
                               new SwerveModuleState(
-                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle)))
+                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle),
+                              focEnable))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
