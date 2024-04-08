@@ -15,10 +15,9 @@ package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableRotation2d;
 import frc.robot.utils.NullableDouble;
+import frc.robot.utils.NullableRotation2d;
 import java.util.List;
-
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
