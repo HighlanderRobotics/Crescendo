@@ -134,30 +134,29 @@ public class Module {
     io.setDriveVoltage(0.0);
   }
 
-  /** Returns the current turn angle of the module without PhoenixOdometryThread. */
+  /** Returns the current turn angle of the module at normal sampling frequency. */
   public Rotation2d getAngle() {
     return inputs.turnPosition;
   }
 
-  /** Returns the current drive position of the module in meters without PhoenixOdometryThread. */
+  /** Returns the current drive position of the module in meters at normal sampling frequency. */
   public double getPositionMeters() {
     return inputs.drivePositionMeters;
   }
 
   /**
-   * Returns the current drive velocity of the module in meters per second without
-   * PhoenixOdometryThread.
+   * Returns the current drive velocity of the module in meters per second withat normal sampling frequency.
    */
   public double getVelocityMetersPerSec() {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  /** Returns the module position (turn angle and drive position) without PhoenixOdometryThread. */
+  /** Returns the module position (turn angle and drive position) at normal sampling frequency. */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(getPositionMeters(), getAngle());
   }
 
-  /** Returns the module state (turn angle and drive velocity) without PhoenixOdometryThread. */
+  /** Returns the module state (turn angle and drive velocity) at normal sampling frequency. */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
   }
