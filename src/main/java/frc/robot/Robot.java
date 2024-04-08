@@ -319,7 +319,6 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
-    controller.leftBumper().whileTrue(swerve.stopWithXCmd());
     controller
         .rightBumper()
         .and(
@@ -334,9 +333,12 @@ public class Robot extends LoggedRobot {
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
                             * SwerveSubsystem.MAX_LINEAR_SPEED)
-                .until(controller.rightTrigger()));
+                .until(
+                    () ->
+                        controller.getHID().getRightTriggerAxis() > 0.5
+                            && currentTarget == Target.SPEAKER));
     controller
-        .rightBumper()
+        .leftBumper()
         .and(controller.rightTrigger().negate())
         .and(operator.a().negate())
         .whileTrue(
@@ -416,6 +418,7 @@ public class Robot extends LoggedRobot {
     operator
         .a()
         .and(controller.rightTrigger().negate())
+        .and(controller.leftBumper().negate())
         .whileTrue(
             Commands.repeatingSequence(
                     shooter
