@@ -79,7 +79,7 @@ public class ShooterIOReal implements ShooterIO {
         ShooterSubsystem.FLYWHEEL_RATIO; // TODO add in once cad is done
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
+    flywheelConfig.CurrentLimits.StatorCurrentLimit = 80.0;
     flywheelConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
 

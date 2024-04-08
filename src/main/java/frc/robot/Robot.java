@@ -262,7 +262,7 @@ public class Robot extends LoggedRobot {
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
         .and(() -> !USE_SOTM)
-        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 10.0 : 3.0));
+        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 6.0 : 3.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.FEED)
