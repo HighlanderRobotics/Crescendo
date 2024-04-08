@@ -19,6 +19,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.NullableDouble;
 import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
@@ -71,12 +72,12 @@ public class Module {
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
-      double positionMeters = inputs.odometryDrivePositionsMeters[i];
+      NullableDouble positionMeters = inputs.odometryDrivePositionsMeters[i];
       NullableRotation2d angle = inputs.odometryTurnPositions[i];
-      if (angle.get() == null) {
+      if (angle.get() == null || positionMeters.get() == null) {
         odometryPositions[i] = null; // SwerveSubsystem deals with this
       } else {
-        odometryPositions[i] = new SwerveModulePosition(positionMeters, angle.get());
+        odometryPositions[i] = new SwerveModulePosition(positionMeters.get(), angle.get());
       }
     }
   }
