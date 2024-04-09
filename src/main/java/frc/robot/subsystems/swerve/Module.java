@@ -145,8 +145,7 @@ public class Module {
   }
 
   /**
-   * Returns the current drive velocity of the module in meters per second withat normal sampling
-   * frequency.
+   * Returns the current drive velocity of the module in meters per second withat normal sampling frequency.
    */
   public double getVelocityMetersPerSec() {
     return inputs.driveVelocityMetersPerSec;

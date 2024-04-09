@@ -141,8 +141,7 @@ public class PhoenixOdometryThread extends Thread {
                 filteredSignals.stream()
                     .collect(Collectors.toUnmodifiableMap(s -> s, s -> s.getValueAsDouble()))));
         for (StatusSignal<Double> signal : signals) {
-          Logger.recordOutput(
-              "Swerve/Odo Thread Status", signal.getName() + signal.getStatus().toString());
+          Logger.recordOutput("Swerve/Odo Thread Status", signal.getName() + signal.getStatus().toString());
         }
       } finally {
         writeLock.unlock();
