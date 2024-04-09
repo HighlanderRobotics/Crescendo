@@ -450,6 +450,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
     autoChooser.addOption("Source 3 Center Bias", autoSource3CenterBias());
+    autoChooser.addOption("Source 3 Spit", autoSource3Spit());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
@@ -843,6 +844,47 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3 center bias.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource3Spit() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0).alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)).until(() -> !feeder.getLastBeambreak()).asProxy(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
