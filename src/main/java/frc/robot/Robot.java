@@ -7,6 +7,7 @@ package frc.robot;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -70,7 +71,13 @@ public class Robot extends LoggedRobot {
 
   public static enum Target {
     AMP,
-    SPEAKER
+    SPEAKER,
+    FEED,
+    SUBWOOFER;
+
+    public boolean isSpeakerAlike() {
+      return this == Target.SPEAKER || this == Target.FEED || this == Target.SUBWOOFER;
+    }
   }
 
   public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
@@ -131,6 +138,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    RoboRioDataJNI.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
     Logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -153,7 +161,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -187,7 +195,7 @@ public class Robot extends LoggedRobot {
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
-            feeder.indexCmd().until(() -> currentTarget != Target.SPEAKER),
+            feeder.indexCmd().until(() -> !currentTarget.isSpeakerAlike()),
             Commands.sequence(
                     feeder
                         .runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
@@ -208,12 +216,14 @@ public class Robot extends LoggedRobot {
                         .until(() -> feeder.getFirstBeambreak()),
                     carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
                     carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
-                .until(() -> currentTarget != Target.SPEAKER)));
+                .until(() -> !currentTarget.isSpeakerAlike())));
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
-            () -> DriverStation.isEnabled(), () -> currentTarget == Target.SPEAKER));
+            () -> DriverStation.isEnabled(),
+            () -> swerve.getDistanceToSpeaker() < AutoAim.shotMap.maxKey(),
+            () -> currentTarget));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -255,20 +265,40 @@ public class Robot extends LoggedRobot {
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
         .and(() -> !USE_SOTM)
-        .whileTrue(staticAutoAim());
+        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 6.0 : 3.0));
     controller
         .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .and(operator.b())
+        .and(() -> currentTarget == Target.FEED)
         .whileTrue(
-            shooter.runStateCmd(
-                AutoAim.FEED_SHOT.getRotation(),
-                AutoAim.FEED_SHOT.getLeftRPS(),
-                AutoAim.FEED_SHOT.getRightRPS()))
+            Commands.parallel(
+                Commands.waitUntil(() -> shooter.isAtGoal())
+                    .andThen(controller.rumbleCmd(1.0, 1.0).withTimeout(0.25))
+                    .asProxy(),
+                shooter.runStateCmd(
+                    AutoAim.FEED_SHOT.getRotation(),
+                    AutoAim.FEED_SHOT.getLeftRPS(),
+                    AutoAim.FEED_SHOT.getRightRPS())))
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5));
+    controller
+        .rightTrigger()
+        .and(() -> currentTarget == Target.SUBWOOFER)
+        .whileTrue(
+            Commands.parallel(
+                Commands.waitUntil(() -> shooter.isAtGoal())
+                    .andThen(controller.rumbleCmd(1.0, 1.0).withTimeout(0.25))
+                    .asProxy(),
+                shooter.runStateCmd(
+                    AutoAim.FENDER_SHOT.getRotation(),
+                    AutoAim.FENDER_SHOT.getLeftRPS(),
+                    AutoAim.FENDER_SHOT.getRightRPS())))
+        .onFalse(
+            Commands.parallel(
+                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                .withTimeout(0.5));
+
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -289,11 +319,12 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
-    controller.leftBumper().whileTrue(swerve.stopWithXCmd());
     controller
         .rightBumper()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .and(controller.rightTrigger().negate())
+        .and(
+            () ->
+                (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
+                    || currentTarget.isSpeakerAlike())
         .whileTrue(
             speakerHeadingSnap(
                     () ->
@@ -302,7 +333,29 @@ public class Robot extends LoggedRobot {
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
                             * SwerveSubsystem.MAX_LINEAR_SPEED)
-                .until(controller.rightTrigger()));
+                .until(
+                    () ->
+                        controller.getHID().getRightTriggerAxis() > 0.5
+                            && currentTarget == Target.SPEAKER));
+    controller
+        .leftBumper()
+        .and(controller.rightTrigger().negate())
+        .and(operator.a().negate())
+        .whileTrue(
+            Commands.repeatingSequence(
+                    shooter
+                        .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                        .until(
+                            () ->
+                                feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    shooter
+                        .runStateCmd(
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                        .until(() -> !feeder.getFirstBeambreak()))
+                .until(controller.rightTrigger())
+                .unless(controller.rightTrigger()));
     controller
         .rightBumper()
         .and(() -> currentTarget == Target.AMP)
@@ -359,10 +412,13 @@ public class Robot extends LoggedRobot {
                                     .getDegrees())
                             < 10.0)
                 .andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
+    operator.b().onTrue(Commands.runOnce(() -> currentTarget = Target.FEED));
+    operator.x().onTrue(Commands.runOnce(() -> currentTarget = Target.SUBWOOFER));
 
     operator
         .a()
         .and(controller.rightTrigger().negate())
+        .and(controller.leftBumper().negate())
         .whileTrue(
             Commands.repeatingSequence(
                     shooter
@@ -536,10 +592,10 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  private Command staticAutoAim(double rotationTolerance) {
+  private Command staticAutoAim(DoubleSupplier rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            SwerveSubsystem.HEADING_VELOCITY_KP,
             0.0,
             0.0,
             new Constraints(
@@ -560,7 +616,7 @@ public class Robot extends LoggedRobot {
                                     .getAngle()
                                     .getDegrees(),
                                 swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance))
+                                rotationTolerance.getAsDouble()))
                 .andThen(
                     feeder
                         .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
@@ -599,7 +655,11 @@ public class Robot extends LoggedRobot {
   }
 
   private Command staticAutoAim() {
-    return staticAutoAim(swerve.getDistanceToSpeaker() < 2.5 ? 6.0 : 3.0);
+    return staticAutoAim(() -> 3.0);
+  }
+
+  private Command staticAutoAim(double tolerance) {
+    return staticAutoAim(() -> tolerance);
   }
 
   private Command autoStaticAutoAim() {
@@ -824,7 +884,7 @@ public class Robot extends LoggedRobot {
   private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            SwerveSubsystem.HEADING_VOLTAGE_KP,
             0.0,
             0.0,
             new Constraints(
@@ -842,7 +902,7 @@ public class Robot extends LoggedRobot {
   private Command speakerHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            4.0,
+            SwerveSubsystem.HEADING_VOLTAGE_KP,
             0.0,
             0.0,
             new Constraints(

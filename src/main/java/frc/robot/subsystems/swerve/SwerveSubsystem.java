@@ -74,6 +74,7 @@ import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionHelper;
@@ -119,6 +120,9 @@ public class SwerveSubsystem extends SubsystemBase {
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
+  public static final double HEADING_VELOCITY_KP = 4.0;
+  public static final double HEADING_VOLTAGE_KP = 4.0;
+
   public static final ModuleConstants frontLeft =
       new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
@@ -157,31 +161,46 @@ public class SwerveSubsystem extends SubsystemBase {
       MatBuilder.fill(
           Nat.N3(),
           Nat.N3(),
-          905.8460068929472,
+          915.2126592056358,
           0.0,
-          609.5597530043692,
+          841.560216921862,
           0.0,
-          902.8748199030964,
-          404.79249985937037,
+          913.9556728013187,
+          648.2330358379004,
           0.0,
           0.0,
           1.0);
   public static final Matrix<N5, N1> LEFT_DIST_COEFFS =
       MatBuilder.fill(
-          Nat.N5(), Nat.N1(), 0.042, -0.055, -0.003, 0.001,
-          0.018); // Last 3 values have been truncated
+          Nat.N5(),
+          Nat.N1(),
+          0.0576413369828492,
+          -0.07356597379196807,
+          -6.669129885790735E-4,
+          6.491281122640802E-4,
+          0.03731824873787814); // Last 3 values have been truncated
   public static final Matrix<N3, N3> RIGHT_CAMERA_MATRIX =
       MatBuilder.fill(
-          Nat.N3(), Nat.N3(), 911.3512229, 0, 613.8313639, 0, 907.3772729, 361.1892783, 0, 0, 1);
+          Nat.N3(),
+          Nat.N3(),
+          902.0832829888818,
+          0.0,
+          611.9702186077134,
+          0.0,
+          902.2731968281233,
+          400.755534902121,
+          0.0,
+          0.0,
+          1.0);
   public static final Matrix<N5, N1> RIGHT_DIST_COEFFS =
       MatBuilder.fill(
           Nat.N5(),
           Nat.N1(),
-          0.0475654581,
-          -0.05424391133,
-          -0.00171161002,
-          0.0007729068571,
-          0.001176848411); // Last 3 values have been truncated
+          0.05398335403070431,
+          -0.07589158973947994,
+          -0.003081304772847505,
+          -0.0010797674400397023,
+          0.015185486932866137); // Last 3 values have been truncated
   public static final VisionConstants leftCamConstants =
       new VisionConstants(
           "Left_Camera",
@@ -543,6 +562,12 @@ public class SwerveSubsystem extends SubsystemBase {
               "Swerve/Target Chassis Speeds Field Relative",
               ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
 
+          final boolean focEnable =
+              Math.sqrt(
+                      Math.pow(this.getVelocity().vxMetersPerSecond, 2)
+                          + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
+                  < MAX_LINEAR_SPEED * 0.9;
+
           // Send setpoints to modules
           SwerveModuleState[] optimizedSetpointStates =
               Streams.zip(
@@ -551,7 +576,8 @@ public class SwerveSubsystem extends SubsystemBase {
                       (m, s) ->
                           m.runVoltageSetpoint(
                               new SwerveModuleState(
-                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle)))
+                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle),
+                              focEnable))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states

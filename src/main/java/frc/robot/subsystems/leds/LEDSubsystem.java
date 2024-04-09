@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot.Target;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
@@ -54,6 +56,17 @@ public class LEDSubsystem extends SubsystemBase {
         setSolidCmd(offColor).withTimeout(1.0 / frequency));
   }
 
+  public Command setSolidCmd(Supplier<Color> color) {
+    return this.run(() -> setSolid(color.get()));
+  }
+
+  public Command setBlinkingCmd(
+      Supplier<Color> onColor, Supplier<Color> offColor, double frequency) {
+    return Commands.repeatingSequence(
+        setSolidCmd(onColor).withTimeout(1.0 / frequency),
+        setSolidCmd(offColor).withTimeout(1.0 / frequency));
+  }
+
   /** Sets the first portion of the leds to a color, and the rest off */
   public Command setProgressCmd(Color color, DoubleSupplier progress) {
     return this.run(
@@ -88,14 +101,27 @@ public class LEDSubsystem extends SubsystemBase {
         });
   }
 
-  public Command defaultStateDisplayCmd(BooleanSupplier enabled, BooleanSupplier targetIsSpeaker) {
+  public Command defaultStateDisplayCmd(
+      BooleanSupplier enabled, BooleanSupplier inRange, Supplier<Target> target) {
     return Commands.either(
-            Commands.either(
-                this.setBlinkingCmd(new Color("#ffff00"), new Color(), 10.0)
-                    .until(() -> !targetIsSpeaker.getAsBoolean() || !enabled.getAsBoolean()),
-                this.setBlinkingCmd(new Color("#ff7777"), new Color(), 10.0)
-                    .until(() -> targetIsSpeaker.getAsBoolean() || !enabled.getAsBoolean()),
-                targetIsSpeaker),
+            Commands.select(
+                Map.of(
+                    Target.SPEAKER,
+                    this.setBlinkingCmd(
+                            () -> new Color("#ffff00"),
+                            () -> inRange.getAsBoolean() ? new Color("#0000ff") : new Color(),
+                            10.0)
+                        .until(() -> target.get() != Target.SPEAKER || !enabled.getAsBoolean()),
+                    Target.AMP,
+                    this.setBlinkingCmd(new Color("#ff7777"), new Color(), 10.0)
+                        .until(() -> target.get() != Target.AMP || !enabled.getAsBoolean()),
+                    Target.FEED,
+                    this.setBlinkingCmd(new Color("#0000ff"), new Color(), 10.0)
+                        .until(() -> target.get() != Target.FEED || !enabled.getAsBoolean()),
+                    Target.SUBWOOFER,
+                    this.setBlinkingCmd(new Color("#ff0000"), new Color(), 10.0)
+                        .until(() -> target.get() != Target.SUBWOOFER || !enabled.getAsBoolean())),
+                target),
             this.setRunAlongCmd(
                     // Set color to be purple with a moving dash corresponding to alliance color
                     () -> {
