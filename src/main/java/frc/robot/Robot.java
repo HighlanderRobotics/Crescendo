@@ -186,9 +186,9 @@ public class Robot extends LoggedRobot {
         swerve.runVoltageTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getRightX())
+                    -teleopAxisAdjustment(controller.getHID().getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getHID().getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getHID().getRightX())
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
@@ -322,10 +322,10 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             speakerHeadingSnap(
                     () ->
-                        -teleopAxisAdjustment(controller.getLeftY())
+                        -teleopAxisAdjustment(controller.getHID().getLeftY())
                             * SwerveSubsystem.MAX_LINEAR_SPEED,
                     () ->
-                        -teleopAxisAdjustment(controller.getLeftX())
+                        -teleopAxisAdjustment(controller.getHID().getLeftX())
                             * SwerveSubsystem.MAX_LINEAR_SPEED)
                 .until(controller.rightTrigger()));
     controller
@@ -334,9 +334,9 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             ampHeadingSnap(
                 () ->
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getHID().getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () ->
-                    -teleopAxisAdjustment(controller.getLeftX())
+                    -teleopAxisAdjustment(controller.getHID().getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     controller
@@ -359,7 +359,7 @@ public class Robot extends LoggedRobot {
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0))
                 .until(
                     () ->
-                        operator.getRightTriggerAxis() > 0.75
+                        operator.getHID().getRightTriggerAxis() > 0.75
                             && operator.rightBumper().getAsBoolean())
                 .andThen(
                     Commands.parallel(
