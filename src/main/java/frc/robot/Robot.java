@@ -722,19 +722,8 @@ public class Robot extends LoggedRobot {
             .until(() -> feeder.getFirstBeambreak())
             .asProxy(),
         shooter
-            .runStateCmd(
-                () ->
-                    Rotation2d.fromDegrees(
-                        MathUtil.clamp(
-                            AutoAim.shotMap
-                                .get(swerve.getDistanceToSpeaker())
-                                .getRotation()
-                                .getDegrees(),
-                            0,
-                            35)),
-                () -> 0.0,
-                () -> 0.0)
-            .until(() -> feeder.getFirstBeambreak())
+            .runIdleFlywheelCmd(() -> ShooterSubsystem.PIVOT_MIN_ANGLE)
+            .until(() -> feeder.getFirstBeambreak() && !feeder.getLastBeambreak())
             .unless(() -> feeder.getFirstBeambreak())
             .andThen(
                 shooter.runStateCmd(
@@ -870,9 +859,13 @@ public class Robot extends LoggedRobot {
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
-        shooter.runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0).alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)).until(() -> !feeder.getLastBeambreak()).asProxy(),
+        shooter
+            .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
+            .alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+            .until(() -> !feeder.getLastBeambreak())
+            .asProxy(),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"), true)
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
