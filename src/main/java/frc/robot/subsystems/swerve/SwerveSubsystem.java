@@ -135,13 +135,16 @@ public class SwerveSubsystem extends SubsystemBase {
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
   private Pose2d pose = new Pose2d();
-  private SwerveModulePosition[] lastModulePositions = // For delta tracking
+
+  /** For delta tracking with PhoenixOdometryThread* */
+  private SwerveModulePosition[] lastModulePositions =
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
         new SwerveModulePosition(),
         new SwerveModulePosition(),
         new SwerveModulePosition()
       };
+
   private Rotation2d rawGyroRotation = new Rotation2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
 
@@ -309,7 +312,8 @@ public class SwerveSubsystem extends SubsystemBase {
           new AprilTagFieldLayout(
               Filesystem.getDeployDirectory()
                   .toPath()
-                  .resolve("vision" + File.pathSeparator + "2024-crescendo.json"));
+                  .resolve("vision" + File.separator + "2024-crescendo.json"));
+      System.out.println("Successfully loaded tag map");
     } catch (Exception e) {
       System.err.println("Failed to load tag map");
       fieldTags = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
@@ -423,43 +427,41 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
-      SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
-      SwerveModulePosition[] estPositions = new SwerveModulePosition[4];
+      SwerveModulePosition[] moduleDeltas =
+          new SwerveModulePosition[4]; // change in positions since the last update
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
+        modulePositions[moduleIndex] =
+            modules[moduleIndex]
+                .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
+        // we can't do any odo updates if we are not getting module data
+        if (modulePositions[moduleIndex] == null) continue;
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
                     - lastModulePositions[moduleIndex].distanceMeters,
                 modulePositions[moduleIndex].angle);
-        estPositions[moduleIndex] = // TODO i don't know why this works but it does
-            new SwerveModulePosition(
-                getModulePositions()[moduleIndex]
-                        .distanceMeters // smth abt odo positions vs module positions
-                    - lastModulePositions[moduleIndex].distanceMeters,
-                getModulePositions()[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
       // The twist represents the motion of the robot since the last
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
-      Twist2d twist = kinematics.toTwist2d(modulePositions);
-      if (gyroInputs.connected) {
-        // If the gyro is connected, replace the theta component of the twist
-        // with the change in angle since the last sample.
-        rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex];
+      Twist2d twist = kinematics.toTwist2d(moduleDeltas);
+      if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
+        Logger.recordOutput("Odometry/Received Gyro Update", false);
+        // We don't have a complete set of data, so just use the module rotations
+        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+      } else {
+        Logger.recordOutput("Odometry/Received Gyro Update", true);
+        rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
-      } else {
-        // Use the angle delta from the kinematics and module deltas
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
       // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       // Apply update
-      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, estPositions);
+      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
     }
   }
 
@@ -476,7 +478,6 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
-        pose = pose.interpolate(visionPose.toPose2d(), 0.25);
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -788,11 +789,12 @@ public class SwerveSubsystem extends SubsystemBase {
     return new VisionConstants[] {rightCamConstants};
   }
 
-  /** Returns the module positions (turn angles and drive velocities) for all of the modules. */
+  /**
+   * Returns the module positions (turn angles and drive velocities) for all of the modules without
+   * PhoenixOdometryThread.
+   */
   private SwerveModulePosition[] getModulePositions() {
-    SwerveModulePosition[] states =
-        Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
-    return states;
+    return Arrays.stream(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
   }
 
   public Rotation2d getInstantRotationToTranslation(Pose2d translation, Pose2d pose) {
