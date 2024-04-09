@@ -449,6 +449,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
+    autoChooser.addOption("Source 3 Center Bias", autoSource3CenterBias());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
@@ -813,6 +814,35 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource3CenterBias() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 center bias.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 center bias.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
