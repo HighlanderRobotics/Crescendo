@@ -19,7 +19,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
 import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
@@ -72,12 +71,12 @@ public class Module {
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
-      NullableDouble positionMeters = inputs.odometryDrivePositionsMeters[i];
+      double positionMeters = inputs.odometryDrivePositionsMeters[i];
       NullableRotation2d angle = inputs.odometryTurnPositions[i];
-      if (angle.get() == null || positionMeters.get() == null) {
+      if (angle.get() == null) {
         odometryPositions[i] = null; // SwerveSubsystem deals with this
       } else {
-        odometryPositions[i] = new SwerveModulePosition(positionMeters.get(), angle.get());
+        odometryPositions[i] = new SwerveModulePosition(positionMeters, angle.get());
       }
     }
   }
@@ -134,29 +133,30 @@ public class Module {
     io.setDriveVoltage(0.0);
   }
 
-  /** Returns the current turn angle of the module at normal sampling frequency. */
+  /** Returns the current turn angle of the module without PhoenixOdometryThread. */
   public Rotation2d getAngle() {
     return inputs.turnPosition;
   }
 
-  /** Returns the current drive position of the module in meters at normal sampling frequency. */
+  /** Returns the current drive position of the module in meters without PhoenixOdometryThread. */
   public double getPositionMeters() {
     return inputs.drivePositionMeters;
   }
 
   /**
-   * Returns the current drive velocity of the module in meters per second withat normal sampling frequency.
+   * Returns the current drive velocity of the module in meters per second without
+   * PhoenixOdometryThread.
    */
   public double getVelocityMetersPerSec() {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  /** Returns the module position (turn angle and drive position) at normal sampling frequency. */
+  /** Returns the module position (turn angle and drive position) without PhoenixOdometryThread. */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(getPositionMeters(), getAngle());
   }
 
-  /** Returns the module state (turn angle and drive velocity) at normal sampling frequency. */
+  /** Returns the module state (turn angle and drive velocity) without PhoenixOdometryThread. */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
   }

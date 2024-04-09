@@ -13,7 +13,7 @@ public class NullableRotation2d implements StructSerializable {
   final Rotation2d value;
 
   public NullableRotation2d(Rotation2d value) {
-    isNull = value == null;
+    isNull = value == null ? true : false;
     this.value = value;
   }
 
