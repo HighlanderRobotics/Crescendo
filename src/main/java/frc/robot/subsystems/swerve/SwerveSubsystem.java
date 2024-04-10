@@ -435,8 +435,13 @@ public class SwerveSubsystem extends SubsystemBase {
             modules[moduleIndex]
                 .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
         // we can't do any odo updates if we are not getting module data
-        if (modulePositions[moduleIndex] == null) {isNull = true; continue;}
-        isNull = false;
+        if (modulePositions[moduleIndex] == null) {
+          isNull = true;
+
+          Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
+          break;
+        }
+        Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, true);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
@@ -444,7 +449,21 @@ public class SwerveSubsystem extends SubsystemBase {
                 modulePositions[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
-      if (isNull) continue;
+      if (isNull) {
+        if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
+          Logger.recordOutput("Odometry/Received Gyro Update", false);
+          // no modules and no gyro so we're just sad :(
+        } else {
+          Logger.recordOutput("Odometry/Received Gyro Update", true);
+          rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
+          var twist = new Twist2d(0, 0, rawGyroRotation.minus(lastGyroRotation).getRadians());
+          pose = pose.exp(twist);
+          lastGyroRotation = rawGyroRotation;
+          Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
+          // TODO prob cant update estimator but maybe?
+        }
+        continue;
+      }
 
       // The twist represents the motion of the robot since the last
       // sample in x, y, and theta based only on the modules, without
@@ -463,6 +482,7 @@ public class SwerveSubsystem extends SubsystemBase {
       // Apply the twist (change since last sample) to the current pose
       pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
+      Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
       // Apply update
       estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
     }
