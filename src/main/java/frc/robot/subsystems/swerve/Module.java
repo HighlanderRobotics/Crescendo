@@ -63,18 +63,39 @@ public class Module {
   }
 
   public void periodic() {
-    Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
-    Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
-        Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
+    SwerveSubsystem.measureTime(
+        () -> Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs),
+        "/mperiodic/process inputs" + io.getModuleName());
+    SwerveSubsystem.measureTime(
+        () ->
+            Logger.recordOutput(
+                String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
+                Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage())),
+        "/mperiodic/record voltage" + io.getModuleName());
 
     // Calculate positions for odometry
-    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
-    odometryPositions = new SwerveModulePosition[sampleCount];
+    int sampleCount =
+        SwerveSubsystem.measureTime(
+            () -> inputs.odometryTimestamps.length,
+            "/mperiodic/get odo length" + io.getModuleName()); // All signals are sampled together
+    odometryPositions =
+        SwerveSubsystem.measureTime(
+            () -> new SwerveModulePosition[sampleCount],
+            "/mperiodic/new odo positions" + io.getModuleName());
     for (int i = 0; i < sampleCount; i++) {
+      long a = Logger.getRealTimestamp();
       double positionMeters = inputs.odometryDrivePositionsMeters[i];
+      long b = Logger.getRealTimestamp();
+      Logger.recordOutput(
+          "MeasureTime/mperiodic/assign pos meters" + io.getModuleName() + i, (b - a) / 1000);
       Rotation2d angle = inputs.odometryTurnPositions[i];
+      a = Logger.getRealTimestamp();
+      Logger.recordOutput(
+          "MeasureTime/mperiodic/assign angle" + io.getModuleName() + i, (a - b) / 1000);
       odometryPositions[i] = new SwerveModulePosition(positionMeters - lastPositionMeters, angle);
+      b = Logger.getRealTimestamp();
+      Logger.recordOutput(
+          "MeasureTime/mperiodic/assign odo pos" + io.getModuleName() + i, (b - a) / 1000);
       lastPositionMeters = positionMeters;
     }
   }

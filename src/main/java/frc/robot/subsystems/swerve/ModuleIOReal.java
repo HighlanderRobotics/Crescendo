@@ -213,16 +213,26 @@ public class ModuleIOReal implements ModuleIO {
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
 
     inputs.odometryTimestamps =
-        asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
+        SwerveSubsystem.measureTime(
+            () -> asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray(),
+            "odo timestamps");
     inputs.odometryDrivePositionsMeters =
-        asyncOdometrySamples.stream().mapToDouble(s -> s.values().get(drivePosition)).toArray();
+        SwerveSubsystem.measureTime(
+            () ->
+                asyncOdometrySamples.stream()
+                    .mapToDouble(s -> s.values().get(drivePosition))
+                    .toArray(),
+            "odo drive pos");
     inputs.odometryTurnPositions =
-        asyncOdometrySamples.stream()
-            // should be after offset + gear ratio
-            .map(s -> s.values().get(turnPosition))
-            .filter(s -> s != null)
-            .map(Rotation2d::fromRotations)
-            .toArray(Rotation2d[]::new);
+        SwerveSubsystem.measureTime(
+            () ->
+                asyncOdometrySamples.stream()
+                    // should be after offset + gear ratio
+                    .map(s -> s.values().get(turnPosition))
+                    .filter(s -> s != null)
+                    .map(Rotation2d::fromRotations)
+                    .toArray(Rotation2d[]::new),
+            "odo turn positions");
   }
 
   @Override

@@ -79,7 +79,7 @@ public class Robot extends LoggedRobot {
     }
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
@@ -186,8 +186,10 @@ public class Robot extends LoggedRobot {
         swerve.runVoltageTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -teleopAxisAdjustment(controller.getHID().getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getHID().getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getHID().getLeftY())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getHID().getLeftX())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -teleopAxisAdjustment(controller.getHID().getRightX())
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
@@ -334,7 +336,8 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             ampHeadingSnap(
                 () ->
-                    -teleopAxisAdjustment(controller.getHID().getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getHID().getLeftY())
+                        * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () ->
                     -teleopAxisAdjustment(controller.getHID().getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
@@ -766,10 +769,10 @@ public class Robot extends LoggedRobot {
   private Command autoSource3() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
+                swerve
+                    .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
+                    .asProxy()
+                    .deadlineWith(autoIntake()),
         autoIntake()
             .raceWith(
                 Commands.sequence(

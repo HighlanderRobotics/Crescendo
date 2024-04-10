@@ -362,23 +362,44 @@ public class SwerveSubsystem extends SubsystemBase {
     return new VisionIO[] {new VisionIOSim(leftCamConstants), new VisionIOSim(rightCamConstants)};
   }
 
+  public static void measureTime(Runnable func, String name) {
+    long start = Logger.getRealTimestamp();
+    func.run();
+    long end = Logger.getRealTimestamp();
+    Logger.recordOutput("MeasureTime/" + name, (end - start) / 1000);
+  }
+
+  public static <T> T measureTime(Supplier<T> func, String name) {
+    long start = Logger.getRealTimestamp();
+    T result = func.get();
+    long end = Logger.getRealTimestamp();
+    Logger.recordOutput("MeasureTime/" + name, (end - start) / 1000);
+    return result;
+  }
+
   public void periodic() {
     for (var camera : cameras) {
       camera.updateInputs();
       camera.processInputs();
     }
     var odometrySamples =
-        PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp);
+        measureTime(
+            () -> PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp),
+            "get odo samples");
     if (!odometrySamples.isEmpty()) {
       lastOdometryUpdateTimestamp = odometrySamples.get(odometrySamples.size() - 1).timestamp();
     }
-    gyroIO.updateInputs(gyroInputs, odometrySamples);
+    measureTime(() -> gyroIO.updateInputs(gyroInputs, odometrySamples), "update gyroinputs");
+    int i = 0;
     for (var module : modules) {
-      module.updateInputs(odometrySamples);
+      measureTime(() -> module.updateInputs(odometrySamples), "update module inputs" + i);
+      i++;
     }
+    i = 0;
     Logger.processInputs("Swerve/Gyro", gyroInputs);
     for (var module : modules) {
-      module.periodic();
+      measureTime(() -> module.periodic(), "module periodic" + i);
+      i++;
     }
 
     // Stop moving when disabled
@@ -389,8 +410,8 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     // Log empty setpoint states when disabled
     if (DriverStation.isDisabled()) {
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
     }
 
     Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
@@ -426,24 +447,31 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
       SwerveModulePosition[] estPositions = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
+        long a = Logger.getRealTimestamp();
         modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[deltaIndex];
+        long b = Logger.getRealTimestamp();
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
                     - lastModulePositions[moduleIndex].distanceMeters,
                 modulePositions[moduleIndex].angle);
+        a = Logger.getRealTimestamp();
+        Logger.recordOutput("MeasureTime/Assign module deltas", (a - b) / 1000);
         estPositions[moduleIndex] = // TODO i don't know why this works but it does
             new SwerveModulePosition(
                 getModulePositions()[moduleIndex]
                         .distanceMeters // smth abt odo positions vs module positions
                     - lastModulePositions[moduleIndex].distanceMeters,
                 getModulePositions()[moduleIndex].angle);
+        b = Logger.getRealTimestamp();
+        Logger.recordOutput("MeasureTime/assign est positions", (b - a) / 1000);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
       // The twist represents the motion of the robot since the last
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
+
       Twist2d twist = kinematics.toTwist2d(modulePositions);
       if (gyroInputs.connected) {
         // If the gyro is connected, replace the theta component of the twist
