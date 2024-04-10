@@ -29,6 +29,7 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -612,8 +613,8 @@ public class SwerveSubsystem extends SubsystemBase {
             traj,
             () -> pose,
             Choreo.choreoSwerveController(
-                new PIDController(3.0, 0.0, 0.0),
-                new PIDController(3.0, 0.0, 0.0),
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(1.5, 0.0, 0.0),
                 new PIDController(3.0, 0.0, 0.0)),
             (ChassisSpeeds speeds) -> this.runVelocity(speeds),
             () -> {
@@ -698,13 +699,13 @@ public class SwerveSubsystem extends SubsystemBase {
                   : trajectory.getFinalState().getPose();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
-          // && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
-          //     && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.4)
-          //     && Math.abs(
-          //             (poseSupplier.get().getRotation().getDegrees()
-          //                     - finalPose.getRotation().getDegrees())
-          //                 % 360)
-          //         < 90.0)
+          && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
+              && MathUtil.isNear(finalPose.getY(), poseSupplier.get().getY(), 0.4)
+              && Math.abs(
+                      (poseSupplier.get().getRotation().getDegrees()
+                              - finalPose.getRotation().getDegrees())
+                          % 360)
+                  < 90.0)
           ;
         },
         requirements);
