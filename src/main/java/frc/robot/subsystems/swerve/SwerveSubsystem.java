@@ -429,12 +429,14 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
           new SwerveModulePosition[4]; // change in positions since the last update
+      boolean isNull = false;
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         modulePositions[moduleIndex] =
             modules[moduleIndex]
                 .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
         // we can't do any odo updates if we are not getting module data
-        if (modulePositions[moduleIndex] == null) continue;
+        if (modulePositions[moduleIndex] == null) {isNull = true; continue;}
+        isNull = false;
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
                 modulePositions[moduleIndex].distanceMeters
@@ -442,6 +444,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 modulePositions[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
+      if (isNull) continue;
 
       // The twist represents the motion of the robot since the last
       // sample in x, y, and theta based only on the modules, without
