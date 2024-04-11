@@ -21,6 +21,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.NullableDouble;
+import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 
 /**
@@ -74,8 +76,10 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnCurrentAmps = new double[] {Math.abs(turnSim.getCurrentDrawAmps())};
 
     inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsMeters = new double[] {inputs.drivePositionMeters};
-    inputs.odometryTurnPositions = new Rotation2d[] {inputs.turnPosition};
+    inputs.odometryDrivePositionsMeters =
+        new NullableDouble[] {new NullableDouble(inputs.drivePositionMeters)};
+    inputs.odometryTurnPositions =
+        new NullableRotation2d[] {new NullableRotation2d(inputs.turnPosition)};
   }
 
   @Override

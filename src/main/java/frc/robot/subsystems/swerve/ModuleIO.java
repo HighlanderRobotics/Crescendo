@@ -15,6 +15,8 @@ package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.NullableDouble;
+import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -32,8 +34,8 @@ public interface ModuleIO {
     public double turnAppliedVolts = 0.0;
     public double[] turnCurrentAmps = new double[] {};
 
-    public double[] odometryDrivePositionsMeters = new double[] {};
-    public Rotation2d[] odometryTurnPositions = new Rotation2d[] {};
+    public NullableDouble[] odometryDrivePositionsMeters = new NullableDouble[] {};
+    public NullableRotation2d[] odometryTurnPositions = new NullableRotation2d[] {};
     public double[] odometryTimestamps = new double[] {};
   }
 

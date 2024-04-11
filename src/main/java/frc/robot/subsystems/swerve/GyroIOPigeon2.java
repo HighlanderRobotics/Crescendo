@@ -23,6 +23,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 
 /** IO implementation for Pigeon2 */
@@ -53,9 +54,8 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.odometryYawPositions =
         asyncOdometrySamples.stream()
             .map(s -> s.values().get(yaw))
-            .filter(s -> s != null)
-            .map(Rotation2d::fromDegrees)
-            .toArray(Rotation2d[]::new);
+            .map(d -> d == null ? new NullableRotation2d(null) : NullableRotation2d.fromDegrees(d))
+            .toArray(NullableRotation2d[]::new);
   }
 
   @Override
