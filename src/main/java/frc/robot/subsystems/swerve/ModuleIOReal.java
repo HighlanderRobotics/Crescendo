@@ -33,6 +33,8 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.utils.NullableDouble;
+import frc.robot.utils.NullableRotation2d;
 import java.util.List;
 
 /**
@@ -222,14 +224,20 @@ public class ModuleIOReal implements ModuleIO {
     inputs.odometryTimestamps =
         asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
     inputs.odometryDrivePositionsMeters =
-        asyncOdometrySamples.stream().mapToDouble(s -> s.values().get(drivePosition)).toArray();
+        asyncOdometrySamples.stream()
+            .map(s -> s.values().get(drivePosition))
+            .map(NullableDouble::new)
+            .toArray(NullableDouble[]::new);
     inputs.odometryTurnPositions =
         asyncOdometrySamples.stream()
             // should be after offset + gear ratio
             .map(s -> s.values().get(turnPosition))
-            .filter(s -> s != null)
-            .map(Rotation2d::fromRotations)
-            .toArray(Rotation2d[]::new);
+            .map(
+                d ->
+                    d == null
+                        ? new NullableRotation2d(null)
+                        : new NullableRotation2d(Rotation2d.fromRotations(d)))
+            .toArray(NullableRotation2d[]::new);
   }
 
   @Override
