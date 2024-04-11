@@ -454,6 +454,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
+    autoChooser.addOption("Zoom", zoom());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -731,6 +732,10 @@ public class Robot extends LoggedRobot {
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
             .asProxy());
+  }
+
+  private Command zoom() {
+    return Commands.sequence(swerve.runChoreoTraj(Choreo.getTrajectory("zoom"), true));
   }
 
   private Command autoAmp4Wing() {
