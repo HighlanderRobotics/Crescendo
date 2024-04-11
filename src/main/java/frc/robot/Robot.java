@@ -455,6 +455,8 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
     autoChooser.addOption("Zoom", zoom());
+    autoChooser.addOption("Source Dash", autoSourceDash());
+    autoChooser.addOption("Source 2 + 3 Centerline", autoSource2And3Centerline());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -732,6 +734,46 @@ public class Robot extends LoggedRobot {
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
             .asProxy());
+  }
+  private Command autoSourceDash() {
+    return Commands.sequence(
+        swerve.runChoreoTraj(Choreo.getTrajectory("dash.1"), true).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("dash.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+            autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+            autoStaticAutoAim(),
+            swerve
+                .runChoreoTraj(Choreo.getTrajectory("dash.3"))
+                .asProxy()
+                .deadlineWith(autoIntake()),
+            autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
+            autoStaticAutoAim());
+  }
+  private Command autoSource2And3Centerline() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.1"), true).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim()
+    );
   }
 
   private Command zoom() {
