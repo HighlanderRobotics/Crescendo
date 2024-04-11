@@ -265,7 +265,7 @@ public class Robot extends LoggedRobot {
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
         .and(() -> !USE_SOTM)
-        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 6.0 : 3.0));
+        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 5.0 : 3.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.FEED)
@@ -621,7 +621,10 @@ public class Robot extends LoggedRobot {
                                     .getAngle()
                                     .getDegrees(),
                                 swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance.getAsDouble()))
+                                rotationTolerance.getAsDouble())
+                            && MathUtil.isNear(
+                                0.0, 
+                            Math.sqrt(swerve.getVelocity().vxMetersPerSecond * swerve.getVelocity().vxMetersPerSecond + swerve.getVelocity().vyMetersPerSecond * swerve.getVelocity().vyMetersPerSecond), 0.25))
                 .andThen(
                     feeder
                         .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
@@ -735,32 +738,34 @@ public class Robot extends LoggedRobot {
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
             .asProxy());
   }
+
   private Command autoSourceDash() {
     return Commands.sequence(
-        swerve.runChoreoTraj(Choreo.getTrajectory("dash.1"), true).asProxy().deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("dash.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("dash.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-            autoIntake()
+        swerve.runChoreoTraj(Choreo.getTrajectory("dash.2")).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
-            autoStaticAutoAim(),
-            swerve
-                .runChoreoTraj(Choreo.getTrajectory("dash.3"))
-                .asProxy()
-                .deadlineWith(autoIntake()),
-            autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
-            autoStaticAutoAim());
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("dash.3")).asProxy().deadlineWith(autoIntake()),
+        autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
+        autoStaticAutoAim());
   }
+
   private Command autoSource2And3Centerline() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.1"), true).asProxy().deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
@@ -772,8 +777,7 @@ public class Robot extends LoggedRobot {
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim()
-    );
+        autoStaticAutoAim());
   }
 
   private Command zoom() {
