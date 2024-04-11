@@ -33,7 +33,7 @@ public class NullableDoubleStruct implements Struct<NullableDouble> {
   public NullableDouble unpack(ByteBuffer bb) {
     byte isNull = bb.get();
     double value = bb.getDouble();
-    if (isNull == -1) {
+    if (isNull == 1) {
       return new NullableDouble(null);
     } else {
       return new NullableDouble(value);
@@ -43,10 +43,10 @@ public class NullableDoubleStruct implements Struct<NullableDouble> {
   @Override
   public void pack(ByteBuffer bb, NullableDouble value) {
     if (value == null) {
-      bb.put((byte) -1);
+      bb.put((byte) 1);
       bb.putDouble(0);
     } else {
-      bb.put((byte) 1);
+      bb.put((byte) 0);
       bb.putDouble(value.get());
     }
   }
