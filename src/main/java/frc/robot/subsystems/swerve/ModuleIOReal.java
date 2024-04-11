@@ -219,9 +219,8 @@ public class ModuleIOReal implements ModuleIO {
     inputs.odometryDrivePositionsMeters =
         asyncOdometrySamples.stream()
             .map(s -> s.values().get(drivePosition))
-            .map(d -> d == null ? new NullableDouble(null) : new NullableDouble(d))
+            .map(NullableDouble::new)
             .toArray(NullableDouble[]::new);
-    // mapToDouble(s -> s.values().get(drivePosition)).toArray();
     inputs.odometryTurnPositions =
         asyncOdometrySamples.stream()
             // should be after offset + gear ratio

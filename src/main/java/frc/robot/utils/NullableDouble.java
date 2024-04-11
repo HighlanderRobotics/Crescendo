@@ -12,7 +12,7 @@ public class NullableDouble implements StructSerializable {
   final Double value;
 
   public NullableDouble(Double value) {
-    isNull = value == null ? true : false;
+    isNull = value == null;
     this.value = value;
   }
 

@@ -429,14 +429,14 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
           new SwerveModulePosition[4]; // change in positions since the last update
-      boolean isNull = false;
+      boolean hasNullModulePosition = false;
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         modulePositions[moduleIndex] =
             modules[moduleIndex]
                 .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
         // we can't do any odo updates if we are not getting module data
         if (modulePositions[moduleIndex] == null) {
-          isNull = true;
+          hasNullModulePosition = true;
 
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
@@ -449,7 +449,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 modulePositions[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
-      if (isNull) {
+      if (hasNullModulePosition) {
         if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
           Logger.recordOutput("Odometry/Received Gyro Update", false);
           // no modules and no gyro so we're just sad :(
