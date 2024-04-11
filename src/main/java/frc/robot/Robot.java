@@ -941,6 +941,62 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim());
   }
 
+  private Command autoSource3CitrusSpit() {
+    return Commands.sequence(
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        shooter
+            .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
+            .alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+            .until(() -> !feeder.getLastBeambreak())
+            .asProxy(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.4"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
   private Command autoSource4() {
     return Commands.sequence(
         autoFenderShot(),
