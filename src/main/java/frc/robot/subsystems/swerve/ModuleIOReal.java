@@ -115,7 +115,7 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Slot1.kV = 0.0;
     driveConfig.Slot1.kA = kAAmpsPerMeterPerSecondSquared;
     driveConfig.Slot1.kS = 11.0;
-    driveConfig.Slot1.kP = 100.0;
+    driveConfig.Slot1.kP = 150.0;
     driveConfig.Slot1.kD = 0.0;
 
     driveConfig.TorqueCurrent.TorqueNeutralDeadband = 10.0;
