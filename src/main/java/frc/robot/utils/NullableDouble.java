@@ -8,16 +8,14 @@ import edu.wpi.first.util.struct.StructSerializable;
 
 /** Silly */
 public class NullableDouble implements StructSerializable {
-  final boolean isNull;
   final Double value;
 
   public NullableDouble(Double value) {
-    isNull = value == null;
     this.value = value;
   }
 
   public Double get() {
-    return isNull ? null : value;
+    return value;
   }
 
   public static final NullableDoubleStruct struct = new NullableDoubleStruct();
