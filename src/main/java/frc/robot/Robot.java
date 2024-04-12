@@ -835,7 +835,7 @@ public class Robot extends LoggedRobot {
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
             .asProxy()
-            .deadlineWith(autoIntake()),
+            .deadlineWith(autoIntake().beforeStarting(Commands.waitSeconds(2.2))),
         autoIntake()
             .raceWith(
                 Commands.sequence(
