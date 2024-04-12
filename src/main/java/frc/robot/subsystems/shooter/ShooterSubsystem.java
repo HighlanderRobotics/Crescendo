@@ -112,6 +112,16 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public Command runStateCmd(
+      Supplier<Rotation2d> rotation,
+      DoubleSupplier left,
+      DoubleSupplier right,
+      double statorLimit,
+      double supplyLimit) {
+    return this.runStateCmd(rotation, left, right)
+        .beforeStarting(() -> io.setFlyhweelCurrentLimit(statorLimit, supplyLimit));
+  }
+
+  public Command runStateCmd(
       Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(
         () -> {

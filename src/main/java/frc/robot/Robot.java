@@ -659,7 +659,9 @@ public class Robot extends LoggedRobot {
             shooter.runStateCmd(
                 () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                 () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS(),
+                80.0,
+                30.0))
         .beforeStarting(
             () ->
                 headingController.reset(
@@ -740,9 +742,10 @@ public class Robot extends LoggedRobot {
             .andThen(
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> 20.0, // AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> 20.0 // AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()
-                    ))
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS(),
+                    30.0,
+                    10.0))
             .asProxy());
   }
 
