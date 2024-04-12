@@ -42,7 +42,7 @@ public class NullableDoubleStruct implements Struct<NullableDouble> {
 
   @Override
   public void pack(ByteBuffer bb, NullableDouble value) {
-    if (value == null) {
+    if (value.get() == null) {
       bb.put((byte) 1);
       bb.putDouble(0);
     } else {
