@@ -740,8 +740,9 @@ public class Robot extends LoggedRobot {
             .andThen(
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
+                    () -> 20.0, // AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                    () -> 20.0 // AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()
+                    ))
             .asProxy());
   }
 
@@ -816,10 +817,12 @@ public class Robot extends LoggedRobot {
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).asProxy().deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("amp 5.4"))
+            .asProxy()
+            .deadlineWith(autoIntake())
+            .until(() -> feeder.getFirstBeambreak()),
+        autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
         autoStaticAutoAim());
   }
 
