@@ -213,7 +213,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(10.380),
                   Units.inchesToMeters(7.381)),
               new Rotation3d(
-                  Units.degreesToRadians(0.0),
+                  Units.degreesToRadians(180.0),
                   Units.degreesToRadians(-28.125),
                   Units.degreesToRadians(120))),
           LEFT_CAMERA_MATRIX,
@@ -637,8 +637,8 @@ public class SwerveSubsystem extends SubsystemBase {
             traj,
             () -> pose,
             Choreo.choreoSwerveController(
-                new PIDController(3.0, 0.0, 0.0),
-                new PIDController(3.0, 0.0, 0.0),
+                new PIDController(1.0, 0.0, 0.0),
+                new PIDController(1.0, 0.0, 0.0),
                 new PIDController(6.0, 0.0, 0.0)),
             (ChassisSpeeds speeds) -> this.runVelocity(speeds),
             () -> {
@@ -819,7 +819,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {rightCamConstants};
+    return new VisionConstants[] {leftCamConstants, rightCamConstants};
   }
 
   /**

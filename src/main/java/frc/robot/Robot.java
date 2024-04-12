@@ -456,7 +456,8 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Line Test Repeatedly", lineTest());
     autoChooser.addOption("Zoom", zoom());
     autoChooser.addOption("Source Dash", autoSourceDash());
-    autoChooser.addOption("Source 2 + 3 Centerline", autoSource2And3Centerline());
+    autoChooser.addOption("Source 3 Citrus Spit", autoSource3CitrusSpit());
+    autoChooser.addOption("Source 3 Citrus", autoSource3Citrus());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -623,8 +624,13 @@ public class Robot extends LoggedRobot {
                                 swerve.getPose().getRotation().getDegrees(),
                                 rotationTolerance.getAsDouble())
                             && MathUtil.isNear(
-                                0.0, 
-                            Math.sqrt(swerve.getVelocity().vxMetersPerSecond * swerve.getVelocity().vxMetersPerSecond + swerve.getVelocity().vyMetersPerSecond * swerve.getVelocity().vyMetersPerSecond), 0.25))
+                                0.0,
+                                Math.sqrt(
+                                    swerve.getVelocity().vxMetersPerSecond
+                                            * swerve.getVelocity().vxMetersPerSecond
+                                        + swerve.getVelocity().vyMetersPerSecond
+                                            * swerve.getVelocity().vyMetersPerSecond),
+                                0.25))
                 .andThen(
                     feeder
                         .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
@@ -719,7 +725,7 @@ public class Robot extends LoggedRobot {
   private Command autoIntake() {
     return Commands.parallel(
         intake
-            .runVelocityCmd(50.0, 30.0)
+            .runVelocityCmd(60.0, 30.0)
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .asProxy(),
         feeder.indexCmd().asProxy(),
@@ -756,27 +762,6 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim(),
         swerve.runChoreoTraj(Choreo.getTrajectory("dash.3")).asProxy().deadlineWith(autoIntake()),
         autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
-        autoStaticAutoAim());
-  }
-
-  private Command autoSource2And3Centerline() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
-        autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
         autoStaticAutoAim());
   }
 
@@ -960,7 +945,7 @@ public class Robot extends LoggedRobot {
             .until(() -> !feeder.getLastBeambreak())
             .asProxy(),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
@@ -972,7 +957,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.3"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
@@ -984,7 +969,47 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         autoStaticAutoAim(),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.4"))
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.4"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource3Citrus() {
+    return Commands.sequence(
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus.3"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
