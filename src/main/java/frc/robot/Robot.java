@@ -708,9 +708,11 @@ public class Robot extends LoggedRobot {
   private Command autoFenderShot() {
     return shooter
         .runStateCmd(
-            AutoAim.FENDER_SHOT.getRotation(),
-            AutoAim.FENDER_SHOT.getLeftRPS(),
-            AutoAim.FENDER_SHOT.getRightRPS())
+            () -> AutoAim.FENDER_SHOT.getRotation(),
+            () -> AutoAim.FENDER_SHOT.getLeftRPS(),
+            () -> AutoAim.FENDER_SHOT.getRightRPS(),
+            80.0,
+            30.0)
         .raceWith(
             feeder
                 .runVelocityCmd(0.0)
@@ -847,7 +849,7 @@ public class Robot extends LoggedRobot {
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
             .asProxy()
-            .deadlineWith(autoIntake()),
+            .deadlineWith(autoIntake().beforeStarting(Commands.waitSeconds(1.8))),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -1000,6 +1002,7 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim(),
         swerve
@@ -1012,6 +1015,7 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
@@ -1024,6 +1028,7 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim());
   }
