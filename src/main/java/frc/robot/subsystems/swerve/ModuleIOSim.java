@@ -83,7 +83,7 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void setDriveVoltage(final double volts) {
+  public void setDriveVoltage(final double volts, final boolean focEnabled) {
     driveAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     driveSim.setInputVoltage(driveAppliedVolts);
   }

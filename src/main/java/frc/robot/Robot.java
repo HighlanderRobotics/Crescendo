@@ -7,6 +7,7 @@ package frc.robot;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
+import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -137,6 +138,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    RoboRioDataJNI.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
     Logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -218,7 +220,10 @@ public class Robot extends LoggedRobot {
     intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
-        leds.defaultStateDisplayCmd(() -> DriverStation.isEnabled(), () -> currentTarget));
+        leds.defaultStateDisplayCmd(
+            () -> DriverStation.isEnabled(),
+            () -> swerve.getDistanceToSpeaker() < AutoAim.shotMap.maxKey(),
+            () -> currentTarget));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
@@ -260,7 +265,7 @@ public class Robot extends LoggedRobot {
         .and(() -> currentTarget == Target.SPEAKER)
         .and(() -> USE_AUTO_AIM)
         .and(() -> !USE_SOTM)
-        .whileTrue(staticAutoAim());
+        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 6.0 : 3.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.FEED)
@@ -314,11 +319,12 @@ public class Robot extends LoggedRobot {
                     carriage.runVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
-    controller.leftBumper().whileTrue(swerve.stopWithXCmd());
     controller
         .rightBumper()
-        .and(() -> currentTarget.isSpeakerAlike())
-        .and(controller.rightTrigger().negate())
+        .and(
+            () ->
+                (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
+                    || currentTarget.isSpeakerAlike())
         .whileTrue(
             speakerHeadingSnap(
                     () ->
@@ -327,7 +333,29 @@ public class Robot extends LoggedRobot {
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
                             * SwerveSubsystem.MAX_LINEAR_SPEED)
-                .until(controller.rightTrigger()));
+                .until(
+                    () ->
+                        controller.getHID().getRightTriggerAxis() > 0.5
+                            && currentTarget == Target.SPEAKER));
+    controller
+        .leftBumper()
+        .and(controller.rightTrigger().negate())
+        .and(operator.a().negate())
+        .whileTrue(
+            Commands.repeatingSequence(
+                    shooter
+                        .runFlywheelsCmd(() -> 0.0, () -> 0.0)
+                        .until(
+                            () ->
+                                feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    shooter
+                        .runStateCmd(
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
+                        .until(() -> !feeder.getFirstBeambreak()))
+                .until(controller.rightTrigger())
+                .unless(controller.rightTrigger()));
     controller
         .rightBumper()
         .and(() -> currentTarget == Target.AMP)
@@ -390,6 +418,7 @@ public class Robot extends LoggedRobot {
     operator
         .a()
         .and(controller.rightTrigger().negate())
+        .and(controller.leftBumper().negate())
         .whileTrue(
             Commands.repeatingSequence(
                     shooter
@@ -563,10 +592,10 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  private Command staticAutoAim(double rotationTolerance) {
+  private Command staticAutoAim(DoubleSupplier rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            SwerveSubsystem.HEADING_VELOCITY_KP,
             0.0,
             0.0,
             new Constraints(
@@ -587,7 +616,7 @@ public class Robot extends LoggedRobot {
                                     .getAngle()
                                     .getDegrees(),
                                 swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance))
+                                rotationTolerance.getAsDouble()))
                 .andThen(
                     feeder
                         .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
@@ -626,7 +655,11 @@ public class Robot extends LoggedRobot {
   }
 
   private Command staticAutoAim() {
-    return staticAutoAim(swerve.getDistanceToSpeaker() < 2.5 ? 6.0 : 3.0);
+    return staticAutoAim(() -> 3.0);
+  }
+
+  private Command staticAutoAim(double tolerance) {
+    return staticAutoAim(() -> tolerance);
   }
 
   private Command autoStaticAutoAim() {
@@ -851,7 +884,7 @@ public class Robot extends LoggedRobot {
   private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            3.0,
+            SwerveSubsystem.HEADING_VOLTAGE_KP,
             0.0,
             0.0,
             new Constraints(
@@ -869,7 +902,7 @@ public class Robot extends LoggedRobot {
   private Command speakerHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
     var headingController =
         new ProfiledPIDController(
-            4.0,
+            SwerveSubsystem.HEADING_VOLTAGE_KP,
             0.0,
             0.0,
             new Constraints(

@@ -120,6 +120,9 @@ public class SwerveSubsystem extends SubsystemBase {
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
+  public static final double HEADING_VELOCITY_KP = 4.0;
+  public static final double HEADING_VOLTAGE_KP = 4.0;
+
   public static final ModuleConstants frontLeft =
       new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
@@ -583,6 +586,12 @@ public class SwerveSubsystem extends SubsystemBase {
               "Swerve/Target Chassis Speeds Field Relative",
               ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
 
+          final boolean focEnable =
+              Math.sqrt(
+                      Math.pow(this.getVelocity().vxMetersPerSecond, 2)
+                          + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
+                  < MAX_LINEAR_SPEED * 0.9;
+
           // Send setpoints to modules
           SwerveModuleState[] optimizedSetpointStates =
               Streams.zip(
@@ -591,7 +600,8 @@ public class SwerveSubsystem extends SubsystemBase {
                       (m, s) ->
                           m.runVoltageSetpoint(
                               new SwerveModuleState(
-                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle)))
+                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle),
+                              focEnable))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
