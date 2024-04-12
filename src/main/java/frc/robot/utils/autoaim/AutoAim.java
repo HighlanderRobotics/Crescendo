@@ -39,6 +39,10 @@ public class AutoAim {
     shotMap.put(
         5.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
         new ShotData(Rotation2d.fromDegrees(27), 50, 100, 0.45)); // TODO check
+    // Like 50% accuracy
+    shotMap.put(
+        6.0 + Units.inchesToMeters(13.5 + 3.25 - 10.0),
+        new ShotData(Rotation2d.fromDegrees(26.5), 50, 100, 0.5)); // TODO check
   }
 
   /**

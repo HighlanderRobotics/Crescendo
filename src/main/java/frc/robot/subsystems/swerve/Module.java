@@ -101,16 +101,25 @@ public class Module {
    * Runs the module open loop with the specified setpoint state, velocity in volts. Returns the
    * optimized state.
    */
-  public SwerveModuleState runVoltageSetpoint(SwerveModuleState state) {
+  public SwerveModuleState runVoltageSetpoint(SwerveModuleState state, boolean focEnabled) {
     // Optimize state based on current angle
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
 
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveVoltage(
         optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()));
+            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
+        focEnabled);
 
     return optimizedState;
+  }
+
+  /**
+   * Runs the module open loop with the specified setpoint state, velocity in volts. Returns the
+   * optimized state.
+   */
+  public SwerveModuleState runVoltageSetpoint(SwerveModuleState state) {
+    return runVoltageSetpoint(state, true);
   }
 
   /** Runs the module with the specified voltage while controlling to zero degrees. */

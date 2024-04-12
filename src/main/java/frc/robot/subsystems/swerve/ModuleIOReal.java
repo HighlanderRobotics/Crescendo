@@ -17,8 +17,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -75,9 +75,14 @@ public class ModuleIOReal implements ModuleIO {
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  private final MotionMagicVelocityVoltage driveCurrentVelocity =
-      new MotionMagicVelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
+  // private final VelocityVoltage driveCurrentVelocity =
+  //     new VelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
+  private final VelocityTorqueCurrentFOC driveCurrentVelocity =
+      new VelocityTorqueCurrentFOC(0.0).withSlot(1);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
+
+  private final double kAVoltsPerMeterPerSecondSquared;
+  private final double kAAmpsPerMeterPerSecondSquared;
 
   public ModuleIOReal(ModuleConstants constants) {
     name = constants.prefix();
@@ -89,7 +94,7 @@ public class ModuleIOReal implements ModuleIO {
     var driveConfig = new TalonFXConfiguration();
     // Current limits
     // TODO: Do we want to limit supply current?
-    driveConfig.CurrentLimits.SupplyCurrentLimit = 80.0;
+    driveConfig.CurrentLimits.SupplyCurrentLimit = 70.0;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
@@ -101,17 +106,19 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
     // Voltage Controls Gains
     driveConfig.Slot0.kV = 2.381;
-    driveConfig.Slot0.kA = 0.65;
+    kAVoltsPerMeterPerSecondSquared = 0.65;
+    driveConfig.Slot0.kA = kAVoltsPerMeterPerSecondSquared;
     driveConfig.Slot0.kS = 0.04;
     driveConfig.Slot0.kP = 2.0;
     driveConfig.Slot0.kD = 0.2;
 
+    kAAmpsPerMeterPerSecondSquared = 4.5;
     // Current control gains
     driveConfig.Slot1.kV = 0.0;
-    driveConfig.Slot1.kA = 3.07135116146;
-    driveConfig.Slot1.kS = 14.0;
-    driveConfig.Slot1.kP = 100.0;
-    driveConfig.Slot1.kD = 1.0;
+    driveConfig.Slot1.kA = kAAmpsPerMeterPerSecondSquared;
+    driveConfig.Slot1.kS = 11.0;
+    driveConfig.Slot1.kP = 150.0;
+    driveConfig.Slot1.kD = 0.0;
 
     driveConfig.TorqueCurrent.TorqueNeutralDeadband = 10.0;
 
@@ -234,8 +241,8 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void setDriveVoltage(final double volts) {
-    driveTalon.setControl(driveVoltage.withOutput(volts));
+  public void setDriveVoltage(final double volts, final boolean focEnabled) {
+    driveTalon.setControl(driveVoltage.withOutput(volts).withEnableFOC(focEnabled));
   }
 
   @Override
@@ -254,7 +261,7 @@ public class ModuleIOReal implements ModuleIO {
       driveTalon.setControl(
           driveCurrentVelocity
               .withVelocity(metersPerSecond)
-              .withAcceleration(metersPerSecondSquared));
+              .withFeedForward(metersPerSecondSquared * kAAmpsPerMeterPerSecondSquared));
     }
   }
 

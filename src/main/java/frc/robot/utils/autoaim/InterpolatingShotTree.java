@@ -54,6 +54,10 @@ public class InterpolatingShotTree {
     map.remove(key);
   }
 
+  public double maxKey() {
+    return map.lastKey();
+  }
+
   private ShotData interpolate(ShotData startValue, ShotData endValue, double t) {
     return new ShotData(
         Rotation2d.fromRadians(

@@ -120,6 +120,9 @@ public class SwerveSubsystem extends SubsystemBase {
   // Hardware constants
   public static final int PIGEON_ID = 0;
 
+  public static final double HEADING_VELOCITY_KP = 4.0;
+  public static final double HEADING_VOLTAGE_KP = 4.0;
+
   public static final ModuleConstants frontLeft =
       new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
@@ -210,7 +213,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(10.380),
                   Units.inchesToMeters(7.381)),
               new Rotation3d(
-                  Units.degreesToRadians(0.0),
+                  Units.degreesToRadians(180.0),
                   Units.degreesToRadians(-28.125),
                   Units.degreesToRadians(120))),
           LEFT_CAMERA_MATRIX,
@@ -583,6 +586,12 @@ public class SwerveSubsystem extends SubsystemBase {
               "Swerve/Target Chassis Speeds Field Relative",
               ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
 
+          final boolean focEnable =
+              Math.sqrt(
+                      Math.pow(this.getVelocity().vxMetersPerSecond, 2)
+                          + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
+                  < MAX_LINEAR_SPEED * 0.9;
+
           // Send setpoints to modules
           SwerveModuleState[] optimizedSetpointStates =
               Streams.zip(
@@ -591,7 +600,8 @@ public class SwerveSubsystem extends SubsystemBase {
                       (m, s) ->
                           m.runVoltageSetpoint(
                               new SwerveModuleState(
-                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle)))
+                                  s.speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, s.angle),
+                              focEnable))
                   .toArray(SwerveModuleState[]::new);
 
           // Log setpoint states
@@ -627,9 +637,9 @@ public class SwerveSubsystem extends SubsystemBase {
             traj,
             () -> pose,
             Choreo.choreoSwerveController(
-                new PIDController(1.5, 0.0, 0.0),
-                new PIDController(1.5, 0.0, 0.0),
-                new PIDController(3.0, 0.0, 0.0)),
+                new PIDController(1.0, 0.0, 0.0),
+                new PIDController(1.0, 0.0, 0.0),
+                new PIDController(6.0, 0.0, 0.0)),
             (ChassisSpeeds speeds) -> this.runVelocity(speeds),
             () -> {
               Optional<Alliance> alliance = DriverStation.getAlliance();
@@ -719,7 +729,7 @@ public class SwerveSubsystem extends SubsystemBase {
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
                               % 360)
-                      < 20.0);
+                      < 90.0);
         },
         requirements);
   }
@@ -809,7 +819,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {rightCamConstants};
+    return new VisionConstants[] {leftCamConstants, rightCamConstants};
   }
 
   /**

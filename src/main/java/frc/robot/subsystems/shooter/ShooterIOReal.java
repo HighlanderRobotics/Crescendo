@@ -2,6 +2,7 @@ package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -79,7 +80,7 @@ public class ShooterIOReal implements ShooterIO {
         ShooterSubsystem.FLYWHEEL_RATIO; // TODO add in once cad is done
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    flywheelConfig.CurrentLimits.StatorCurrentLimit = 40.0;
+    flywheelConfig.CurrentLimits.StatorCurrentLimit = 80.0;
     flywheelConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
 
@@ -161,5 +162,17 @@ public class ShooterIOReal implements ShooterIO {
 
   public void resetPivotPosition(final Rotation2d rotation) {
     pivotMotor.setPosition(rotation.getRotations());
+  }
+
+  @Override
+  public void setFlyhweelCurrentLimit(final double stator, final double supply) {
+    flywheelLeftMotor
+        .getConfigurator()
+        .apply(
+            new CurrentLimitsConfigs()
+                .withStatorCurrentLimit(stator)
+                .withSupplyCurrentLimit(supply)
+                .withStatorCurrentLimitEnable(true)
+                .withSupplyCurrentLimitEnable(true));
   }
 }

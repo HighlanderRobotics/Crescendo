@@ -38,4 +38,6 @@ public interface ShooterIO {
   public void setPivotSetpoint(final Rotation2d rotation);
 
   public void resetPivotPosition(final Rotation2d rotation);
+
+  public void setFlyhweelCurrentLimit(final double stator, final double supply);
 }
