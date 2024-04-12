@@ -51,8 +51,9 @@ public class PhoenixOdometryThread extends Thread {
   private static PhoenixOdometryThread instance = null;
 
   public static PhoenixOdometryThread getInstance() {
-    if (instance == null) {
+    if (instance == null || instance.isInterrupted()) {
       instance = new PhoenixOdometryThread();
+      System.out.println("new odo thread");
     }
     return instance;
   }

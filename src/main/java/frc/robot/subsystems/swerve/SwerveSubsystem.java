@@ -243,7 +243,6 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int i = 0; i < moduleIOs.length; i++) {
       modules[i] = new Module(moduleIOs[i]);
     }
-    PhoenixOdometryThread.getInstance().start();
     for (int i = 0; i < visionIOs.length; i++) {
       cameras[i] = new Vision(visionIOs[i]);
     }

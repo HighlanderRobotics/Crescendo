@@ -46,6 +46,7 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
@@ -735,32 +736,34 @@ public class Robot extends LoggedRobot {
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
             .asProxy());
   }
+
   private Command autoSourceDash() {
     return Commands.sequence(
-        swerve.runChoreoTraj(Choreo.getTrajectory("dash.1"), true).asProxy().deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("dash.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("dash.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-            autoIntake()
+        swerve.runChoreoTraj(Choreo.getTrajectory("dash.2")).asProxy().deadlineWith(autoIntake()),
+        autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
-            autoStaticAutoAim(),
-            swerve
-                .runChoreoTraj(Choreo.getTrajectory("dash.3"))
-                .asProxy()
-                .deadlineWith(autoIntake()),
-            autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
-            autoStaticAutoAim());
+        autoStaticAutoAim(),
+        swerve.runChoreoTraj(Choreo.getTrajectory("dash.3")).asProxy().deadlineWith(autoIntake()),
+        autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
+        autoStaticAutoAim());
   }
+
   private Command autoSource2And3Centerline() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.1"), true).asProxy().deadlineWith(autoIntake()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 2 3 centerline.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
@@ -772,8 +775,7 @@ public class Robot extends LoggedRobot {
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim()
-    );
+        autoStaticAutoAim());
   }
 
   private Command zoom() {
@@ -1042,9 +1044,20 @@ public class Robot extends LoggedRobot {
   public void disabledPeriodic() {}
 
   @Override
+  public void disabledInit() {
+
+    PhoenixOdometryThread.getInstance().interrupt();
+  }
+
+  @Override
+  public void disabledExit() {
+
+    PhoenixOdometryThread.getInstance().start();
+  }
+
+  @Override
   public void autonomousInit() {
     autonomousCommand = autoChooser.get();
-
     if (autonomousCommand != null) {
       autonomousCommand.schedule();
     }
