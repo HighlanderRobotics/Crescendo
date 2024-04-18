@@ -223,6 +223,7 @@ public class Robot extends LoggedRobot {
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(),
             () -> swerve.getDistanceToSpeaker() < AutoAim.shotMap.maxKey(),
+            () -> swerve.getPose().getX() > 6.3 && swerve.getPose().getX() < 10.2,
             () -> currentTarget));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
