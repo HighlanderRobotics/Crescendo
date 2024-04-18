@@ -458,6 +458,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Source Dash", autoSourceDash());
     autoChooser.addOption("Source 3 Citrus Spit", autoSource3CitrusSpit());
     autoChooser.addOption("Source 3 Citrus", autoSource3Citrus());
+    autoChooser.addOption("Source 3 Truss", autoSource3Truss());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -850,6 +851,35 @@ public class Robot extends LoggedRobot {
             .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
             .asProxy()
             .deadlineWith(autoIntake().beforeStarting(Commands.waitSeconds(1.8))),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource3Truss() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 truss.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake().beforeStarting(Commands.waitSeconds(2.2))),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 truss.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoIntake()
             .raceWith(
                 Commands.sequence(
