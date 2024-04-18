@@ -410,6 +410,7 @@ public class SwerveSubsystem extends SubsystemBase {
     updateVision();
 
     Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
+    Logger.recordOutput("Odometry/Pure Pose", pose);
     Logger.recordOutput(
         "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
   }

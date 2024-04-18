@@ -281,7 +281,19 @@ public class Robot extends LoggedRobot {
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-                .withTimeout(0.5));
+                .withTimeout(0.5))
+        .whileTrue(
+            speakerHeadingSnap(
+                    () ->
+                        -teleopAxisAdjustment(controller.getLeftY())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    () ->
+                        -teleopAxisAdjustment(controller.getLeftX())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED)
+                .until(
+                    () ->
+                        controller.getHID().getRightTriggerAxis() > 0.5
+                            && currentTarget == Target.SPEAKER).unless(() -> controller.getHID().getRightBumper()));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SUBWOOFER)
@@ -324,7 +336,7 @@ public class Robot extends LoggedRobot {
         .and(
             () ->
                 (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
-                    || currentTarget.isSpeakerAlike())
+                    || (currentTarget.isSpeakerAlike() && currentTarget != Target.FEED))
         .whileTrue(
             speakerHeadingSnap(
                     () ->
