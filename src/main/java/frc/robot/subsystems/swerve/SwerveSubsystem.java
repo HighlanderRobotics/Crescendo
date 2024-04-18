@@ -500,6 +500,7 @@ public class SwerveSubsystem extends SubsystemBase {
       try {
         var estPose = camera.update(result);
         var visionPose = estPose.get().estimatedPose;
+        pose = pose.interpolate(visionPose.toPose2d(), 0.1);
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
