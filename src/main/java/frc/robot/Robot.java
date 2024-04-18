@@ -293,7 +293,8 @@ public class Robot extends LoggedRobot {
                 .until(
                     () ->
                         controller.getHID().getRightTriggerAxis() > 0.5
-                            && currentTarget == Target.SPEAKER).unless(() -> controller.getHID().getRightBumper()));
+                            && currentTarget == Target.SPEAKER)
+                .unless(() -> controller.getHID().getRightBumper()));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SUBWOOFER)
@@ -645,11 +646,13 @@ public class Robot extends LoggedRobot {
                                             * swerve.getVelocity().vyMetersPerSecond),
                                 0.25))
                 .andThen(
-                    feeder
-                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                        .raceWith(
-                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                .andThen(Commands.waitSeconds(0.25)))),
+                    Commands.parallel(
+                        controller.rumbleCmd(1.0, 1.0).withTimeout(0.5),
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .raceWith(
+                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                    .andThen(Commands.waitSeconds(0.25))))),
             swerve.runVelocityFieldRelative(
                 () -> {
                   var pidOut =
