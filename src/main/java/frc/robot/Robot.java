@@ -687,8 +687,16 @@ public class Robot extends LoggedRobot {
             Commands.repeatingSequence(
                 shooter
                     .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .unless(() -> feeder.getFirstBeambreak() && !feeder.getLastBeambreak() && swerve.getDistanceToSpeaker() < 8.0)
-                    .until(() -> feeder.getFirstBeambreak() && !feeder.getLastBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    .unless(
+                        () ->
+                            feeder.getFirstBeambreak()
+                                && !feeder.getLastBeambreak()
+                                && swerve.getDistanceToSpeaker() < 8.0)
+                    .until(
+                        () ->
+                            feeder.getFirstBeambreak()
+                                && !feeder.getLastBeambreak()
+                                && swerve.getDistanceToSpeaker() < 8.0),
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
