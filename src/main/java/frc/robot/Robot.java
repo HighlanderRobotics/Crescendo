@@ -1056,9 +1056,8 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim(),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus.2"))
             .asProxy()
@@ -1069,7 +1068,6 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
@@ -1082,9 +1080,8 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim());
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()));
   }
 
   private Command autoSource4() {
