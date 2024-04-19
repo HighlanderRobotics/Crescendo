@@ -772,7 +772,7 @@ public class Robot extends LoggedRobot {
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS(),
                     30.0,
-                    10.0))
+                    15.0))
             .asProxy());
   }
 
