@@ -7,7 +7,6 @@ package frc.robot;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
-import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -21,6 +20,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
@@ -138,7 +138,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
-    RoboRioDataJNI.setBrownoutVoltage(6.0);
+    RobotController.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
     Logger.recordMetadata("RuntimeType", getRuntimeType().toString());
@@ -223,6 +223,7 @@ public class Robot extends LoggedRobot {
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(),
             () -> swerve.getDistanceToSpeaker() < AutoAim.shotMap.maxKey(),
+            () -> swerve.getPose().getX() > 6.3 && swerve.getPose().getX() < 10.2,
             () -> currentTarget));
 
     controller.setDefaultCommand(controller.rumbleCmd(0.0, 0.0));
@@ -281,7 +282,20 @@ public class Robot extends LoggedRobot {
         .onFalse(
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-                .withTimeout(0.5));
+                .withTimeout(0.5))
+        .whileTrue(
+            speakerHeadingSnap(
+                    () ->
+                        -teleopAxisAdjustment(controller.getLeftY())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    () ->
+                        -teleopAxisAdjustment(controller.getLeftX())
+                            * SwerveSubsystem.MAX_LINEAR_SPEED)
+                .until(
+                    () ->
+                        controller.getHID().getRightTriggerAxis() > 0.5
+                            && currentTarget == Target.SPEAKER)
+                .unless(() -> controller.getHID().getRightBumper()));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SUBWOOFER)
@@ -324,7 +338,7 @@ public class Robot extends LoggedRobot {
         .and(
             () ->
                 (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
-                    || currentTarget.isSpeakerAlike())
+                    || (currentTarget.isSpeakerAlike() && currentTarget != Target.FEED))
         .whileTrue(
             speakerHeadingSnap(
                     () ->
@@ -458,6 +472,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Source Dash", autoSourceDash());
     autoChooser.addOption("Source 3 Citrus Spit", autoSource3CitrusSpit());
     autoChooser.addOption("Source 3 Citrus", autoSource3Citrus());
+    autoChooser.addOption("Source 3 Truss", autoSource3Truss());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -632,11 +647,13 @@ public class Robot extends LoggedRobot {
                                             * swerve.getVelocity().vyMetersPerSecond),
                                 0.25))
                 .andThen(
-                    feeder
-                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                        .raceWith(
-                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                .andThen(Commands.waitSeconds(0.25)))),
+                    Commands.parallel(
+                        controller.rumbleCmd(1.0, 1.0).withTimeout(0.5),
+                        feeder
+                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .raceWith(
+                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                    .andThen(Commands.waitSeconds(0.25))))),
             swerve.runVelocityFieldRelative(
                 () -> {
                   var pidOut =
@@ -686,8 +703,16 @@ public class Robot extends LoggedRobot {
             Commands.repeatingSequence(
                 shooter
                     .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .unless(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0)
-                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
+                    .unless(
+                        () ->
+                            feeder.getFirstBeambreak()
+                                && !feeder.getLastBeambreak()
+                                && swerve.getDistanceToSpeaker() < 8.0)
+                    .until(
+                        () ->
+                            feeder.getFirstBeambreak()
+                                && !feeder.getLastBeambreak()
+                                && swerve.getDistanceToSpeaker() < 8.0),
                 shooter.runStateCmd(
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
@@ -747,7 +772,7 @@ public class Robot extends LoggedRobot {
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
                     () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS(),
                     30.0,
-                    10.0))
+                    15.0))
             .asProxy());
   }
 
@@ -850,6 +875,35 @@ public class Robot extends LoggedRobot {
             .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
             .asProxy()
             .deadlineWith(autoIntake().beforeStarting(Commands.waitSeconds(1.8))),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoSource3Truss() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 truss.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake().beforeStarting(Commands.waitSeconds(2.2))),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("source 3 truss.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -1002,9 +1056,8 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim(),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus.2"))
             .asProxy()
@@ -1015,7 +1068,6 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
@@ -1028,9 +1080,8 @@ public class Robot extends LoggedRobot {
                     Commands.waitSeconds(0.25),
                     Commands.waitUntil(
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .unless(() -> feeder.getFirstBeambreak())
             .withTimeout(1.0),
-        autoStaticAutoAim());
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()));
   }
 
   private Command autoSource4() {

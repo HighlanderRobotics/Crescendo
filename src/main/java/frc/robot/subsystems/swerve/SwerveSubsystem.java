@@ -74,7 +74,6 @@ import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
-import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionHelper;
@@ -410,6 +409,7 @@ public class SwerveSubsystem extends SubsystemBase {
     updateVision();
 
     Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
+    Logger.recordOutput("Odometry/Pure Pose", pose);
     Logger.recordOutput(
         "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
   }
@@ -500,6 +500,7 @@ public class SwerveSubsystem extends SubsystemBase {
       try {
         var estPose = camera.update(result);
         var visionPose = estPose.get().estimatedPose;
+        // pose = pose.interpolate(visionPose.toPose2d(), 0.1);
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
@@ -635,7 +636,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
     return choreoFullFollowSwerveCommand(
             traj,
-            () -> pose,
+            () -> DriverStation.getMatchTime() > 12.0 ? pose : getPose(),
             Choreo.choreoSwerveController(
                 new PIDController(1.0, 0.0, 0.0),
                 new PIDController(1.0, 0.0, 0.0),
