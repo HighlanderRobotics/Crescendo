@@ -6,6 +6,8 @@ package frc.robot.subsystems.feeder;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+
 import org.littletonrobotics.junction.Logger;
 
 /** Feeder motor for shooter and associated beambreaks for indexing */
@@ -15,6 +17,8 @@ public class FeederSubsystem extends SubsystemBase {
 
   private final FeederIO io;
   private final FeederIOInputsAutoLogged inputs = new FeederIOInputsAutoLogged();
+
+  public final Trigger beambreakTrig = new Trigger(this::getFirstBeambreak);
 
   /** Creates a new FeederSubsystem. */
   public FeederSubsystem(FeederIO io) {
@@ -28,11 +32,11 @@ public class FeederSubsystem extends SubsystemBase {
   }
 
   /** Run the feeder at a set voltage */
-  public Command runVoltageCmd(double volts) {
+  public Command setVoltageCmd(double volts) {
     return this.run(() -> io.setVoltage(volts));
   }
 
-  public Command runVelocityCmd(double velocity) {
+  public Command setVelocityCmd(double velocity) {
     return this.run(() -> io.setVelocity(velocity));
   }
 

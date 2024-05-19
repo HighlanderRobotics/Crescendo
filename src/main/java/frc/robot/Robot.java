@@ -198,10 +198,10 @@ public class Robot extends LoggedRobot {
             feeder.indexCmd().until(() -> !currentTarget.isSpeakerAlike()),
             Commands.sequence(
                     feeder
-                        .runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
+                        .setVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
                         .until(() -> carriage.getBeambreak()),
-                    feeder.runVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5),
-                    feeder.runVelocityCmd(0))
+                    feeder.setVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5),
+                    feeder.setVelocityCmd(0))
                 .until(() -> currentTarget != Target.AMP)));
     carriage.setDefaultCommand(
         Commands.repeatingSequence(
@@ -212,12 +212,12 @@ public class Robot extends LoggedRobot {
                 .until(() -> currentTarget != Target.AMP),
             Commands.repeatingSequence(
                     carriage
-                        .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
+                        .setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
                         .until(() -> feeder.getFirstBeambreak()),
-                    carriage.runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    carriage.runVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
+                    carriage.setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
+                    carriage.setVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
                 .until(() -> !currentTarget.isSpeakerAlike())));
-    intake.setDefaultCommand(intake.runVoltageCmd(0.0, 0.0));
+    intake.setDefaultCommand(intake.setVoltageCmd(0.0, 0.0));
     shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
@@ -232,7 +232,7 @@ public class Robot extends LoggedRobot {
     // Robot state management bindings
     new Trigger(() -> carriage.getBeambreak())
         .debounce(0.5)
-        .onTrue(intake.runVelocityCmd(-50.0, -30.0).withTimeout(1.0));
+        .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
         .debounce(0.25)
         .onTrue(
@@ -254,7 +254,7 @@ public class Robot extends LoggedRobot {
     controller
         .leftTrigger()
         .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
-        .whileTrue(intake.runVelocityCmd(60.0, 30.0));
+        .whileTrue(intake.setVelocityCmd(60.0, 30.0));
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SPEAKER)
@@ -281,7 +281,7 @@ public class Robot extends LoggedRobot {
                     AutoAim.FEED_SHOT.getRightRPS())))
         .onFalse(
             Commands.parallel(
-                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                    shooter.run(() -> {}), feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5))
         .whileTrue(
             speakerHeadingSnap(
@@ -310,7 +310,7 @@ public class Robot extends LoggedRobot {
                     AutoAim.FENDER_SHOT.getRightRPS())))
         .onFalse(
             Commands.parallel(
-                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                    shooter.run(() -> {}), feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5));
 
     controller
@@ -320,7 +320,7 @@ public class Robot extends LoggedRobot {
         .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(50.0), 50.0, 60.0))
         .onFalse(
             Commands.parallel(
-                    shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                    shooter.run(() -> {}), feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5));
     controller
         .rightTrigger()
@@ -330,7 +330,7 @@ public class Robot extends LoggedRobot {
         .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
         .onFalse(
             Commands.parallel(
-                    carriage.runVoltageCmd(-3.0),
+                    carriage.setVoltageCmd(-3.0),
                     elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
                 .withTimeout(0.75));
     controller
@@ -386,9 +386,9 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             Commands.parallel(
                 shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(30.0), -5.0),
-                feeder.runVoltageCmd(-5.0),
-                carriage.runVoltageCmd(-5.0),
-                intake.runVelocityCmd(-50.0, -50.0)));
+                feeder.setVoltageCmd(-5.0),
+                carriage.setVoltageCmd(-5.0),
+                intake.setVelocityCmd(-50.0, -50.0)));
 
     // climb
     operator
@@ -598,7 +598,7 @@ public class Robot extends LoggedRobot {
                             AutoAimStates.curShotSpeeds.vxMetersPerSecond,
                             AutoAimStates.curShotSpeeds.vyMetersPerSecond,
                             0))
-                .alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+                .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.25),
             staticAutoAim(),
             () ->
@@ -625,7 +625,7 @@ public class Robot extends LoggedRobot {
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.deadline(
             feeder
-                .runVelocityCmd(0.0)
+                .setVelocityCmd(0.0)
                 .until(
                     () ->
                         shooter.isAtGoal()
@@ -650,7 +650,7 @@ public class Robot extends LoggedRobot {
                     Commands.parallel(
                         controller.rumbleCmd(1.0, 1.0).withTimeout(0.5),
                         feeder
-                            .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                            .setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
                             .raceWith(
                                 Commands.waitUntil(() -> !feeder.getFirstBeambreak())
                                     .andThen(Commands.waitSeconds(0.25))))),
@@ -723,7 +723,7 @@ public class Robot extends LoggedRobot {
         .andThen(
             staticAutoAim(6.0)
                 .deadlineWith(
-                    intake.runVoltageCmd(0, 0).asProxy(), carriage.runVoltageCmd(0).asProxy())
+                    intake.setVoltageCmd(0, 0).asProxy(), carriage.setVoltageCmd(0).asProxy())
                 .withTimeout(2.0)
                 .unless(() -> !feeder.getFirstBeambreak()))
         .asProxy()
@@ -740,11 +740,11 @@ public class Robot extends LoggedRobot {
             30.0)
         .raceWith(
             feeder
-                .runVelocityCmd(0.0)
+                .setVelocityCmd(0.0)
                 .until(() -> shooter.isAtGoal())
                 .andThen(
                     feeder
-                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        .setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
                         .raceWith(
                             Commands.waitUntil(() -> !feeder.getFirstBeambreak())
                                 .andThen(Commands.waitSeconds(0.1)))))
@@ -754,12 +754,12 @@ public class Robot extends LoggedRobot {
   private Command autoIntake() {
     return Commands.parallel(
         intake
-            .runVelocityCmd(60.0, 30.0)
+            .setVelocityCmd(60.0, 30.0)
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .asProxy(),
         feeder.indexCmd().asProxy(),
         carriage
-            .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
+            .setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
             .until(() -> feeder.getFirstBeambreak())
             .asProxy(),
         shooter
@@ -959,7 +959,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         shooter
             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
-            .alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+            .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
             .until(() -> !feeder.getLastBeambreak())
             .asProxy(),
         swerve
@@ -1003,7 +1003,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         shooter
             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
-            .alongWith(feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+            .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
             .until(() -> !feeder.getLastBeambreak())
             .asProxy(),
         swerve

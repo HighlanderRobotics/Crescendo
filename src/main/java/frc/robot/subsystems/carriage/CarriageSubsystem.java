@@ -7,6 +7,8 @@ package frc.robot.subsystems.carriage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+
 import org.littletonrobotics.junction.Logger;
 
 /** Drainpipe style amp/trap mechanism on the elevator */
@@ -15,6 +17,10 @@ public class CarriageSubsystem extends SubsystemBase {
 
   final CarriageIO io;
   final CarriageIOInputsAutoLogged inputs = new CarriageIOInputsAutoLogged();
+
+  private boolean isIndexed;
+  public final Trigger isIndexedTrig = new Trigger(() -> isIndexed);
+  public final Trigger beambreakTrig = new Trigger(this::getBeambreak);
 
   /** Creates a new CarriageSubsystem. */
   public CarriageSubsystem(CarriageIO io) {
@@ -28,8 +34,16 @@ public class CarriageSubsystem extends SubsystemBase {
   }
 
   /** Run the carriage roller at the specified voltage */
-  public Command runVoltageCmd(double voltage) {
+  public Command setVoltageCmd(double voltage) {
     return this.run(() -> io.setVoltage(voltage));
+  }
+
+  public Command stop() {
+    return this.setVoltageCmd(0.0);
+  }
+
+  public Command setIndexingVoltageCmd() {
+    return setVoltageCmd(INDEXING_VOLTAGE);
   }
 
   /**
@@ -37,9 +51,9 @@ public class CarriageSubsystem extends SubsystemBase {
    * further forward.
    */
   public Command indexForwardsCmd() {
-    return runVoltageCmd(INDEXING_VOLTAGE)
+    return setVoltageCmd(INDEXING_VOLTAGE).beforeStarting(() -> isIndexed = false)
         .until(() -> inputs.beambreak)
-        .andThen(runVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12), runVoltageCmd(0.0))
+        .andThen(setVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12), setVoltageCmd(0.0).finallyDo(() -> isIndexed = true))
         .until(() -> !getBeambreak())
         .repeatedly();
   }
@@ -47,10 +61,10 @@ public class CarriageSubsystem extends SubsystemBase {
   /** Run the amp mech backwards until the beambreak cycles, then forward index. */
   public Command indexBackwardsCmd() {
     return Commands.sequence(
-        runVoltageCmd(-INDEXING_VOLTAGE).until(() -> inputs.beambreak),
-        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.1),
-        runVoltageCmd(-INDEXING_VOLTAGE).until(() -> !inputs.beambreak),
-        runVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.1),
+        setVoltageCmd(-INDEXING_VOLTAGE).until(() -> inputs.beambreak),
+        setVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.1),
+        setVoltageCmd(-INDEXING_VOLTAGE).until(() -> !inputs.beambreak),
+        setVoltageCmd(-INDEXING_VOLTAGE).withTimeout(0.1),
         indexForwardsCmd());
   }
 
