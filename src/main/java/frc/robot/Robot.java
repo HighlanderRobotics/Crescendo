@@ -107,6 +107,7 @@ public class Robot extends LoggedRobot {
 
   private Target currentTarget = Target.SPEAKER;
   private double flywheelIdleSpeed = 30.0;
+  private double demoModeScaling = 1.0;
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
@@ -188,9 +189,14 @@ public class Robot extends LoggedRobot {
         swerve.runVoltageTeleopFieldRelative(
             () ->
                 new ChassisSpeeds(
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getLeftY())
+                        * demoModeScaling
+                        * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getLeftX())
+                        * demoModeScaling
+                        * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -teleopAxisAdjustment(controller.getRightX())
+                        * demoModeScaling
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
     feeder.setDefaultCommand(
@@ -287,9 +293,11 @@ public class Robot extends LoggedRobot {
             speakerHeadingSnap(
                     () ->
                         -teleopAxisAdjustment(controller.getLeftY())
+                            * demoModeScaling
                             * SwerveSubsystem.MAX_LINEAR_SPEED,
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
+                            * demoModeScaling
                             * SwerveSubsystem.MAX_LINEAR_SPEED)
                 .until(
                     () ->
@@ -343,9 +351,11 @@ public class Robot extends LoggedRobot {
             speakerHeadingSnap(
                     () ->
                         -teleopAxisAdjustment(controller.getLeftY())
+                            * demoModeScaling
                             * SwerveSubsystem.MAX_LINEAR_SPEED,
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
+                            * demoModeScaling
                             * SwerveSubsystem.MAX_LINEAR_SPEED)
                 .until(
                     () ->
@@ -376,9 +386,12 @@ public class Robot extends LoggedRobot {
         .whileTrue(
             ampHeadingSnap(
                 () ->
-                    -teleopAxisAdjustment(controller.getLeftY()) * SwerveSubsystem.MAX_LINEAR_SPEED,
+                    -teleopAxisAdjustment(controller.getLeftY())
+                        * demoModeScaling
+                        * SwerveSubsystem.MAX_LINEAR_SPEED,
                 () ->
                     -teleopAxisAdjustment(controller.getLeftX())
+                        * demoModeScaling
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
 
     controller
@@ -458,6 +471,8 @@ public class Robot extends LoggedRobot {
                 .alongWith(
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 10.0)
                         .withTimeout(0.25)));
+    operator.leftStick().onTrue(Commands.runOnce(() -> demoModeScaling = 0.5));
+    operator.rightStick().onTrue(Commands.runOnce(() -> demoModeScaling = 1.0));
 
     autoChooser.addOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
