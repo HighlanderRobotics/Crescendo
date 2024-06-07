@@ -80,7 +80,7 @@ public class Robot extends LoggedRobot {
     }
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
@@ -471,7 +471,7 @@ public class Robot extends LoggedRobot {
                 .alongWith(
                     leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 10.0)
                         .withTimeout(0.25)));
-    operator.leftStick().onTrue(Commands.runOnce(() -> demoModeScaling = 0.5));
+    operator.leftStick().onTrue(Commands.runOnce(() -> demoModeScaling = 0.3));
     operator.rightStick().onTrue(Commands.runOnce(() -> demoModeScaling = 1.0));
 
     autoChooser.addOption("None", Commands.none());

@@ -26,6 +26,13 @@
       "/SmartDashboard/VisionSystemSim-Right_Camera/Sim Field": "Field2d",
       "/SmartDashboard/Zero shooter": "Command",
       "/SmartDashboard/manual zero shooter": "Command"
+    },
+    "windows": {
+      "/SmartDashboard/Auto Chooser": {
+        "window": {
+          "visible": true
+        }
+      }
     }
   },
   "NetworkTables": {

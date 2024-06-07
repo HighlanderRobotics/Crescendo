@@ -505,6 +505,7 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
+        Logger.recordOutput("Vision/" + camera.getName() + " pose", visionPose.plus(camera.inputs.constants.robotToCamera()));
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
@@ -564,7 +565,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 speeds.get(),
                 DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
                     ? getPose().getRotation()
-                    : getPose().getRotation().minus(Rotation2d.fromDegrees(180))));
+                    : getPose().getRotation().minus(Rotation2d.fromDegrees(90))));
   }
 
   public Command runVoltageTeleopFieldRelative(Supplier<ChassisSpeeds> speeds) {
@@ -575,7 +576,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   speeds.get(),
                   DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
                       ? getPose().getRotation()
-                      : getPose().getRotation().minus(Rotation2d.fromDegrees(180)));
+                      : getPose().getRotation().minus(Rotation2d.fromDegrees(90)));
           // Calculate module setpoints
           ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(allianceSpeeds, 0.02);
           SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
