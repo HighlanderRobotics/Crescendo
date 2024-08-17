@@ -66,7 +66,12 @@ public class Superstructure {
   private final Trigger preClimbReq;
   private final Trigger climbConfReq;
 
+  // This feels messy
+  private boolean scoreOverride = false;
+  private boolean intakeOverride = false;
+
   private SuperState state = SuperState.IDLE;
+  private SuperState prevState = SuperState.IDLE;
   private Map<SuperState, Trigger> stateTriggers;
 
   private Timer stateTimer = new Timer();
@@ -100,7 +105,7 @@ public class Superstructure {
     this.shot = shot;
 
     this.prescoreReq = prescoreReq.or(scoreReq);
-    this.scoreReq = scoreReq;
+    this.scoreReq = scoreReq.or(() -> scoreOverride);
     this.intakeReq = intakeReq;
     this.preClimbReq = climbReq;
     this.climbConfReq = climbConfReq;
@@ -132,17 +137,19 @@ public class Superstructure {
         .onTrue(carriage.setVoltageCmd(0.0))
         .onTrue(feeder.setVelocityCmd(0.0))
         // State Transitions
+        // Rerun the intake and indexing sequence if the note moves during IDLE
         .and(carriage.beambreakTrig.or(feeder.beambreakTrig).or(intakeReq))
         .onTrue(this.setState(SuperState.INTAKE));
     stateTriggers.get(SuperState.IDLE).and(preClimbReq).onTrue(this.setState(SuperState.SPIT));
 
     stateTriggers
         .get(SuperState.INTAKE)
-        .onTrue(intake.intake())
+        .whileTrue(intake.intake())
         .onFalse(intake.stop())
         .whileTrue(carriage.setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
         // State Transition
-        .onFalse(
+        .and(carriage.beambreakTrig.or(feeder.beambreakTrig))
+        .onTrue(
             this.setState(
                 target.get().isSpeakerAlike()
                     ? SuperState.INDEX_SHOOTER
@@ -160,9 +167,14 @@ public class Superstructure {
     stateTriggers
         .get(SuperState.READY_INDEXED_CARRIAGE)
         .whileTrue(carriage.stop())
+        // Reject any additional rings
+        .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0))
         .and(prescoreReq)
         .and(() -> target.get() == Target.AMP)
         .onTrue(this.setState(SuperState.PREAMP));
+    stateTriggers.get(SuperState.READY_INDEXED_CARRIAGE)
+        .and(() -> target.get() != Target.AMP)
+        .onTrue(this.setState(SuperState.INDEX_SHOOTER));
 
     stateTriggers
         .get(SuperState.PREAMP)
@@ -188,6 +200,10 @@ public class Superstructure {
         .whileTrue(feeder.indexCmd())
         .and(feeder.beambreakTrig)
         .onTrue(this.setState(SuperState.READY_INDEXED_SHOOTER));
+    
+    stateTriggers.get(SuperState.READY_INDEXED_SHOOTER)
+        // Reject any additional rings
+        .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     // State Transitions
     stateTriggers
         .get(SuperState.READY_INDEXED_SHOOTER)
@@ -269,27 +285,13 @@ public class Superstructure {
 
     stateTriggers
         .get(SuperState.SHOOT)
-        // maintain previous state
+        // Explicitly maintain previous state
+        // This should happen by default anyways
         .whileTrue(pivot.run(() -> {}))
         .whileTrue(leftFlywheel.run(() -> {}))
         .whileTrue(rightFlywheel.run(() -> {}))
         .whileTrue(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
         .and(() -> stateTimer.get() > 0.5)
-        .onTrue(this.setState(SuperState.IDLE));
-
-    stateTriggers
-        .get(SuperState.PREAMP)
-        .whileTrue(elevator.setExtensionCmd(ElevatorSubsystem.AMP_EXTENSION_METERS))
-        .whileTrue(carriage.stop())
-        .and(scoreReq)
-        .and(elevator::isAtAmp)
-        .onTrue(this.setState(SuperState.AMP));
-
-    stateTriggers
-        .get(SuperState.AMP)
-        .whileTrue(elevator.run(() -> {}))
-        .whileTrue(carriage.setVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE))
-        .and(() -> stateTimer.get() > 1.0)
         .onTrue(this.setState(SuperState.IDLE));
 
     stateTriggers
@@ -334,8 +336,28 @@ public class Superstructure {
   private Command setState(SuperState state) {
     return Commands.runOnce(
         () -> {
+          this.prevState = state;
           this.state = state;
           stateTimer.restart();
         });
+  }
+
+  /** Request the robot to score in the current target */
+  public Command score() {
+    return Commands.runOnce(() -> scoreOverride = true)
+        .andThen(Commands.waitUntil(() -> 
+          this.state == SuperState.IDLE 
+          && (
+            this.prevState == SuperState.SHOOT
+            || this.prevState == SuperState.AMP
+            ))).finallyDo(() -> scoreOverride = false);
+  }
+
+  /** Request the robot to intake */
+  public Command intake() {
+    return Commands.runOnce(() -> intakeOverride = true)
+        .andThen(Commands.waitUntil(() -> 
+            this.prevState == SuperState.INTAKE
+            )).finallyDo(() -> intakeOverride = false);
   }
 }

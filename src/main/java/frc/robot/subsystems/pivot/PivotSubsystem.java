@@ -53,6 +53,10 @@ public class PivotSubsystem extends SubsystemBase {
         0.0437896, 0.0, 0.3274568, new Rotation3d(0.0, inputs.pivotRotation.getRadians(), 0.0));
   }
 
+  public Rotation2d getAngle() {
+    return inputs.pivotRotation;
+  }
+
   public Command setPivotSetpoint(Rotation2d goal) {
     return this.run(
         () -> {

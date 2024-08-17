@@ -218,32 +218,12 @@ public class Robot extends LoggedRobot {
     // All subsystems in Superstructure should maintain state by default
     // Other behavior is handled in Superstructure
     elevator.setDefaultCommand(elevator.run(() -> {}));
-    feeder.setDefaultCommand(
-        Commands.repeatingSequence(
-            feeder.indexCmd().until(() -> !currentTarget.isSpeakerAlike()),
-            Commands.sequence(
-                    feeder
-                        .setVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY)
-                        .until(() -> carriage.getBeambreak()),
-                    feeder.setVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY).withTimeout(0.5),
-                    feeder.setVelocityCmd(0))
-                .until(() -> currentTarget != Target.AMP)));
-    carriage.setDefaultCommand(
-        Commands.repeatingSequence(
-            Commands.either(
-                    carriage.indexBackwardsCmd(),
-                    carriage.indexForwardsCmd(),
-                    () -> feeder.getFirstBeambreak())
-                .until(() -> currentTarget != Target.AMP),
-            Commands.repeatingSequence(
-                    carriage
-                        .setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
-                        .until(() -> feeder.getFirstBeambreak()),
-                    carriage.setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE).withTimeout(0.5),
-                    carriage.setVoltageCmd(-0.5).until(() -> !feeder.getFirstBeambreak()))
-                .until(() -> !currentTarget.isSpeakerAlike())));
-    intake.setDefaultCommand(intake.setVoltageCmd(0.0, 0.0));
-    shooter.setDefaultCommand(shooter.runFlywheelsCmd(() -> 0.0, () -> 0.0));
+    feeder.setDefaultCommand(feeder.run(() -> {}));
+    carriage.setDefaultCommand(carriage.run(() -> {}));
+    intake.setDefaultCommand(intake.run(() -> {}));
+    leftFlywheel.setDefaultCommand(leftFlywheel.run(() -> {}));
+    rightFlywheel.setDefaultCommand(rightFlywheel.run(() -> {}));
+    pivot.setDefaultCommand(pivot.run(() -> {}));
     leds.setDefaultCommand(
         leds.defaultStateDisplayCmd(
             () -> DriverStation.isEnabled(),
@@ -255,109 +235,27 @@ public class Robot extends LoggedRobot {
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
 
     // Robot state management bindings
-    new Trigger(() -> carriage.getBeambreak())
-        .debounce(0.5)
-        .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0));
+    // new Trigger(() -> carriage.getBeambreak())
+    //     .debounce(0.5)
+    //     .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
         .debounce(0.25)
         .onTrue(
             Commands.parallel(
                     controller.rumbleCmd(1.0, 1.0),
                     operator.rumbleCmd(1.0, 1.0),
-                    leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 15.0))
+                    leds.setBlinkingCmd(new Color("#ff4400"), new Color("#000000"), 5.0))
                 .withTimeout(0.5));
     new Trigger(() -> DriverStation.isEnabled()).onTrue(elevator.unlockClimb());
     new Trigger(() -> DriverStation.getMatchTime() < 30.0)
         .onTrue(
             Commands.parallel(
                     operator.rumbleCmd(1.0, 1.0),
-                    leds.setBlinkingCmd(new Color("#350868"), Color.kWhite, 10.0))
+                    leds.setBlinkingCmd(new Color("#350868"), Color.kWhite, 5.0))
                 .withTimeout(1.0));
 
     // ---- Controller bindings here ----
     // Prevent intaking when elevator isnt down
-    controller
-        .leftTrigger()
-        .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0))
-        .whileTrue(intake.setVelocityCmd(60.0, 30.0));
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> USE_AUTO_AIM)
-        .and(() -> USE_SOTM)
-        .whileTrue(teleopAutoAim());
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> USE_AUTO_AIM)
-        .and(() -> !USE_SOTM)
-        .whileTrue(staticAutoAim(() -> swerve.getDistanceToSpeaker() < 3.0 ? 5.0 : 3.0));
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.FEED)
-        .whileTrue(
-            Commands.parallel(
-                Commands.waitUntil(() -> shooter.isAtGoal())
-                    .andThen(controller.rumbleCmd(1.0, 1.0).withTimeout(0.25))
-                    .asProxy(),
-                shooter.runStateCmd(
-                    AutoAim.FEED_SHOT.getRotation(),
-                    AutoAim.FEED_SHOT.getLeftRPS(),
-                    AutoAim.FEED_SHOT.getRightRPS())))
-        .onFalse(
-            Commands.parallel(
-                    shooter.run(() -> {}), feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-                .withTimeout(0.5))
-        .whileTrue(
-            speakerHeadingSnap(
-                    () ->
-                        -teleopAxisAdjustment(controller.getLeftY())
-                            * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    () ->
-                        -teleopAxisAdjustment(controller.getLeftX())
-                            * SwerveSubsystem.MAX_LINEAR_SPEED)
-                .until(
-                    () ->
-                        controller.getHID().getRightTriggerAxis() > 0.5
-                            && currentTarget == Target.SPEAKER)
-                .unless(() -> controller.getHID().getRightBumper()));
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SUBWOOFER)
-        .whileTrue(
-            Commands.parallel(
-                Commands.waitUntil(() -> shooter.isAtGoal())
-                    .andThen(controller.rumbleCmd(1.0, 1.0).withTimeout(0.25))
-                    .asProxy(),
-                shooter.runStateCmd(
-                    AutoAim.FENDER_SHOT.getRotation(),
-                    AutoAim.FENDER_SHOT.getLeftRPS(),
-                    AutoAim.FENDER_SHOT.getRightRPS())))
-        .onFalse(
-            Commands.parallel(
-                    shooter.run(() -> {}), feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-                .withTimeout(0.5));
-
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.SPEAKER)
-        .and(() -> !USE_AUTO_AIM)
-        .whileTrue(shooter.runStateCmd(Rotation2d.fromDegrees(50.0), 50.0, 60.0))
-        .onFalse(
-            Commands.parallel(
-                    shooter.run(() -> {}), feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-                .withTimeout(0.5));
-    controller
-        .rightTrigger()
-        .and(() -> currentTarget == Target.AMP)
-        .and(operator.leftBumper().negate().debounce(0.5))
-        .and(operator.leftTrigger().negate().debounce(0.5))
-        .whileTrue(elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
-        .onFalse(
-            Commands.parallel(
-                    carriage.setVoltageCmd(-3.0),
-                    elevator.setExtensionCmd(() -> ElevatorSubsystem.AMP_EXTENSION_METERS))
-                .withTimeout(0.75));
     controller
         .rightBumper()
         .and(
@@ -376,25 +274,7 @@ public class Robot extends LoggedRobot {
                     () ->
                         controller.getHID().getRightTriggerAxis() > 0.5
                             && currentTarget == Target.SPEAKER));
-    controller
-        .leftBumper()
-        .and(controller.rightTrigger().negate())
-        .and(operator.a().negate())
-        .whileTrue(
-            Commands.repeatingSequence(
-                    shooter
-                        .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                        .until(
-                            () ->
-                                feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-                    shooter
-                        .runStateCmd(
-                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
-                        .until(() -> !feeder.getFirstBeambreak()))
-                .until(controller.rightTrigger())
-                .unless(controller.rightTrigger()));
+    
     controller
         .rightBumper()
         .and(() -> currentTarget == Target.AMP)
@@ -406,32 +286,14 @@ public class Robot extends LoggedRobot {
                     -teleopAxisAdjustment(controller.getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
 
-    controller
-        .x()
-        .whileTrue(
-            Commands.parallel(
-                shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(30.0), -5.0),
-                feeder.setVoltageCmd(-5.0),
-                carriage.setVoltageCmd(-5.0),
-                intake.setVelocityCmd(-50.0, -50.0)));
-
-    // climb
-    operator
-        .rightTrigger(0.75)
-        .and(() -> elevator.getExtensionMeters() < 0.25)
-        .and(operator.rightBumper())
-        .onFalse(
-            Commands.parallel(
-                    elevator.setExtensionCmd(() -> ElevatorSubsystem.CLIMB_EXTENSION_METERS),
-                    leds.setBlinkingCmd(new Color("#00ff00"), new Color("#ffffff"), 10.0))
-                .until(
-                    () ->
-                        operator.getRightTriggerAxis() > 0.75
-                            && operator.rightBumper().getAsBoolean())
-                .andThen(
-                    Commands.parallel(
-                            elevator.climbRetractAndLock().asProxy(), leds.setRainbowCmd())
-                        .withInterruptBehavior(InterruptionBehavior.kCancelIncoming)));
+    // controller
+    //     .x()
+    //     .whileTrue(
+    //         Commands.parallel(
+    //             shooter.runFlywheelVoltageCmd(Rotation2d.fromDegrees(30.0), -5.0),
+    //             feeder.setVoltageCmd(-5.0),
+    //             carriage.setVoltageCmd(-5.0),
+    //             intake.setVelocityCmd(-50.0, -50.0)));
     // Heading reset
     controller
         .leftStick()
@@ -445,70 +307,39 @@ public class Robot extends LoggedRobot {
             Commands.waitUntil(
                     () ->
                         Math.abs(
-                                shooter
+                                pivot
                                     .getAngle()
-                                    .minus(ShooterSubsystem.PIVOT_MIN_ANGLE)
+                                    .minus(PivotSubsystem.MIN_ANGLE)
                                     .getDegrees())
                             < 10.0)
                 .andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
     operator.b().onTrue(Commands.runOnce(() -> currentTarget = Target.FEED));
     operator.x().onTrue(Commands.runOnce(() -> currentTarget = Target.SUBWOOFER));
 
-    operator
-        .a()
-        .and(controller.rightTrigger().negate())
-        .and(controller.leftBumper().negate())
-        .whileTrue(
-            Commands.repeatingSequence(
-                    shooter
-                        .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                        .until(
-                            () ->
-                                feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-                    shooter
-                        .runStateCmd(
-                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                            () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())
-                        .until(() -> !feeder.getFirstBeambreak()))
-                .until(controller.rightTrigger())
-                .unless(controller.rightTrigger()));
-
     operator.start().whileTrue(elevator.runCurrentZeroing());
-    operator
-        .back()
-        .onTrue(
-            shooter
-                .resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE)
-                .alongWith(
-                    leds.setBlinkingCmd(new Color("#00ff00"), new Color(), 10.0)
-                        .withTimeout(0.25)));
 
     autoChooser.addOption("None", Commands.none());
-    autoChooser.addOption("Shoot Preload", teleopAutoAim());
+    autoChooser.addOption("Shoot Preload", Commands.none());
     autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
     autoChooser.addOption("Source 3 Center Bias", autoSource3CenterBias());
-    autoChooser.addOption("Source 3 Spit", autoSource3Spit());
+    // autoChooser.addOption("Source 3 Spit", autoSource3Spit());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
     autoChooser.addOption("Zoom", zoom());
     autoChooser.addOption("Source Dash", autoSourceDash());
-    autoChooser.addOption("Source 3 Citrus Spit", autoSource3CitrusSpit());
+    // autoChooser.addOption("Source 3 Citrus Spit", autoSource3CitrusSpit());
     autoChooser.addOption("Source 3 Citrus", autoSource3Citrus());
     autoChooser.addOption("Source 3 Truss", autoSource3Truss());
 
     // Dashboard command buttons
-    SmartDashboard.putData("Shooter shoot", shootWithDashboard());
     SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
     SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
-    SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
-    SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
     SmartDashboard.putData(
         "manual zero shooter",
-        shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
+        pivot.resetPosition(PivotSubsystem.MIN_ANGLE).ignoringDisable(true));
   }
 
   @Override
@@ -518,7 +349,7 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "Mechanism Poses",
         new Pose3d[] {
-          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+          pivot.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
@@ -533,111 +364,6 @@ public class Robot extends LoggedRobot {
         swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
   }
 
-  private Command shootWithDashboard() {
-    return Commands.parallel(
-        shooter.runStateCmd(
-            () -> Rotation2d.fromDegrees(dashShotDegrees.get()),
-            () -> dashShotLeftRPS.get(),
-            () -> dashShotRightRPS.get()),
-        feeder.indexCmd());
-  }
-
-  /**
-   * A demo command that goes through all the steps of a shoot while moving algorithm
-   *
-   * @param speeds
-   * @return A command that takes the robot through an auto aim sequence
-   */
-  private Command teleopAutoAim() {
-    return Commands.sequence(
-        swerve
-            .runVelocityFieldRelative(
-                () -> {
-                  double velocity =
-                      Math.sqrt(
-                          Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
-                              + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2));
-                  Rotation2d direction =
-                      new Rotation2d(
-                          swerve.getVelocity().vxMetersPerSecond,
-                          swerve.getVelocity().vyMetersPerSecond);
-                  double clampedSpeed =
-                      MathUtil.clamp(
-                          velocity,
-                          -SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95,
-                          SwerveSubsystem.MAX_AUTOAIM_SPEED * 0.95);
-                  return new ChassisSpeeds(
-                      clampedSpeed * direction.getCos(), clampedSpeed * direction.getSin(), 0.0);
-                })
-            .until(
-                () ->
-                    Math.sqrt(
-                            Math.pow(swerve.getVelocity().vxMetersPerSecond, 2)
-                                + Math.pow(swerve.getVelocity().vyMetersPerSecond, 2))
-                        < SwerveSubsystem.MAX_AUTOAIM_SPEED),
-        Commands.runOnce(
-            () -> {
-              AutoAimStates.curShotSpeeds =
-                  new ChassisSpeeds(
-                      swerve.getVelocity().vxMetersPerSecond,
-                      swerve.getVelocity().vyMetersPerSecond,
-                      0.0);
-              Logger.recordOutput("AutoAim/Current Shot Speed", AutoAimStates.curShotSpeeds);
-              AutoAimStates.lookaheadTime = swerve.getLookaheadTime();
-              double distance =
-                  swerve
-                      .getLinearFuturePose(AutoAimStates.lookaheadTime, AutoAimStates.curShotSpeeds)
-                      .minus(FieldConstants.getSpeaker())
-                      .getTranslation()
-                      .getNorm();
-              AutoAimStates.curShotData = AutoAim.shotMap.get(distance);
-              Logger.recordOutput("AutoAim/Distance From Target", distance);
-              Logger.recordOutput(
-                  "AutoAim/Desired Shooting Angle", AutoAim.shotMap.get(distance).getRotation());
-              Logger.recordOutput(
-                  "AutoAim/Actual Shooting Angle", AutoAimStates.curShotData.getRotation());
-              AutoAimStates.endingPose =
-                  swerve.getLinearFuturePose(
-                      AutoAimStates.lookaheadTime, AutoAimStates.curShotSpeeds);
-              AutoAimStates.virtualTarget =
-                  AutoAim.getVirtualTarget(AutoAimStates.endingPose, AutoAimStates.curShotSpeeds);
-              Logger.recordOutput("AutoAim/Virtual Target", AutoAimStates.virtualTarget);
-              System.out.println(Timer.getFPGATimestamp());
-            }),
-        Commands.deadline(
-            Commands.waitSeconds(AutoAimStates.lookaheadTime),
-            swerve.teleopAimAtVirtualTargetCmd(
-                () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                AutoAimStates.lookaheadTime),
-            shooter.runStateCmd(
-                () -> AutoAimStates.curShotData.getRotation(),
-                () -> AutoAimStates.curShotData.getLeftRPS(),
-                () -> AutoAimStates.curShotData.getRightRPS())),
-        // keeps moving to prevent the robot from stopping and changing the velocity of the note
-        Commands.either(
-            swerve
-                .runVelocityFieldRelative(
-                    () ->
-                        new ChassisSpeeds(
-                            AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                            AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                            0))
-                .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-                .withTimeout(0.25),
-            staticAutoAim(),
-            () ->
-                shooter.isAtGoal()
-                    && MathUtil.isNear(
-                        AutoAimStates.endingPose
-                            .getTranslation()
-                            .minus(AutoAimStates.virtualTarget.getTranslation())
-                            .getAngle()
-                            .getDegrees(),
-                        swerve.getRotation().getDegrees(),
-                        2.0)));
-  }
-
   private Command staticAutoAim(DoubleSupplier rotationTolerance) {
     var headingController =
         new ProfiledPIDController(
@@ -649,37 +375,8 @@ public class Robot extends LoggedRobot {
                 SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.deadline(
-            feeder
-                .setVelocityCmd(0.0)
-                .until(
-                    () ->
-                        shooter.isAtGoal()
-                            && MathUtil.isNear(
-                                swerve
-                                    .getPose()
-                                    .getTranslation()
-                                    .minus(FieldConstants.getSpeaker().getTranslation())
-                                    .getAngle()
-                                    .getDegrees(),
-                                swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance.getAsDouble())
-                            && MathUtil.isNear(
-                                0.0,
-                                Math.sqrt(
-                                    swerve.getVelocity().vxMetersPerSecond
-                                            * swerve.getVelocity().vxMetersPerSecond
-                                        + swerve.getVelocity().vyMetersPerSecond
-                                            * swerve.getVelocity().vyMetersPerSecond),
-                                0.25))
-                .andThen(
-                    Commands.parallel(
-                        controller.rumbleCmd(1.0, 1.0).withTimeout(0.5),
-                        feeder
-                            .setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                            .raceWith(
-                                Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                    .andThen(Commands.waitSeconds(0.25))))),
-            swerve.runVelocityFieldRelative(
+      superstructure.score().beforeStarting(Commands.runOnce(() -> currentTarget = Target.SPEAKER)),
+      swerve.runVelocityFieldRelative(
                 () -> {
                   var pidOut =
                       headingController.calculate(
@@ -697,19 +394,13 @@ public class Robot extends LoggedRobot {
                       headingController.getSetpoint().velocity);
                   return new ChassisSpeeds(
                       0.0, 0.0, pidOut + (headingController.getSetpoint().velocity * 0.9));
-                }),
-            shooter.runStateCmd(
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS(),
-                80.0,
-                30.0))
+                })
         .beforeStarting(
             () ->
                 headingController.reset(
                     new State(
                         swerve.getPose().getRotation().getRadians(),
-                        swerve.getVelocity().omegaRadiansPerSecond)));
+                        swerve.getVelocity().omegaRadiansPerSecond))));
   }
 
   private Command staticAutoAim() {
@@ -721,84 +412,18 @@ public class Robot extends LoggedRobot {
   }
 
   private Command autoStaticAutoAim() {
-    return feeder
-        .indexCmd()
-        .deadlineWith(
-            swerve.runVelocityCmd(() -> new ChassisSpeeds()),
-            Commands.repeatingSequence(
-                shooter
-                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .unless(
-                        () ->
-                            feeder.getFirstBeambreak()
-                                && !feeder.getLastBeambreak()
-                                && swerve.getDistanceToSpeaker() < 8.0)
-                    .until(
-                        () ->
-                            feeder.getFirstBeambreak()
-                                && !feeder.getLastBeambreak()
-                                && swerve.getDistanceToSpeaker() < 8.0),
-                shooter.runStateCmd(
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())))
-        .until(() -> feeder.getFirstBeambreak())
-        .unless(() -> feeder.getFirstBeambreak())
-        .withTimeout(1.0)
-        .andThen(
-            staticAutoAim(6.0)
-                .deadlineWith(
-                    intake.setVoltageCmd(0, 0).asProxy(), carriage.setVoltageCmd(0).asProxy())
-                .withTimeout(2.0)
-                .unless(() -> !feeder.getFirstBeambreak()))
-        .asProxy()
-        .withTimeout(4.0);
+    // With the superstructure setup cant really manually block for the intake as easily
+    return staticAutoAim().withTimeout(2.0).asProxy();
   }
 
   private Command autoFenderShot() {
-    return shooter
-        .runStateCmd(
-            () -> AutoAim.FENDER_SHOT.getRotation(),
-            () -> AutoAim.FENDER_SHOT.getLeftRPS(),
-            () -> AutoAim.FENDER_SHOT.getRightRPS(),
-            80.0,
-            30.0)
-        .raceWith(
-            feeder
-                .setVelocityCmd(0.0)
-                .until(() -> shooter.isAtGoal())
-                .andThen(
-                    feeder
-                        .setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                        .raceWith(
-                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                .andThen(Commands.waitSeconds(0.1)))))
-        .asProxy();
+    return Commands.runOnce(() -> currentTarget = Target.FEED).andThen(superstructure.score()
+    ).asProxy();
   }
 
   private Command autoIntake() {
-    return Commands.parallel(
-        intake
-            .setVelocityCmd(60.0, 30.0)
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .asProxy(),
-        feeder.indexCmd().asProxy(),
-        carriage
-            .setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
-            .until(() -> feeder.getFirstBeambreak())
-            .asProxy(),
-        shooter
-            .runIdleFlywheelCmd(() -> ShooterSubsystem.PIVOT_MIN_ANGLE)
-            .until(() -> feeder.getFirstBeambreak() && !feeder.getLastBeambreak())
-            .unless(() -> feeder.getFirstBeambreak())
-            .andThen(
-                shooter.runStateCmd(
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS(),
-                    30.0,
-                    15.0))
-            .asProxy());
+    return superstructure.intake()
+            .asProxy();
   }
 
   private Command autoSourceDash() {
@@ -968,106 +593,106 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim());
   }
 
-  private Command autoSource3Spit() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        shooter
-            .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
-            .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-            .until(() -> !feeder.getLastBeambreak())
-            .asProxy(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim());
-  }
+//   private Command autoSource3Spit() {
+//     return Commands.sequence(
+//         autoFenderShot(),
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.1"), true)
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         shooter
+//             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
+//             .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+//             .until(() -> !feeder.getLastBeambreak())
+//             .asProxy(),
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         autoStaticAutoAim());
+//   }
 
-  private Command autoSource3CitrusSpit() {
-    return Commands.sequence(
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        shooter
-            .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
-            .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-            .until(() -> !feeder.getLastBeambreak())
-            .asProxy(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.4"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim());
-  }
+//   private Command autoSource3CitrusSpit() {
+//     return Commands.sequence(
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.1"), true)
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         shooter
+//             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
+//             .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+//             .until(() -> !feeder.getLastBeambreak())
+//             .asProxy(),
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.2"))
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.3"))
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         autoStaticAutoAim(),
+//         swerve
+//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.4"))
+//             .asProxy()
+//             .deadlineWith(autoIntake()),
+//         autoIntake()
+//             .raceWith(
+//                 Commands.sequence(
+//                     Commands.waitSeconds(0.25),
+//                     Commands.waitUntil(
+//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+//             .withTimeout(1.0),
+//         autoStaticAutoAim());
+//   }
 
   private Command autoSource3Citrus() {
     return Commands.sequence(
