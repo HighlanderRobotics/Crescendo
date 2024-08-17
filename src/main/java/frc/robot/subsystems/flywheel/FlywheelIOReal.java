@@ -19,12 +19,11 @@ public class FlywheelIOReal implements FlywheelIO {
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-  private final VelocityVoltage velocityVoltage =
-      new VelocityVoltage(0.0).withEnableFOC(true);
+  private final VelocityVoltage velocityVoltage = new VelocityVoltage(0.0).withEnableFOC(true);
 
   public FlywheelIOReal(int id, InvertedValue invert) {
     motor = new TalonFX(id, "canivore");
-    
+
     amps = motor.getStatorCurrent();
     voltage = motor.getMotorVoltage();
     temp = motor.getDeviceTemp();
@@ -34,8 +33,7 @@ public class FlywheelIOReal implements FlywheelIO {
 
     flywheelConfig.MotorOutput.Inverted = invert;
 
-    flywheelConfig.Feedback.SensorToMechanismRatio =
-        FlywheelSubsystem.FLYWHEEL_RATIO;
+    flywheelConfig.Feedback.SensorToMechanismRatio = FlywheelSubsystem.FLYWHEEL_RATIO;
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 80.0;
@@ -50,22 +48,13 @@ public class FlywheelIOReal implements FlywheelIO {
 
     motor.getConfigurator().apply(flywheelConfig);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        vel,
-        voltage,
-        amps,
-        temp);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, vel, voltage, amps, temp);
     motor.optimizeBusUtilization();
   }
 
   @Override
   public void updateInputs(FlywheelIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(
-        vel,
-        voltage,
-        amps,
-        temp);
+    BaseStatusSignal.refreshAll(vel, voltage, amps, temp);
     inputs.velocityRotationsPerSecond = vel.getValue();
     inputs.voltage = voltage.getValue();
     inputs.amps = amps.getValue();

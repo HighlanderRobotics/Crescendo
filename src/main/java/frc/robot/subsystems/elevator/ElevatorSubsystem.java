@@ -7,6 +7,7 @@ package frc.robot.subsystems.elevator;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.SignalLogger;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -115,7 +116,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     return this.run(() -> io.setVoltage(-1.0))
         .until(() -> inputs.elevatorCurrentAmps[0] > 40.0)
         .finallyDo(() -> io.resetEncoder(0.0))
-        .beforeStarting(() -> io.setLockServoRotation(0.2));
+        .beforeStarting(() -> io.setLockServoRotation(0.2))
+        .withName("Homing");
   }
 
   public Command runSysidCmd() {
@@ -167,5 +169,13 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   public double getExtensionMeters() {
     return inputs.elevatorPositionMeters;
+  }
+
+  public boolean isAtAmp() {
+    return MathUtil.isNear(AMP_EXTENSION_METERS, getExtensionMeters(), 0.1);
+  }
+
+  public boolean isAtClimb() {
+    return MathUtil.isNear(CLIMB_EXTENSION_METERS, getExtensionMeters(), 0.1);
   }
 }

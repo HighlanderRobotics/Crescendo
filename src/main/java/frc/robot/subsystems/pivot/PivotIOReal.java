@@ -12,23 +12,23 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class PivotIOReal implements PivotIO {
-    private final TalonFX pivotMotor = new TalonFX(10, "canivore");
+  private final TalonFX pivotMotor = new TalonFX(10, "canivore");
 
-    private final StatusSignal<Double> pivotVelocity = pivotMotor.getVelocity();
-    private final StatusSignal<Double> pivotVoltage = pivotMotor.getMotorVoltage();
-    private final StatusSignal<Double> pivotAmps = pivotMotor.getStatorCurrent();
-    private final StatusSignal<Double> pivotTempC = pivotMotor.getDeviceTemp();
-    private final StatusSignal<Double> pivotRotations = pivotMotor.getPosition();
+  private final StatusSignal<Double> pivotVelocity = pivotMotor.getVelocity();
+  private final StatusSignal<Double> pivotVoltage = pivotMotor.getMotorVoltage();
+  private final StatusSignal<Double> pivotAmps = pivotMotor.getStatorCurrent();
+  private final StatusSignal<Double> pivotTempC = pivotMotor.getDeviceTemp();
+  private final StatusSignal<Double> pivotRotations = pivotMotor.getPosition();
 
-    private final VoltageOut pivotVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
-    private final MotionMagicVoltage pivotMotionMagic =
+  private final VoltageOut pivotVoltageOut = new VoltageOut(0.0).withEnableFOC(true);
+  private final MotionMagicVoltage pivotMotionMagic =
       new MotionMagicVoltage(0.0).withEnableFOC(true);
-    public PivotIOReal() {
-        var pivotConfig = new TalonFXConfiguration();
+
+  public PivotIOReal() {
+    var pivotConfig = new TalonFXConfiguration();
 
     pivotConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
@@ -49,21 +49,15 @@ public class PivotIOReal implements PivotIO {
     pivotConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0;
 
     pivotMotor.getConfigurator().apply(pivotConfig);
-    pivotMotor.setPosition(
-        PivotSubsystem.MIN_ANGLE.getRotations()); // Assume we boot at hard stop
+    pivotMotor.setPosition(PivotSubsystem.MIN_ANGLE.getRotations()); // Assume we boot at hard stop
     BaseStatusSignal.setUpdateFrequencyForAll(
         250.0, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC, pivotRotations);
     pivotMotor.optimizeBusUtilization();
-    }
+  }
 
-    @Override
+  @Override
   public void updateInputs(PivotIOInputsAutoLogged inputs) {
-    BaseStatusSignal.refreshAll(
-        pivotRotations,
-        pivotVelocity,
-        pivotVoltage,
-        pivotAmps,
-        pivotTempC);
+    BaseStatusSignal.refreshAll(pivotRotations, pivotVelocity, pivotVoltage, pivotAmps, pivotTempC);
 
     inputs.pivotRotation = Rotation2d.fromRotations(pivotRotations.getValue());
     inputs.pivotVelocityRotationsPerSecond = pivotVelocity.getValue();
@@ -72,7 +66,6 @@ public class PivotIOReal implements PivotIO {
     inputs.pivotTempC = pivotTempC.getValue();
   }
 
-  
   public void resetPivotPosition(final Rotation2d rotation) {
     pivotMotor.setPosition(rotation.getRotations());
   }

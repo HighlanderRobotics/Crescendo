@@ -22,19 +22,20 @@ public class FlywheelSubsystem extends SubsystemBase {
   }
 
   public Command setVelocity(final double rps) {
-    return this.run(() -> {
-      io.setVelocity(rps);
-      goalRPS = rps;
-    }
-    );
-    }
+    return this.run(
+        () -> {
+          io.setVelocity(rps);
+          goalRPS = rps;
+        });
+  }
 
   public Command setVoltageCmd(final double volts) {
-    return this.run(() -> {
-      io.setVoltage(volts);
-      // Estimate goal rps from kv
-      goalRPS = (volts / 12.0) * (5800.0 / 60.0);
-    });
+    return this.run(
+        () -> {
+          io.setVoltage(volts);
+          // Estimate goal rps from kv
+          goalRPS = (volts / 12.0) * (5800.0 / 60.0);
+        });
   }
 
   @Override
@@ -44,7 +45,6 @@ public class FlywheelSubsystem extends SubsystemBase {
   }
 
   public boolean isAtGoal() {
-    return 
-        MathUtil.isNear(goalRPS, inputs.velocityRotationsPerSecond, 1.0);
+    return MathUtil.isNear(goalRPS, inputs.velocityRotationsPerSecond, 1.0);
   }
 }

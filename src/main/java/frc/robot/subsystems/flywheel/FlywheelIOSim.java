@@ -8,7 +8,6 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
@@ -17,7 +16,8 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 public class FlywheelIOSim implements FlywheelIO {
   private final TalonFX motor;
 
-  private final DCMotorSim sim = new DCMotorSim(DCMotor.getKrakenX60Foc(1), FlywheelSubsystem.FLYWHEEL_RATIO, 0.00034531479);
+  private final DCMotorSim sim =
+      new DCMotorSim(DCMotor.getKrakenX60Foc(1), FlywheelSubsystem.FLYWHEEL_RATIO, 0.00034531479);
 
   private final StatusSignal<Double> amps;
   private final StatusSignal<Double> voltage;
@@ -26,12 +26,11 @@ public class FlywheelIOSim implements FlywheelIO {
 
   private final VoltageOut voltageOut = new VoltageOut(0.0).withEnableFOC(true);
 
-  private final VelocityVoltage velocityVoltage =
-      new VelocityVoltage(0.0).withEnableFOC(true);
+  private final VelocityVoltage velocityVoltage = new VelocityVoltage(0.0).withEnableFOC(true);
 
   public FlywheelIOSim(int id, InvertedValue invert) {
     motor = new TalonFX(id, "canivore");
-    
+
     amps = motor.getStatorCurrent();
     voltage = motor.getMotorVoltage();
     temp = motor.getDeviceTemp();
@@ -41,8 +40,7 @@ public class FlywheelIOSim implements FlywheelIO {
 
     flywheelConfig.MotorOutput.Inverted = invert;
 
-    flywheelConfig.Feedback.SensorToMechanismRatio =
-        FlywheelSubsystem.FLYWHEEL_RATIO;
+    flywheelConfig.Feedback.SensorToMechanismRatio = FlywheelSubsystem.FLYWHEEL_RATIO;
 
     flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     flywheelConfig.CurrentLimits.StatorCurrentLimit = 80.0;
@@ -57,12 +55,7 @@ public class FlywheelIOSim implements FlywheelIO {
 
     motor.getConfigurator().apply(flywheelConfig);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        vel,
-        voltage,
-        amps,
-        temp);
+    BaseStatusSignal.setUpdateFrequencyForAll(50.0, vel, voltage, amps, temp);
     motor.optimizeBusUtilization();
   }
 
@@ -73,11 +66,7 @@ public class FlywheelIOSim implements FlywheelIO {
     simState.setSupplyVoltage(RobotController.getBatteryVoltage());
     simState.setRawRotorPosition(sim.getAngularPositionRotations());
     simState.setRotorVelocity(Units.radiansToRotations(sim.getAngularVelocityRadPerSec()));
-    BaseStatusSignal.refreshAll(
-        vel,
-        voltage,
-        amps,
-        temp);
+    BaseStatusSignal.refreshAll(vel, voltage, amps, temp);
     inputs.velocityRotationsPerSecond = vel.getValue();
     inputs.voltage = voltage.getValue();
     inputs.amps = amps.getValue();

@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
 import org.littletonrobotics.junction.Logger;
 
 /** Drainpipe style amp/trap mechanism on the elevator */
@@ -51,9 +50,12 @@ public class CarriageSubsystem extends SubsystemBase {
    * further forward.
    */
   public Command indexForwardsCmd() {
-    return setVoltageCmd(INDEXING_VOLTAGE).beforeStarting(() -> isIndexed = false)
+    return setVoltageCmd(INDEXING_VOLTAGE)
+        .beforeStarting(() -> isIndexed = false)
         .until(() -> inputs.beambreak)
-        .andThen(setVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12), setVoltageCmd(0.0).finallyDo(() -> isIndexed = true))
+        .andThen(
+            setVoltageCmd(INDEXING_VOLTAGE / 2).withTimeout(0.12),
+            setVoltageCmd(0.0).finallyDo(() -> isIndexed = true))
         .until(() -> !getBeambreak())
         .repeatedly();
   }
