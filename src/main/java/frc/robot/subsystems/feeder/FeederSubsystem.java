@@ -40,6 +40,10 @@ public class FeederSubsystem extends SubsystemBase {
     return this.run(() -> io.setVelocity(velocity));
   }
 
+  public Command stop() {
+    return this.setVelocityCmd(0.0);
+  }
+
   /** Run the feeder to place the ring between the beambreaks. */
   public Command indexCmd() {
     // return this.run(

@@ -9,6 +9,8 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -20,6 +22,8 @@ import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.pivot.PivotSubsystem;
+import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.autoaim.ShotData;
 
 public class SuperstructureSubsystem extends SubsystemBase {
   public static enum SuperState {
@@ -52,6 +56,8 @@ public class SuperstructureSubsystem extends SubsystemBase {
   private final ElevatorSubsystem elevator;
 
   private final Supplier<Target> target;
+  private final Supplier<Pose2d> pose;
+  private final Supplier<ShotData> shot;
 
   /** Also triggered by scoreReq */
   private final Trigger prescoreReq;
@@ -62,6 +68,8 @@ public class SuperstructureSubsystem extends SubsystemBase {
   private SuperState state = SuperState.IDLE;
   private Map<SuperState, Trigger> stateTriggers;
 
+  private Timer stateTimer = new Timer();
+
   public SuperstructureSubsystem(
     PivotSubsystem pivot,
     FlywheelSubsystem leftFlywheel,
@@ -71,6 +79,8 @@ public class SuperstructureSubsystem extends SubsystemBase {
     IntakeSubsystem intake,
     ElevatorSubsystem elevator,
     Supplier<Target> target,
+    Supplier<Pose2d> pose,
+    Supplier<ShotData> shot,
     Trigger scoreReq,
     Trigger prescoreReq,
     Trigger intakeReq,
@@ -85,11 +95,15 @@ public class SuperstructureSubsystem extends SubsystemBase {
     this.elevator = elevator;
 
     this.target = target;
+    this.pose = pose;
+    this.shot = shot;
     
     this.prescoreReq = prescoreReq.or(scoreReq);
     this.scoreReq = scoreReq;
     this.intakeReq = intakeReq;
     this.climbReq = climbReq;
+
+    stateTimer.start();
 
     for (var state : SuperState.values()) {
       stateTriggers.put(state, new Trigger(() -> this.state == state));
@@ -178,11 +192,51 @@ public class SuperstructureSubsystem extends SubsystemBase {
       .and(carriage.isIndexedTrig)
       .onTrue(this.setState(SuperState.READY_INDEXED_CARRIAGE));
 
-    stateTriggers.get(SuperState.PRESHOOT);
+    stateTriggers.get(SuperState.PRESHOOT)
+      .whileTrue(pivot.setPivotSetpoint(shot.get().getRotation()))
+      .whileTrue(leftFlywheel.setVelocity(shot.get().getLeftRPS()))
+      .whileTrue(rightFlywheel.setVelocity(shot.get().getRightRPS()))
+      .whileTrue(feeder.stop())
+      .and(scoreReq)
+      .and(pivot::isAtGoal)
+      .and(leftFlywheel::isAtGoal)
+      .and(rightFlywheel::isAtGoal)
+      .onTrue(this.setState(SuperState.SHOOT));
+
+    stateTriggers.get(SuperState.PREFEED)
+      .whileTrue(pivot.setPivotSetpoint(AutoAim.FEED_SHOT.getRotation()))
+      .whileTrue(leftFlywheel.setVelocity(AutoAim.FEED_SHOT.getLeftRPS()))
+      .whileTrue(rightFlywheel.setVelocity(AutoAim.FEED_SHOT.getRightRPS()))
+      .whileTrue(feeder.stop())
+      .and(scoreReq)
+      .and(pivot::isAtGoal)
+      .and(leftFlywheel::isAtGoal)
+      .and(rightFlywheel::isAtGoal)
+      .onTrue(this.setState(SuperState.SHOOT));
+
+    stateTriggers.get(SuperState.PREFEED)
+      .whileTrue(pivot.setPivotSetpoint(AutoAim.FENDER_SHOT.getRotation()))
+      .whileTrue(leftFlywheel.setVelocity(AutoAim.FENDER_SHOT.getLeftRPS()))
+      .whileTrue(rightFlywheel.setVelocity(AutoAim.FENDER_SHOT.getRightRPS()))
+      .whileTrue(feeder.stop())
+      .and(scoreReq)
+      .and(pivot::isAtGoal)
+      .and(leftFlywheel::isAtGoal)
+      .and(rightFlywheel::isAtGoal)
+      .onTrue(this.setState(SuperState.SHOOT));
+    
+    stateTriggers.get(SuperState.SHOOT)
+      // maintain previous state
+      .whileTrue(pivot.run(() -> {}))
+      .whileTrue(leftFlywheel.run(() -> {}))
+      .whileTrue(rightFlywheel.run(() -> {}))
+      .whileTrue(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+      .and(() -> stateTimer.get() > 0.5)
+      .onTrue(this.setState(SuperState.IDLE));
   }
 
   /** Force sets the current state */
   private Command setState(SuperState state) {
-    return Commands.runOnce(() -> this.state = state);
+    return Commands.runOnce(() -> {this.state = state; stateTimer.restart();});
   }
 }
