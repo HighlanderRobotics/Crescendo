@@ -9,7 +9,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldConstants;
 import frc.robot.Robot.Target;
@@ -25,7 +24,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
-public class SuperstructureSubsystem extends SubsystemBase {
+public class Superstructure {
   public static enum SuperState {
     IDLE,
     INTAKE,
@@ -72,7 +71,7 @@ public class SuperstructureSubsystem extends SubsystemBase {
 
   private Timer stateTimer = new Timer();
 
-  public SuperstructureSubsystem(
+  public Superstructure(
       PivotSubsystem pivot,
       FlywheelSubsystem leftFlywheel,
       FlywheelSubsystem rightFlywheel,
@@ -115,7 +114,7 @@ public class SuperstructureSubsystem extends SubsystemBase {
     configureStateTransitionCommands();
   }
 
-  @Override
+  /** This file is not a subsystem, so this MUST be called manually. */
   public void periodic() {
     Logger.recordOutput("Superstructure State", state);
   }

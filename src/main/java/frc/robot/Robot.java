@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
@@ -36,14 +37,15 @@ import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.feeder.FeederIOReal;
 import frc.robot.subsystems.feeder.FeederSubsystem;
+import frc.robot.subsystems.flywheel.FlywheelIOReal;
+import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.leds.LEDIOReal;
 import frc.robot.subsystems.leds.LEDIOSim;
 import frc.robot.subsystems.leds.LEDSubsystem;
-import frc.robot.subsystems.shooter.ShooterIOReal;
-import frc.robot.subsystems.shooter.ShooterIOSim;
-import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.pivot.PivotIOReal;
+import frc.robot.subsystems.pivot.PivotSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
@@ -130,11 +132,32 @@ public class Robot extends LoggedRobot {
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =
       new ElevatorSubsystem(mode == RobotMode.REAL ? new ElevatorIOReal() : new ElevatorIOSim());
-  private final ShooterSubsystem shooter =
-      new ShooterSubsystem(mode == RobotMode.REAL ? new ShooterIOReal() : new ShooterIOSim());
+  private final FlywheelSubsystem leftFlywheel =
+      new FlywheelSubsystem(FlywheelIOReal.leftFlywheelIO, "Left");
+  private final FlywheelSubsystem rightFlywheel =
+      new FlywheelSubsystem(FlywheelIOReal.rightFlywheelIO, "Right");
+  private final PivotSubsystem pivot = new PivotSubsystem(new PivotIOReal());
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
+
+  private final Superstructure superstructure =
+      new Superstructure(
+          pivot,
+          leftFlywheel,
+          rightFlywheel,
+          feeder,
+          carriage,
+          intake,
+          elevator,
+          () -> currentTarget,
+          swerve::getPose,
+          () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()),
+          new Trigger(() -> false),
+          new Trigger(() -> false),
+          new Trigger(() -> false),
+          new Trigger(() -> false),
+          new Trigger(() -> false));
 
   @Override
   public void robotInit() {
@@ -192,7 +215,9 @@ public class Robot extends LoggedRobot {
                     -teleopAxisAdjustment(controller.getLeftX()) * SwerveSubsystem.MAX_LINEAR_SPEED,
                     -teleopAxisAdjustment(controller.getRightX())
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
-    elevator.setDefaultCommand(elevator.setExtensionCmd(() -> 0.0));
+    // All subsystems in Superstructure should maintain state by default
+    // Other behavior is handled in Superstructure
+    elevator.setDefaultCommand(elevator.run(() -> {}));
     feeder.setDefaultCommand(
         Commands.repeatingSequence(
             feeder.indexCmd().until(() -> !currentTarget.isSpeakerAlike()),

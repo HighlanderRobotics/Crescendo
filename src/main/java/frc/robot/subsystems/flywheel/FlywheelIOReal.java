@@ -10,6 +10,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
 public class FlywheelIOReal implements FlywheelIO {
+  // Constant fields for organization, keeps the IDs in the same place as other IOs
+  public static final FlywheelIOReal leftFlywheelIO =
+      new FlywheelIOReal(11, InvertedValue.Clockwise_Positive);
+  public static final FlywheelIOReal rightFlywheelIO =
+      new FlywheelIOReal(12, InvertedValue.CounterClockwise_Positive);
+
   private final TalonFX motor;
 
   private final StatusSignal<Double> amps;
