@@ -6,6 +6,8 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -57,6 +59,7 @@ public class Superstructure {
   private final Supplier<Target> target;
   private final Supplier<Pose2d> pose;
   private final Supplier<ShotData> shot;
+  private final Supplier<ChassisSpeeds> chassisVel;
 
   /** Also triggered by scoreReq */
   private final Trigger prescoreReq;
@@ -88,6 +91,7 @@ public class Superstructure {
       Supplier<Target> target,
       Supplier<Pose2d> pose,
       Supplier<ShotData> shot,
+      Supplier<ChassisSpeeds> chassisVel,
       Trigger scoreReq,
       Trigger prescoreReq,
       Trigger intakeReq,
@@ -105,6 +109,7 @@ public class Superstructure {
     this.target = target;
     this.pose = pose;
     this.shot = shot;
+    this.chassisVel = chassisVel;
 
     this.prescoreReq = prescoreReq.or(scoreReq);
     this.scoreReq = scoreReq.or(() -> scoreOverride);
@@ -260,6 +265,7 @@ public class Superstructure {
                     pose.get().minus(FieldConstants.getSpeaker()).getTranslation().getNorm() < 3.0
                         ? 5.0
                         : 3.0))
+        .and(() -> chassisVel.get().omegaRadiansPerSecond < Units.degreesToRadians(90.0))
         .onTrue(this.setState(SuperState.SHOOT));
 
     stateTriggers
@@ -272,6 +278,10 @@ public class Superstructure {
         .and(pivot::isAtGoal)
         .and(leftFlywheel::isAtGoal)
         .and(rightFlywheel::isAtGoal)
+        // Make sure we are in midfield
+        .and(() -> pose.get().getX() > 6.3 && pose.get().getX() < 10.2)
+        // Make sure we aren't moving fast
+        .and(() -> 0.5 > Math.hypot(chassisVel.get().vxMetersPerSecond, chassisVel.get().vyMetersPerSecond))
         .onTrue(this.setState(SuperState.SHOOT));
 
     stateTriggers

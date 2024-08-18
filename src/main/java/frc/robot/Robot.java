@@ -153,6 +153,7 @@ public class Robot extends LoggedRobot {
           () -> currentTarget,
           swerve::getPose,
           () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()),
+          swerve::getVelocity,
           controller.rightTrigger(),
           controller.leftBumper(),
           controller
@@ -259,13 +260,9 @@ public class Robot extends LoggedRobot {
                 .withTimeout(1.0));
 
     // ---- Controller bindings here ----
-    // Prevent intaking when elevator isnt down
     controller
-        .rightBumper()
-        .and(
-            () ->
-                (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
-                    || (currentTarget.isSpeakerAlike() && currentTarget != Target.FEED))
+        .rightBumper().or(controller.rightTrigger())
+        .and(() -> currentTarget == Target.SPEAKER || currentTarget == Target.SUBWOOFER)
         .whileTrue(
             speakerHeadingSnap(
                     () ->
