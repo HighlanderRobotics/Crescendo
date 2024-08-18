@@ -22,6 +22,7 @@ import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.pivot.PivotSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
@@ -76,7 +77,7 @@ public class Superstructure {
 
   private SuperState state = SuperState.IDLE;
   private SuperState prevState = SuperState.IDLE;
-  private Map<SuperState, Trigger> stateTriggers;
+  private Map<SuperState, Trigger> stateTriggers = new HashMap<SuperState, Trigger>();
 
   private Timer stateTimer = new Timer();
 
@@ -162,6 +163,8 @@ public class Superstructure {
                 target.get().isSpeakerAlike()
                     ? SuperState.INDEX_SHOOTER
                     : SuperState.INDEX_CARRIAGE));
+    stateTriggers
+        .get(SuperState.INTAKE).and(intakeReq.negate()).onTrue(this.setState(SuperState.IDLE));
 
     stateTriggers
         .get(SuperState.INDEX_CARRIAGE)
@@ -180,7 +183,8 @@ public class Superstructure {
         .and(prescoreReq)
         .and(() -> target.get() == Target.AMP)
         .onTrue(this.setState(SuperState.PREAMP));
-    stateTriggers.get(SuperState.READY_INDEXED_CARRIAGE)
+    stateTriggers
+        .get(SuperState.READY_INDEXED_CARRIAGE)
         .and(() -> target.get() != Target.AMP)
         .onTrue(this.setState(SuperState.INDEX_SHOOTER));
 
@@ -208,8 +212,9 @@ public class Superstructure {
         .whileTrue(feeder.indexCmd())
         .and(feeder.beambreakTrig)
         .onTrue(this.setState(SuperState.READY_INDEXED_SHOOTER));
-    
-    stateTriggers.get(SuperState.READY_INDEXED_SHOOTER)
+
+    stateTriggers
+        .get(SuperState.READY_INDEXED_SHOOTER)
         // Reject any additional rings
         .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     // State Transitions
@@ -281,7 +286,11 @@ public class Superstructure {
         // Make sure we are in midfield
         .and(() -> pose.get().getX() > 6.3 && pose.get().getX() < 10.2)
         // Make sure we aren't moving fast
-        .and(() -> 0.5 > Math.hypot(chassisVel.get().vxMetersPerSecond, chassisVel.get().vyMetersPerSecond))
+        .and(
+            () ->
+                0.5
+                    > Math.hypot(
+                        chassisVel.get().vxMetersPerSecond, chassisVel.get().vyMetersPerSecond))
         .onTrue(this.setState(SuperState.SHOOT));
 
     stateTriggers
@@ -325,24 +334,26 @@ public class Superstructure {
         .and(climbConfReq)
         .debounce(0.25)
         .onTrue(this.setState(SuperState.CLIMB));
-    stateTriggers.get(SuperState.PRECLIMB).and(climbCanReq)
-      // Debounce in case we cancel from pull into preclimb
-      .debounce(0.4)
-      .onTrue(this.setState(SuperState.IDLE));
+    stateTriggers
+        .get(SuperState.PRECLIMB)
+        .and(climbCanReq)
+        // Debounce in case we cancel from pull into preclimb
+        .debounce(0.4)
+        .onTrue(this.setState(SuperState.IDLE));
 
-    stateTriggers.get(SuperState.CLIMB)
+    stateTriggers
+        .get(SuperState.CLIMB)
         .whileTrue(elevator.climbRetractAndLock())
         // This is dangerous bc we cant confirm if the climb unlatches
         // Consider better tracking for if we are likely to be latched
         .and(climbCanReq)
         // Switching to homing is the best way to try to put it low to unlatch
         .onTrue(
-          Commands.either(
-            this.setState(SuperState.HOME_ELEVATOR), 
-            this.setState(SuperState.PRECLIMB), 
-            // If we are low, try to unlatch. If we are high, try to extend.
-            () -> elevator.getExtensionMeters() < 0.25)
-          );
+            Commands.either(
+                this.setState(SuperState.HOME_ELEVATOR),
+                this.setState(SuperState.PRECLIMB),
+                // If we are low, try to unlatch. If we are high, try to extend.
+                () -> elevator.getExtensionMeters() < 0.25));
 
     stateTriggers
         .get(SuperState.HOME_ELEVATOR)
@@ -373,19 +384,19 @@ public class Superstructure {
   /** Request the robot to score in the current target */
   public Command score() {
     return Commands.runOnce(() -> scoreOverride = true)
-        .andThen(Commands.waitUntil(() -> 
-          this.state == SuperState.IDLE 
-          && (
-            this.prevState == SuperState.SHOOT
-            || this.prevState == SuperState.AMP
-            ))).finallyDo(() -> scoreOverride = false);
+        .andThen(
+            Commands.waitUntil(
+                () ->
+                    this.state == SuperState.IDLE
+                        && (this.prevState == SuperState.SHOOT
+                            || this.prevState == SuperState.AMP)))
+        .finallyDo(() -> scoreOverride = false);
   }
 
   /** Request the robot to intake */
   public Command intake() {
     return Commands.runOnce(() -> intakeOverride = true)
-        .andThen(Commands.waitUntil(() -> 
-            this.prevState == SuperState.INTAKE
-            )).finallyDo(() -> intakeOverride = false);
+        .andThen(Commands.waitUntil(() -> this.prevState == SuperState.INTAKE))
+        .finallyDo(() -> intakeOverride = false);
   }
 }

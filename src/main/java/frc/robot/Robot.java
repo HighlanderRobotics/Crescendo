@@ -21,11 +21,9 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -50,7 +48,6 @@ import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.List;
@@ -82,7 +79,7 @@ public class Robot extends LoggedRobot {
     }
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
@@ -157,15 +154,14 @@ public class Robot extends LoggedRobot {
           controller.rightTrigger(),
           controller.leftBumper(),
           controller
-            .leftTrigger()
-            .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0)),
-        operator
-            .rightTrigger(0.75)
-            .and(() -> elevator.getExtensionMeters() < 0.25)
-            .and(operator.rightBumper()),
+              .leftTrigger()
+              .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0)),
           operator
-            .rightTrigger(0.75),
-        new Trigger(() -> false));
+              .rightTrigger(0.75)
+              .and(() -> elevator.getExtensionMeters() < 0.25)
+              .and(operator.rightBumper()),
+          operator.rightTrigger(0.75),
+          new Trigger(() -> false));
 
   @Override
   public void robotInit() {
@@ -261,7 +257,8 @@ public class Robot extends LoggedRobot {
 
     // ---- Controller bindings here ----
     controller
-        .rightBumper().or(controller.rightTrigger())
+        .rightBumper()
+        .or(controller.rightTrigger())
         .and(() -> currentTarget == Target.SPEAKER || currentTarget == Target.SUBWOOFER)
         .whileTrue(
             speakerHeadingSnap(
@@ -275,7 +272,7 @@ public class Robot extends LoggedRobot {
                     () ->
                         controller.getHID().getRightTriggerAxis() > 0.5
                             && currentTarget == Target.SPEAKER));
-    
+
     controller
         .rightBumper()
         .and(() -> currentTarget == Target.AMP)
@@ -307,11 +304,7 @@ public class Robot extends LoggedRobot {
         .onTrue(
             Commands.waitUntil(
                     () ->
-                        Math.abs(
-                                pivot
-                                    .getAngle()
-                                    .minus(PivotSubsystem.MIN_ANGLE)
-                                    .getDegrees())
+                        Math.abs(pivot.getAngle().minus(PivotSubsystem.MIN_ANGLE).getDegrees())
                             < 10.0)
                 .andThen(Commands.runOnce(() -> currentTarget = Target.AMP)));
     operator.b().onTrue(Commands.runOnce(() -> currentTarget = Target.FEED));
@@ -339,14 +332,14 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
     SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
     SmartDashboard.putData(
-        "manual zero shooter",
-        pivot.resetPosition(PivotSubsystem.MIN_ANGLE).ignoringDisable(true));
+        "manual zero shooter", pivot.resetPosition(PivotSubsystem.MIN_ANGLE).ignoringDisable(true));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
     // Update ascope mechanism visualization
+    superstructure.periodic();
     Logger.recordOutput(
         "Mechanism Poses",
         new Pose3d[] {
@@ -376,8 +369,11 @@ public class Robot extends LoggedRobot {
                 SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     return Commands.deadline(
-      superstructure.score().beforeStarting(Commands.runOnce(() -> currentTarget = Target.SPEAKER)),
-      swerve.runVelocityFieldRelative(
+        superstructure
+            .score()
+            .beforeStarting(Commands.runOnce(() -> currentTarget = Target.SPEAKER)),
+        swerve
+            .runVelocityFieldRelative(
                 () -> {
                   var pidOut =
                       headingController.calculate(
@@ -396,12 +392,12 @@ public class Robot extends LoggedRobot {
                   return new ChassisSpeeds(
                       0.0, 0.0, pidOut + (headingController.getSetpoint().velocity * 0.9));
                 })
-        .beforeStarting(
-            () ->
-                headingController.reset(
-                    new State(
-                        swerve.getPose().getRotation().getRadians(),
-                        swerve.getVelocity().omegaRadiansPerSecond))));
+            .beforeStarting(
+                () ->
+                    headingController.reset(
+                        new State(
+                            swerve.getPose().getRotation().getRadians(),
+                            swerve.getVelocity().omegaRadiansPerSecond))));
   }
 
   private Command staticAutoAim() {
@@ -418,13 +414,13 @@ public class Robot extends LoggedRobot {
   }
 
   private Command autoFenderShot() {
-    return Commands.runOnce(() -> currentTarget = Target.FEED).andThen(superstructure.score()
-    ).asProxy();
+    return Commands.runOnce(() -> currentTarget = Target.FEED)
+        .andThen(superstructure.score())
+        .asProxy();
   }
 
   private Command autoIntake() {
-    return superstructure.intake()
-            .asProxy();
+    return superstructure.intake().asProxy();
   }
 
   private Command autoSourceDash() {
@@ -594,106 +590,106 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim());
   }
 
-//   private Command autoSource3Spit() {
-//     return Commands.sequence(
-//         autoFenderShot(),
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.1"), true)
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         shooter
-//             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
-//             .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-//             .until(() -> !feeder.getLastBeambreak())
-//             .asProxy(),
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         autoStaticAutoAim());
-//   }
+  //   private Command autoSource3Spit() {
+  //     return Commands.sequence(
+  //         autoFenderShot(),
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.1"), true)
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         shooter
+  //             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
+  //             .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+  //             .until(() -> !feeder.getLastBeambreak())
+  //             .asProxy(),
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.2"))
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 spit.3"))
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         autoStaticAutoAim());
+  //   }
 
-//   private Command autoSource3CitrusSpit() {
-//     return Commands.sequence(
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.1"), true)
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         shooter
-//             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
-//             .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
-//             .until(() -> !feeder.getLastBeambreak())
-//             .asProxy(),
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.2"))
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.3"))
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         autoStaticAutoAim(),
-//         swerve
-//             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.4"))
-//             .asProxy()
-//             .deadlineWith(autoIntake()),
-//         autoIntake()
-//             .raceWith(
-//                 Commands.sequence(
-//                     Commands.waitSeconds(0.25),
-//                     Commands.waitUntil(
-//                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-//             .withTimeout(1.0),
-//         autoStaticAutoAim());
-//   }
+  //   private Command autoSource3CitrusSpit() {
+  //     return Commands.sequence(
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.1"), true)
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         shooter
+  //             .runStateCmd(ShooterSubsystem.PIVOT_MIN_ANGLE, 50.0, 50.0)
+  //             .alongWith(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
+  //             .until(() -> !feeder.getLastBeambreak())
+  //             .asProxy(),
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.2"))
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.3"))
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         autoStaticAutoAim(),
+  //         swerve
+  //             .runChoreoTraj(Choreo.getTrajectory("source 3 citrus spit.4"))
+  //             .asProxy()
+  //             .deadlineWith(autoIntake()),
+  //         autoIntake()
+  //             .raceWith(
+  //                 Commands.sequence(
+  //                     Commands.waitSeconds(0.25),
+  //                     Commands.waitUntil(
+  //                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+  //             .withTimeout(1.0),
+  //         autoStaticAutoAim());
+  //   }
 
   private Command autoSource3Citrus() {
     return Commands.sequence(
