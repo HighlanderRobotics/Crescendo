@@ -153,11 +153,18 @@ public class Robot extends LoggedRobot {
           () -> currentTarget,
           swerve::getPose,
           () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()),
-          new Trigger(() -> false),
-          new Trigger(() -> false),
-          new Trigger(() -> false),
-          new Trigger(() -> false),
-          new Trigger(() -> false));
+          controller.rightTrigger(),
+          controller.leftBumper(),
+          controller
+            .leftTrigger()
+            .and(() -> elevator.getExtensionMeters() < Units.inchesToMeters(2.0)),
+        operator
+            .rightTrigger(0.75)
+            .and(() -> elevator.getExtensionMeters() < 0.25)
+            .and(operator.rightBumper()),
+          operator
+            .rightTrigger(0.75),
+        new Trigger(() -> false));
 
   @Override
   public void robotInit() {
@@ -235,9 +242,6 @@ public class Robot extends LoggedRobot {
     operator.setDefaultCommand(operator.rumbleCmd(0.0, 0.0));
 
     // Robot state management bindings
-    // new Trigger(() -> carriage.getBeambreak())
-    //     .debounce(0.5)
-    //     .onTrue(intake.setVelocityCmd(-50.0, -30.0).withTimeout(1.0));
     new Trigger(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
         .debounce(0.25)
         .onTrue(

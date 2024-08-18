@@ -65,6 +65,7 @@ public class Superstructure {
   private final Trigger intakeReq;
   private final Trigger preClimbReq;
   private final Trigger climbConfReq;
+  private final Trigger climbCanReq;
 
   // This feels messy
   private boolean scoreOverride = false;
@@ -91,7 +92,8 @@ public class Superstructure {
       Trigger prescoreReq,
       Trigger intakeReq,
       Trigger climbReq,
-      Trigger climbConfReq) {
+      Trigger climbConfReq,
+      Trigger climbCanReq) {
     this.pivot = pivot;
     this.leftFlywheel = leftFlywheel;
     this.rightFlywheel = rightFlywheel;
@@ -106,9 +108,10 @@ public class Superstructure {
 
     this.prescoreReq = prescoreReq.or(scoreReq);
     this.scoreReq = scoreReq.or(() -> scoreOverride);
-    this.intakeReq = intakeReq;
+    this.intakeReq = intakeReq.or(() -> intakeOverride);
     this.preClimbReq = climbReq;
     this.climbConfReq = climbConfReq;
+    this.climbCanReq = climbCanReq;
 
     stateTimer.start();
 
@@ -302,8 +305,7 @@ public class Superstructure {
         .whileTrue(feeder.setVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
         .whileTrue(carriage.setVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE))
         .and(() -> feeder.getFirstBeambreak() || carriage.getBeambreak())
-        .and(preClimbReq)
-        .debounce(0.75)
+        .debounce(0.4)
         .onTrue(this.setState(SuperState.PRECLIMB));
 
     stateTriggers
@@ -313,8 +315,24 @@ public class Superstructure {
         .and(climbConfReq)
         .debounce(0.25)
         .onTrue(this.setState(SuperState.CLIMB));
+    stateTriggers.get(SuperState.PRECLIMB).and(climbCanReq)
+      // Debounce in case we cancel from pull into preclimb
+      .debounce(0.4)
+      .onTrue(this.setState(SuperState.IDLE));
 
-    stateTriggers.get(SuperState.CLIMB).whileTrue(elevator.climbRetractAndLock());
+    stateTriggers.get(SuperState.CLIMB)
+        .whileTrue(elevator.climbRetractAndLock())
+        // This is dangerous bc we cant confirm if the climb unlatches
+        // Consider better tracking for if we are likely to be latched
+        .and(climbCanReq)
+        // Switching to homing is the best way to try to put it low to unlatch
+        .onTrue(
+          Commands.either(
+            this.setState(SuperState.HOME_ELEVATOR), 
+            this.setState(SuperState.PRECLIMB), 
+            // If we are low, try to unlatch. If we are high, try to extend.
+            () -> elevator.getExtensionMeters() < 0.25)
+          );
 
     stateTriggers
         .get(SuperState.HOME_ELEVATOR)
