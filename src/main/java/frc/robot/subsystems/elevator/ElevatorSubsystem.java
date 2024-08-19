@@ -97,6 +97,10 @@ public class ElevatorSubsystem extends SubsystemBase {
     return this.setExtensionCmd(() -> meters);
   }
 
+  public Command stop() {
+    return this.run(() -> io.setVoltage(0.0));
+  }
+
   public Command climbRetractAndLock() {
     return this.setExtensionCmd(() -> -0.01)
         .alongWith(Commands.runOnce(() -> io.setLockServoRotation(0.5)))

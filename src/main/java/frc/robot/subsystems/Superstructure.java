@@ -164,11 +164,13 @@ public class Superstructure {
                     ? SuperState.INDEX_SHOOTER
                     : SuperState.INDEX_CARRIAGE));
     stateTriggers
-        .get(SuperState.INTAKE).and(intakeReq.negate()).onTrue(this.setState(SuperState.IDLE));
+        .get(SuperState.INTAKE)
+        .and(intakeReq.negate())
+        .onTrue(this.setState(SuperState.IDLE));
 
     stateTriggers
         .get(SuperState.INDEX_CARRIAGE)
-        .whileTrue(elevator.setExtensionCmd(0.0))
+        .onTrue(elevator.setExtensionCmd(0.0))
         .whileTrue(carriage.indexForwardsCmd())
         // State Transition
         .and(carriage.isIndexedTrig)
@@ -244,8 +246,13 @@ public class Superstructure {
         .whileTrue(pivot.setMinCmd())
         .whileTrue(feeder.setVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY))
         .whileTrue(carriage.indexBackwardsCmd())
-        .and(carriage.isIndexedTrig)
-        .onTrue(this.setState(SuperState.READY_INDEXED_CARRIAGE));
+        .whileTrue(
+            Commands.waitUntil(carriage.beambreakTrig)
+                .andThen(
+                    intake.setVelocityCmd(-50.0, -50.0).until(carriage.beambreakTrig.negate()),
+                    intake.setVelocityCmd(50.0, 30.0)))
+        .and(carriage.beambreakTrig.negate())
+        .onTrue(this.setState(SuperState.INTAKE));
 
     // TODO add cancellation behavior
     stateTriggers
@@ -398,5 +405,10 @@ public class Superstructure {
     return Commands.runOnce(() -> intakeOverride = true)
         .andThen(Commands.waitUntil(() -> this.prevState == SuperState.INTAKE))
         .finallyDo(() -> intakeOverride = false);
+  }
+
+  public Command homeElevator() {
+    return Commands.waitUntil(() -> state == SuperState.IDLE)
+        .andThen(this.setState(SuperState.HOME_ELEVATOR));
   }
 }

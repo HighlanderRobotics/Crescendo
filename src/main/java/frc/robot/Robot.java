@@ -188,7 +188,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -221,10 +221,10 @@ public class Robot extends LoggedRobot {
                         * SwerveSubsystem.MAX_ANGULAR_SPEED)));
     // All subsystems in Superstructure should maintain state by default
     // Other behavior is handled in Superstructure
-    elevator.setDefaultCommand(elevator.run(() -> {}));
-    feeder.setDefaultCommand(feeder.run(() -> {}));
-    carriage.setDefaultCommand(carriage.run(() -> {}));
-    intake.setDefaultCommand(intake.run(() -> {}));
+    elevator.setDefaultCommand(elevator.setExtensionCmd(0.0));
+    feeder.setDefaultCommand(feeder.stop());
+    carriage.setDefaultCommand(carriage.stop());
+    intake.setDefaultCommand(intake.stop());
     leftFlywheel.setDefaultCommand(leftFlywheel.run(() -> {}));
     rightFlywheel.setDefaultCommand(rightFlywheel.run(() -> {}));
     pivot.setDefaultCommand(pivot.run(() -> {}));
@@ -310,7 +310,7 @@ public class Robot extends LoggedRobot {
     operator.b().onTrue(Commands.runOnce(() -> currentTarget = Target.FEED));
     operator.x().onTrue(Commands.runOnce(() -> currentTarget = Target.SUBWOOFER));
 
-    operator.start().whileTrue(elevator.runCurrentZeroing());
+    operator.start().whileTrue(superstructure.homeElevator());
 
     autoChooser.addOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", Commands.none());
