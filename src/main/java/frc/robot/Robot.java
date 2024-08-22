@@ -80,7 +80,7 @@ public class Robot extends LoggedRobot {
     }
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
@@ -332,7 +332,7 @@ public class Robot extends LoggedRobot {
                             * SwerveSubsystem.MAX_LINEAR_SPEED,
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
-                            * SwerveSubsystem.MAX_LINEAR_SPEED)
+                            * SwerveSubsystem.MAX_LINEAR_SPEED) 
                 .until(
                     () ->
                         controller.getHID().getRightTriggerAxis() > 0.5
@@ -366,6 +366,7 @@ public class Robot extends LoggedRobot {
                 () ->
                     -teleopAxisAdjustment(controller.getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
+    controller.leftTrigger().whileTrue(teleopAutoAim());
 
     controller
         .x()
