@@ -332,7 +332,7 @@ public class Robot extends LoggedRobot {
                             * SwerveSubsystem.MAX_LINEAR_SPEED,
                     () ->
                         -teleopAxisAdjustment(controller.getLeftX())
-                            * SwerveSubsystem.MAX_LINEAR_SPEED) 
+                            * SwerveSubsystem.MAX_LINEAR_SPEED)
                 .until(
                     () ->
                         controller.getHID().getRightTriggerAxis() > 0.5
@@ -366,8 +366,6 @@ public class Robot extends LoggedRobot {
                 () ->
                     -teleopAxisAdjustment(controller.getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
-    controller.leftTrigger().whileTrue(teleopAutoAim());
-
     controller
         .x()
         .whileTrue(
@@ -376,7 +374,9 @@ public class Robot extends LoggedRobot {
                 feeder.runVoltageCmd(-5.0),
                 carriage.runVoltageCmd(-5.0),
                 intake.runVelocityCmd(-50.0, -50.0)));
-
+    controller
+        .leftTrigger()
+        .whileTrue(Commands.sequence(shootOnTheMove(() -> swerve.getPose().getX(), () -> swerve.getPose().getY()), Commands.print(Double.toString(swerve.getPose().getX()))));
     // climb
     operator
         .rightTrigger(0.75)
@@ -563,8 +563,7 @@ public class Robot extends LoggedRobot {
             Commands.waitSeconds(AutoAimStates.lookaheadTime),
             swerve.teleopAimAtVirtualTargetCmd(
                 () -> AutoAimStates.curShotSpeeds.vxMetersPerSecond,
-                () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond,
-                AutoAimStates.lookaheadTime),
+                () -> AutoAimStates.curShotSpeeds.vyMetersPerSecond),
             shooter.runStateCmd(
                 () -> AutoAimStates.curShotData.getRotation(),
                 () -> AutoAimStates.curShotData.getLeftRPS(),
@@ -591,6 +590,52 @@ public class Robot extends LoggedRobot {
                             .getDegrees(),
                         swerve.getRotation().getDegrees(),
                         2.0)));
+  }
+
+  private Command shootOnTheMove(DoubleSupplier vxFieldRelative, DoubleSupplier vyFieldRelative) {
+    // initialize controller
+    var headingController =
+        new ProfiledPIDController(
+            SwerveSubsystem.HEADING_VELOCITY_KP,
+            0.0,
+            0.0,
+            new Constraints(
+                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75,
+                SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
+    // initialize basic variables
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    
+    SwerveSubsystem.AutoAimStates.curShotSpeeds =
+        new ChassisSpeeds(vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
+    
+    SwerveSubsystem.AutoAimStates.endingPose =
+        swerve.getLinearFuturePose(
+            SwerveSubsystem.AutoAimStates.lookaheadTime,
+            SwerveSubsystem.AutoAimStates.curShotSpeeds);
+    
+    SwerveSubsystem.AutoAimStates.virtualTarget =
+        AutoAim.getVirtualTarget(
+            SwerveSubsystem.AutoAimStates.endingPose, SwerveSubsystem.AutoAimStates.curShotSpeeds);
+    
+    Rotation2d rotationsToSpeaker =
+        swerve.getLinearFutureRotationToTranslation(
+            swerve.getPose(),
+            SwerveSubsystem.AutoAimStates.endingPose,
+            SwerveSubsystem.AutoAimStates.curShotSpeeds);
+    
+    return Commands.deadline(
+            swerve.teleopAimAtVirtualTargetCmd(
+                vxFieldRelative,
+                vyFieldRelative,
+                SwerveSubsystem.AutoAimStates.lookaheadTime,
+                rotationsToSpeaker))
+        .beforeStarting(
+            // reset heading controller error before
+            () ->
+                headingController.reset(
+                    new State(
+                        swerve.getPose().getRotation().getRadians(),
+                        swerve.getVelocity().omegaRadiansPerSecond)));
   }
 
   private Command staticAutoAim(DoubleSupplier rotationTolerance) {

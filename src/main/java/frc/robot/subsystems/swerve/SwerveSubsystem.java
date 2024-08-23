@@ -846,6 +846,13 @@ public class SwerveSubsystem extends SubsystemBase {
     return Rotation2d.fromRadians(angle);
   }
 
+  public Rotation2d getLinearFutureRotationToTranslation(
+      Pose2d translation, Pose2d futurePose, ChassisSpeeds speedsFieldRelative) {
+    double angle =
+        Math.atan2(translation.getY() - futurePose.getY(), translation.getX() - futurePose.getX());
+    return Rotation2d.fromRadians(angle);
+  }
+
   /**
    * Gets the pose at some time in the future, assuming constant velocity
    *
@@ -917,7 +924,10 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return A command reference that rotates the robot to a computed rotation
    */
   public Command teleopAimAtVirtualTargetCmd(
-      DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond, double time) {
+      DoubleSupplier xMetersPerSecond,
+      DoubleSupplier yMetersPerSecond,
+      double time,
+      Rotation2d angleToSpeaker) {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
@@ -934,12 +944,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 () -> {
                   double feedbackOutput =
                       headingController.calculate(
-                          getPose().getRotation().getRadians(),
-                          AutoAimStates.endingPose
-                              .getTranslation()
-                              .minus(AutoAimStates.virtualTarget.getTranslation())
-                              .getAngle()
-                              .getRadians());
+                          getPose().getRotation().getRadians(), angleToSpeaker.getRadians());
                   double vxFeedbackOutput =
                       vxController.calculate(getPose().getX(), AutoAimStates.endingPose.getX());
                   double vyFeedbackOutput =
@@ -1002,7 +1007,14 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public Command teleopAimAtVirtualTargetCmd(
       DoubleSupplier xMetersPerSecond, DoubleSupplier yMetersPerSecond) {
-    return teleopAimAtVirtualTargetCmd(xMetersPerSecond, yMetersPerSecond, getLookaheadTime());
+    return teleopAimAtVirtualTargetCmd(
+        xMetersPerSecond,
+        yMetersPerSecond,
+        getLookaheadTime(),
+        AutoAimStates.endingPose
+            .getTranslation()
+            .minus(AutoAimStates.virtualTarget.getTranslation())
+            .getAngle());
   }
 
   public Command runModuleSteerCharacterizationCmd() {
