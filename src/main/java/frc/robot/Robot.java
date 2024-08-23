@@ -376,7 +376,12 @@ public class Robot extends LoggedRobot {
                 intake.runVelocityCmd(-50.0, -50.0)));
     controller
         .leftTrigger()
-        .whileTrue(Commands.sequence(shootOnTheMove(() -> swerve.getPose().getX(), () -> swerve.getPose().getY()), Commands.print(Double.toString(swerve.getPose().getX()))));
+        .whileTrue(
+        Commands.parallel(
+        shootOnTheMove(
+            () -> swerve.getPose().getX(),
+             () -> swerve.getPose().getY()),
+            Commands.print(Double.toString(swerve.getPose().getX()))));
     // climb
     operator
         .rightTrigger(0.75)
