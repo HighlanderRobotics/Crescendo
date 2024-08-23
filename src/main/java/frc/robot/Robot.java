@@ -366,6 +366,7 @@ public class Robot extends LoggedRobot {
                 () ->
                     -teleopAxisAdjustment(controller.getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
+    
     controller
         .x()
         .whileTrue(
@@ -379,9 +380,8 @@ public class Robot extends LoggedRobot {
         .whileTrue(
         Commands.parallel(
         shootOnTheMove(
-            () -> swerve.getPose().getX(),
-             () -> swerve.getPose().getY()),
-            Commands.print(Double.toString(swerve.getPose().getX()))));
+            () -> swerve.getVelocity().vxMetersPerSecond,
+             () -> swerve.getVelocity().vyMetersPerSecond)));
     // climb
     operator
         .rightTrigger(0.75)
@@ -482,6 +482,7 @@ public class Robot extends LoggedRobot {
         });
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
+    Logger.recordOutput("AutoAim/poseX", swerve.getPose().getX());
     // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
     Logger.recordOutput(
         "Angle to target",
@@ -599,6 +600,7 @@ public class Robot extends LoggedRobot {
 
   private Command shootOnTheMove(DoubleSupplier vxFieldRelative, DoubleSupplier vyFieldRelative) {
     // initialize controller
+    
     var headingController =
         new ProfiledPIDController(
             SwerveSubsystem.HEADING_VELOCITY_KP,
@@ -628,12 +630,15 @@ public class Robot extends LoggedRobot {
             SwerveSubsystem.AutoAimStates.endingPose,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
     
-    return Commands.deadline(
+    return Commands.repeatingSequence(
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
                 vyFieldRelative,
                 SwerveSubsystem.AutoAimStates.lookaheadTime,
-                rotationsToSpeaker))
+                rotationsToSpeaker),
+                Commands.runOnce(() -> {
+                    // refresh variables!!!!!
+                }, null))
         .beforeStarting(
             // reset heading controller error before
             () ->
