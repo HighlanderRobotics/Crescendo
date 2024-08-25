@@ -630,7 +630,7 @@ public class Robot extends LoggedRobot {
             SwerveSubsystem.AutoAimStates.endingPose,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
     
-    return Commands.deadline(
+    return Commands.race(
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
                 vyFieldRelative,
@@ -663,7 +663,7 @@ public class Robot extends LoggedRobot {
                 swerve.getLinearFutureRotationToTranslation(
                       SwerveSubsystem.AutoAimStates.virtualTarget,
                       SwerveSubsystem.AutoAimStates.endingPose,
-                      SwerveSubsystem.AutoAimStates.curShotSpeeds).plus(Rotation2d.fromRotations(0.5));
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds).plus(Rotation2d.fromRotations(0.0));
                       System.out.println(
                         "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
                             + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
