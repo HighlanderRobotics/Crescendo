@@ -105,6 +105,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public static Pose2d endingPose = new Pose2d();
     public static Pose2d virtualTarget = new Pose2d();
+    public static Rotation2d rotationToTarget = new Rotation2d();
   }
 
   // Drivebase constants
@@ -780,7 +781,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-   return estimator.getEstimatedPosition();
+    return estimator.getEstimatedPosition();
   }
 
   public Pose3d getPose3d() {
@@ -944,38 +945,15 @@ public class SwerveSubsystem extends SubsystemBase {
                 () -> {
                   double feedbackOutput =
                       headingController.calculate(
-                          getPose().getRotation().getRadians(), angleToSpeaker.getRadians());
+                          getPose().getRotation().getRadians(), SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+                          System.out.println(
+        "IMPORTANT IMPORTANT IMPORTANT IMPORTANTIMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
+            + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+
                   double vxFeedbackOutput =
                       vxController.calculate(getPose().getX(), AutoAimStates.endingPose.getX());
                   double vyFeedbackOutput =
                       vyController.calculate(getPose().getY(), AutoAimStates.endingPose.getY());
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Velocity", headingController.getSetpoint().velocity);
-                  Logger.recordOutput(
-                      "AutoAim/Goal Rotation", headingController.getGoal().position);
-                  Logger.recordOutput(
-                      "AutoAim/Goal Velocity", headingController.getGoal().velocity);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint X Position", vxController.getSetpoint().position);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint X Velocity", vxController.getSetpoint().velocity);
-                  Logger.recordOutput("AutoAim/Goal X Position", vxController.getGoal().position);
-                  Logger.recordOutput("AutoAim/Goal X Velocity", vxController.getGoal().velocity);
-
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Y Positon", vyController.getSetpoint().position);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint Y Velocity", vyController.getSetpoint().velocity);
-                  Logger.recordOutput("AutoAim/Goal Y Position", vyController.getGoal().position);
-                  Logger.recordOutput("AutoAim/Goal Y Velosity", vyController.getGoal().velocity);
-                  Logger.recordOutput(
-                      "AutoAim/Setpoint pose",
-                      new Pose2d(
-                          vxController.getSetpoint().position,
-                          vyController.getSetpoint().position,
-                          Rotation2d.fromRadians(headingController.getSetpoint().position)));
                   return new ChassisSpeeds(
                       vxFeedbackOutput + vxController.getSetpoint().velocity,
                       vyFeedbackOutput + vyController.getSetpoint().velocity,
@@ -994,7 +972,35 @@ public class SwerveSubsystem extends SubsystemBase {
                           getVelocity().omegaRadiansPerSecond));
                   vxController.reset(new State(getPose().getX(), getVelocity().vxMetersPerSecond));
                   vyController.reset(new State(getPose().getY(), getVelocity().vyMetersPerSecond));
-                }));
+                }),
+        Commands.runOnce(
+            () -> {
+              Logger.recordOutput(
+                  "AutoAim/Setpoint Rotation", headingController.getSetpoint().position);
+              Logger.recordOutput(
+                  "AutoAim/Setpoint Velocity", headingController.getSetpoint().velocity);
+              Logger.recordOutput("AutoAim/Goal Rotation", headingController.getGoal().position);
+              Logger.recordOutput("AutoAim/Goal Velocity", headingController.getGoal().velocity);
+              Logger.recordOutput(
+                  "AutoAim/Setpoint X Position", vxController.getSetpoint().position);
+              Logger.recordOutput(
+                  "AutoAim/Setpoint X Velocity", vxController.getSetpoint().velocity);
+              Logger.recordOutput("AutoAim/Goal X Position", vxController.getGoal().position);
+              Logger.recordOutput("AutoAim/Goal X Velocity", vxController.getGoal().velocity);
+
+              Logger.recordOutput(
+                  "AutoAim/Setpoint Y Positon", vyController.getSetpoint().position);
+              Logger.recordOutput(
+                  "AutoAim/Setpoint Y Velocity", vyController.getSetpoint().velocity);
+              Logger.recordOutput("AutoAim/Goal Y Position", vyController.getGoal().position);
+              Logger.recordOutput("AutoAim/Goal Y Velosity", vyController.getGoal().velocity);
+              Logger.recordOutput(
+                  "AutoAim/Setpoint pose",
+                  new Pose2d(
+                      vxController.getSetpoint().position,
+                      vyController.getSetpoint().position,
+                      Rotation2d.fromRadians(headingController.getSetpoint().position)));
+            }));
   }
 
   /**

@@ -366,7 +366,7 @@ public class Robot extends LoggedRobot {
                 () ->
                     -teleopAxisAdjustment(controller.getLeftX())
                         * SwerveSubsystem.MAX_LINEAR_SPEED));
-    
+
     controller
         .x()
         .whileTrue(
@@ -377,11 +377,11 @@ public class Robot extends LoggedRobot {
                 intake.runVelocityCmd(-50.0, -50.0)));
     controller
         .leftTrigger()
-        .whileTrue(
-        Commands.parallel(
-        shootOnTheMove(
-            () -> swerve.getVelocity().vxMetersPerSecond,
-             () -> swerve.getVelocity().vyMetersPerSecond)));
+        .onTrue(
+            Commands.parallel(
+                shootOnTheMove(
+                    () -> swerve.getVelocity().vxMetersPerSecond,
+                    () -> swerve.getVelocity().vyMetersPerSecond)));
     // climb
     operator
         .rightTrigger(0.75)
@@ -600,7 +600,7 @@ public class Robot extends LoggedRobot {
 
   private Command shootOnTheMove(DoubleSupplier vxFieldRelative, DoubleSupplier vyFieldRelative) {
     // initialize controller
-    
+
     var headingController =
         new ProfiledPIDController(
             SwerveSubsystem.HEADING_VELOCITY_KP,
@@ -611,41 +611,64 @@ public class Robot extends LoggedRobot {
                 SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
     // initialize basic variables
     headingController.enableContinuousInput(-Math.PI, Math.PI);
-    
+
     SwerveSubsystem.AutoAimStates.curShotSpeeds =
         new ChassisSpeeds(vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
-    
+
     SwerveSubsystem.AutoAimStates.endingPose =
         swerve.getLinearFuturePose(
             SwerveSubsystem.AutoAimStates.lookaheadTime,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
-    
+
     SwerveSubsystem.AutoAimStates.virtualTarget =
         AutoAim.getVirtualTarget(
             SwerveSubsystem.AutoAimStates.endingPose, SwerveSubsystem.AutoAimStates.curShotSpeeds);
-    
-    Rotation2d rotationsToSpeaker =
+
+    SwerveSubsystem.AutoAimStates.rotationToTarget =
         swerve.getLinearFutureRotationToTranslation(
             swerve.getPose(),
             SwerveSubsystem.AutoAimStates.endingPose,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
     
-    return Commands.repeatingSequence(
+    return Commands.deadline(
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
                 vyFieldRelative,
                 SwerveSubsystem.AutoAimStates.lookaheadTime,
-                rotationsToSpeaker),
-                Commands.runOnce(() -> {
-                    // refresh variables!!!!!
-                }, null))
+                SwerveSubsystem.AutoAimStates.rotationToTarget),
+                Commands.waitSeconds(2))
         .beforeStarting(
             // reset heading controller error before
-            () ->
-                headingController.reset(
-                    new State(
-                        swerve.getPose().getRotation().getRadians(),
-                        swerve.getVelocity().omegaRadiansPerSecond)));
+            () -> {
+              headingController.reset(
+                  new State(
+                      swerve.getPose().getRotation().getRadians(),
+                      swerve.getVelocity().omegaRadiansPerSecond));
+
+              SwerveSubsystem.AutoAimStates.curShotSpeeds =
+                  new ChassisSpeeds(
+                      vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
+
+              SwerveSubsystem.AutoAimStates.endingPose =
+                  swerve.getLinearFuturePose(
+                      SwerveSubsystem.AutoAimStates.lookaheadTime,
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds);
+
+              SwerveSubsystem.AutoAimStates.virtualTarget =
+                  AutoAim.getVirtualTarget(
+                      SwerveSubsystem.AutoAimStates.endingPose,
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds);
+
+              SwerveSubsystem.AutoAimStates.rotationToTarget =
+                swerve.getLinearFutureRotationToTranslation(
+                      SwerveSubsystem.AutoAimStates.virtualTarget,
+                      SwerveSubsystem.AutoAimStates.endingPose,
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds).plus(Rotation2d.fromRotations(0.5));
+                      System.out.println(
+                        "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
+                            + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+              
+                    });
   }
 
   private Command staticAutoAim(DoubleSupplier rotationTolerance) {
