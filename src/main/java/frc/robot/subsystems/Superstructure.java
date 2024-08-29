@@ -149,7 +149,10 @@ public class Superstructure {
         // Rerun the intake and indexing sequence if the note moves during IDLE
         .and(carriage.beambreakTrig.or(feeder.beambreakTrig).or(intakeReq))
         .onTrue(this.setState(SuperState.INTAKE));
-    stateTriggers.get(SuperState.IDLE).and(preClimbReq).onTrue(this.setState(SuperState.SPIT));
+    stateTriggers.get(SuperState.IDLE)
+    .or(stateTriggers.get(SuperState.READY_INDEXED_SHOOTER))
+    .or(stateTriggers.get(SuperState.READY_INDEXED_CARRIAGE))
+    .and(preClimbReq).onTrue(this.setState(SuperState.SPIT));
 
     stateTriggers
         .get(SuperState.INTAKE)
@@ -245,13 +248,13 @@ public class Superstructure {
         .whileTrue(elevator.setExtensionCmd(0.0))
         .whileTrue(pivot.setMinCmd())
         .whileTrue(feeder.setVelocityCmd(-FeederSubsystem.INDEXING_VELOCITY))
-        .whileTrue(carriage.indexBackwardsCmd())
+        .whileTrue(carriage.setVoltageCmd(-CarriageSubsystem.INDEXING_VOLTAGE))
         .whileTrue(
             Commands.waitUntil(carriage.beambreakTrig)
                 .andThen(
-                    intake.setVelocityCmd(-50.0, -50.0).until(carriage.beambreakTrig.negate()),
+                    intake.setVelocityCmd(-50.0, -50.0).until(carriage.beambreakTrig.negate().debounce(0.25)),
                     intake.setVelocityCmd(50.0, 30.0)))
-        .and(carriage.beambreakTrig.negate())
+        .and(carriage.beambreakTrig.negate().debounce(0.4))
         .onTrue(this.setState(SuperState.INTAKE));
 
     // TODO add cancellation behavior
