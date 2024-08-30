@@ -636,6 +636,11 @@ public class Robot extends LoggedRobot {
                                 SwerveSubsystem.AutoAimStates.endingPose.getX(),
                                 swerve.getPose().getX(),
                                 0.05
+                            )
+                            && MathUtil.isNear(
+                                SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                                swerve.getPose().getY(),
+                                0.05
                             )).andThen(Commands.waitSeconds(0.5))
                             ,
                 // auto aim to target
