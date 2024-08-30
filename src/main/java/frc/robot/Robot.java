@@ -381,7 +381,8 @@ public class Robot extends LoggedRobot {
             Commands.parallel(
                 shootOnTheMove(
                     () -> swerve.getVelocity().vxMetersPerSecond,
-                    () -> swerve.getVelocity().vyMetersPerSecond)));
+                    () -> swerve.getVelocity().vyMetersPerSecond,
+                    () -> 5.0)));
     // climb
     operator
         .rightTrigger(0.75)
@@ -598,20 +599,10 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  private Command shootOnTheMove(DoubleSupplier vxFieldRelative, DoubleSupplier vyFieldRelative) {
+  private Command shootOnTheMove(DoubleSupplier vxFieldRelative, DoubleSupplier vyFieldRelative, DoubleSupplier rotationTolerance) {
     // initialize controller
 
-    var headingController =
-        new ProfiledPIDController(
-            SwerveSubsystem.HEADING_VELOCITY_KP,
-            0.0,
-            0.0,
-            new Constraints(
-                SwerveSubsystem.MAX_ANGULAR_SPEED * 0.75,
-                SwerveSubsystem.MAX_ANGULAR_ACCELERATION * 0.75));
-    // initialize basic variables
-    headingController.enableContinuousInput(-Math.PI, Math.PI);
-
+    
     SwerveSubsystem.AutoAimStates.curShotSpeeds =
         new ChassisSpeeds(vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
 
@@ -629,21 +620,38 @@ public class Robot extends LoggedRobot {
             swerve.getPose(),
             SwerveSubsystem.AutoAimStates.endingPose,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
-    
-    return Commands.race(
+
+    return Commands.deadline(
+        // dont feed until we've rotated to the right angle
+        feeder
+                .runVelocityCmd(0.0)
+                .until(
+                    () ->
+                        //shooter.isAtGoal() &&
+                            MathUtil.isNear(
+                                SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
+                                swerve.getPose().getRotation().getDegrees(),
+                                rotationTolerance.getAsDouble())
+                            && MathUtil.isNear(
+                                SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                                swerve.getPose().getX(),
+                                0.05
+                            )).andThen(Commands.waitSeconds(0.5))
+                            ,
+                // auto aim to target
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
                 vyFieldRelative,
                 SwerveSubsystem.AutoAimStates.lookaheadTime,
                 SwerveSubsystem.AutoAimStates.rotationToTarget),
-                Commands.waitSeconds(2))
+            shooter.runStateCmd(
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
         .beforeStarting(
             // reset heading controller error before
             () -> {
-              headingController.reset(
-                  new State(
-                      swerve.getPose().getRotation().getRadians(),
-                      swerve.getVelocity().omegaRadiansPerSecond));
+              
 
               SwerveSubsystem.AutoAimStates.curShotSpeeds =
                   new ChassisSpeeds(
@@ -660,15 +668,16 @@ public class Robot extends LoggedRobot {
                       SwerveSubsystem.AutoAimStates.curShotSpeeds);
 
               SwerveSubsystem.AutoAimStates.rotationToTarget =
-                swerve.getLinearFutureRotationToTranslation(
-                      SwerveSubsystem.AutoAimStates.virtualTarget,
-                      SwerveSubsystem.AutoAimStates.endingPose,
-                      SwerveSubsystem.AutoAimStates.curShotSpeeds).plus(Rotation2d.fromRotations(0.0));
-                      System.out.println(
-                        "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
-                            + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
-              
-                    });
+                  swerve
+                      .getLinearFutureRotationToTranslation(
+                          SwerveSubsystem.AutoAimStates.virtualTarget,
+                          SwerveSubsystem.AutoAimStates.endingPose,
+                          SwerveSubsystem.AutoAimStates.curShotSpeeds)
+                      .plus(Rotation2d.fromRotations(0.0));
+              System.out.println(
+                  "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
+                      + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians() + "/" + swerve.getPose().getRotation().getDegrees());
+            });
   }
 
   private Command staticAutoAim(DoubleSupplier rotationTolerance) {

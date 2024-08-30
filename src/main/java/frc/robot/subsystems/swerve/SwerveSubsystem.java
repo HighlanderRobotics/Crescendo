@@ -54,6 +54,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
@@ -106,6 +107,9 @@ public class SwerveSubsystem extends SubsystemBase {
     public static Pose2d endingPose = new Pose2d();
     public static Pose2d virtualTarget = new Pose2d();
     public static Rotation2d rotationToTarget = new Rotation2d();
+
+    public static TrapezoidProfile.State xState = new TrapezoidProfile.State();
+    public static TrapezoidProfile.State yState = new TrapezoidProfile.State();
   }
 
   // Drivebase constants
@@ -932,35 +936,39 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            0.5, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED));
+            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     ProfiledPIDController vxController =
         new ProfiledPIDController(
-            0.5, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
+            1, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
     ProfiledPIDController vyController =
         new ProfiledPIDController(
-            0.5, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
+            1, 0.0, 0.0, new Constraints(MAX_AUTOAIM_SPEED, MAX_AUTOAIM_SPEED));
     return Commands.sequence(
         this.runVelocityFieldRelative(
                 () -> {
-                  double feedbackOutput =
+                  double headingFeedbackOutput =
                       headingController.calculate(
-                          getPose().getRotation().getRadians(), SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+                          getPose().getRotation().getRadians(),
+                          SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+               /*
                           System.out.println(
-        "IMPORTANT IMPORTANT IMPORTANT IMPORTANTIMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
-            + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
-
+                      "IMPORTANT IMPORTANT IMPORTANT IMPORTANTIMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
+                          + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+                    */
                   double vxFeedbackOutput =
-                      vxController.calculate(getPose().getX(), AutoAimStates.endingPose.getX());
+                      vxController.calculate(getPose().getX(), AutoAimStates.xState);
                   double vyFeedbackOutput =
-                      vyController.calculate(getPose().getY(), AutoAimStates.endingPose.getY());
+                      vyController.calculate(getPose().getY(), AutoAimStates.yState);
                   return new ChassisSpeeds(
                       vxFeedbackOutput + vxController.getSetpoint().velocity,
                       vyFeedbackOutput + vyController.getSetpoint().velocity,
-                      feedbackOutput + headingController.getSetpoint().velocity);
+                      headingFeedbackOutput + headingController.getSetpoint().velocity);
                 })
             .beforeStarting(
                 () -> {
+                  AutoAimStates.xState = new TrapezoidProfile.State(AutoAimStates.endingPose.getX(), xMetersPerSecond.getAsDouble());
+                  AutoAimStates.yState = new TrapezoidProfile.State(AutoAimStates.endingPose.getY(), yMetersPerSecond.getAsDouble());
                   vxController.setConstraints(
                       new Constraints(xMetersPerSecond.getAsDouble(), MAX_AUTOAIM_SPEED));
                   vyController.setConstraints(
