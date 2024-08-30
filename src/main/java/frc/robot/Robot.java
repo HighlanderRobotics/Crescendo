@@ -641,7 +641,7 @@ public class Robot extends LoggedRobot {
                                 SwerveSubsystem.AutoAimStates.endingPose.getY(),
                                 swerve.getPose().getY(),
                                 0.05
-                            )).andThen(Commands.waitSeconds(0.5))
+                            )).andThen(Commands.waitSeconds(0.25))
                             ,
                 // auto aim to target
             swerve.teleopAimAtVirtualTargetCmd(
