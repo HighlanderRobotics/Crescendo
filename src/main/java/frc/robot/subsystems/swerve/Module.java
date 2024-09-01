@@ -92,7 +92,9 @@ public class Module {
         optimizedState.speedMetersPerSecond
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
         (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
-
+    Logger.recordOutput(
+        String.format("Swerve/%s Module/Accel Setpoint", io.getModuleName()),
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
     lastSetpoint = optimizedState;
     return optimizedState;
   }
