@@ -18,6 +18,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.utils.NullableDouble;
 import frc.robot.utils.NullableRotation2d;
@@ -49,6 +50,7 @@ public class Module {
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
 
   private SwerveModuleState lastSetpoint = new SwerveModuleState();
+  private double lastTime = Timer.getFPGATimestamp();
 
   public Module(final ModuleIO io) {
     this.io = io;
@@ -84,6 +86,12 @@ public class Module {
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
+    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    return runSetpoint(state, (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / (Timer.getFPGATimestamp() - lastTime));
+  }
+
+  /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
+  public SwerveModuleState runSetpoint(SwerveModuleState state, double accel) {
     // Optimize state based on current angle
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
 
@@ -91,11 +99,12 @@ public class Module {
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
-        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
+        accel);
     Logger.recordOutput(
         String.format("Swerve/%s Module/Accel Setpoint", io.getModuleName()),
-        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
+        accel);
     lastSetpoint = optimizedState;
+    lastTime = Timer.getFPGATimestamp();
     return optimizedState;
   }
 
