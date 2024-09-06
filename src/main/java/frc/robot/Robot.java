@@ -711,7 +711,7 @@ public class Robot extends LoggedRobot {
               SwerveSubsystem.AutoAimStates.curShotSpeeds =
                   new ChassisSpeeds(
                       vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
-
+               
               SwerveSubsystem.AutoAimStates.endingPose =
                   swerve.getLinearFuturePose(
                       SwerveSubsystem.AutoAimStates.lookaheadTime,
@@ -721,8 +721,11 @@ public class Robot extends LoggedRobot {
                   AutoAim.getVirtualTarget(
                       SwerveSubsystem.AutoAimStates.endingPose,
                       SwerveSubsystem.AutoAimStates.curShotSpeeds);
+             if (DriverStation.getAlliance().isPresent()) {
+                    if(DriverStation.getAlliance().get() == Alliance.Blue){
 
-              SwerveSubsystem.AutoAimStates.rotationToTarget =
+                        SwerveSubsystem.AutoAimStates.curShotSpeeds = SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
+                        SwerveSubsystem.AutoAimStates.rotationToTarget =
                   swerve
                       .getLinearFutureRotationToTranslation(
                           SwerveSubsystem.AutoAimStates.virtualTarget,
@@ -730,6 +733,19 @@ public class Robot extends LoggedRobot {
                           SwerveSubsystem.AutoAimStates.curShotSpeeds)
                       .plus(Rotation2d.fromRotations(0.0));
                 SwerveSubsystem.AutoAimStates.endingPose = new Pose2d(SwerveSubsystem.AutoAimStates.endingPose.getX(), SwerveSubsystem.AutoAimStates.endingPose.getY(), SwerveSubsystem.AutoAimStates.rotationToTarget);
+              SwerveSubsystem.AutoAimStates.curShotSpeeds = SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
+                    } else {
+                        SwerveSubsystem.AutoAimStates.rotationToTarget =
+                  swerve
+                      .getLinearFutureRotationToTranslation(
+                          SwerveSubsystem.AutoAimStates.virtualTarget,
+                          SwerveSubsystem.AutoAimStates.endingPose,
+                          SwerveSubsystem.AutoAimStates.curShotSpeeds)
+                      .plus(Rotation2d.fromRotations(0.0));
+                SwerveSubsystem.AutoAimStates.endingPose = new Pose2d(SwerveSubsystem.AutoAimStates.endingPose.getX(), SwerveSubsystem.AutoAimStates.endingPose.getY(), SwerveSubsystem.AutoAimStates.rotationToTarget);
+              
+                    }
+                    }
               
                 System.out.println(
                   "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
