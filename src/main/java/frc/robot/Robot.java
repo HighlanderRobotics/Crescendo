@@ -11,6 +11,7 @@ import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -382,7 +383,7 @@ public class Robot extends LoggedRobot {
                 shootOnTheMove(
                     () -> swerve.getVelocity().vxMetersPerSecond,
                     () -> swerve.getVelocity().vyMetersPerSecond,
-                    () -> 5.0)));
+                    () -> 50)));
     // climb
     operator
         .rightTrigger(0.75)
@@ -481,6 +482,31 @@ public class Robot extends LoggedRobot {
         new Pose3d[] {
           shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
         });
+
+    Logger.recordOutput(
+        "AutoAim/AtGoal?",
+        MathUtil.isNear(
+                SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
+                swerve.getPose().getRotation().getDegrees(),
+                5.0)
+            && MathUtil.isNear(
+                SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                swerve.getPose().getX(),
+                0.2)
+            && MathUtil.isNear(
+                SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                swerve.getPose().getY(),
+                0.2));
+
+    Logger.recordOutput("AutoAim/RotationAtGoal?",
+     SwerveSubsystem.AutoAimStates.rotationAtGoal);
+
+    Logger.recordOutput("AutoAim/XAtGoal?", 
+    SwerveSubsystem.AutoAimStates.xAtGoal);
+    
+    Logger.recordOutput("AutoAim/YAtGoal?",
+    SwerveSubsystem.AutoAimStates.yAtGoal);
+
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     Logger.recordOutput("AutoAim/poseX", swerve.getPose().getX());
@@ -599,10 +625,12 @@ public class Robot extends LoggedRobot {
                         2.0)));
   }
 
-  private Command shootOnTheMove(DoubleSupplier vxFieldRelative, DoubleSupplier vyFieldRelative, DoubleSupplier rotationTolerance) {
+  private Command shootOnTheMove(
+      DoubleSupplier vxFieldRelative,
+      DoubleSupplier vyFieldRelative,
+      DoubleSupplier rotationTolerance) {
     // initialize controller
 
-    
     SwerveSubsystem.AutoAimStates.curShotSpeeds =
         new ChassisSpeeds(vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
 
@@ -621,29 +649,46 @@ public class Robot extends LoggedRobot {
             SwerveSubsystem.AutoAimStates.endingPose,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
 
-    return Commands.deadline(
+    return Commands.race( Commands.race(
         // dont feed until we've rotated to the right angle
-        feeder
+            feeder
                 .runVelocityCmd(0.0)
                 .until(
                     () ->
-                        //shooter.isAtGoal() &&
-                            MathUtil.isNear(
-                                SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
-                                swerve.getPose().getRotation().getDegrees(),
-                                rotationTolerance.getAsDouble())
-                            && MathUtil.isNear(
-                                SwerveSubsystem.AutoAimStates.endingPose.getX(),
-                                swerve.getPose().getX(),
-                                0.05
-                            )
-                            && MathUtil.isNear(
-                                SwerveSubsystem.AutoAimStates.endingPose.getY(),
-                                swerve.getPose().getY(),
-                                0.05
-                            )).andThen(Commands.waitSeconds(0.25))
-                            ,
-                // auto aim to target
+                        // shooter.isAtGoal() &&
+                        SwerveSubsystem.AutoAimStates.rotationAtGoal
+                            && SwerveSubsystem.AutoAimStates.xAtGoal
+                            && SwerveSubsystem.AutoAimStates.yAtGoal)
+                .andThen(Commands.sequence(Commands.runOnce(() -> {
+                    SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
+                    SwerveSubsystem.AutoAimStates.xAtGoal = false;
+                    SwerveSubsystem.AutoAimStates.yAtGoal = false;
+                }), Commands.waitSeconds(0.25))),
+
+                Commands.runOnce(() -> {
+                    System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
+                    if(!SwerveSubsystem.AutoAimStates.rotationAtGoal){
+                        SwerveSubsystem.AutoAimStates.rotationAtGoal = MathUtil.isNear(
+                        SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
+                        swerve.getPose().getRotation().getDegrees(),
+                        rotationTolerance.getAsDouble());
+                    }
+                    if(!SwerveSubsystem.AutoAimStates.xAtGoal){
+                        SwerveSubsystem.AutoAimStates.xAtGoal = MathUtil.isNear(
+                        SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                        swerve.getPose().getX(),
+                        0.2);
+                    }
+                    if(!SwerveSubsystem.AutoAimStates.yAtGoal){
+                        SwerveSubsystem.AutoAimStates.yAtGoal = MathUtil.isNear(
+                        SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                        swerve.getPose().getY(),
+                        0.2);
+                    }
+                    
+                }).repeatedly()),
+            
+            // auto aim to target
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
                 vyFieldRelative,
@@ -652,11 +697,16 @@ public class Robot extends LoggedRobot {
             shooter.runStateCmd(
                 () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
                 () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
+                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()),
+            Commands.waitSeconds(4)
+                .andThen(Commands.print("HIGSIUGHUHGEUHESGHUGUHGEHIEGSUHGHIOGHUGSEEU")))
         .beforeStarting(
             // reset heading controller error before
             () -> {
-              
+
+                SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
+                    SwerveSubsystem.AutoAimStates.xAtGoal = false;
+                    SwerveSubsystem.AutoAimStates.yAtGoal = false;
 
               SwerveSubsystem.AutoAimStates.curShotSpeeds =
                   new ChassisSpeeds(
@@ -679,9 +729,13 @@ public class Robot extends LoggedRobot {
                           SwerveSubsystem.AutoAimStates.endingPose,
                           SwerveSubsystem.AutoAimStates.curShotSpeeds)
                       .plus(Rotation2d.fromRotations(0.0));
-              System.out.println(
+                SwerveSubsystem.AutoAimStates.endingPose = new Pose2d(SwerveSubsystem.AutoAimStates.endingPose.getX(), SwerveSubsystem.AutoAimStates.endingPose.getY(), SwerveSubsystem.AutoAimStates.rotationToTarget);
+              
+                System.out.println(
                   "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
-                      + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians() + "/" + swerve.getPose().getRotation().getDegrees());
+                      + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians()
+                      + "/"
+                      + swerve.getPose().getRotation().getDegrees());
             });
   }
 

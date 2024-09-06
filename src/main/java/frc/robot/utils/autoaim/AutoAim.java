@@ -16,7 +16,7 @@ public class AutoAim {
 
   public static final InterpolatingShotTree shotMap = new InterpolatingShotTree();
 
-  public static final double LOOKAHEAD_TIME_SECONDS = 1.0;
+  public static final double LOOKAHEAD_TIME_SECONDS = 0.5;
 
   public static final ShotData FENDER_SHOT =
       new ShotData(Rotation2d.fromDegrees(61.0), 50.0, 60.0, 0.25); // ToF is an estimate

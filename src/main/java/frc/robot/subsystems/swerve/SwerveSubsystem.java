@@ -110,6 +110,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public static TrapezoidProfile.State xState = new TrapezoidProfile.State();
     public static TrapezoidProfile.State yState = new TrapezoidProfile.State();
+  
+    public static boolean rotationAtGoal = false;
+    public static boolean xAtGoal = false;
+    public static boolean yAtGoal = false;
   }
 
   // Drivebase constants
@@ -936,7 +940,7 @@ public class SwerveSubsystem extends SubsystemBase {
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
-            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 2, MAX_ANGULAR_SPEED));
+            1, 0.0, 0.0, new Constraints(MAX_ANGULAR_SPEED / 1.5, MAX_ANGULAR_SPEED));
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     ProfiledPIDController vxController =
         new ProfiledPIDController(
@@ -951,11 +955,11 @@ public class SwerveSubsystem extends SubsystemBase {
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
                           SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
-               /*
-                          System.out.println(
-                      "IMPORTANT IMPORTANT IMPORTANT IMPORTANTIMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
-                          + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
-                    */
+                  /*
+                        System.out.println(
+                    "IMPORTANT IMPORTANT IMPORTANT IMPORTANTIMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
+                        + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+                  */
                   double vxFeedbackOutput =
                       vxController.calculate(getPose().getX(), AutoAimStates.xState);
                   double vyFeedbackOutput =
@@ -967,8 +971,12 @@ public class SwerveSubsystem extends SubsystemBase {
                 })
             .beforeStarting(
                 () -> {
-                  AutoAimStates.xState = new TrapezoidProfile.State(AutoAimStates.endingPose.getX(), xMetersPerSecond.getAsDouble());
-                  AutoAimStates.yState = new TrapezoidProfile.State(AutoAimStates.endingPose.getY(), yMetersPerSecond.getAsDouble());
+                  AutoAimStates.xState =
+                      new TrapezoidProfile.State(
+                          AutoAimStates.endingPose.getX(), xMetersPerSecond.getAsDouble());
+                  AutoAimStates.yState =
+                      new TrapezoidProfile.State(
+                          AutoAimStates.endingPose.getY(), yMetersPerSecond.getAsDouble());
                   vxController.setConstraints(
                       new Constraints(xMetersPerSecond.getAsDouble(), MAX_AUTOAIM_SPEED));
                   vyController.setConstraints(
