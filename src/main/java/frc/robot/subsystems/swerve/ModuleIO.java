@@ -14,14 +14,14 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
-    public ModuleConstants constants =
-        new ModuleConstants(-1, "", 0, 0, 0, Rotation2d.fromRotations(0));
+    // public ModuleConstants constants =
+    //     new ModuleConstants(-1, "", 0, 0, 0, Rotation2d.fromRotations(0));
+    public String prefix = "";
 
     public double drivePositionMeters = 0.0;
     public double driveVelocityMetersPerSec = 0.0;

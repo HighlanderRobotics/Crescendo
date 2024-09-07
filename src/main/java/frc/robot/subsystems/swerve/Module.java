@@ -56,9 +56,9 @@ public class Module {
   }
 
   public void periodic() {
-    Logger.processInputs(String.format("Swerve/%s Module", inputs.constants.prefix), inputs);
+    Logger.processInputs(String.format("Swerve/%s Module", inputs.prefix), inputs);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Available", inputs.constants.prefix),
+        String.format("Swerve/%s Module/Voltage Available", inputs.prefix),
         Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
   }
 
@@ -81,8 +81,7 @@ public class Module {
         optimizedState.speedMetersPerSecond
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
         accel);
-    Logger.recordOutput(
-        String.format("Swerve/%s Module/Accel Setpoint", inputs.constants.prefix), accel);
+    Logger.recordOutput(String.format("Swerve/%s Module/Accel Setpoint", inputs.prefix), accel);
     lastSetpoint = optimizedState;
     lastTime = Timer.getFPGATimestamp();
     return optimizedState;

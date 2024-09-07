@@ -124,30 +124,17 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     }
   }
 
-  public List<Samples> samplesSince(double timestamp, Set<RegisteredSignal> signals) {
+  public List<Samples> samplesSince(double timestamp) {
     var readLock = journalLock.readLock();
     try {
       readLock.lock();
 
       return journal.stream()
           .filter(s -> s.timestamp > timestamp)
-          .map(
-              s -> {
-                var filteredValues =
-                    s.values.entrySet().stream()
-                        .filter(e -> signals.contains(e.getKey()))
-                        .collect(
-                            Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-                return new Samples(s.timestamp, filteredValues);
-              })
           .collect(Collectors.toUnmodifiableList());
     } finally {
       readLock.unlock();
     }
-  }
-
-  public List<Samples> samplesSince(double timestamp) {
-    return samplesSince(timestamp, signals);
   }
 
   @Override

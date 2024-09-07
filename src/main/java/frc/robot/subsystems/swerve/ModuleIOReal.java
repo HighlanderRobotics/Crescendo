@@ -219,7 +219,7 @@ public class ModuleIOReal implements ModuleIO {
         turnAppliedVolts,
         turnCurrent);
 
-    inputs.constants = constants;
+    inputs.prefix = constants.prefix();
 
     inputs.drivePositionMeters = drivePosition.getValueAsDouble();
     inputs.driveVelocityMetersPerSec = driveVelocity.getValueAsDouble();

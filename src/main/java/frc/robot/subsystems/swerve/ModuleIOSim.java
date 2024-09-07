@@ -59,7 +59,7 @@ public class ModuleIOSim implements ModuleIO {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
 
-    inputs.constants = constants;
+    inputs.prefix = constants.prefix();
 
     inputs.drivePositionMeters = driveSim.getAngularPositionRad() * Module.WHEEL_RADIUS;
     inputs.driveVelocityMetersPerSec = driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS;
