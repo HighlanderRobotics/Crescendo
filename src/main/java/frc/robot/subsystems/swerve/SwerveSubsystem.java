@@ -142,7 +142,6 @@ public class SwerveSubsystem extends SubsystemBase {
   private final OdometryThreadIOInputs odoThreadInputs = new OdometryThreadIOInputs();
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  private Pose2d pose = new Pose2d();
 
   /** For delta tracking with PhoenixOdometryThread* */
   private SwerveModulePosition[] lastModulePositions =
@@ -160,7 +159,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public static AprilTagFieldLayout fieldTags;
 
   private SwerveDrivePoseEstimator estimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
+      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
@@ -234,7 +233,6 @@ public class SwerveSubsystem extends SubsystemBase {
               new Rotation3d(0, Units.degreesToRadians(-28.125), Units.degreesToRadians(210))),
           RIGHT_CAMERA_MATRIX,
           RIGHT_DIST_COEFFS);
-  private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
@@ -257,7 +255,7 @@ public class SwerveSubsystem extends SubsystemBase {
     VisionIOSim.pose = this::getPose3d;
 
     AutoBuilder.configureHolonomic(
-        () -> pose, // Robot pose supplier
+        this::getPose, // Robot pose supplier
         this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
         this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
         this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
@@ -288,8 +286,6 @@ public class SwerveSubsystem extends SubsystemBase {
         (path) -> Logger.recordOutput("PathPlanner/Active Path", path.toArray(Pose2d[]::new)));
     Logger.recordOutput("PathPlanner/Target", new Pose2d());
     Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
-
-    odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
 
     moduleSteerRoutine =
         new SysIdRoutine(
@@ -412,10 +408,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
     updateOdometry();
     updateVision();
-
-    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
-    Logger.recordOutput(
-        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
   }
 
   private void updateOdometry() {
@@ -460,7 +452,6 @@ public class SwerveSubsystem extends SubsystemBase {
           // null here is checked by if clause
           rawGyroRotation = Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, -1)));
           var twist = new Twist2d(0, 0, rawGyroRotation.minus(lastGyroRotation).getRadians());
-          pose = pose.exp(twist);
           lastGyroRotation = rawGyroRotation;
           Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
           estimator.updateWithTime(sample.timestamp(), rawGyroRotation, lastModulePositions);
@@ -483,7 +474,6 @@ public class SwerveSubsystem extends SubsystemBase {
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
       }
       // Apply the twist (change since last sample) to the current pose
-      pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
       // Apply update
@@ -635,7 +625,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
     return choreoFullFollowSwerveCommand(
             traj,
-            () -> pose,
+            this::getPose,
             Choreo.choreoSwerveController(
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(1.5, 0.0, 0.0),
@@ -794,13 +784,11 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    this.pose = pose;
     try {
       estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
     } catch (Exception e) {
       System.out.println("odo reset sad :(");
     }
-    odometry.resetPosition(lastGyroRotation, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
