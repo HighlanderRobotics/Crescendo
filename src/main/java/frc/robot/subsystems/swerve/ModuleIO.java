@@ -14,6 +14,7 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.utils.NullableDouble;
 import frc.robot.utils.NullableRotation2d;
@@ -23,6 +24,8 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
+    public ModuleConstants constants = new ModuleConstants(-1, "", 0, 0, 0, Rotation2d.fromRotations(0));
+
     public double drivePositionMeters = 0.0;
     public double driveVelocityMetersPerSec = 0.0;
     public double driveAppliedVolts = 0.0;
@@ -64,7 +67,4 @@ public interface ModuleIO {
 
   /** Use onboard PIDF to run the turn motor to the specified rotation */
   public void setTurnSetpoint(final Rotation2d rotation);
-
-  /** Gets the name of the swerve module for logging purposes, should be constant per-module. */
-  public String getModuleName();
 }

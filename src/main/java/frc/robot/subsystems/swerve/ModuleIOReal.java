@@ -33,9 +33,11 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
 import frc.robot.utils.NullableDouble;
 import frc.robot.utils.NullableRotation2d;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Module IO implementation for Talon FX drive motor controller, Talon FX turn motor controller, and
@@ -53,7 +55,7 @@ public class ModuleIOReal implements ModuleIO {
   // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = true;
 
-  private final String name;
+  private final ModuleConstants constants;
 
   // Hardware
   private final TalonFX driveTalon;
@@ -84,7 +86,7 @@ public class ModuleIOReal implements ModuleIO {
   private final double kAVoltsPerMeterPerSecondSquared;
 
   public ModuleIOReal(ModuleConstants constants) {
-    name = constants.prefix();
+    this.constants = constants;
 
     driveTalon = new TalonFX(constants.driveID(), "canivore");
     turnTalon = new TalonFX(constants.turnID(), "canivore");
@@ -179,8 +181,8 @@ public class ModuleIOReal implements ModuleIO {
 
     PhoenixOdometryThread.getInstance()
         .registerSignals(
-            new Registration(driveTalon, ImmutableSet.of(drivePosition)),
-            new Registration(turnTalon, ImmutableSet.of(turnPosition)));
+            new Registration(driveTalon, Optional.of(constants), SignalType.Drive, ImmutableSet.of(drivePosition)),
+            new Registration(turnTalon, Optional.of(constants), SignalType.Steer, ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -212,6 +214,8 @@ public class ModuleIOReal implements ModuleIO {
         turnVelocity,
         turnAppliedVolts,
         turnCurrent);
+      
+    inputs.constants = constants;
 
     inputs.drivePositionMeters = drivePosition.getValueAsDouble();
     inputs.driveVelocityMetersPerSec = driveVelocity.getValueAsDouble();
@@ -274,10 +278,5 @@ public class ModuleIOReal implements ModuleIO {
   @Override
   public void setTurnSetpoint(final Rotation2d rotation) {
     turnTalon.setControl(turnPID.withPosition(rotation.getRotations()));
-  }
-
-  @Override
-  public String getModuleName() {
-    return name;
   }
 }

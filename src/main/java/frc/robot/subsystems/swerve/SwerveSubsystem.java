@@ -124,13 +124,13 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final double HEADING_VOLTAGE_KP = 4.0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
+      new ModuleConstants(0, "Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
+      new ModuleConstants(1, "Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
+      new ModuleConstants(2, "Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
+      new ModuleConstants(3, "Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
@@ -344,10 +344,10 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static ModuleIO[] createSimModules() {
     return new ModuleIO[] {
-      new ModuleIOSim("FrontLeft"),
-      new ModuleIOSim("FrontRight"),
-      new ModuleIOSim("BackLeft"),
-      new ModuleIOSim("BackRight")
+      new ModuleIOSim(frontLeft),
+      new ModuleIOSim(frontRight),
+      new ModuleIOSim(backLeft),
+      new ModuleIOSim(backRight)
     };
   }
 

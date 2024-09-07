@@ -28,7 +28,7 @@ import org.littletonrobotics.junction.Logger;
 public class Module {
   // Represents per-module constants
   public record ModuleConstants(
-      String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
+      int id, String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
 
   // Global constants
   public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
@@ -65,9 +65,9 @@ public class Module {
   }
 
   public void periodic() {
-    Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
+    Logger.processInputs(String.format("Swerve/%s Module", inputs.constants.prefix), inputs);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
+        String.format("Swerve/%s Module/Voltage Available", inputs.constants.prefix),
         Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
 
     // Calculate positions for odometry
@@ -101,7 +101,7 @@ public class Module {
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
         accel);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Accel Setpoint", io.getModuleName()),
+        String.format("Swerve/%s Module/Accel Setpoint", inputs.constants.prefix),
         accel);
     lastSetpoint = optimizedState;
     lastTime = Timer.getFPGATimestamp();

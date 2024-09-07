@@ -20,9 +20,15 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -39,14 +45,31 @@ import org.littletonrobotics.junction.Logger;
  * users to benefit from lower latency between devices using CANivore time synchronization.
  */
 public class PhoenixOdometryThread extends Thread {
-  public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
+  public enum SignalType {
+    Drive,
+    Steer,
+    Gyro;
+    // In theory we could measure other types of info in this thread
+    // But we don't!
+  }
 
-  public record Samples(double timestamp, Map<StatusSignal<Double>, Double> values) {}
+  public record SignalID(SignalType type, int modID) {}
+
+  public record Registration(ParentDevice device, Optional<ModuleConstants> moduleConstants, SignalType type, Set<StatusSignal<Double>> signals) {}
+
+  public record RegisteredSignal(StatusSignal<Double> signal, Optional<ModuleConstants> moduleConstants, SignalType type) {}
+
+  public record Samples(double timestamp, Map<SignalID, Double> values) {}
+
+  public record SampledPositions(double timestamp, Map<Integer, SwerveModulePosition> positions) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
 
-  private final Set<StatusSignal<Double>> signals = Sets.newHashSet();
+  private final Set<RegisteredSignal> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
+
+  // For gyros
+  private static final ModuleConstants NEGATIVE_ONE = new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
 
   private static PhoenixOdometryThread instance = null;
 
@@ -87,14 +110,14 @@ public class PhoenixOdometryThread extends Thread {
       for (var registration : registrations) {
         assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
 
-        signals.addAll(registration.signals);
+        signals.addAll(registration.signals.stream().map(s -> new RegisteredSignal(s, registration.moduleConstants(), registration.type())).toList());
       }
     } finally {
       writeLock.unlock();
     }
   }
 
-  public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
+  public List<Samples> samplesSince(double timestamp, Set<RegisteredSignal> signals) {
     var readLock = journalLock.readLock();
     try {
       readLock.lock();
@@ -133,24 +156,24 @@ public class PhoenixOdometryThread extends Thread {
         writeLock.lock();
         var filteredSignals =
             signals.stream()
-                .filter(s -> s.getStatus().equals(StatusCode.OK))
+                .filter(s -> s.signal().getStatus().equals(StatusCode.OK))
                 .collect(Collectors.toSet());
         journal.add(
             new Samples(
                 timestampFor(filteredSignals),
                 filteredSignals.stream()
-                    .collect(Collectors.toUnmodifiableMap(s -> s, s -> s.getValueAsDouble()))));
+                    .collect(Collectors.toUnmodifiableMap(s -> new SignalID(s.type(), s.moduleConstants().orElse(NEGATIVE_ONE).id()), s -> s.signal().getValueAsDouble()))));
       } finally {
         writeLock.unlock();
       }
     }
   }
 
-  private double timestampFor(Set<StatusSignal<Double>> signals) {
+  private double timestampFor(Set<RegisteredSignal> signals) {
     double timestamp = Logger.getRealTimestamp() / 1e6;
 
     final double totalLatency =
-        signals.stream().mapToDouble(s -> s.getTimestamp().getLatency()).sum();
+        signals.stream().mapToDouble(s -> s.signal().getTimestamp().getLatency()).sum();
 
     // Account for mean latency for a "good enough" timestamp
     if (!signals.isEmpty()) {
