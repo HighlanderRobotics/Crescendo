@@ -20,11 +20,8 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
-
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -55,16 +52,22 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
 
   public record SignalID(SignalType type, int modID) {}
 
-  public record Registration(ParentDevice device, Optional<ModuleConstants> moduleConstants, SignalType type, Set<StatusSignal<Double>> signals) {}
+  public record Registration(
+      ParentDevice device,
+      Optional<ModuleConstants> moduleConstants,
+      SignalType type,
+      Set<StatusSignal<Double>> signals) {}
 
-  public record RegisteredSignal(StatusSignal<Double> signal, Optional<ModuleConstants> moduleConstants, SignalType type) {}
+  public record RegisteredSignal(
+      StatusSignal<Double> signal, Optional<ModuleConstants> moduleConstants, SignalType type) {}
 
   public record Samples(double timestamp, Map<SignalID, Double> values) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
-  
+
   // For gyros
-  private static final ModuleConstants NEGATIVE_ONE = new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
+  private static final ModuleConstants NEGATIVE_ONE =
+      new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
 
   private final Set<RegisteredSignal> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
@@ -108,7 +111,13 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
       for (var registration : registrations) {
         assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
 
-        signals.addAll(registration.signals.stream().map(s -> new RegisteredSignal(s, registration.moduleConstants(), registration.type())).toList());
+        signals.addAll(
+            registration.signals.stream()
+                .map(
+                    s ->
+                        new RegisteredSignal(
+                            s, registration.moduleConstants(), registration.type()))
+                .toList());
       }
     } finally {
       writeLock.unlock();
@@ -160,7 +169,12 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
             new Samples(
                 timestampFor(filteredSignals),
                 filteredSignals.stream()
-                    .collect(Collectors.toUnmodifiableMap(s -> new SignalID(s.type(), s.moduleConstants().orElse(NEGATIVE_ONE).id()), s -> s.signal().getValueAsDouble()))));
+                    .collect(
+                        Collectors.toUnmodifiableMap(
+                            s ->
+                                new SignalID(
+                                    s.type(), s.moduleConstants().orElse(NEGATIVE_ONE).id()),
+                            s -> s.signal().getValueAsDouble()))));
       } finally {
         writeLock.unlock();
       }

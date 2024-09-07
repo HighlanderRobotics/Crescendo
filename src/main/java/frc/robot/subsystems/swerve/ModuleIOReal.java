@@ -32,11 +32,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -181,8 +177,16 @@ public class ModuleIOReal implements ModuleIO {
 
     PhoenixOdometryThread.getInstance()
         .registerSignals(
-            new Registration(driveTalon, Optional.of(constants), SignalType.DRIVE, ImmutableSet.of(drivePosition)),
-            new Registration(turnTalon, Optional.of(constants), SignalType.STEER, ImmutableSet.of(turnPosition)));
+            new Registration(
+                driveTalon,
+                Optional.of(constants),
+                SignalType.DRIVE,
+                ImmutableSet.of(drivePosition)),
+            new Registration(
+                turnTalon,
+                Optional.of(constants),
+                SignalType.STEER,
+                ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -214,7 +218,7 @@ public class ModuleIOReal implements ModuleIO {
         turnVelocity,
         turnAppliedVolts,
         turnCurrent);
-      
+
     inputs.constants = constants;
 
     inputs.drivePositionMeters = drivePosition.getValueAsDouble();

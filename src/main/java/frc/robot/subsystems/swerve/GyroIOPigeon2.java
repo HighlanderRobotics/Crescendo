@@ -22,10 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
 import java.util.Optional;
 
 /** IO implementation for Pigeon2 */
@@ -42,7 +39,8 @@ public class GyroIOPigeon2 implements GyroIO {
     yawVelocity.setUpdateFrequency(100.0);
     pigeon.optimizeBusUtilization();
     PhoenixOdometryThread.getInstance()
-        .registerSignals(new Registration(pigeon, Optional.empty(), SignalType.GYRO, ImmutableSet.of(yaw)));
+        .registerSignals(
+            new Registration(pigeon, Optional.empty(), SignalType.GYRO, ImmutableSet.of(yaw)));
   }
 
   @Override

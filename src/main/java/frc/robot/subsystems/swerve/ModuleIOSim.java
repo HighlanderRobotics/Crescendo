@@ -18,13 +18,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
 
 /**
  * Physics sim implementation of module IO.
@@ -65,7 +60,7 @@ public class ModuleIOSim implements ModuleIO {
     turnSim.update(LOOP_PERIOD_SECS);
 
     inputs.constants = constants;
-    
+
     inputs.drivePositionMeters = driveSim.getAngularPositionRad() * Module.WHEEL_RADIUS;
     inputs.driveVelocityMetersPerSec = driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS;
     inputs.driveAppliedVolts = driveAppliedVolts;

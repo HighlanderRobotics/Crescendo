@@ -19,10 +19,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -54,9 +50,7 @@ public class Module {
     this.io = io;
   }
 
-  /**
-   * Update inputs without running the rest of the periodic logic.
-   */
+  /** Update inputs without running the rest of the periodic logic. */
   public void updateInputs() {
     io.updateInputs(inputs);
   }
@@ -71,7 +65,10 @@ public class Module {
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
-    return runSetpoint(state, (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / (Timer.getFPGATimestamp() - lastTime));
+    return runSetpoint(
+        state,
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond)
+            / (Timer.getFPGATimestamp() - lastTime));
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
@@ -85,8 +82,7 @@ public class Module {
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
         accel);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Accel Setpoint", inputs.constants.prefix),
-        accel);
+        String.format("Swerve/%s Module/Accel Setpoint", inputs.constants.prefix), accel);
     lastSetpoint = optimizedState;
     lastTime = Timer.getFPGATimestamp();
     return optimizedState;
