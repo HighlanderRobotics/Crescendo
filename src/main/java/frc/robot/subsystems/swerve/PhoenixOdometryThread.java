@@ -44,7 +44,7 @@ import org.littletonrobotics.junction.Logger;
  * "waitForAll" blocking method to enable more consistent sampling. This also allows Phoenix Pro
  * users to benefit from lower latency between devices using CANivore time synchronization.
  */
-public class PhoenixOdometryThread extends Thread {
+public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
   public enum SignalType {
     Drive,
     Steer,
@@ -61,15 +61,13 @@ public class PhoenixOdometryThread extends Thread {
 
   public record Samples(double timestamp, Map<SignalID, Double> values) {}
 
-  public record SampledPositions(double timestamp, Map<Integer, SwerveModulePosition> positions) {}
-
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
+  
+  // For gyros
+  private static final ModuleConstants NEGATIVE_ONE = new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
 
   private final Set<RegisteredSignal> signals = Sets.newHashSet();
   private final Queue<Samples> journal;
-
-  // For gyros
-  private static final ModuleConstants NEGATIVE_ONE = new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
 
   private static PhoenixOdometryThread instance = null;
 
@@ -181,5 +179,10 @@ public class PhoenixOdometryThread extends Thread {
     }
 
     return timestamp;
+  }
+
+  @Override
+  public void updateInputs(OdometryThreadIOInputs inputs, double lastTimestamp) {
+    inputs.sampledStates = samplesSince(lastTimestamp);
   }
 }
