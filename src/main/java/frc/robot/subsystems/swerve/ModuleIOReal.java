@@ -181,8 +181,8 @@ public class ModuleIOReal implements ModuleIO {
 
     PhoenixOdometryThread.getInstance()
         .registerSignals(
-            new Registration(driveTalon, Optional.of(constants), SignalType.Drive, ImmutableSet.of(drivePosition)),
-            new Registration(turnTalon, Optional.of(constants), SignalType.Steer, ImmutableSet.of(turnPosition)));
+            new Registration(driveTalon, Optional.of(constants), SignalType.DRIVE, ImmutableSet.of(drivePosition)),
+            new Registration(turnTalon, Optional.of(constants), SignalType.STEER, ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -202,7 +202,7 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
+  public void updateInputs(final ModuleIOInputs inputs) {
     BaseStatusSignal.refreshAll(
         drivePosition,
         driveVelocity,
@@ -228,24 +228,6 @@ public class ModuleIOReal implements ModuleIO {
     inputs.turnVelocityRadPerSec = Units.rotationsToRadians(turnVelocity.getValueAsDouble());
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
-
-    inputs.odometryTimestamps =
-        asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
-    inputs.odometryDrivePositionsMeters =
-        asyncOdometrySamples.stream()
-            .map(s -> s.values().get(drivePosition))
-            .map(NullableDouble::new)
-            .toArray(NullableDouble[]::new);
-    inputs.odometryTurnPositions =
-        asyncOdometrySamples.stream()
-            // should be after offset + gear ratio
-            .map(s -> s.values().get(turnPosition))
-            .map(
-                d ->
-                    d == null
-                        ? new NullableRotation2d(null)
-                        : new NullableRotation2d(Rotation2d.fromRotations(d)))
-            .toArray(NullableRotation2d[]::new);
   }
 
   @Override

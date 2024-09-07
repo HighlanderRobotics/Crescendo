@@ -47,8 +47,6 @@ public class Module {
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
 
-  private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
-
   private SwerveModuleState lastSetpoint = new SwerveModuleState();
   private double lastTime = Timer.getFPGATimestamp();
 
@@ -57,11 +55,10 @@ public class Module {
   }
 
   /**
-   * Update inputs without running the rest of the periodic logic. This is useful since these
-   * updates need to be properly thread-locked.
+   * Update inputs without running the rest of the periodic logic.
    */
-  public void updateInputs(final List<Samples> asyncOdometrySamples) {
-    io.updateInputs(inputs, asyncOdometrySamples);
+  public void updateInputs() {
+    io.updateInputs(inputs);
   }
 
   public void periodic() {
@@ -69,19 +66,6 @@ public class Module {
     Logger.recordOutput(
         String.format("Swerve/%s Module/Voltage Available", inputs.constants.prefix),
         Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
-
-    // Calculate positions for odometry
-    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
-    odometryPositions = new SwerveModulePosition[sampleCount];
-    for (int i = 0; i < sampleCount; i++) {
-      NullableDouble positionMeters = inputs.odometryDrivePositionsMeters[i];
-      NullableRotation2d angle = inputs.odometryTurnPositions[i];
-      if (angle.get() == null || positionMeters.get() == null) {
-        odometryPositions[i] = null; // SwerveSubsystem deals with this
-      } else {
-        odometryPositions[i] = new SwerveModulePosition(positionMeters.get(), angle.get());
-      }
-    }
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
@@ -185,15 +169,5 @@ public class Module {
   /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
     return inputs.driveVelocityMetersPerSec;
-  }
-
-  /** Returns the timestamps of the samples received this cycle from PhoenixOdometryThread. */
-  public double[] getOdometryTimestamps() {
-    return inputs.odometryTimestamps;
-  }
-
-  /** Returns the module positions received this cycle from PhoenixOdometryThread. */
-  public SwerveModulePosition[] getOdometryPositions() {
-    return odometryPositions;
   }
 }

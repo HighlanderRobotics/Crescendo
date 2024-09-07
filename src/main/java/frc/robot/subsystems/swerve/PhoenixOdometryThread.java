@@ -46,9 +46,9 @@ import org.littletonrobotics.junction.Logger;
  */
 public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
   public enum SignalType {
-    Drive,
-    Steer,
-    Gyro;
+    DRIVE,
+    STEER,
+    GYRO;
     // In theory we could measure other types of info in this thread
     // But we don't!
   }

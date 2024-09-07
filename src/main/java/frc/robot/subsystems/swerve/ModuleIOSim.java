@@ -60,7 +60,7 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
+  public void updateInputs(final ModuleIOInputs inputs) {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
 
@@ -77,12 +77,6 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnVelocityRadPerSec = turnSim.getAngularVelocityRadPerSec();
     inputs.turnAppliedVolts = turnAppliedVolts;
     inputs.turnCurrentAmps = new double[] {Math.abs(turnSim.getCurrentDrawAmps())};
-
-    inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsMeters =
-        new NullableDouble[] {new NullableDouble(inputs.drivePositionMeters)};
-    inputs.odometryTurnPositions =
-        new NullableRotation2d[] {new NullableRotation2d(inputs.turnPosition)};
   }
 
   @Override

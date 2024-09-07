@@ -14,9 +14,6 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface GyroIO {
@@ -24,12 +21,10 @@ public interface GyroIO {
   public static class GyroIOInputs {
     public boolean connected = false;
     public Rotation2d yawPosition = new Rotation2d();
-    public NullableRotation2d[] odometryYawPositions = new NullableRotation2d[] {};
-    public double[] odometryTimestamps = new double[] {};
     public double yawVelocityRadPerSec = 0.0;
   }
 
-  public void updateInputs(final GyroIOInputs inputs, final List<Samples> asyncOdometrySamples);
+  public void updateInputs(final GyroIOInputs inputs);
 
   public void setYaw(final Rotation2d yaw);
 }

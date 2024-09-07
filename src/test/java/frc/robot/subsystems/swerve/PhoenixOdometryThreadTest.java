@@ -49,15 +49,15 @@ public class PhoenixOdometryThreadTest {
   @Test
   void samplesSinceReturnsNothingWhenNoSamples() {
     var thread = PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque());
-    var samples = thread.samplesSince(0.0, ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.Gyro)));
+    var samples = thread.samplesSince(0.0, ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.GYRO)));
     Assertions.assertEquals(Collections.emptyList(), samples);
   }
 
   @Test
   void samplesSinceReturnsAfterTimestamp() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.Gyro, -1), 42.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.GYRO, -1), 42.0);
     var sample = new Samples(10, sampleValue);
-    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.Gyro));
+    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.GYRO));
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
     var samples = thread.samplesSince(0, registration);
@@ -66,9 +66,9 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceIgnoresBeforeTimestamp() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.Gyro, -1), 42.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.GYRO, -1), 42.0);
     var sample = new Samples(10, sampleValue);
-    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.Gyro));
+    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.GYRO));
 
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
@@ -78,9 +78,9 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceIgnoresWhenTimestampEqual() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.Gyro, -1), 42.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.GYRO, -1), 42.0);
     var sample = new Samples(10, sampleValue);
-    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.Gyro));
+    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.GYRO));
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
     var samples = thread.samplesSince(10, registration);
@@ -89,15 +89,15 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceOnlySelectsRequestedSignals() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.Gyro, -1), 42.0, new SignalID( SignalType.Drive, 1), 1024.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID( SignalType.GYRO, -1), 42.0, new SignalID( SignalType.DRIVE, 1), 1024.0);
     var sample = new Samples(10, sampleValue);
-    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.Gyro));
+    var registration = ImmutableSet.of(new RegisteredSignal(talon.getAcceleration(), Optional.empty(), SignalType.GYRO));
 
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
     var samples = thread.samplesSince(0, registration);
 
-    var filteredSample = new Samples(10, ImmutableMap.of(new SignalID( SignalType.Gyro, -1), 42.0));
+    var filteredSample = new Samples(10, ImmutableMap.of(new SignalID( SignalType.GYRO, -1), 42.0));
     Assertions.assertEquals(ImmutableList.of(filteredSample), samples);
   }
 }

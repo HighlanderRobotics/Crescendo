@@ -46,6 +46,7 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
@@ -115,7 +116,7 @@ public class Robot extends LoggedRobot {
               : new GyroIO() {
                 // Blank implementation to mock gyro in sim
                 @Override
-                public void updateInputs(GyroIOInputs inputs, List<Samples> asyncOdometrySamples) {}
+                public void updateInputs(GyroIOInputs inputs) {}
 
                 @Override
                 public void setYaw(Rotation2d yaw) {}
@@ -125,7 +126,8 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimCameras(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
-              : SwerveSubsystem.createSimModules());
+              : SwerveSubsystem.createSimModules(),
+          PhoenixOdometryThread.getInstance());
   private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =

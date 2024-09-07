@@ -37,14 +37,10 @@ public interface ModuleIO {
     public double turnVelocityRadPerSec = 0.0;
     public double turnAppliedVolts = 0.0;
     public double[] turnCurrentAmps = new double[] {};
-
-    public NullableDouble[] odometryDrivePositionsMeters = new NullableDouble[] {};
-    public NullableRotation2d[] odometryTurnPositions = new NullableRotation2d[] {};
-    public double[] odometryTimestamps = new double[] {};
   }
 
   /** Updates the set of loggable inputs. */
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples);
+  public void updateInputs(final ModuleIOInputs inputs);
 
   /** Run the drive motor at the specified voltage. */
   public default void setDriveVoltage(final double volts) {
