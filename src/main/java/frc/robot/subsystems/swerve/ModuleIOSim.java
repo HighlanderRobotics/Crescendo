@@ -18,12 +18,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
 
 /**
  * Physics sim implementation of module IO.
@@ -35,7 +31,7 @@ import java.util.List;
 public class ModuleIOSim implements ModuleIO {
   private static final double LOOP_PERIOD_SECS = 0.02;
 
-  private final String name;
+  private final ModuleConstants constants;
 
   private final DCMotorSim driveSim =
       // Third param is the moment of inertia of the swerve wheel
@@ -54,14 +50,16 @@ public class ModuleIOSim implements ModuleIO {
   private final PIDController driveController = new PIDController(0.3, 0.0, 0.0);
   private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 2.0);
 
-  public ModuleIOSim(final String name) {
-    this.name = name;
+  public ModuleIOSim(final ModuleConstants constants) {
+    this.constants = constants;
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
+  public void updateInputs(final ModuleIOInputs inputs) {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
+
+    inputs.prefix = constants.prefix();
 
     inputs.drivePositionMeters = driveSim.getAngularPositionRad() * Module.WHEEL_RADIUS;
     inputs.driveVelocityMetersPerSec = driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS;
@@ -74,12 +72,6 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnVelocityRadPerSec = turnSim.getAngularVelocityRadPerSec();
     inputs.turnAppliedVolts = turnAppliedVolts;
     inputs.turnCurrentAmps = new double[] {Math.abs(turnSim.getCurrentDrawAmps())};
-
-    inputs.odometryTimestamps = new double[] {Timer.getFPGATimestamp()};
-    inputs.odometryDrivePositionsMeters =
-        new NullableDouble[] {new NullableDouble(inputs.drivePositionMeters)};
-    inputs.odometryTurnPositions =
-        new NullableRotation2d[] {new NullableRotation2d(inputs.turnPosition)};
   }
 
   @Override
@@ -106,10 +98,5 @@ public class ModuleIOSim implements ModuleIO {
   public void setTurnSetpoint(final Rotation2d rotation) {
     setTurnVoltage(
         turnController.calculate(turnSim.getAngularPositionRotations(), rotation.getRotations()));
-  }
-
-  @Override
-  public String getModuleName() {
-    return name;
   }
 }
