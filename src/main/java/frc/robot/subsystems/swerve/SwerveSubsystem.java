@@ -914,6 +914,10 @@ public class SwerveSubsystem extends SubsystemBase {
                 .getRotations());
   }
 
+  public double getDistanceToSpeaker(Pose2d futurePose) {
+    return futurePose.minus(SwerveSubsystem.AutoAimStates.virtualTarget).getTranslation().getNorm();
+  }
+
   @AutoLogOutput(key = "AutoAim/Distance to Target")
   public double getDistanceToSpeaker() {
     return this.estimator

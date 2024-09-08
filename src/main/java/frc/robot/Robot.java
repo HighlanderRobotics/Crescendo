@@ -649,11 +649,15 @@ public class Robot extends LoggedRobot {
                     .runVelocityCmd(0.0)
                     .until(
                         () ->
-                            // shooter.isAtGoal() &&
+                            shooter.isAtGoal() &&
                             SwerveSubsystem.AutoAimStates.rotationAtGoal
                                 && SwerveSubsystem.AutoAimStates.xAtGoal
                                 && SwerveSubsystem.AutoAimStates.yAtGoal)
-                    .andThen(
+                    .andThen(feeder
+                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        .raceWith(
+                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                                .andThen(Commands.waitSeconds(0.25))),
                         Commands.sequence(
                             Commands.runOnce(
                                 () -> {
@@ -664,7 +668,7 @@ public class Robot extends LoggedRobot {
                             Commands.waitSeconds(0.25))),
                 Commands.runOnce(
                         () -> {
-                        //  System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
+                          //  System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
                           if (!SwerveSubsystem.AutoAimStates.rotationAtGoal) {
                             SwerveSubsystem.AutoAimStates.rotationAtGoal =
                                 MathUtil.isNear(
@@ -693,12 +697,23 @@ public class Robot extends LoggedRobot {
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
                 vyFieldRelative,
-                SwerveSubsystem.AutoAimStates.lookaheadTime,
+                AutoAim.shotMap
+                    .get(swerve.getDistanceToSpeaker(SwerveSubsystem.AutoAimStates.endingPose))
+                    .getFlightTimeSeconds(),
                 SwerveSubsystem.AutoAimStates.rotationToTarget),
             shooter.runStateCmd(
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()),
+                () ->
+                    AutoAim.shotMap
+                        .get(swerve.getDistanceToSpeaker(SwerveSubsystem.AutoAimStates.endingPose))
+                        .getRotation(),
+                () ->
+                    AutoAim.shotMap
+                        .get(swerve.getDistanceToSpeaker(SwerveSubsystem.AutoAimStates.endingPose))
+                        .getLeftRPS(),
+                () ->
+                    AutoAim.shotMap
+                        .get(swerve.getDistanceToSpeaker(SwerveSubsystem.AutoAimStates.endingPose))
+                        .getRightRPS()),
             Commands.waitSeconds(4)
                 .andThen(Commands.print("HIGSIUGHUHGEUHESGHUGUHGEHIEGSUHGHIOGHUGSEEU")))
         .beforeStarting(
@@ -717,21 +732,20 @@ public class Robot extends LoggedRobot {
                       SwerveSubsystem.AutoAimStates.lookaheadTime,
                       SwerveSubsystem.AutoAimStates.curShotSpeeds);
 
-              
               if (DriverStation.getAlliance().isPresent()) {
                 if (DriverStation.getAlliance().get() == Alliance.Blue) {
 
                   SwerveSubsystem.AutoAimStates.curShotSpeeds =
                       SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
-                System.out.println("IMPORTANT" + SwerveSubsystem.AutoAimStates.curShotSpeeds);
+                  System.out.println("IMPORTANT" + SwerveSubsystem.AutoAimStates.curShotSpeeds);
 
-                SwerveSubsystem.AutoAimStates.virtualTarget =
-                  AutoAim.getVirtualTarget(
-                      SwerveSubsystem.AutoAimStates.endingPose,
-                      SwerveSubsystem.AutoAimStates.curShotSpeeds);
+                  SwerveSubsystem.AutoAimStates.virtualTarget =
+                      AutoAim.getVirtualTarget(
+                          SwerveSubsystem.AutoAimStates.endingPose,
+                          SwerveSubsystem.AutoAimStates.curShotSpeeds);
                   SwerveSubsystem.AutoAimStates.curShotSpeeds =
                       SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
-                      
+
                   SwerveSubsystem.AutoAimStates.rotationToTarget =
                       swerve
                           .getLinearFutureRotationToTranslation(
@@ -744,13 +758,14 @@ public class Robot extends LoggedRobot {
                           SwerveSubsystem.AutoAimStates.endingPose.getX(),
                           SwerveSubsystem.AutoAimStates.endingPose.getY(),
                           SwerveSubsystem.AutoAimStates.rotationToTarget);
-                    
-                      System.out.println("IMPORANT IMPORTANT "+SwerveSubsystem.AutoAimStates.curShotSpeeds);
+
+                  System.out.println(
+                      "IMPORANT IMPORTANT " + SwerveSubsystem.AutoAimStates.curShotSpeeds);
                 } else {
-                     SwerveSubsystem.AutoAimStates.virtualTarget =
-                  AutoAim.getVirtualTarget(
-                      SwerveSubsystem.AutoAimStates.endingPose,
-                      SwerveSubsystem.AutoAimStates.curShotSpeeds);
+                  SwerveSubsystem.AutoAimStates.virtualTarget =
+                      AutoAim.getVirtualTarget(
+                          SwerveSubsystem.AutoAimStates.endingPose,
+                          SwerveSubsystem.AutoAimStates.curShotSpeeds);
                   SwerveSubsystem.AutoAimStates.rotationToTarget =
                       swerve
                           .getLinearFutureRotationToTranslation(
@@ -763,7 +778,6 @@ public class Robot extends LoggedRobot {
                           SwerveSubsystem.AutoAimStates.endingPose.getX(),
                           SwerveSubsystem.AutoAimStates.endingPose.getY(),
                           SwerveSubsystem.AutoAimStates.rotationToTarget);
-                   
                 }
               }
 
