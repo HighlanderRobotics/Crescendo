@@ -21,15 +21,13 @@ public interface OdometryThreadIO {
 
     @Override
     public void toLog(LogTable table) {
+      var timestamps = sampledStates.stream().mapToDouble(Samples::timestamp).toArray();
       Set<Integer> modIds = new HashSet();
-      for (var sample : sampledStates) {
+      for (int i = 0; i < sampledStates.size(); i++) {
+        var sample = sampledStates.get(i);
         for (var signal : sample.values().entrySet()) {
           table.put(
-              sample.timestamp()
-                  + " "
-                  + signal.getKey().type().toString()
-                  + " "
-                  + signal.getKey().modID(),
+              i + " " + signal.getKey().type().toString() + " " + signal.getKey().modID(),
               signal.getValue());
           modIds.add(signal.getKey().modID());
         }
@@ -37,7 +35,7 @@ public interface OdometryThreadIO {
       // Remove Gyro/placeholder
       modIds.remove(-1);
       table.put("Module IDs", modIds.stream().mapToInt(Integer::intValue).toArray());
-      table.put("Timestamps", sampledStates.stream().mapToDouble(Samples::timestamp).toArray());
+      table.put("Timestamps", timestamps);
     }
 
     @Override
@@ -45,21 +43,22 @@ public interface OdometryThreadIO {
       sampledStates = List.of();
       var modIds = table.get("Module IDs").getIntegerArray();
       var timestamps = table.get("Timestamps").getDoubleArray();
-      for (var timestamp : timestamps) {
+      for (int i = 0; i < sampledStates.size(); i++) {
+        var timestamp = timestamps[i];
         try {
           Map<SignalID, Double> values = new HashMap();
           for (var id : modIds) {
             values.put(
                 new SignalID(SignalType.DRIVE, (int) id),
-                table.get(timestamp + " " + SignalType.DRIVE + " " + id).getDouble());
+                table.get(i + " " + SignalType.DRIVE + " " + id).getDouble());
             values.put(
                 new SignalID(SignalType.STEER, (int) id),
-                table.get(timestamp + " " + SignalType.STEER + " " + id).getDouble());
+                table.get(i + " " + SignalType.STEER + " " + id).getDouble());
           }
           try {
             values.put(
                 new SignalID(SignalType.GYRO, (int) -1),
-                table.get(timestamp + " " + SignalType.GYRO + " " + -1).getDouble());
+                table.get(i + " " + SignalType.GYRO + " " + -1).getDouble());
           } catch (NullPointerException e) {
             // We don't have a gyro this loop ig
           }

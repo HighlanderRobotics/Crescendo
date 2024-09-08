@@ -398,6 +398,7 @@ public class SwerveSubsystem extends SubsystemBase {
       camera.processInputs();
     }
     odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp);
+    Logger.processInputs("Async Odo", odoThreadInputs);
     if (!odoThreadInputs.sampledStates.isEmpty()) {
       lastOdometryUpdateTimestamp =
           odoThreadInputs.sampledStates.get(odoThreadInputs.sampledStates.size() - 1).timestamp();
