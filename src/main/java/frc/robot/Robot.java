@@ -48,6 +48,7 @@ import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.GyroIOSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
+import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.mapleUtils.CompetitionFieldSimulation;
@@ -137,6 +138,8 @@ public class Robot extends LoggedRobot {
       try {
         fieldSim = new Crescendo2024FieldSimulation(swerve.createDriveSimulation());
         fieldSim.placeGamePiecesOnField();
+        // mildly questionable
+        VisionIOSim.pose = () -> fieldSim.getMainRobot().getPose3d();
       } catch (Exception e) {
         System.out.println("Could not create swerve sim");
         System.out.println(e.getMessage());

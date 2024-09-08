@@ -259,9 +259,6 @@ public class SwerveSubsystem extends SubsystemBase {
       cameras[i] = new Vision(visionIOs[i]);
     }
 
-    // mildly questionable
-    VisionIOSim.pose = this::getPose3d;
-
     AutoBuilder.configureHolonomic(
         this::getPose, // Robot pose supplier
         this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
