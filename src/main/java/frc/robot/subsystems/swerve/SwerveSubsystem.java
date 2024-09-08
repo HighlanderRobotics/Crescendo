@@ -237,9 +237,10 @@ public class SwerveSubsystem extends SubsystemBase {
   private final SysIdRoutine driveRoutine;
 
   public SwerveSubsystem(
-      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs, OdometryThreadIO odoThread) {
+      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
     this.gyroIO = gyroIO;
-    this.odoThread = odoThread;
+    // Instantiate here because we need to pass in the IOs
+    this.odoThread = Robot.mode == RobotMode.REAL ? PhoenixOdometryThread.getInstance() : new OdometryThreadSim((ModuleIOSim[]) moduleIOs, (GyroIOSim) gyroIO);
     cameras = new Vision[visionIOs.length];
     new AutoAim();
     modules = new Module[moduleIOs.length];

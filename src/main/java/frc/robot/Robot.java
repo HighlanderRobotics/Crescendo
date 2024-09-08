@@ -124,8 +124,7 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimCameras(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
-              : SwerveSubsystem.createSimModules(),
-          PhoenixOdometryThread.getInstance());
+              : SwerveSubsystem.createSimModules());
   private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =

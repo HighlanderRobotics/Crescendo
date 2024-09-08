@@ -1,5 +1,7 @@
 package frc.robot.utils.mapleUtils;
 
+import static frc.robot.utils.mapleUtils.CustomMaths.MapleCommonMath.constrainMagnitude;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.DriveTrainConstants;
@@ -9,8 +11,6 @@ import org.dyn4j.dynamics.Force;
 import org.dyn4j.geometry.Geometry;
 import org.dyn4j.geometry.MassType;
 import org.dyn4j.geometry.Vector2;
-
-import static frc.robot.utils.mapleUtils.CustomMaths.MapleCommonMath.constrainMagnitude;
 
 /**
  * simulates the physics behavior of holonomic chassis, with respect to its collision space,

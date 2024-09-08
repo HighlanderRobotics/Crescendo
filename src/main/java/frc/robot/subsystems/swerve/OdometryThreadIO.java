@@ -16,7 +16,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public interface OdometryThreadIO {
   public class OdometryThreadIOInputs implements LoggableInputs {
-    List<Samples> sampledStates = List.of();
+    public List<Samples> sampledStates = List.of();
 
     @Override
     public void toLog(LogTable table) {
