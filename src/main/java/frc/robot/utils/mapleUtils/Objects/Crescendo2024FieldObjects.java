@@ -2,7 +2,7 @@ package frc.robot.utils.mapleUtils.Objects;
 
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.util.Units;
-import frc.robot.utils.mapleUtils.FieldConstants;
+import frc.robot.utils.mapleUtils.MapleFieldConstants;
 import org.dyn4j.geometry.Geometry;
 
 /** a set of game pieces of the 2024 game "Crescendo" */
@@ -64,7 +64,7 @@ public final class Crescendo2024FieldObjects {
     public NoteOnFly(Translation3d shooterPosition, double flightTimeSeconds) {
       super(
           shooterPosition,
-          FieldConstants.toCurrentAllianceTranslation(FieldConstants.SPEAKER_POSE_BLUE),
+          MapleFieldConstants.toCurrentAllianceTranslation(MapleFieldConstants.SPEAKER_POSE_BLUE),
           flightTimeSeconds);
     }
 

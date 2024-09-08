@@ -165,4 +165,13 @@ public class Module {
   public double getCharacterizationVelocity() {
     return inputs.driveVelocityMetersPerSec;
   }
+
+  /** Returns this module's io if it is a simulation, or null otherwise */
+  public ModuleIOSim getSimIO() {
+    try {
+      return (ModuleIOSim) io;
+    } catch (Exception e) {
+      return null;
+    }
+  }
 }

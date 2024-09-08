@@ -85,6 +85,7 @@ import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
+import frc.robot.utils.mapleUtils.SwerveDriveSimulation;
 import java.io.File;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -158,7 +159,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public static AprilTagFieldLayout fieldTags;
 
   private SwerveDrivePoseEstimator estimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
+      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d(2.0, 2.0, Rotation2d.fromRotations(0.0)));
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
@@ -236,11 +237,13 @@ public class SwerveSubsystem extends SubsystemBase {
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
 
-  public SwerveSubsystem(
-      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
+  public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
     this.gyroIO = gyroIO;
     // Instantiate here because we need to pass in the IOs
-    this.odoThread = Robot.mode == RobotMode.REAL ? PhoenixOdometryThread.getInstance() : new OdometryThreadSim((ModuleIOSim[]) moduleIOs, (GyroIOSim) gyroIO);
+    this.odoThread =
+        Robot.mode == RobotMode.REAL
+            ? PhoenixOdometryThread.getInstance()
+            : new OdometryThreadSim((ModuleIOSim[]) moduleIOs, (GyroIOSim) gyroIO);
     cameras = new Vision[visionIOs.length];
     new AutoAim();
     modules = new Module[moduleIOs.length];
@@ -344,8 +347,8 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The array of swerve module ios.
    */
-  public static ModuleIO[] createSimModules() {
-    return new ModuleIO[] {
+  public static ModuleIOSim[] createSimModules() {
+    return new ModuleIOSim[] {
       new ModuleIOSim(frontLeft),
       new ModuleIOSim(frontRight),
       new ModuleIOSim(backLeft),
@@ -369,6 +372,18 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static VisionIO[] createSimCameras() {
     return new VisionIO[] {new VisionIOSim(leftCamConstants), new VisionIOSim(rightCamConstants)};
+  }
+
+  public SwerveDriveSimulation createDriveSimulation() {
+    try {
+      return new SwerveDriveSimulation(
+          (GyroIOSim) gyroIO,
+          (ModuleIOSim[]) Arrays.stream(modules).map(m -> m.getSimIO()).toArray(),
+          getPose(),
+          this::setPose);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   public void periodic() {

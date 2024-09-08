@@ -12,6 +12,7 @@
       "/AdvantageKit/RealOutputs/Shooter/Mechanism2d": "Mechanism2d",
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/Auto Chooser": "String Chooser",
+      "/SmartDashboard/Field": "Field2d",
       "/SmartDashboard/Run Elevator Sysid": "Command",
       "/SmartDashboard/Run Flywheel Sysid": "Command",
       "/SmartDashboard/Run Pivot Sysid": "Command",

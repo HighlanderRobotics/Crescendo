@@ -44,13 +44,15 @@ import frc.robot.subsystems.leds.LEDSubsystem;
 import frc.robot.subsystems.shooter.ShooterIOReal;
 import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
-import frc.robot.subsystems.swerve.GyroIO;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread;
+import frc.robot.subsystems.swerve.GyroIOSim;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
+import frc.robot.utils.mapleUtils.CompetitionFieldSimulation;
+import frc.robot.utils.mapleUtils.CompetitionFieldVisualizer;
+import frc.robot.utils.mapleUtils.Crescendo2024FieldSimulation;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -79,7 +81,7 @@ public class Robot extends LoggedRobot {
     }
   }
 
-  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  public static final RobotMode mode = Robot.isReal() ? RobotMode.REAL : RobotMode.SIM;
   public static final boolean USE_AUTO_AIM = true;
   public static final boolean USE_SOTM = false;
   private Command autonomousCommand;
@@ -109,16 +111,7 @@ public class Robot extends LoggedRobot {
 
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
-          mode == RobotMode.REAL
-              ? new GyroIOPigeon2()
-              : new GyroIO() {
-                // Blank implementation to mock gyro in sim
-                @Override
-                public void updateInputs(GyroIOInputs inputs) {}
-
-                @Override
-                public void setYaw(Rotation2d yaw) {}
-              },
+          mode == RobotMode.REAL ? new GyroIOPigeon2() : new GyroIOSim(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createRealCameras()
               : SwerveSubsystem.createSimCameras(),
@@ -134,6 +127,25 @@ public class Robot extends LoggedRobot {
   private final CarriageSubsystem carriage = new CarriageSubsystem(new CarriageIOReal());
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
+
+  private final CompetitionFieldVisualizer fieldVisualizer;
+  private CompetitionFieldSimulation fieldSim;
+
+  public Robot() {
+
+    if (mode == RobotMode.SIM) {
+      try {
+        fieldSim = new Crescendo2024FieldSimulation(swerve.createDriveSimulation());
+        fieldSim.placeGamePiecesOnField();
+      } catch (Exception e) {
+        System.out.println("Could not create swerve sim");
+      }
+    }
+    fieldVisualizer =
+        mode == RobotMode.REAL || fieldSim == null
+            ? new CompetitionFieldVisualizer(swerve::getPose)
+            : fieldSim.getCompetitionField();
+  }
 
   @Override
   public void robotInit() {
@@ -467,6 +479,11 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    if (mode == RobotMode.SIM) {
+      if (fieldSim != null) fieldSim.updateSimulationWorld();
+
+      fieldVisualizer.updateObjectsToDashboardAndTelemetry();
+    }
     // Update ascope mechanism visualization
     Logger.recordOutput(
         "Mechanism Poses",

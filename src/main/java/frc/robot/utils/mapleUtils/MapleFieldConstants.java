@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class FieldConstants {
+public class MapleFieldConstants {
   public static final double FIELD_WIDTH = 16.54;
   public static final double FIELD_HEIGHT = 8.21;
 
