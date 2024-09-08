@@ -87,7 +87,10 @@ public class Module {
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
-    return runSetpoint(state, (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / (Timer.getFPGATimestamp() - lastTime));
+    return runSetpoint(
+        state,
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond)
+            / (Timer.getFPGATimestamp() - lastTime));
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
@@ -101,8 +104,7 @@ public class Module {
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
         accel);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Accel Setpoint", io.getModuleName()),
-        accel);
+        String.format("Swerve/%s Module/Accel Setpoint", io.getModuleName()), accel);
     lastSetpoint = optimizedState;
     lastTime = Timer.getFPGATimestamp();
     return optimizedState;
