@@ -131,8 +131,7 @@ public class ModuleIOSim implements ModuleIO {
 
   public SwerveModuleState getDesiredSwerveState() {
     return new SwerveModuleState(
-        (driveAppliedVolts / 12.0) * SwerveSubsystem.MAX_LINEAR_SPEED,
-        getSimulationSteerFacing());
+        (driveAppliedVolts / 12.0) * SwerveSubsystem.MAX_LINEAR_SPEED, getSimulationSteerFacing());
   }
 
   /** this replaces DC Motor Sim for drive wheels from maple template */

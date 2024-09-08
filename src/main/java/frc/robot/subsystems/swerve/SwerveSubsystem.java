@@ -159,7 +159,11 @@ public class SwerveSubsystem extends SubsystemBase {
   public static AprilTagFieldLayout fieldTags;
 
   private SwerveDrivePoseEstimator estimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d(2.0, 2.0, Rotation2d.fromRotations(0.0)));
+      new SwerveDrivePoseEstimator(
+          kinematics,
+          rawGyroRotation,
+          lastModulePositions,
+          new Pose2d(2.0, 2.0, Rotation2d.fromRotations(0.0)));
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
@@ -378,10 +382,12 @@ public class SwerveSubsystem extends SubsystemBase {
     try {
       return new SwerveDriveSimulation(
           (GyroIOSim) gyroIO,
-          (ModuleIOSim[]) Arrays.stream(modules).map(m -> m.getSimIO()).toArray(),
+          Arrays.stream(modules).map(m -> m.getSimIO()).toArray(ModuleIOSim[]::new),
           getPose(),
           this::setPose);
     } catch (Exception e) {
+      System.out.println("Failed to create swerve sim");
+      System.out.println(e.getMessage());
       return null;
     }
   }

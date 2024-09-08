@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
 
 /**
  * stores the constants and PID configs for chassis because we want an all-real simulation for the
@@ -40,21 +41,7 @@ public class DriveTrainConstants {
   public static final double STEER_CURRENT_LIMIT = 20;
 
   /** translations of the modules to the robot center, in FL, FR, BL, BR */
-  public static final Translation2d[] MODULE_TRANSLATIONS =
-      new Translation2d[] {
-        new Translation2d(
-            Units.inchesToMeters(TunerConstants.kFrontLeftXPosInches),
-            Units.inchesToMeters(TunerConstants.kFrontLeftYPosInches)),
-        new Translation2d(
-            Units.inchesToMeters(TunerConstants.kFrontRightXPosInches),
-            Units.inchesToMeters(TunerConstants.kFrontRightYPosInches)),
-        new Translation2d(
-            Units.inchesToMeters(TunerConstants.kBackLeftXPosInches),
-            Units.inchesToMeters(TunerConstants.kBackLeftYPosInches)),
-        new Translation2d(
-            Units.inchesToMeters(TunerConstants.kBackRightXPosInches),
-            Units.inchesToMeters(TunerConstants.kBackRightYPosInches))
-      };
+  public static final Translation2d[] MODULE_TRANSLATIONS = SwerveSubsystem.getModuleTranslations();
 
   /* equations that calculates some constants for the simulator (don't modify) */
   private static final double GRAVITY_CONSTANT = 9.8;

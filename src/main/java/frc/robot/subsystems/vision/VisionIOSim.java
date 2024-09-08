@@ -8,6 +8,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
@@ -68,7 +69,7 @@ public class VisionIOSim implements VisionIO {
     sim.update(pose.get().toPose2d());
     inputs.timestamp = result.getTimestampSeconds();
     inputs.latency = result.getLatencyMillis();
-    inputs.targets = result.targets; // TODO aaaaaaa
+    inputs.targets = List.of(); // result.targets; // TODO aaaaaaa
     inputs.constants = constants;
   }
 

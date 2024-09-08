@@ -8,6 +8,7 @@ import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalID;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +21,7 @@ public interface OdometryThreadIO {
 
     @Override
     public void toLog(LogTable table) {
-      Set<Integer> modIds = Set.of();
+      Set<Integer> modIds = new HashSet();
       for (var sample : sampledStates) {
         for (var signal : sample.values().entrySet()) {
           table.put(

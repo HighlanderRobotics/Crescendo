@@ -139,6 +139,7 @@ public class Robot extends LoggedRobot {
         fieldSim.placeGamePiecesOnField();
       } catch (Exception e) {
         System.out.println("Could not create swerve sim");
+        System.out.println(e.getMessage());
       }
     }
     fieldVisualizer =
@@ -478,12 +479,19 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
-    CommandScheduler.getInstance().run();
     if (mode == RobotMode.SIM) {
-      if (fieldSim != null) fieldSim.updateSimulationWorld();
+      if (fieldSim != null) {
+        Logger.recordOutput("Updating Sim", true);
+        fieldSim.updateSimulationWorld();
+      } else {
+        Logger.recordOutput("Updating Sim", false);
+      }
 
       fieldVisualizer.updateObjectsToDashboardAndTelemetry();
+    } else {
+      Logger.recordOutput("Updating Sim", false);
     }
+    CommandScheduler.getInstance().run();
     // Update ascope mechanism visualization
     Logger.recordOutput(
         "Mechanism Poses",
