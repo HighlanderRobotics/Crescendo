@@ -490,22 +490,15 @@ public class Robot extends LoggedRobot {
                 swerve.getPose().getRotation().getDegrees(),
                 5.0)
             && MathUtil.isNear(
-                SwerveSubsystem.AutoAimStates.endingPose.getX(),
-                swerve.getPose().getX(),
-                0.2)
+                SwerveSubsystem.AutoAimStates.endingPose.getX(), swerve.getPose().getX(), 0.2)
             && MathUtil.isNear(
-                SwerveSubsystem.AutoAimStates.endingPose.getY(),
-                swerve.getPose().getY(),
-                0.2));
+                SwerveSubsystem.AutoAimStates.endingPose.getY(), swerve.getPose().getY(), 0.2));
 
-    Logger.recordOutput("AutoAim/RotationAtGoal?",
-     SwerveSubsystem.AutoAimStates.rotationAtGoal);
+    Logger.recordOutput("AutoAim/RotationAtGoal?", SwerveSubsystem.AutoAimStates.rotationAtGoal);
 
-    Logger.recordOutput("AutoAim/XAtGoal?", 
-    SwerveSubsystem.AutoAimStates.xAtGoal);
-    
-    Logger.recordOutput("AutoAim/YAtGoal?",
-    SwerveSubsystem.AutoAimStates.yAtGoal);
+    Logger.recordOutput("AutoAim/XAtGoal?", SwerveSubsystem.AutoAimStates.xAtGoal);
+
+    Logger.recordOutput("AutoAim/YAtGoal?", SwerveSubsystem.AutoAimStates.yAtGoal);
 
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
@@ -649,45 +642,53 @@ public class Robot extends LoggedRobot {
             SwerveSubsystem.AutoAimStates.endingPose,
             SwerveSubsystem.AutoAimStates.curShotSpeeds);
 
-    return Commands.race( Commands.race(
-        // dont feed until we've rotated to the right angle
-            feeder
-                .runVelocityCmd(0.0)
-                .until(
-                    () ->
-                        // shooter.isAtGoal() &&
-                        SwerveSubsystem.AutoAimStates.rotationAtGoal
-                            && SwerveSubsystem.AutoAimStates.xAtGoal
-                            && SwerveSubsystem.AutoAimStates.yAtGoal)
-                .andThen(Commands.sequence(Commands.runOnce(() -> {
-                    SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
-                    SwerveSubsystem.AutoAimStates.xAtGoal = false;
-                    SwerveSubsystem.AutoAimStates.yAtGoal = false;
-                }), Commands.waitSeconds(0.25))),
+    return Commands.race(
+            Commands.race(
+                // dont feed until we've rotated to the right angle
+                feeder
+                    .runVelocityCmd(0.0)
+                    .until(
+                        () ->
+                            // shooter.isAtGoal() &&
+                            SwerveSubsystem.AutoAimStates.rotationAtGoal
+                                && SwerveSubsystem.AutoAimStates.xAtGoal
+                                && SwerveSubsystem.AutoAimStates.yAtGoal)
+                    .andThen(
+                        Commands.sequence(
+                            Commands.runOnce(
+                                () -> {
+                                  SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
+                                  SwerveSubsystem.AutoAimStates.xAtGoal = false;
+                                  SwerveSubsystem.AutoAimStates.yAtGoal = false;
+                                }),
+                            Commands.waitSeconds(0.25))),
+                Commands.runOnce(
+                        () -> {
+                        //  System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
+                          if (!SwerveSubsystem.AutoAimStates.rotationAtGoal) {
+                            SwerveSubsystem.AutoAimStates.rotationAtGoal =
+                                MathUtil.isNear(
+                                    SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
+                                    rotationTolerance.getAsDouble());
+                          }
+                          if (!SwerveSubsystem.AutoAimStates.xAtGoal) {
+                            SwerveSubsystem.AutoAimStates.xAtGoal =
+                                MathUtil.isNear(
+                                    SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                                    swerve.getPose().getX(),
+                                    0.2);
+                          }
+                          if (!SwerveSubsystem.AutoAimStates.yAtGoal) {
+                            SwerveSubsystem.AutoAimStates.yAtGoal =
+                                MathUtil.isNear(
+                                    SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                                    swerve.getPose().getY(),
+                                    0.2);
+                          }
+                        })
+                    .repeatedly()),
 
-                Commands.runOnce(() -> {
-                    System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
-                    if(!SwerveSubsystem.AutoAimStates.rotationAtGoal){
-                        SwerveSubsystem.AutoAimStates.rotationAtGoal = MathUtil.isNear(
-                        SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
-                        swerve.getPose().getRotation().getDegrees(),
-                        rotationTolerance.getAsDouble());
-                    }
-                    if(!SwerveSubsystem.AutoAimStates.xAtGoal){
-                        SwerveSubsystem.AutoAimStates.xAtGoal = MathUtil.isNear(
-                        SwerveSubsystem.AutoAimStates.endingPose.getX(),
-                        swerve.getPose().getX(),
-                        0.2);
-                    }
-                    if(!SwerveSubsystem.AutoAimStates.yAtGoal){
-                        SwerveSubsystem.AutoAimStates.yAtGoal = MathUtil.isNear(
-                        SwerveSubsystem.AutoAimStates.endingPose.getY(),
-                        swerve.getPose().getY(),
-                        0.2);
-                    }
-                    
-                }).repeatedly()),
-            
             // auto aim to target
             swerve.teleopAimAtVirtualTargetCmd(
                 vxFieldRelative,
@@ -703,51 +704,70 @@ public class Robot extends LoggedRobot {
         .beforeStarting(
             // reset heading controller error before
             () -> {
-
-                SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
-                    SwerveSubsystem.AutoAimStates.xAtGoal = false;
-                    SwerveSubsystem.AutoAimStates.yAtGoal = false;
+              SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
+              SwerveSubsystem.AutoAimStates.xAtGoal = false;
+              SwerveSubsystem.AutoAimStates.yAtGoal = false;
 
               SwerveSubsystem.AutoAimStates.curShotSpeeds =
                   new ChassisSpeeds(
                       vxFieldRelative.getAsDouble(), vyFieldRelative.getAsDouble(), 0.0);
-               
+
               SwerveSubsystem.AutoAimStates.endingPose =
                   swerve.getLinearFuturePose(
                       SwerveSubsystem.AutoAimStates.lookaheadTime,
                       SwerveSubsystem.AutoAimStates.curShotSpeeds);
 
-              SwerveSubsystem.AutoAimStates.virtualTarget =
+              
+              if (DriverStation.getAlliance().isPresent()) {
+                if (DriverStation.getAlliance().get() == Alliance.Blue) {
+
+                  SwerveSubsystem.AutoAimStates.curShotSpeeds =
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
+                System.out.println("IMPORTANT" + SwerveSubsystem.AutoAimStates.curShotSpeeds);
+
+                SwerveSubsystem.AutoAimStates.virtualTarget =
                   AutoAim.getVirtualTarget(
                       SwerveSubsystem.AutoAimStates.endingPose,
                       SwerveSubsystem.AutoAimStates.curShotSpeeds);
-             if (DriverStation.getAlliance().isPresent()) {
-                    if(DriverStation.getAlliance().get() == Alliance.Blue){
+                  SwerveSubsystem.AutoAimStates.curShotSpeeds =
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
+                      
+                  SwerveSubsystem.AutoAimStates.rotationToTarget =
+                      swerve
+                          .getLinearFutureRotationToTranslation(
+                              SwerveSubsystem.AutoAimStates.virtualTarget,
+                              SwerveSubsystem.AutoAimStates.endingPose,
+                              SwerveSubsystem.AutoAimStates.curShotSpeeds)
+                          .plus(Rotation2d.fromRotations(0.0));
+                  SwerveSubsystem.AutoAimStates.endingPose =
+                      new Pose2d(
+                          SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                          SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                          SwerveSubsystem.AutoAimStates.rotationToTarget);
+                    
+                      System.out.println("IMPORANT IMPORTANT "+SwerveSubsystem.AutoAimStates.curShotSpeeds);
+                } else {
+                     SwerveSubsystem.AutoAimStates.virtualTarget =
+                  AutoAim.getVirtualTarget(
+                      SwerveSubsystem.AutoAimStates.endingPose,
+                      SwerveSubsystem.AutoAimStates.curShotSpeeds);
+                  SwerveSubsystem.AutoAimStates.rotationToTarget =
+                      swerve
+                          .getLinearFutureRotationToTranslation(
+                              SwerveSubsystem.AutoAimStates.virtualTarget,
+                              SwerveSubsystem.AutoAimStates.endingPose,
+                              SwerveSubsystem.AutoAimStates.curShotSpeeds)
+                          .plus(Rotation2d.fromRotations(0.0));
+                  SwerveSubsystem.AutoAimStates.endingPose =
+                      new Pose2d(
+                          SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                          SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                          SwerveSubsystem.AutoAimStates.rotationToTarget);
+                   
+                }
+              }
 
-                        SwerveSubsystem.AutoAimStates.curShotSpeeds = SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
-                        SwerveSubsystem.AutoAimStates.rotationToTarget =
-                  swerve
-                      .getLinearFutureRotationToTranslation(
-                          SwerveSubsystem.AutoAimStates.virtualTarget,
-                          SwerveSubsystem.AutoAimStates.endingPose,
-                          SwerveSubsystem.AutoAimStates.curShotSpeeds)
-                      .plus(Rotation2d.fromRotations(0.0));
-                SwerveSubsystem.AutoAimStates.endingPose = new Pose2d(SwerveSubsystem.AutoAimStates.endingPose.getX(), SwerveSubsystem.AutoAimStates.endingPose.getY(), SwerveSubsystem.AutoAimStates.rotationToTarget);
-              SwerveSubsystem.AutoAimStates.curShotSpeeds = SwerveSubsystem.AutoAimStates.curShotSpeeds.times(-1.0);
-                    } else {
-                        SwerveSubsystem.AutoAimStates.rotationToTarget =
-                  swerve
-                      .getLinearFutureRotationToTranslation(
-                          SwerveSubsystem.AutoAimStates.virtualTarget,
-                          SwerveSubsystem.AutoAimStates.endingPose,
-                          SwerveSubsystem.AutoAimStates.curShotSpeeds)
-                      .plus(Rotation2d.fromRotations(0.0));
-                SwerveSubsystem.AutoAimStates.endingPose = new Pose2d(SwerveSubsystem.AutoAimStates.endingPose.getX(), SwerveSubsystem.AutoAimStates.endingPose.getY(), SwerveSubsystem.AutoAimStates.rotationToTarget);
-              
-                    }
-                    }
-              
-                System.out.println(
+              System.out.println(
                   "VERY IMPORTANT VERY IMPORTANT VERY IMPORTVERY ANT IMPORTANTIMPORVERY TANT VERY IMPORTANT IVERY MPORTANT IVERY MPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
                       + SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians()
                       + "/"

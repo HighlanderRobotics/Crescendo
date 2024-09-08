@@ -110,7 +110,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public static TrapezoidProfile.State xState = new TrapezoidProfile.State();
     public static TrapezoidProfile.State yState = new TrapezoidProfile.State();
-  
+
     public static boolean rotationAtGoal = false;
     public static boolean xAtGoal = false;
     public static boolean yAtGoal = false;
