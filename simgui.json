@@ -36,7 +36,39 @@
             "open": true
           },
           "open": true
+        }
+      },
+      "Tracer": {
+        "Robot": {
+          "LoopFunc": {
+            "RobotPeriodic": {
+              "CommandScheduler": {
+                "SwervePeriodic": {
+                  "open": true
+                },
+                "open": true
+              },
+              "open": true
+            },
+            "open": true
+          },
+          "RobotPeriodic": {
+            "CommandScheduler": {
+              "SwervePeriodic": {
+                "open": true
+              },
+              "open": true
+            },
+            "open": true
+          },
+          "open": true
         },
+        "VisionPeriodic": {
+          "open": true
+        },
+        "open": true
+      },
+      "photonvision": {
         "open": true
       }
     }
@@ -53,9 +85,19 @@
     "Clients": {
       "open": true
     },
+    "Connections": {
+      "open": true
+    },
+    "Server": {
+      "open": true
+    },
     "visible": true
   },
-  "NetworkTables View": {
-    "visible": false
+  "Plot": {
+    "Plot <0>": {
+      "window": {
+        "visible": false
+      }
+    }
   }
 }

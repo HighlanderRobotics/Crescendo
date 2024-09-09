@@ -80,6 +80,7 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.io.File;
@@ -347,6 +348,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void periodic() {
+    Tracer.startTrace("SwervePeriodic");
     for (var camera : cameras) {
       camera.updateInputs();
       camera.processInputs();
@@ -361,8 +363,11 @@ public class SwerveSubsystem extends SubsystemBase {
       module.updateInputs(odometrySamples);
     }
     Logger.processInputs("Swerve/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
+    // for (var module : modules) {
+    //   module.periodic();
+    // }
+    for (int i = 0; i < modules.length; i++) {
+      Tracer.traceFunc("SwerveModule[" + i + "]", modules[i]::periodic);
     }
 
     // Stop moving when disabled
@@ -383,12 +388,14 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
     Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
-    updateOdometry();
+    // updateOdometry();
+    Tracer.traceFunc("Update odometry", () -> updateOdometry());
     updateVision();
 
     Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
     Logger.recordOutput(
         "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+    Tracer.endTrace();
   }
 
   private void updateOdometry() {
