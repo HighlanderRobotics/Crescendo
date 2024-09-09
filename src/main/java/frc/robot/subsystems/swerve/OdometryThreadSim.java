@@ -34,7 +34,7 @@ public final class OdometryThreadSim implements OdometryThreadIO {
               modules[id].driveSimResults.odometryDriveWheelRevolutions[i]
                   * 2
                   * Math.PI
-                  * Module.WHEEL_RADIUS);
+                  * Module.WHEEL_RADIUS_METERS);
           values.put(
               new SignalID(SignalType.STEER, (int) id),
               modules[id].driveSimResults.odometrySteerPositions[i].getRotations());

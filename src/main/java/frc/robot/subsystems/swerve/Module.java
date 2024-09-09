@@ -27,7 +27,7 @@ public class Module {
       int id, String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
 
   // Global constants
-  public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
+  public static final double WHEEL_RADIUS_METERS = Units.inchesToMeters(2.0);
   public static final double ODOMETRY_FREQUENCY_HZ = 250.0;
 
   // Gear ratios for SDS MK4i L3.5, adjust as necessary
@@ -35,7 +35,7 @@ public class Module {
   // They are the gear tooth counts for each stage of the modules' gearboxes
   public static final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (16.0 / 28.0) * (45.0 / 15.0);
   public static final double DRIVE_ROTOR_TO_METERS =
-      (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
+      (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS_METERS * 2 * Math.PI));
   public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;

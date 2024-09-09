@@ -4,41 +4,32 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
+import frc.robot.subsystems.swerve.Module;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 
 /**
- * stores the constants and PID configs for chassis because we want an all-real simulation for the
+ * stores the constants and PID configs for chassis. because we want an all-real simulation for the
  * chassis, the numbers are required to be considerably precise
+ *
+ * <p>Some of these configs are duplicates of ones in Module.java and SwerveSubsystem.java, but
+ * there should be a single source of truth for all of them
  */
 public class DriveTrainConstants {
-  /**
-   * numbers that needs to be changed to fit each robot TODO: change these numbers to match your
-   * robot
-   */
-  public static final double WHEEL_COEFFICIENT_OF_FRICTION = 0.95,
-      ROBOT_MASS_KG = 40; // with bumpers
-
-  /** TODO: change motor type to match your robot */
-  public static final DCMotor DRIVE_MOTOR = DCMotor.getKrakenX60(1),
-      STEER_MOTOR = DCMotor.getFalcon500(1);
-
-  /**
-   * numbers imported from {@link TunerConstants} TODO: for REV chassis, replace them with actual
-   * numbers
-   */
-  public static final double
-      WHEEL_RADIUS_METERS = Units.inchesToMeters(TunerConstants.kWheelRadiusInches),
-      DRIVE_GEAR_RATIO = TunerConstants.kDriveGearRatio,
-      STEER_GEAR_RATIO = TunerConstants.kSteerGearRatio,
+  public static final double WHEEL_COEFFICIENT_OF_FRICTION = 1.4,
+      ROBOT_MASS_KG = 65; // with battery + bumpers
+  public static final DCMotor DRIVE_MOTOR = DCMotor.getKrakenX60Foc(1),
+      STEER_MOTOR = DCMotor.getKrakenX60Foc(1);
+  public static final double WHEEL_RADIUS_METERS = Module.WHEEL_RADIUS_METERS,
+      DRIVE_GEAR_RATIO = Module.DRIVE_GEAR_RATIO,
+      STEER_GEAR_RATIO = Module.TURN_GEAR_RATIO,
       TIME_ROBOT_STOP_ROTATING_SECONDS = 0.06,
-      STEER_FRICTION_VOLTAGE = TunerConstants.kSteerFrictionVoltage,
-      DRIVE_FRICTION_VOLTAGE = TunerConstants.kDriveFrictionVoltage,
+      STEER_FRICTION_VOLTAGE = 0.28,
+      DRIVE_FRICTION_VOLTAGE = 0.04,
       DRIVE_INERTIA = 0.01,
       STEER_INERTIA = 0.01;
 
-  /* adjust current limit */
-  public static final double DRIVE_CURRENT_LIMIT = 60;
-  public static final double STEER_CURRENT_LIMIT = 20;
+  public static final double DRIVE_CURRENT_LIMIT = 120;
+  public static final double STEER_CURRENT_LIMIT = Module.TURN_STATOR_CURRENT_LIMIT;
 
   /** translations of the modules to the robot center, in FL, FR, BL, BR */
   public static final Translation2d[] MODULE_TRANSLATIONS = SwerveSubsystem.getModuleTranslations();
@@ -72,8 +63,8 @@ public class DriveTrainConstants {
       new SwerveDriveKinematics(MODULE_TRANSLATIONS);
 
   /* for collision detection in simulation */
-  public static final double BUMPER_WIDTH_METERS = Units.inchesToMeters(34.5),
-      BUMPER_LENGTH_METERS = Units.inchesToMeters(36),
+  public static final double BUMPER_WIDTH_METERS = Units.inchesToMeters(35.3),
+      BUMPER_LENGTH_METERS = Units.inchesToMeters(39.8),
       /* https://en.wikipedia.org/wiki/Friction#Coefficient_of_friction */
       BUMPER_COEFFICIENT_OF_FRICTION = 0.75,
       /* https://simple.wikipedia.org/wiki/Coefficient_of_restitution */

@@ -63,9 +63,9 @@ public class ModuleIOSim implements ModuleIO {
     inputs.prefix = constants.prefix();
 
     inputs.drivePositionMeters =
-        driveSimResults.driveWheelFinalRevolutions * 2 * Math.PI * Module.WHEEL_RADIUS;
+        driveSimResults.driveWheelFinalRevolutions * 2 * Math.PI * Module.WHEEL_RADIUS_METERS;
     inputs.driveVelocityMetersPerSec =
-        driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS;
+        driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS_METERS;
     inputs.driveAppliedVolts = driveAppliedVolts;
     inputs.driveCurrentAmps =
         new double[] {Math.abs(getSimulationTorque() / DRIVE_MOTOR.KtNMPerAmp)};
@@ -97,7 +97,7 @@ public class ModuleIOSim implements ModuleIO {
   public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
     setDriveVoltage(
         driveController.calculate(
-                driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS,
+                driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS_METERS,
                 metersPerSecond)
             + driveFeedforward.calculate(metersPerSecond, metersPerSecondSquared));
   }
@@ -125,7 +125,7 @@ public class ModuleIOSim implements ModuleIO {
 
   public SwerveModuleState getSimulationSwerveState() {
     return new SwerveModuleState(
-        driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS,
+        driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS_METERS,
         getSimulationSteerFacing());
   }
 

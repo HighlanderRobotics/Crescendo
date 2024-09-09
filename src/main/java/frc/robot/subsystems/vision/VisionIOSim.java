@@ -8,7 +8,6 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
