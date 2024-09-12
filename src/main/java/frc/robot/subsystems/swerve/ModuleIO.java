@@ -19,8 +19,6 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
-    // public ModuleConstants constants =
-    //     new ModuleConstants(-1, "", 0, 0, 0, Rotation2d.fromRotations(0));
     public String prefix = "";
 
     public double drivePositionMeters = 0.0;
