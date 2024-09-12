@@ -27,7 +27,7 @@ public interface OdometryThreadIO {
         var sample = sampledStates.get(i);
         for (var signal : sample.values().entrySet()) {
           table.put(
-              i + " " + signal.getKey().type().toString() + " " + signal.getKey().modID(),
+              "Data/" + i + " " + signal.getKey().type().toString() + " " + signal.getKey().modID(),
               signal.getValue());
           modIds.add(signal.getKey().modID());
         }
@@ -50,15 +50,15 @@ public interface OdometryThreadIO {
           for (var id : modIds) {
             values.put(
                 new SignalID(SignalType.DRIVE, (int) id),
-                table.get(i + " " + SignalType.DRIVE + " " + id).getDouble());
+                table.get("Data/" + i + " " + SignalType.DRIVE + " " + id).getDouble());
             values.put(
                 new SignalID(SignalType.STEER, (int) id),
-                table.get(i + " " + SignalType.STEER + " " + id).getDouble());
+                table.get("Data/" + i + " " + SignalType.STEER + " " + id).getDouble());
           }
           try {
             values.put(
                 new SignalID(SignalType.GYRO, (int) -1),
-                table.get(i + " " + SignalType.GYRO + " " + -1).getDouble());
+                table.get("Data/" + i + " " + SignalType.GYRO + " " + -1).getDouble());
           } catch (NullPointerException e) {
             // We don't have a gyro this loop ig
           }
