@@ -22,6 +22,7 @@ import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
       new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
 
   private final Set<RegisteredSignal> registeredSignals = Sets.newHashSet();
-  private final Set<StatusSignal<Double>> signalSet = Sets.newHashSet();
+  private StatusSignal<Double>[] signalArr = new StatusSignal[0];
   private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
@@ -119,7 +120,12 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
                         new RegisteredSignal(
                             s, registration.moduleConstants(), registration.type()))
                 .toList());
-        signalSet.addAll(registration.signals.stream().toList());
+        registration.signals.stream()
+            .forEach(
+                (s) -> {
+                  signalArr = Arrays.copyOf(signalArr, signalArr.length + 1);
+                  signalArr[signalArr.length - 1] = s;
+                });
       }
     } finally {
       writeLock.unlock();
@@ -145,10 +151,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     while (true) {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
-      // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
-      // but keeping up a symmetric array is too and it's probably negligible on latency.
-      BaseStatusSignal.waitForAll(
-          2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalSet.toArray(new BaseStatusSignal[0]));
+      BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalArr);
       try {
         writeLock.lock();
         var filteredSignals =
