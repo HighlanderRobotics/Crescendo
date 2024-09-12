@@ -240,6 +240,7 @@ public class SwerveSubsystem extends SubsystemBase {
       GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs, OdometryThreadIO odoThread) {
     this.gyroIO = gyroIO;
     this.odoThread = odoThread;
+    odoThread.start();
     cameras = new Vision[visionIOs.length];
     new AutoAim();
     modules = new Module[moduleIOs.length];
