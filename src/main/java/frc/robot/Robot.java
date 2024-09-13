@@ -649,15 +649,16 @@ public class Robot extends LoggedRobot {
                     .runVelocityCmd(0.0)
                     .until(
                         () ->
-                            shooter.isAtGoal() &&
+                            //  shooter.isAtGoal() &&
                             SwerveSubsystem.AutoAimStates.rotationAtGoal
                                 && SwerveSubsystem.AutoAimStates.xAtGoal
                                 && SwerveSubsystem.AutoAimStates.yAtGoal)
-                    .andThen(feeder
-                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                        .raceWith(
-                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                .andThen(Commands.waitSeconds(0.25))),
+                    .andThen(
+                        // feeder
+                        // .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
+                        // .raceWith(
+                        //     Commands.waitUntil(() -> !feeder.getFirstBeambreak())
+                        //         .andThen(Commands.waitSeconds(0.25))),
                         Commands.sequence(
                             Commands.runOnce(
                                 () -> {
