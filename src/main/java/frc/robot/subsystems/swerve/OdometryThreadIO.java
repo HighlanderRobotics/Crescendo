@@ -16,6 +16,7 @@ import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public interface OdometryThreadIO {
+  public static final int GYRO_MODULE_ID = -1;
   public class OdometryThreadIOInputs implements LoggableInputs {
     List<Samples> sampledStates = List.of();
 
@@ -58,7 +59,7 @@ public interface OdometryThreadIO {
           try {
             values.put(
                 new SignalID(SignalType.GYRO, (int) -1),
-                table.get("Data/" + i + " " + SignalType.GYRO + " " + -1).getDouble());
+                table.get("Data/" + i + " " + SignalType.GYRO + " " + GYRO_MODULE_ID).getDouble());
           } catch (NullPointerException e) {
             // We don't have a gyro this loop ig
           }

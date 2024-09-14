@@ -48,19 +48,17 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceReturnsAfterTimestamp() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID(SignalType.GYRO, -1), 42.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID), 42.0);
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));
     var samples = thread.samplesSince(0);
-    System.out.println(samples);
-    System.out.println(sample);
     Assertions.assertEquals(ImmutableList.of(sample), samples);
   }
 
   @Test
   void samplesSinceIgnoresBeforeTimestamp() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID(SignalType.GYRO, -1), 42.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID), 42.0);
     var sample = new Samples(10, sampleValue);
 
     var thread =
@@ -71,7 +69,7 @@ public class PhoenixOdometryThreadTest {
 
   @Test
   void samplesSinceIgnoresWhenTimestampEqual() {
-    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID(SignalType.GYRO, -1), 42.0);
+    Map<SignalID, Double> sampleValue = ImmutableMap.of(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID), 42.0);
     var sample = new Samples(10, sampleValue);
     var thread =
         PhoenixOdometryThread.createWithJournal(Queues.newArrayDeque(ImmutableList.of(sample)));

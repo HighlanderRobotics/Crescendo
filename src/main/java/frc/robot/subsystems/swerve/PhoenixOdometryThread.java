@@ -20,7 +20,6 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,6 +50,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     // But we don't!
   }
 
+  /** modID should be GYRO_MODULE_ID for the gyro signal */
   public record SignalID(SignalType type, int modID) {}
 
   public record Registration(
@@ -59,16 +59,12 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
       SignalType type,
       Set<StatusSignal<Double>> signals) {}
 
-  public record RegisteredSignal(
-      StatusSignal<Double> signal, Optional<ModuleConstants> moduleConstants, SignalType type) {}
+  /** modID should be GYRO_MODULE_ID for the gyro signal */
+  public record RegisteredSignal(StatusSignal<Double> signal, int modID, SignalType type) {}
 
   public record Samples(double timestamp, Map<SignalID, Double> values) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
-
-  // For gyros
-  private static final ModuleConstants NEGATIVE_ONE =
-      new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
 
   private final Set<RegisteredSignal> registeredSignals = Sets.newHashSet();
   private StatusSignal<Double>[] signalArr = new StatusSignal[0];
@@ -118,7 +114,11 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
                 .map(
                     s ->
                         new RegisteredSignal(
-                            s, registration.moduleConstants(), registration.type()))
+                            s,
+                            registration.moduleConstants().isPresent()
+                                ? registration.moduleConstants().get().id()
+                                : GYRO_MODULE_ID,
+                            registration.type()))
                 .toList());
         registration.signals.stream()
             .forEach(
@@ -164,9 +164,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
                 filteredSignals.stream()
                     .collect(
                         Collectors.toUnmodifiableMap(
-                            s ->
-                                new SignalID(
-                                    s.type(), s.moduleConstants().orElse(NEGATIVE_ONE).id()),
+                            s -> new SignalID(s.type(), s.modID()),
                             s -> s.signal().getValueAsDouble()))));
       } finally {
         writeLock.unlock();
