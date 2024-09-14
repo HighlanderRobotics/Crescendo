@@ -424,23 +424,31 @@ public class SwerveSubsystem extends SubsystemBase {
       boolean hasNullModulePosition = false;
       // Technically we could have not 4 modules worth of data here but im not dealing w that
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        try {
-          modulePositions[moduleIndex] =
-              new SwerveModulePosition(
-                  sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex)),
-                  Rotation2d.fromRotations(
-                      sample
-                          .values()
-                          .get(
-                              new SignalID(
-                                  SignalType.STEER,
-                                  moduleIndex)))); // gets positions from the thread, NOT inputs
-        } catch (NullPointerException e) {
+        var dist = sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex));
+        if (dist == null) {
+          // No value at this timestamp 
           hasNullModulePosition = true;
 
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
         }
+        var rot = sample
+                        .values()
+                        .get(
+                            new SignalID(
+                                SignalType.STEER,
+                                moduleIndex));
+        if (rot == null) {
+          // No value at this timestamp 
+          hasNullModulePosition = true;
+
+          Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
+          break;
+        }
+        modulePositions[moduleIndex] =
+            new SwerveModulePosition(
+                dist,
+                Rotation2d.fromRotations(rot)); // gets positions from the thread, NOT inputs
         Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, true);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
