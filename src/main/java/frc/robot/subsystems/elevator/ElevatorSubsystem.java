@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.utils.Tracer;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -75,6 +76,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    Tracer.startTrace("ElevatorPeriodic");
     io.updateInputs(inputs);
     Logger.processInputs("Elevator", inputs);
 
@@ -82,6 +84,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     Logger.recordOutput("Elevator/Mechanism2d", mech2d);
 
     Logger.recordOutput("Elevator/Carriage Pose", getCarriagePose());
+    Tracer.endTrace();
   }
 
   public Command setExtensionCmd(DoubleSupplier meters) {

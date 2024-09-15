@@ -20,6 +20,7 @@ import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import frc.robot.utils.Tracer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   private PhoenixOdometryThread() {
-    this(EvictingQueue.create(20));
+    this(EvictingQueue.create(5));
   }
 
   public void registerSignals(Collection<Registration> registrations) {
@@ -95,24 +96,30 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
+    Tracer.startTrace("samples since");
     var readLock = journalLock.readLock();
     try {
       readLock.lock();
 
-      return journal.stream()
-          .filter(s -> s.timestamp > timestamp)
-          .map(
-              s -> {
-                var filteredValues =
-                    s.values.entrySet().stream()
-                        .filter(e -> signals.contains(e.getKey()))
-                        .collect(
-                            Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-                return new Samples(s.timestamp, filteredValues);
-              })
-          .collect(Collectors.toUnmodifiableList());
+      return Tracer.traceFunc(
+          "stream timestamps",
+          () ->
+              journal.stream()
+                  .filter(s -> s.timestamp > timestamp)
+                  .map(
+                      s -> {
+                        var filteredValues = Tracer.traceFunc("filter", () ->
+                            s.values.entrySet().stream()
+                                .filter(e -> Tracer.traceFunc("filter x2", ()-> signals.contains(e.getKey())))
+                                .collect(
+                                    Collectors.toUnmodifiableMap(
+                                        Map.Entry::getKey, Map.Entry::getValue)));
+                        return new Samples(s.timestamp, filteredValues);
+                      })
+                  .collect(Collectors.toUnmodifiableList()));
     } finally {
       readLock.unlock();
+      Tracer.endTrace();
     }
   }
 
@@ -127,9 +134,9 @@ public class PhoenixOdometryThread extends Thread {
       var writeLock = journalLock.writeLock();
       // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
       // but keeping up a symmetric array is too and it's probably negligible on latency.
-      var status =
+      var status = Tracer.jankTraceFunc("wait for all", () ->
           BaseStatusSignal.waitForAll(
-              2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
+              2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0])));
       try {
         writeLock.lock();
         if (status.isOK()) {

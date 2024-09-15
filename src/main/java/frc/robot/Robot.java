@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
@@ -159,7 +158,7 @@ public class Robot extends LoggedRobot {
     switch (mode) {
       case REAL:
         Logger.addDataReceiver(new WPILOGWriter("/U")); // Log to a USB stick
-        // Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+        Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
         new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
         break;
       case REPLAY:
@@ -404,15 +403,16 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Line Test Repeatedly", lineTest());
 
     // Dashboard command buttons
-    SmartDashboard.putData("Shooter shoot", shootWithDashboard());
-    SmartDashboard.putData("Run Swerve Azimuth Sysid", swerve.runModuleSteerCharacterizationCmd());
-    SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
-    SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
-    SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
-    SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
-    SmartDashboard.putData(
-        "manual zero shooter",
-        shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
+    // SmartDashboard.putData("Shooter shoot", shootWithDashboard());
+    // SmartDashboard.putData("Run Swerve Azimuth Sysid",
+    // swerve.runModuleSteerCharacterizationCmd());
+    // SmartDashboard.putData("Run Swerve Drive Sysid", swerve.runDriveCharacterizationCmd());
+    // SmartDashboard.putData("Run Elevator Sysid", elevator.runSysidCmd());
+    // SmartDashboard.putData("Run Pivot Sysid", shooter.runPivotSysidCmd());
+    // SmartDashboard.putData("Run Flywheel Sysid", shooter.runFlywheelSysidCmd());
+    // SmartDashboard.putData(
+    //     "manual zero shooter",
+    //     shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
   }
 
   @Override

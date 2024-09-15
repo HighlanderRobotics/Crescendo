@@ -350,24 +350,33 @@ public class SwerveSubsystem extends SubsystemBase {
   public void periodic() {
     Tracer.startTrace("SwervePeriodic");
     for (var camera : cameras) {
-      camera.updateInputs();
-      camera.processInputs();
+      Tracer.traceFunc("Update cam inputs", camera::updateInputs);
+      Tracer.traceFunc("Process cam inputs", camera::processInputs);
     }
     var odometrySamples =
-        PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp);
+        Tracer.traceFunc(
+            "Get samples",
+            () -> PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp));
     if (!odometrySamples.isEmpty()) {
-      lastOdometryUpdateTimestamp = odometrySamples.get(odometrySamples.size() - 1).timestamp();
+      lastOdometryUpdateTimestamp =
+          Tracer.traceFunc(
+              "get samples x2", () -> odometrySamples.get(odometrySamples.size() - 1).timestamp());
     }
-    gyroIO.updateInputs(gyroInputs, odometrySamples);
-    for (var module : modules) {
-      module.updateInputs(odometrySamples);
+    Tracer.traceFunc("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs, odometrySamples));
+    // for (var module : modules) {
+    //   module.updateInputs(odometrySamples);
+    // }
+    for (int i = 0; i < modules.length; i++) {
+      int index = i;
+      Tracer.traceFunc(
+          "SwerveModule inputs[" + i + "]", () -> modules[index].updateInputs(odometrySamples));
     }
-    Logger.processInputs("Swerve/Gyro", gyroInputs);
+    Tracer.traceFunc("process gyroinputs", () -> Logger.processInputs("Swerve/Gyro", gyroInputs));
     // for (var module : modules) {
     //   module.periodic();
     // }
     for (int i = 0; i < modules.length; i++) {
-      Tracer.traceFunc("SwerveModule[" + i + "]", modules[i]::periodic);
+      Tracer.traceFunc("SwerveModule periodic[" + i + "]", modules[i]::periodic);
     }
 
     // Stop moving when disabled
@@ -382,19 +391,19 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
-    Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
-    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
-    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
-    Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
+    Tracer.traceFunc("Log angle", () -> Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation()));
+    Tracer.traceFunc("Log left rpm", () -> Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS()));
+    Tracer.traceFunc("Log right rpm", () -> Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS()));
+    Tracer.traceFunc("Log flight time", () -> Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds()));
+    Tracer.traceFunc("Log lookahead", () -> Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime));
 
     // updateOdometry();
     Tracer.traceFunc("Update odometry", () -> updateOdometry());
-    updateVision();
+    Tracer.traceFunc("update vision", () -> updateVision());
 
-    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
-    Logger.recordOutput(
-        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+    Tracer.traceFunc("Log pose", () -> Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition()));
+    Tracer.traceFunc("Log pose deviation", () -> Logger.recordOutput(
+        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose)));
     Tracer.endTrace();
   }
 

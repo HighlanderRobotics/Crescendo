@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.utils.Tracer;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -77,12 +78,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    Tracer.startTrace("ShooterPeriodic");
     io.updateInputs(inputs);
     Logger.processInputs("Shooter", inputs);
 
     shooterLig.setAngle(inputs.pivotRotation.unaryMinus().minus(Rotation2d.fromDegrees(180.0)));
     Logger.recordOutput("Shooter/Mechanism2d", mech2d);
     Logger.recordOutput("Shooter/Root Pose", getMechanismPose());
+    Tracer.endTrace();
   }
 
   public Pose3d getMechanismPose() {
