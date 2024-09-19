@@ -17,6 +17,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public interface OdometryThreadIO {
   public static final int GYRO_MODULE_ID = -1;
+
   public class OdometryThreadIOInputs implements LoggableInputs {
     List<Samples> sampledStates = List.of();
 

@@ -426,20 +426,15 @@ public class SwerveSubsystem extends SubsystemBase {
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         var dist = sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex));
         if (dist == null) {
-          // No value at this timestamp 
+          // No value at this timestamp
           hasNullModulePosition = true;
 
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
         }
-        var rot = sample
-                        .values()
-                        .get(
-                            new SignalID(
-                                SignalType.STEER,
-                                moduleIndex));
+        var rot = sample.values().get(new SignalID(SignalType.STEER, moduleIndex));
         if (rot == null) {
-          // No value at this timestamp 
+          // No value at this timestamp
           hasNullModulePosition = true;
 
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
@@ -447,8 +442,7 @@ public class SwerveSubsystem extends SubsystemBase {
         }
         modulePositions[moduleIndex] =
             new SwerveModulePosition(
-                dist,
-                Rotation2d.fromRotations(rot)); // gets positions from the thread, NOT inputs
+                dist, Rotation2d.fromRotations(rot)); // gets positions from the thread, NOT inputs
         Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, true);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
@@ -459,7 +453,8 @@ public class SwerveSubsystem extends SubsystemBase {
       }
       if (hasNullModulePosition) {
         if (!gyroInputs.connected
-            || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID)) == null) {
+            || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
+                == null) {
           Logger.recordOutput("Odometry/Received Gyro Update", false);
           // no modules and no gyro so we're just sad :(
         } else {
@@ -478,14 +473,19 @@ public class SwerveSubsystem extends SubsystemBase {
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-      if (!gyroInputs.connected || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID)) == null) {
+      if (!gyroInputs.connected
+          || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
+              == null) {
         Logger.recordOutput("Odometry/Received Gyro Update", false);
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
         Logger.recordOutput("Odometry/Received Gyro Update", true);
         rawGyroRotation =
-            Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID)));
+            Rotation2d.fromDegrees(
+                sample
+                    .values()
+                    .get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID)));
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
       }
@@ -803,7 +803,8 @@ public class SwerveSubsystem extends SubsystemBase {
     try {
       estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
     } catch (Exception e) {
-      System.out.println("odo reset sad :( (this is likely because we havent had an odometry update yet or are having odo issues)");
+      System.out.println(
+          "odo reset sad :( (this is likely because we havent had an odometry update yet or are having odo issues)");
       System.out.println(e.getMessage());
     }
   }
