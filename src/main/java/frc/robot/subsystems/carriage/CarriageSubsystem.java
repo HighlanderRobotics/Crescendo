@@ -7,8 +7,6 @@ package frc.robot.subsystems.carriage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.utils.Tracer;
-import org.littletonrobotics.junction.Logger;
 
 /** Drainpipe style amp/trap mechanism on the elevator */
 public class CarriageSubsystem extends SubsystemBase {
@@ -24,10 +22,7 @@ public class CarriageSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    Tracer.startTrace("CarriagePeriodic");
     io.updateInputs(inputs);
-    Logger.processInputs("Carriage", inputs);
-    Tracer.endTrace();
   }
 
   /** Run the carriage roller at the specified voltage */

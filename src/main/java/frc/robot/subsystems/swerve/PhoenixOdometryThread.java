@@ -108,12 +108,12 @@ public class PhoenixOdometryThread extends Thread {
                   .filter(s -> s.timestamp > timestamp)
                   .map(
                       s -> {
-                        var filteredValues = Tracer.traceFunc("filter", () ->
+                        var filteredValues =
                             s.values.entrySet().stream()
-                                .filter(e -> Tracer.traceFunc("filter x2", ()-> signals.contains(e.getKey())))
+                                .filter(e -> signals.contains(e.getKey()))
                                 .collect(
                                     Collectors.toUnmodifiableMap(
-                                        Map.Entry::getKey, Map.Entry::getValue)));
+                                        Map.Entry::getKey, Map.Entry::getValue));
                         return new Samples(s.timestamp, filteredValues);
                       })
                   .collect(Collectors.toUnmodifiableList()));
@@ -134,9 +134,15 @@ public class PhoenixOdometryThread extends Thread {
       var writeLock = journalLock.writeLock();
       // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
       // but keeping up a symmetric array is too and it's probably negligible on latency.
-      var status = Tracer.jankTraceFunc("wait for all", () ->
-          BaseStatusSignal.waitForAll(
-              2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0])));
+      var status =
+          Tracer.traceFunc(
+              "wait for all",
+              () ->
+                  BaseStatusSignal.waitForAll(
+                      2.0 / Module.ODOMETRY_FREQUENCY_HZ,
+                      signals.toArray(new BaseStatusSignal[0]))
+                      )
+                      ;
       try {
         writeLock.lock();
         if (status.isOK()) {

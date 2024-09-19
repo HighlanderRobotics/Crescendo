@@ -391,19 +391,24 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
-    Tracer.traceFunc("Log angle", () -> Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation()));
-    Tracer.traceFunc("Log left rpm", () -> Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS()));
-    Tracer.traceFunc("Log right rpm", () -> Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS()));
-    Tracer.traceFunc("Log flight time", () -> Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds()));
-    Tracer.traceFunc("Log lookahead", () -> Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime));
+    Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
+    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
+    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
+    Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
+    Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
     // updateOdometry();
     Tracer.traceFunc("Update odometry", () -> updateOdometry());
     Tracer.traceFunc("update vision", () -> updateVision());
 
-    Tracer.traceFunc("Log pose", () -> Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition()));
-    Tracer.traceFunc("Log pose deviation", () -> Logger.recordOutput(
-        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose)));
+    Tracer.traceFunc(
+        "Log pose",
+        () -> Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition()));
+    Tracer.traceFunc(
+        "Log pose deviation",
+        () ->
+            Logger.recordOutput(
+                "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose)));
     Tracer.endTrace();
   }
 

@@ -6,7 +6,6 @@ package frc.robot.subsystems.feeder;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.utils.Tracer;
 import org.littletonrobotics.junction.Logger;
 
 /** Feeder motor for shooter and associated beambreaks for indexing */
@@ -24,10 +23,8 @@ public class FeederSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    Tracer.startTrace("FeederPeriodic");
     io.updateInputs(inputs);
     Logger.processInputs("Feeder", inputs);
-    Tracer.endTrace();
   }
 
   /** Run the feeder at a set voltage */

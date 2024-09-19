@@ -6,7 +6,6 @@ package frc.robot.subsystems.intake;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.utils.Tracer;
 import org.littletonrobotics.junction.Logger;
 
 /** 95 style utb intake */
@@ -21,10 +20,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    Tracer.startTrace("IntakePeriodic");
     io.updateInputs(inputs);
     Logger.processInputs("Intake", inputs);
-    Tracer.endTrace();
   }
 
   /** Run the intake and centering motors at the specified voltage */
