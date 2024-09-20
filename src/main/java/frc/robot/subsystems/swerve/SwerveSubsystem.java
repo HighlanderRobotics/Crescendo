@@ -366,7 +366,10 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return The array of vision IOs.
    */
   public static VisionIO[] createRealCameras() {
-    return new VisionIO[] {new VisionIOReal(leftCamConstants), new VisionIOReal(rightCamConstants)};
+    return new VisionIO[] {
+      /*new VisionIOReal(leftCamConstants),*/
+      new VisionIOReal(rightCamConstants)
+    };
   }
 
   /**
