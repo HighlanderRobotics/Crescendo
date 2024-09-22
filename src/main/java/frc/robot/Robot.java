@@ -383,7 +383,7 @@ public class Robot extends LoggedRobot {
                 shootOnTheMove(
                     () -> swerve.getVelocity().vxMetersPerSecond,
                     () -> swerve.getVelocity().vyMetersPerSecond,
-                    () -> 50)));
+                    () -> 5.0)));
     // climb
     operator
         .rightTrigger(0.75)
@@ -658,7 +658,7 @@ public class Robot extends LoggedRobot {
                             .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
                             .raceWith(
                                 Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                    .andThen(Commands.waitSeconds(0.25))),
+                                    .andThen(Commands.waitSeconds(0.1))),
                         Commands.sequence(
                             Commands.runOnce(
                                 () -> {
@@ -666,7 +666,7 @@ public class Robot extends LoggedRobot {
                                   SwerveSubsystem.AutoAimStates.xAtGoal = false;
                                   SwerveSubsystem.AutoAimStates.yAtGoal = false;
                                 }),
-                            Commands.waitSeconds(0.25))),
+                            Commands.waitSeconds(0.1))),
                 Commands.runOnce(
                         () -> {
                           //  System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
@@ -682,14 +682,14 @@ public class Robot extends LoggedRobot {
                                 MathUtil.isNear(
                                     SwerveSubsystem.AutoAimStates.endingPose.getX(),
                                     swerve.getPose().getX(),
-                                    0.2);
+                                    0.1486);
                           }
                           if (!SwerveSubsystem.AutoAimStates.yAtGoal) {
                             SwerveSubsystem.AutoAimStates.yAtGoal =
                                 MathUtil.isNear(
                                     SwerveSubsystem.AutoAimStates.endingPose.getY(),
                                     swerve.getPose().getY(),
-                                    0.2);
+                                    0.1486);
                           }
                         })
                     .repeatedly()),
@@ -753,7 +753,7 @@ public class Robot extends LoggedRobot {
                               SwerveSubsystem.AutoAimStates.virtualTarget,
                               SwerveSubsystem.AutoAimStates.endingPose,
                               SwerveSubsystem.AutoAimStates.curShotSpeeds)
-                          .plus(Rotation2d.fromRotations(0.0));
+                          .plus(Rotation2d.fromRotations(0.5));
                   SwerveSubsystem.AutoAimStates.endingPose =
                       new Pose2d(
                           SwerveSubsystem.AutoAimStates.endingPose.getX(),
@@ -773,7 +773,7 @@ public class Robot extends LoggedRobot {
                               SwerveSubsystem.AutoAimStates.virtualTarget,
                               SwerveSubsystem.AutoAimStates.endingPose,
                               SwerveSubsystem.AutoAimStates.curShotSpeeds)
-                          .plus(Rotation2d.fromRotations(0.0));
+                          .plus(Rotation2d.fromRotations(0.5));
                   SwerveSubsystem.AutoAimStates.endingPose =
                       new Pose2d(
                           SwerveSubsystem.AutoAimStates.endingPose.getX(),
