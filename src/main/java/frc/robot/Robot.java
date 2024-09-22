@@ -650,49 +650,24 @@ public class Robot extends LoggedRobot {
                     .until(
                         () ->
                             shooter.isAtGoal()
-                                && SwerveSubsystem.AutoAimStates.rotationAtGoal
-                                && SwerveSubsystem.AutoAimStates.xAtGoal
-                                && SwerveSubsystem.AutoAimStates.yAtGoal)
+                                && MathUtil.isNear(
+                                    SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
+                                    swerve.getPose().getRotation().getDegrees(),
+                                    rotationTolerance.getAsDouble())
+                                && MathUtil.isNear(
+                                    SwerveSubsystem.AutoAimStates.endingPose.getX(),
+                                    swerve.getPose().getX(),
+                                    0.1486)
+                                && MathUtil.isNear(
+                                    SwerveSubsystem.AutoAimStates.endingPose.getY(),
+                                    swerve.getPose().getY(),
+                                    0.1486))
                     .andThen(
                         feeder
                             .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
                             .raceWith(
                                 Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                    .andThen(Commands.waitSeconds(0.1))),
-                        Commands.sequence(
-                            Commands.runOnce(
-                                () -> {
-                                  SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
-                                  SwerveSubsystem.AutoAimStates.xAtGoal = false;
-                                  SwerveSubsystem.AutoAimStates.yAtGoal = false;
-                                }),
-                            Commands.waitSeconds(0.1))),
-                Commands.runOnce(
-                        () -> {
-                          //  System.out.println("IMPORTANT IMPORTANT IMPORTANT IMPORTANT");
-                          if (!SwerveSubsystem.AutoAimStates.rotationAtGoal) {
-                            SwerveSubsystem.AutoAimStates.rotationAtGoal =
-                                MathUtil.isNear(
-                                    SwerveSubsystem.AutoAimStates.rotationToTarget.getDegrees(),
-                                    swerve.getPose().getRotation().getDegrees(),
-                                    rotationTolerance.getAsDouble());
-                          }
-                          if (!SwerveSubsystem.AutoAimStates.xAtGoal) {
-                            SwerveSubsystem.AutoAimStates.xAtGoal =
-                                MathUtil.isNear(
-                                    SwerveSubsystem.AutoAimStates.endingPose.getX(),
-                                    swerve.getPose().getX(),
-                                    0.1486);
-                          }
-                          if (!SwerveSubsystem.AutoAimStates.yAtGoal) {
-                            SwerveSubsystem.AutoAimStates.yAtGoal =
-                                MathUtil.isNear(
-                                    SwerveSubsystem.AutoAimStates.endingPose.getY(),
-                                    swerve.getPose().getY(),
-                                    0.1486);
-                          }
-                        })
-                    .repeatedly()),
+                                    .andThen(Commands.waitSeconds(0.1))))),
 
             // auto aim to target
             swerve.teleopAimAtVirtualTargetCmd(

@@ -943,7 +943,10 @@ public class SwerveSubsystem extends SubsystemBase {
       DoubleSupplier xMetersPerSecond,
       DoubleSupplier yMetersPerSecond,
       double time,
-      Rotation2d angleToSpeaker) {
+      Rotation2d rotationToTarget) {
+
+    TrapezoidProfile.State xState;
+    TrapezoidProfile.State yState;
     ProfiledPIDController headingController =
         // assume we can accelerate to max in 2/3 of a second
         new ProfiledPIDController(
@@ -961,7 +964,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   double headingFeedbackOutput =
                       headingController.calculate(
                           getPose().getRotation().getRadians(),
-                          SwerveSubsystem.AutoAimStates.rotationToTarget.getRadians());
+                          rotationToTarget.getRadians());
                   /*
                         System.out.println(
                     "IMPORTANT IMPORTANT IMPORTANT IMPORTANTIMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT"
