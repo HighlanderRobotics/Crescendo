@@ -17,7 +17,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -53,7 +52,6 @@ import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
-
 import java.util.HashMap;
 import java.util.function.BiConsumer;
 import java.util.function.DoubleSupplier;
@@ -492,44 +490,44 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "AutoAim/Actual Distance",
         swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
-  
-        Tracer.endTrace();
-    }
-  
-    @Override
-    public void loopFunc() {
-      Tracer.startTrace("Robot");
-      Tracer.traceFunc("LoopFunc", super::loopFunc);
-      Tracer.endTrace();
-    }
-  
-    private void setUpLogging() {
-      HashMap<String, Integer> commandCounts = new HashMap<>();
-      BiConsumer<Command, Boolean> logCommandFunction =
-          (Command command, Boolean active) -> {
-            String name = command.getName();
-            int count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
-            commandCounts.put(name, count);
-            Logger.recordOutput(
-                "Commands/CommandsUnique/" + name + "_" + Integer.toHexString(command.hashCode()),
-                active.booleanValue());
-            Logger.recordOutput("Commands/CommandsAll/" + name, count > 0);
-          };
-      CommandScheduler.getInstance()
-          .onCommandInitialize(
-              (Command command) -> {
-                logCommandFunction.accept(command, true);
-              });
-      CommandScheduler.getInstance()
-          .onCommandFinish(
-              (Command command) -> {
-                logCommandFunction.accept(command, false);
-              });
-      CommandScheduler.getInstance()
-          .onCommandInterrupt(
-              (Command command) -> {
-                logCommandFunction.accept(command, false);
-              });
+
+    Tracer.endTrace();
+  }
+
+  @Override
+  public void loopFunc() {
+    Tracer.startTrace("Robot");
+    Tracer.traceFunc("LoopFunc", super::loopFunc);
+    Tracer.endTrace();
+  }
+
+  private void setUpLogging() {
+    HashMap<String, Integer> commandCounts = new HashMap<>();
+    BiConsumer<Command, Boolean> logCommandFunction =
+        (Command command, Boolean active) -> {
+          String name = command.getName();
+          int count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
+          commandCounts.put(name, count);
+          Logger.recordOutput(
+              "Commands/CommandsUnique/" + name + "_" + Integer.toHexString(command.hashCode()),
+              active.booleanValue());
+          Logger.recordOutput("Commands/CommandsAll/" + name, count > 0);
+        };
+    CommandScheduler.getInstance()
+        .onCommandInitialize(
+            (Command command) -> {
+              logCommandFunction.accept(command, true);
+            });
+    CommandScheduler.getInstance()
+        .onCommandFinish(
+            (Command command) -> {
+              logCommandFunction.accept(command, false);
+            });
+    CommandScheduler.getInstance()
+        .onCommandInterrupt(
+            (Command command) -> {
+              logCommandFunction.accept(command, false);
+            });
   }
 
   private Command shootWithDashboard() {

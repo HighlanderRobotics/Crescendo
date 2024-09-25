@@ -1,8 +1,5 @@
 package frc.robot.utils;
 
-import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -49,7 +46,6 @@ public class Tracer {
    * All of the tracers persistent state in a single object to be stored in a {@link ThreadLocal}.
    */
   private static final class TracerState {
-    private final NetworkTable rootTable;
 
     // the stack of traces, every startTrace will add to this stack
     // and every endTrace will remove from this stack
@@ -62,20 +58,13 @@ public class Tracer {
     // the start time of each trace and the gc time at the start of the trace,
     // the key is the trace name, modified every startTrace and endTrace.
     private final HashMap<String, TraceStartData> traceStartTimes = new HashMap<>();
-    // the publishers for each trace, the key is the trace name, modified every endCycle
-    private final HashMap<String, DoublePublisher> publisherHeap = new HashMap<>();
 
     // the garbage collector beans
     private final ArrayList<GarbageCollectorMXBean> gcs =
         new ArrayList<>(ManagementFactory.getGarbageCollectorMXBeans());
-    private final DoublePublisher gcTimeEntry;
     private double gcTimeThisCycle = 0.0;
 
-    private TracerState(String threadName) {
-      this.rootTable = NetworkTableInstance.getDefault().getTable("Tracer").getSubTable(threadName);
-      this.gcTimeEntry =
-          rootTable.getDoubleTopic("GCTime").publishEx("double", "{ \"cached\": false}");
-    }
+    private TracerState(String threadName) {}
 
     private String appendTraceStack(String trace) {
       traceStack.add(trace);
@@ -105,25 +94,14 @@ public class Tracer {
     }
 
     private void endCycle() {
-      // update times for all already existing publishers
-      for (var publisher : publisherHeap.entrySet()) {
-        // if the entry isn't found, time will null-cast to 0.0
-        Double time = traceTimes.remove(publisher.getKey());
-        if (time == null) time = 0.0;
-        publisher.getValue().set(time);
-      }
-      // create publishers for all new entries
       for (var traceTime : traceTimes.entrySet()) {
-        DoublePublisher publisher =
-            rootTable
-                .getDoubleTopic(traceTime.getKey())
-                .publishEx("double", "{ \"cached\": false}");
-        publisher.set(traceTime.getValue());
-        publisherHeap.put(traceTime.getKey(), publisher);
+        Double time = traceTimes.remove(traceTime.getKey());
+        if (time == null) time = 0.0;
+        Logger.recordOutput("Tracer/" + traceTime.getKey(), traceTime.getValue());
       }
 
       // log gc time
-      if (gcs.size() > 0) gcTimeEntry.set(gcTimeThisCycle);
+      if (gcs.size() > 0) Logger.recordOutput("Tracer/GCTime", gcTimeThisCycle);
       gcTimeThisCycle = 0.0;
 
       // clean up state
@@ -140,7 +118,6 @@ public class Tracer {
 
   public static void disableGcLoggingForCurrentThread() {
     TracerState state = threadLocalState.get();
-    state.gcTimeEntry.close();
     state.gcs.clear();
   }
 
