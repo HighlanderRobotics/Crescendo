@@ -83,6 +83,7 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.io.File;
@@ -372,23 +373,26 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void periodic() {
+    Tracer.startTrace("SwervePeriodic");
     for (var camera : cameras) {
-      camera.updateInputs();
-      camera.processInputs();
+      Tracer.traceFunc("Update cam inputs", camera::updateInputs);
+      Tracer.traceFunc("Process cam inputs", camera::processInputs);
     }
-    odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp);
+    Tracer.traceFunc(
+        "Update odo inputs",
+        () -> odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp));
     Logger.processInputs("Async Odo", odoThreadInputs);
     if (!odoThreadInputs.sampledStates.isEmpty()) {
       lastOdometryUpdateTimestamp =
           odoThreadInputs.sampledStates.get(odoThreadInputs.sampledStates.size() - 1).timestamp();
     }
-    gyroIO.updateInputs(gyroInputs);
-    for (var module : modules) {
-      module.updateInputs();
+    Tracer.traceFunc("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
+    for (int i = 0; i < modules.length; i++) {
+      Tracer.traceFunc("SwerveModule update inputs[" + i + "]", modules[i]::updateInputs);
     }
     Logger.processInputs("Swerve/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
+    for (int i = 0; i < modules.length; i++) {
+      Tracer.traceFunc("SwerveModule periodic[" + i + "]", modules[i]::periodic);
     }
 
     // Stop moving when disabled
@@ -409,8 +413,10 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
     Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
-    updateOdometry();
-    updateVision();
+    Tracer.traceFunc("Update odometry", () -> updateOdometry());
+    Tracer.traceFunc("update vision", () -> updateVision());
+
+    Tracer.endTrace();
   }
 
   private void updateOdometry() {
