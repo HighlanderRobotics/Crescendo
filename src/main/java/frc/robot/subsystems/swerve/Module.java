@@ -143,6 +143,11 @@ public class Module {
     return inputs.drivePositionMeters;
   }
 
+  /** Returns this modules prefix ie "Back Left" */
+  public String getPrefix() {
+    return inputs.prefix;
+  }
+
   /**
    * Returns the current drive velocity of the module in meters per second withat normal sampling
    * frequency.

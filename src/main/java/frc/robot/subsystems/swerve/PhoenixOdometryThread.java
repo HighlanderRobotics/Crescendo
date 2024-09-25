@@ -176,8 +176,8 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
                             s -> s.signal().getValueAsDouble()))));
       } finally {
         writeLock.unlock();
-        Tracer.endTrace();
       }
+      Tracer.endTrace();
     }
   }
 

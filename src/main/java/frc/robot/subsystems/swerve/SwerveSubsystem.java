@@ -388,11 +388,14 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     Tracer.traceFunc("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
     for (int i = 0; i < modules.length; i++) {
-      Tracer.traceFunc("SwerveModule update inputs[" + i + "]", modules[i]::updateInputs);
+      Tracer.traceFunc(
+          "SwerveModule update inputs from " + modules[i].getPrefix() + " Module",
+          modules[i]::updateInputs);
     }
     Logger.processInputs("Swerve/Gyro", gyroInputs);
     for (int i = 0; i < modules.length; i++) {
-      Tracer.traceFunc("SwerveModule periodic[" + i + "]", modules[i]::periodic);
+      Tracer.traceFunc(
+          "SwerveModule periodic from " + modules[i].getPrefix() + " Module", modules[i]::periodic);
     }
 
     // Stop moving when disabled
@@ -422,7 +425,10 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateOdometry() {
     Logger.recordOutput("Swerve/Updates Since Last", odoThreadInputs.sampledStates.size());
     var sampleStates = odoThreadInputs.sampledStates;
+    var i = 0;
     for (var sample : sampleStates) {
+      Tracer.startTrace("Sample " + i);
+      i++;
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
@@ -500,6 +506,7 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
       // Apply update
       estimator.updateWithTime(sample.timestamp(), rawGyroRotation, modulePositions);
+      Tracer.endTrace();
     }
   }
 
