@@ -685,7 +685,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param requirements The subsystem(s) to require, typically your drive subsystem only.
    * @return A command that follows a Choreo path.
    */
-  public static Command choreoFullFollowSwerveCommand(
+  public Command choreoFullFollowSwerveCommand(
       ChoreoTrajectory trajectory,
       Supplier<Pose2d> poseSupplier,
       ChoreoControlFunction controller,
@@ -727,6 +727,7 @@ public class SwerveSubsystem extends SubsystemBase {
               mirrorTrajectory.getAsBoolean()
                   ? trajectory.getFinalState().flipped().getPose()
                   : trajectory.getFinalState().getPose();
+          var vel = getVelocity();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
               && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
@@ -735,7 +736,8 @@ public class SwerveSubsystem extends SubsystemBase {
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
                               % 360)
-                      < 20.0);
+                      < 20.0)
+                  && MathUtil.isNear( 0.0, vel.vxMetersPerSecond * vel.vxMetersPerSecond + vel.vyMetersPerSecond * vel.vyMetersPerSecond, 0.25);
         },
         requirements);
   }
