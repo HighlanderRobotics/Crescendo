@@ -737,7 +737,11 @@ public class SwerveSubsystem extends SubsystemBase {
                                   - finalPose.getRotation().getDegrees())
                               % 360)
                       < 20.0)
-                  && MathUtil.isNear( 0.0, vel.vxMetersPerSecond * vel.vxMetersPerSecond + vel.vyMetersPerSecond * vel.vyMetersPerSecond, 0.25);
+              && MathUtil.isNear(
+                  0.0,
+                  vel.vxMetersPerSecond * vel.vxMetersPerSecond
+                      + vel.vyMetersPerSecond * vel.vyMetersPerSecond,
+                  0.25);
         },
         requirements);
   }

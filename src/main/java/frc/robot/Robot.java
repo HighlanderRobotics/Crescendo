@@ -729,7 +729,7 @@ public class Robot extends LoggedRobot {
                                 .getRotation()
                                 .getDegrees(),
                             0,
-                            35)),
+                            20)),
                 () -> 0.0,
                 () -> 0.0)
             .until(() -> feeder.getFirstBeambreak())
