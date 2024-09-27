@@ -494,12 +494,6 @@ public class Robot extends LoggedRobot {
             && MathUtil.isNear(
                 SwerveSubsystem.AutoAimStates.endingPose.getY(), swerve.getPose().getY(), 0.2));
 
-    Logger.recordOutput("AutoAim/RotationAtGoal?", SwerveSubsystem.AutoAimStates.rotationAtGoal);
-
-    Logger.recordOutput("AutoAim/XAtGoal?", SwerveSubsystem.AutoAimStates.xAtGoal);
-
-    Logger.recordOutput("AutoAim/YAtGoal?", SwerveSubsystem.AutoAimStates.yAtGoal);
-
     Logger.recordOutput("Target", currentTarget);
     Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
     Logger.recordOutput("AutoAim/poseX", swerve.getPose().getX());
@@ -695,9 +689,7 @@ public class Robot extends LoggedRobot {
         .beforeStarting(
             // reset heading controller error before
             () -> {
-              SwerveSubsystem.AutoAimStates.rotationAtGoal = false;
-              SwerveSubsystem.AutoAimStates.xAtGoal = false;
-              SwerveSubsystem.AutoAimStates.yAtGoal = false;
+
 
               SwerveSubsystem.AutoAimStates.curShotSpeeds =
                   new ChassisSpeeds(
