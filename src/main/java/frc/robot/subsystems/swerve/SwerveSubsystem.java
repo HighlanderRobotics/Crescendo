@@ -83,6 +83,7 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.io.File;
@@ -372,23 +373,29 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void periodic() {
+    Tracer.startTrace("SwervePeriodic");
     for (var camera : cameras) {
-      camera.updateInputs();
-      camera.processInputs();
+      Tracer.traceFunc("Update cam inputs", camera::updateInputs);
+      Tracer.traceFunc("Process cam inputs", camera::processInputs);
     }
-    odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp);
+    Tracer.traceFunc(
+        "Update odo inputs",
+        () -> odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp));
     Logger.processInputs("Async Odo", odoThreadInputs);
     if (!odoThreadInputs.sampledStates.isEmpty()) {
       lastOdometryUpdateTimestamp =
           odoThreadInputs.sampledStates.get(odoThreadInputs.sampledStates.size() - 1).timestamp();
     }
-    gyroIO.updateInputs(gyroInputs);
-    for (var module : modules) {
-      module.updateInputs();
+    Tracer.traceFunc("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
+    for (int i = 0; i < modules.length; i++) {
+      Tracer.traceFunc(
+          "SwerveModule update inputs from " + modules[i].getPrefix() + " Module",
+          modules[i]::updateInputs);
     }
     Logger.processInputs("Swerve/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
+    for (int i = 0; i < modules.length; i++) {
+      Tracer.traceFunc(
+          "SwerveModule periodic from " + modules[i].getPrefix() + " Module", modules[i]::periodic);
     }
 
     // Stop moving when disabled
@@ -409,14 +416,19 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
     Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
-    updateOdometry();
-    updateVision();
+    Tracer.traceFunc("Update odometry", () -> updateOdometry());
+    Tracer.traceFunc("update vision", () -> updateVision());
+
+    Tracer.endTrace();
   }
 
   private void updateOdometry() {
     Logger.recordOutput("Swerve/Updates Since Last", odoThreadInputs.sampledStates.size());
     var sampleStates = odoThreadInputs.sampledStates;
+    var i = 0;
     for (var sample : sampleStates) {
+      Tracer.startTrace("Sample " + i);
+      i++;
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
@@ -494,6 +506,7 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
       // Apply update
       estimator.updateWithTime(sample.timestamp(), rawGyroRotation, modulePositions);
+      Tracer.endTrace();
     }
   }
 
@@ -685,7 +698,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param requirements The subsystem(s) to require, typically your drive subsystem only.
    * @return A command that follows a Choreo path.
    */
-  public static Command choreoFullFollowSwerveCommand(
+  public Command choreoFullFollowSwerveCommand(
       ChoreoTrajectory trajectory,
       Supplier<Pose2d> poseSupplier,
       ChoreoControlFunction controller,
@@ -727,6 +740,7 @@ public class SwerveSubsystem extends SubsystemBase {
               mirrorTrajectory.getAsBoolean()
                   ? trajectory.getFinalState().flipped().getPose()
                   : trajectory.getFinalState().getPose();
+          var vel = getVelocity();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
               && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
@@ -735,7 +749,12 @@ public class SwerveSubsystem extends SubsystemBase {
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
                               % 360)
-                      < 20.0);
+                      < 20.0)
+              && MathUtil.isNear(
+                  0.0,
+                  vel.vxMetersPerSecond * vel.vxMetersPerSecond
+                      + vel.vyMetersPerSecond * vel.vyMetersPerSecond,
+                  0.75);
         },
         requirements);
   }
