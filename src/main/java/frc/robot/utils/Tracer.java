@@ -9,8 +9,11 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * A Utility class for tracing code execution time. Will put info to NetworkTables under the
- * "Tracer" table.
+ * 
+ * Thanks to oh-yes-0-fps and <a href="https://github.com/McQuaidRobotics/2024_Crescendo/blob/main/src/main/java/com/igknighters/util/Tracer.java">FRC 3173!</a>
+ * <p>
+ * 
+ * A Utility class for tracing code execution time. Will put info to Advantagekit under "Tracer".
  *
  * <pre><code>
  *
@@ -25,7 +28,6 @@ import org.littletonrobotics.junction.Logger;
  * public void robotPeriodic() {
  *     Tracer.startTrace("RobotPeriodic");
  *     Tracer.traceFunc("CommandScheduler", scheduler::run);
- *     Tracer.traceFunc("Monologue", Monologue::updateAll);
  *     Tracer.endTrace();
  * }
  *
