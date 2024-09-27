@@ -754,7 +754,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   0.0,
                   vel.vxMetersPerSecond * vel.vxMetersPerSecond
                       + vel.vyMetersPerSecond * vel.vyMetersPerSecond,
-                  0.25);
+                  0.75);
         },
         requirements);
   }
