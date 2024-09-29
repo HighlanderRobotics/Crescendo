@@ -453,7 +453,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
-    autoChooser.addOption("Center 3", autoCenter3());
+    autoChooser.addOption("Center 4", autoCenter4());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
@@ -840,11 +840,11 @@ public class Robot extends LoggedRobot {
         autoStaticAutoAim());
   }
 
-  private Command autoCenter3() {
+  private Command autoCenter4() {
     return Commands.sequence(
         autoFenderShot(),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 3.1"), true)
+            .runChoreoTraj(Choreo.getTrajectory("center 4.1"), true)
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
@@ -856,7 +856,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 3.2"))
+            .runChoreoTraj(Choreo.getTrajectory("center 4.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
@@ -868,7 +868,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 3.3"))
+            .runChoreoTraj(Choreo.getTrajectory("center 4.3"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
