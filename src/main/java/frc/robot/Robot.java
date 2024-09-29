@@ -844,7 +844,7 @@ public class Robot extends LoggedRobot {
     return Commands.sequence(
         autoFenderShot(),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("3 center.1"), true)
+            .runChoreoTraj(Choreo.getTrajectory("center 3.1"), true)
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
@@ -856,7 +856,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("3 center.2"))
+            .runChoreoTraj(Choreo.getTrajectory("center 3.2"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
@@ -868,7 +868,7 @@ public class Robot extends LoggedRobot {
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
         swerve
-            .runChoreoTraj(Choreo.getTrajectory("3 center.3"))
+            .runChoreoTraj(Choreo.getTrajectory("center 3.3"))
             .asProxy()
             .deadlineWith(autoIntake()),
         autoIntake()
