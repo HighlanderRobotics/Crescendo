@@ -91,10 +91,10 @@ public class ModuleIOReal implements ModuleIO {
     var driveConfig = new TalonFXConfiguration();
     // Current limits
     // TODO: Do we want to limit supply current?
-    driveConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
+    driveConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    driveConfig.CurrentLimits.SupplyCurrentThreshold = 60.0;
-    driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
+    // driveConfig.CurrentLimits.SupplyCurrentThreshold = 30.0;
+    // driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts

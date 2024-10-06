@@ -50,7 +50,10 @@ import frc.robot.subsystems.swerve.PhoenixOdometryThread;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
+import java.util.HashMap;
+import java.util.function.BiConsumer;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -157,6 +160,7 @@ public class Robot extends LoggedRobot {
         Logger.recordMetadata("GitDirty", "Unknown");
         break;
     }
+    setUpLogging();
 
     switch (mode) {
       case REAL:
@@ -449,6 +453,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
+    autoChooser.addOption("Center 4", autoCenter4());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
@@ -467,7 +472,8 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
-    CommandScheduler.getInstance().run();
+    Tracer.startTrace("RobotPeriodic");
+    Tracer.traceFunc("CommandScheduler", CommandScheduler.getInstance()::run);
     // Update ascope mechanism visualization
     Logger.recordOutput(
         "Mechanism Poses",
@@ -485,6 +491,44 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "AutoAim/Actual Distance",
         swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
+
+    Tracer.endTrace();
+  }
+
+  @Override
+  public void loopFunc() {
+    Tracer.startTrace("Robot");
+    Tracer.traceFunc("LoopFunc", super::loopFunc);
+    Tracer.endTrace();
+  }
+
+  private void setUpLogging() {
+    HashMap<String, Integer> commandCounts = new HashMap<>();
+    BiConsumer<Command, Boolean> logCommandFunction =
+        (Command command, Boolean active) -> {
+          String name = command.getName();
+          int count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
+          commandCounts.put(name, count);
+          Logger.recordOutput(
+              "Commands/CommandsUnique/" + name + "_" + Integer.toHexString(command.hashCode()),
+              active.booleanValue());
+          Logger.recordOutput("Commands/CommandsAll/" + name, count > 0);
+        };
+    CommandScheduler.getInstance()
+        .onCommandInitialize(
+            (Command command) -> {
+              logCommandFunction.accept(command, true);
+            });
+    CommandScheduler.getInstance()
+        .onCommandFinish(
+            (Command command) -> {
+              logCommandFunction.accept(command, false);
+            });
+    CommandScheduler.getInstance()
+        .onCommandInterrupt(
+            (Command command) -> {
+              logCommandFunction.accept(command, false);
+            });
   }
 
   private Command shootWithDashboard() {
@@ -729,7 +773,7 @@ public class Robot extends LoggedRobot {
                                 .getRotation()
                                 .getDegrees(),
                             0,
-                            35)),
+                            20)),
                 () -> 0.0,
                 () -> 0.0)
             .until(() -> feeder.getFirstBeambreak())
@@ -792,6 +836,47 @@ public class Robot extends LoggedRobot {
         swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).asProxy().deadlineWith(autoIntake()),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoCenter4() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("center 4.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("center 4.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("center 4.3"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim());
   }
