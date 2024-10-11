@@ -17,9 +17,12 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -49,6 +52,7 @@ import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
+import frc.robot.utils.Battery;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.DoubleSupplier;
@@ -136,8 +140,10 @@ public class Robot extends LoggedRobot {
   private final LEDSubsystem leds =
       new LEDSubsystem(mode == RobotMode.REAL ? new LEDIOReal() : new LEDIOSim());
 
+  private Battery battery;
   @Override
   public void robotInit() {
+    
     RoboRioDataJNI.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
@@ -146,6 +152,10 @@ public class Robot extends LoggedRobot {
     Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
     Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
     Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
+
+    battery = new Battery("", RobotController.getBatteryVoltage(), DriverStation.getAlliance().isPresent());
+    
+    
     switch (BuildConstants.DIRTY) {
       case 0:
         Logger.recordMetadata("GitDirty", "All changes committed");
@@ -485,6 +495,7 @@ public class Robot extends LoggedRobot {
     Logger.recordOutput(
         "AutoAim/Actual Distance",
         swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
+    
   }
 
   private Command shootWithDashboard() {
