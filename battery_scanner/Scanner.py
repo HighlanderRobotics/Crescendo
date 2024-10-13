@@ -34,34 +34,34 @@ client = ntcore.NetworkTableInstance.getDefault()
 client.startClient4(f'battery-scanner')
 client.setServerTeam(8033)
 
-pub = client.getStringTopic("/battery_name").publish()
+pub = client.getStringTopic("battery_name").publish()
 
 #------------------
 #-- Read battery name
 #------------------
-name = None
-try:
-  with serial.Serial(args.dev, 9600, timeout=timeout) as ser:
+name = "petro"
+# try:
+#   with serial.Serial(args.dev, 9600, timeout=timeout) as ser:
 
-    logging.info("Scanning for battery ID")
+#     logging.info("Scanning for battery ID")
 
-    while True:
-      ser.write(scan_command)
-      response = ser.read(response_length)
+#     while True:
+#       ser.write(scan_command)
+#       response = ser.read(response_length)
       
-      if len(response) == response_length:
-          if response.startswith(prefix):
-              name_bytes = response[-8:]
-              name_str = name_bytes.decode("utf-8")
-              if re.match('^[a-zA-Z0-9_\\-]+$', name_str):
-                  name = name_str
-                  logging.info(f"Battery ID: {name}")
-                  break
-              else:
-                logging.warning("Battery ID doesn't match expected pattern")
+#       if len(response) == response_length:
+#           if response.startswith(prefix):
+#               name_bytes = response[-8:]
+#               name_str = name_bytes.decode("utf-8")
+#               if re.match('^[a-zA-Z0-9_\\-]+$', name_str):
+#                   name = name_str
+#                   logging.info(f"Battery ID: {name}")
+#                   break
+#               else:
+#                 logging.warning("Battery ID doesn't match expected pattern")
 
-except Exception as e:
-   logging.error(e)
+# except Exception as e:
+#    logging.error(e)
 
 #------------------
 #-- Publish name
