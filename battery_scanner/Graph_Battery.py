@@ -66,7 +66,10 @@ if __name__ == '__main__':
         
 def get_voltages():
     return battery_voltages
-        
+
+def get_graph(name, date, time):
+    fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
+    fig.write_html("battery_scanner/templates/Graph.html")
 '''
 
 

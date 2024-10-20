@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+     
+</head>
+<body>
+    <form class="nameSelection" method="POST" action="/dates">
+    <select name="nameSelector" method="GET" action="/", id = "test">
+        <option value="{{names[0]}}" selected>{{names[0]}}</option>
+        {% for name in names[1:] %}
+            <option value= "{{name}}" SELECTED>{{ name }}</option>
+            
+        {% endfor %}
+      </select>
+      <input class="btn" type="submit" value="submit">
+    </form>
+</body>
+</html>
