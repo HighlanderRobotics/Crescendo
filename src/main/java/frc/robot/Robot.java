@@ -50,6 +50,7 @@ import frc.robot.subsystems.swerve.PhoenixOdometryThread;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import frc.robot.utils.PitChecks;
 import frc.robot.utils.autoaim.AutoAim;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -463,6 +464,7 @@ public class Robot extends LoggedRobot {
     SmartDashboard.putData(
         "manual zero shooter",
         shooter.resetPivotPosition(ShooterSubsystem.PIVOT_MIN_ANGLE).ignoringDisable(true));
+    addPitChecks();
   }
 
   @Override
@@ -956,5 +958,22 @@ public class Robot extends LoggedRobot {
   /** Modifies the given joystick axis value to make teleop driving smoother. */
   private static double teleopAxisAdjustment(double x) {
     return MathUtil.applyDeadband(Math.abs(Math.pow(x, 2)) * Math.signum(x), 0.02);
+  }
+
+  public void addPitChecks() {
+    SmartDashboard.putData(
+        "Run Swerve Check",
+        PitChecks.runCheck(
+            () -> new double[] {1, 1, 0},
+            () -> 0.2, //TODO does this make sense?
+            () ->
+                new double[] {
+                  swerve.getVelocity().vxMetersPerSecond,
+                  swerve.getVelocity().vyMetersPerSecond,
+                  swerve.getVelocity().omegaRadiansPerSecond
+                },
+            swerve.runVelocityCmd(() -> new ChassisSpeeds(1, 1, 0)),
+            1,
+            "Swerve Check"));
   }
 }
