@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+     
+</head>
+<body>
+    <h1>{{title}}</h1>
+    <ul>
+        {% for name in names|reverse %}
+            <li>{{name + ": " + ranking[name]|string}}</li>
+        {% endfor %}
+    </ul>
+    <a href = "/name">Battery Graph Chooser</a>
+</body>
+</html>

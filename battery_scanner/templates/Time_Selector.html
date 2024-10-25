@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>{{title}}</h1>
-    <form class="timeSelection" method="POST" action="/dates/times/graphs">
+    <form class="timeSelection" method="POST" action="/name/dates/times/graphs">
     <select name="timeSelector" method="GET" action="/", id = "test">
         <option value="{{times[0]}}" selected>{{times[0]}}</option>
         {% for time in times[1:] %}

@@ -4,7 +4,7 @@
      
 </head>
 <body>
-    <form class="nameSelection" method="POST" action="/dates">
+    <form class="nameSelection" method="POST" action="/name/dates">
     <select name="nameSelector" method="GET" action="/", id = "test">
         <option value="{{names[0]}}" selected>{{names[0]}}</option>
         {% for name in names[1:] %}
@@ -14,5 +14,6 @@
       </select>
       <input class="btn" type="submit" value="submit">
     </form>
+    <a href = "/">Battery Ranking</a>
 </body>
 </html>

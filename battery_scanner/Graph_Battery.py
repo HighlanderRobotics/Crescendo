@@ -5,7 +5,7 @@ import csv
 import random
 
 
-RANDOM_NAMES = ["Ed", "Bed"]
+RANDOM_NAMES = ["Ed", "Athena", "Lewy", "Cassie", "Dumb Idiot"]
 PATH = "logs"
 
 battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]] = {}
@@ -53,7 +53,7 @@ for file in os.listdir(PATH):
 #tmp = battery_voltages['24-09-22']['3:50:18'].values()
 #print(sum(tmp)/len(tmp))
 #x_axis = list(battery_voltages['24-09-22']['3:50:18'].values())
-if __name__ == '__main__':
+if  __name__ == '__main__':
     for name in battery_voltages:
         for date in battery_voltages[name]:
             fig = go.Figure()
@@ -67,9 +67,22 @@ if __name__ == '__main__':
 def get_voltages():
     return battery_voltages
 
-def get_graph(name, date, time):
+def get_graph(name: str, date, time):
     fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
     fig.write_html("battery_scanner/templates/Graph.html")
+    
+def get_battery_rankings():
+    ranking = {}
+    for name in battery_voltages:
+        last_date = list(battery_voltages[name].keys())[-1]
+        last_time = list(battery_voltages[name][last_date].keys())[-1]
+        ranking[name] = list(battery_voltages[name][last_date][last_time].values())[0]
+    print(ranking)
+    ranking = dict(sorted(ranking.items(), key=lambda x: x[1]))
+    print(ranking)
+    return ranking
+
+        
 '''
 
 

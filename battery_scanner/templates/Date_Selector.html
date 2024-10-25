@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>{{title}}</h1>
-    <form class="dateSelection" method="POST" action="/dates/times">
+    <form class="dateSelection" method="POST" action="/name/dates/times">
     <select name="dateSelector" method="GET" action="/", id = "test">
         <option value="{{dates[0]}}" selected>{{dates[0]}}</option>
         {% for date in dates[1:] %}
