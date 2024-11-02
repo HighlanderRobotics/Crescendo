@@ -373,53 +373,59 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void periodic() {
-    Tracer.startTrace("SwervePeriodic");
-    for (var camera : cameras) {
-      Tracer.traceFunc("Update cam inputs", camera::updateInputs);
-      Tracer.traceFunc("Process cam inputs", camera::processInputs);
-    }
-    Tracer.traceFunc(
-        "Update odo inputs",
-        () -> odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp));
-    Logger.processInputs("Async Odo", odoThreadInputs);
-    if (!odoThreadInputs.sampledStates.isEmpty()) {
-      lastOdometryUpdateTimestamp =
-          odoThreadInputs.sampledStates.get(odoThreadInputs.sampledStates.size() - 1).timestamp();
-    }
-    Tracer.traceFunc("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
-    for (int i = 0; i < modules.length; i++) {
-      Tracer.traceFunc(
-          "SwerveModule update inputs from " + modules[i].getPrefix() + " Module",
-          modules[i]::updateInputs);
-    }
-    Logger.processInputs("Swerve/Gyro", gyroInputs);
-    for (int i = 0; i < modules.length; i++) {
-      Tracer.traceFunc(
-          "SwerveModule periodic from " + modules[i].getPrefix() + " Module", modules[i]::periodic);
-    }
+    Tracer.trace(
+        "SwervePeriodic",
+        () -> {
+          for (var camera : cameras) {
+            Tracer.trace("Update cam inputs", camera::updateInputs);
+            Tracer.trace("Process cam inputs", camera::processInputs);
+          }
+          Tracer.trace(
+              "Update odo inputs",
+              () -> odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp));
+          Logger.processInputs("Async Odo", odoThreadInputs);
+          if (!odoThreadInputs.sampledStates.isEmpty()) {
+            lastOdometryUpdateTimestamp =
+                odoThreadInputs
+                    .sampledStates
+                    .get(odoThreadInputs.sampledStates.size() - 1)
+                    .timestamp();
+          }
+          Tracer.trace("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
+          for (int i = 0; i < modules.length; i++) {
+            Tracer.trace(
+                "SwerveModule update inputs from " + modules[i].getPrefix() + " Module",
+                modules[i]::updateInputs);
+          }
+          Logger.processInputs("Swerve/Gyro", gyroInputs);
+          for (int i = 0; i < modules.length; i++) {
+            Tracer.trace(
+                "SwerveModule periodic from " + modules[i].getPrefix() + " Module",
+                modules[i]::periodic);
+          }
 
-    // Stop moving when disabled
-    if (DriverStation.isDisabled()) {
-      for (var module : modules) {
-        module.stop();
-      }
-    }
-    // Log empty setpoint states when disabled
-    if (DriverStation.isDisabled()) {
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-    }
+          // Stop moving when disabled
+          if (DriverStation.isDisabled()) {
+            for (var module : modules) {
+              module.stop();
+            }
+          }
+          // Log empty setpoint states when disabled
+          if (DriverStation.isDisabled()) {
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+          }
 
-    Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
-    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
-    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
-    Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
+          Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
+          Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
+          Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
+          Logger.recordOutput(
+              "ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
+          Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
-    Tracer.traceFunc("Update odometry", () -> updateOdometry());
-    Tracer.traceFunc("update vision", () -> updateVision());
-
-    Tracer.endTrace();
+          Tracer.trace("Update odometry", this::updateOdometry);
+          Tracer.trace("update vision", this::updateVision);
+        });
   }
 
   private void updateOdometry() {
@@ -427,7 +433,6 @@ public class SwerveSubsystem extends SubsystemBase {
     var sampleStates = odoThreadInputs.sampledStates;
     var i = 0;
     for (var sample : sampleStates) {
-      Tracer.startTrace("Sample " + i);
       i++;
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
@@ -476,7 +481,11 @@ public class SwerveSubsystem extends SubsystemBase {
               Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, -1)));
           lastGyroRotation = rawGyroRotation;
           Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
-          estimator.updateWithTime(sample.timestamp(), rawGyroRotation, lastModulePositions);
+          Tracer.trace(
+              "update estimator",
+              () ->
+                  estimator.updateWithTime(
+                      sample.timestamp(), rawGyroRotation, lastModulePositions));
         }
         continue;
       }
@@ -506,7 +515,6 @@ public class SwerveSubsystem extends SubsystemBase {
       Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
       // Apply update
       estimator.updateWithTime(sample.timestamp(), rawGyroRotation, modulePositions);
-      Tracer.endTrace();
     }
   }
 

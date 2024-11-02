@@ -473,39 +473,38 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
-    Tracer.startTrace("RobotPeriodic");
-    Tracer.traceFunc("CommandScheduler", CommandScheduler.getInstance()::run);
-    // Update ascope mechanism visualization
-    Logger.recordOutput(
-        "Mechanism Poses",
-        new Pose3d[] {
-          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+    Tracer.trace(
+        "RobotPeriodic",
+        () -> {
+          Tracer.trace("CommandScheduler", CommandScheduler.getInstance()::run);
+          // Update ascope mechanism visualization
+          Logger.recordOutput(
+              "Mechanism Poses",
+              new Pose3d[] {
+                shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+              });
+          Logger.recordOutput("Target", currentTarget);
+          Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
+          // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
+          Logger.recordOutput(
+              "Angle to target",
+              Math.atan2(
+                  FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
+                  FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
+          Logger.recordOutput(
+              "AutoAim/Actual Distance",
+              swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
         });
-    Logger.recordOutput("Target", currentTarget);
-    Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
-    // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
-    Logger.recordOutput(
-        "Angle to target",
-        Math.atan2(
-            FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
-            FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
-    Logger.recordOutput(
-        "AutoAim/Actual Distance",
-        swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
-
-    Tracer.endTrace();
   }
 
   @Override
   public void loopFunc() {
-    Tracer.startTrace("Robot");
-    Tracer.traceFunc("LoopFunc", super::loopFunc);
-    Tracer.endTrace();
+    Tracer.trace("Robot/LoopFunc", super::loopFunc);
   }
 
   private void setUpLogging() {
     HashMap<String, Integer> commandCounts = new HashMap<>();
-    BiConsumer<Command, Boolean> logCommandFunction =
+    final BiConsumer<Command, Boolean> logCommandFunction =
         (Command command, Boolean active) -> {
           String name = command.getName();
           int count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
@@ -515,21 +514,12 @@ public class Robot extends LoggedRobot {
               active.booleanValue());
           Logger.recordOutput("Commands/CommandsAll/" + name, count > 0);
         };
-    CommandScheduler.getInstance()
-        .onCommandInitialize(
-            (Command command) -> {
-              logCommandFunction.accept(command, true);
-            });
-    CommandScheduler.getInstance()
-        .onCommandFinish(
-            (Command command) -> {
-              logCommandFunction.accept(command, false);
-            });
-    CommandScheduler.getInstance()
-        .onCommandInterrupt(
-            (Command command) -> {
-              logCommandFunction.accept(command, false);
-            });
+
+    var scheduler = CommandScheduler.getInstance();
+
+    scheduler.onCommandInitialize(c -> logCommandFunction.accept(c, true));
+    scheduler.onCommandFinish(c -> logCommandFunction.accept(c, false));
+    scheduler.onCommandInterrupt(c -> logCommandFunction.accept(c, false));
   }
 
   private Command shootWithDashboard() {

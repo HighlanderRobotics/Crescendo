@@ -9,8 +9,11 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * A Utility class for tracing code execution time. Will put info to NetworkTables under the
- * "Tracer" table.
+ * 
+ * Thanks to oh-yes-0-fps and <a href="https://github.com/McQuaidRobotics/2024_Crescendo/blob/main/src/main/java/com/igknighters/util/Tracer.java">FRC 3173!</a>
+ * <p>
+ * 
+ * A Utility class for tracing code execution time. Will put info to Advantagekit under "Tracer".
  *
  * <pre><code>
  *
@@ -25,7 +28,6 @@ import org.littletonrobotics.junction.Logger;
  * public void robotPeriodic() {
  *     Tracer.startTrace("RobotPeriodic");
  *     Tracer.traceFunc("CommandScheduler", scheduler::run);
- *     Tracer.traceFunc("Monologue", Monologue::updateAll);
  *     Tracer.endTrace();
  * }
  *
@@ -157,40 +159,22 @@ public class Tracer {
   }
 
   /**
-   * Starts a trace, should be called at the beginning of a function thats not being called by user
-   * code. Should be paired with {@link Tracer#endTrace()} at the end of the function.
-   *
-   * <p>Best used in periodic functions in Subsystems and Robot.java.
-   *
-   * @param name the name of the trace, should be unique to the function.
-   */
-  public static void startTrace(String name) {
-    startTrace(name, threadLocalState.get());
-  }
-
-  /**
-   * Ends a trace, should only be called at the end of a function thats not being called by user
-   * code. If a {@link Tracer#startTrace(String)} is not paired with a {@link Tracer#endTrace()}
-   * there could be a crash.
-   */
-  public static void endTrace() {
-    endTrace(threadLocalState.get());
-  }
-
-  /**
    * Traces a function, should be used in place of {@link Tracer#startTrace(String)} and {@link
    * Tracer#endTrace()} for functions called by user code like {@code CommandScheduler.run()} and
    * other expensive functions.
    *
    * @param name the name of the trace, should be unique to the function.
    * @param runnable the function to trace.
-   * @apiNote If you want to return a value then use {@link Tracer#traceFunc(String, Supplier)}.
+   * @apiNote If you want to return a value then use {@link Tracer#trace(String, Supplier)}.
    */
-  public static void traceFunc(String name, Runnable runnable) {
+  public static void trace(String name, Runnable runnable) {
     final TracerState state = threadLocalState.get();
-    startTrace(name, state);
-    runnable.run();
-    endTrace(state);
+    try {
+      startTrace(name, state);
+      runnable.run();
+    } finally {
+      endTrace(state);
+    }
   }
 
   /**
@@ -201,11 +185,14 @@ public class Tracer {
    * @param name the name of the trace, should be unique to the function.
    * @param supplier the function to trace.
    */
-  public static <T> T traceFunc(String name, Supplier<T> supplier) {
+  public static <T> T trace(String name, Supplier<T> supplier) {
     final TracerState state = threadLocalState.get();
-    startTrace(name, state);
-    T ret = supplier.get();
-    endTrace(state);
-    return ret;
+    try {
+      startTrace(name, state);
+      T ret = supplier.get();
+      return ret;
+    } finally {
+      endTrace(state);
+    }
   }
 }
