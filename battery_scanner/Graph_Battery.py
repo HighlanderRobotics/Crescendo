@@ -5,7 +5,7 @@ import csv
 import random
 
 
-RANDOM_NAMES = ["Ed", "Athena", "Lewy", "Cassie", "Dumb Idiot"]
+RANDOM_NAMES = ["Ed", "Athena"]
 PATH = "logs"
 
 battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]] = {}
@@ -53,7 +53,7 @@ for file in os.listdir(PATH):
 #tmp = battery_voltages['24-09-22']['3:50:18'].values()
 #print(sum(tmp)/len(tmp))
 #x_axis = list(battery_voltages['24-09-22']['3:50:18'].values())
-if  __name__ == '__main__':
+if  not __name__ == '__main__':
     for name in battery_voltages:
         for date in battery_voltages[name]:
             fig = go.Figure()
@@ -70,7 +70,73 @@ def get_voltages():
 def get_graph(name: str, date, time):
     fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
     fig.show()
+def get_candlestick_chart_all():
+    x_axis = []
+    high = []
+    low = []
+    start = []
+    end = []
+    data = []
     
+    for name in battery_voltages:
+        x_axis = []
+        high = []
+        low = []
+        start = []
+        end = []
+        for date in battery_voltages[name]:
+            times = list(battery_voltages[name][date].keys())
+            for time in times:
+                x_axis.append(date + " | " + time)
+                high.append(list(battery_voltages[name][date][time].values())[0])
+                low.append(list(battery_voltages[name][date][time].values())[-1])
+                start = high
+                end = low
+        data.append(go.Candlestick(
+            x = x_axis,
+            open = start,
+            high = high,
+            low = low,
+            close = end, 
+            name = name
+        ))
+    print(x_axis)
+    print(high)
+    fig = go.Figure(data)
+    fig.update_layout(title = name, 
+                      yaxis_title = "voltatge"
+                      )
+    fig.show()
+def get_candlestick_chart(name: str):
+    x_axis = []
+    high = []
+    low = []
+    start = []
+    end = []
+    fig = go.Figure()
+    for date in battery_voltages[name]:
+        times = list(battery_voltages[name][date].keys())
+        for time in times:
+            x_axis.append(date + " | " + time)
+            high.append(list(battery_voltages[name][date][time].values())[0])
+            low.append(list(battery_voltages[name][date][time].values())[-1])
+            start = high
+            end = low
+    print(x_axis)
+    print(high)
+    fig.add_trace(go.Candlestick(
+        x = x_axis,
+        open = start,
+        high = high,
+        low = low,
+        close = end
+    ))
+    fig.update_layout(title = name, 
+                      yaxis_title = "voltatge"
+                      )
+    fig.show()
+    
+get_candlestick_chart_all()
 def get_battery_rankings():
     ranking = {}
     for name in battery_voltages:

@@ -51,7 +51,7 @@ def show_graph():
         if(key == "timeSelector"):
             time = value
     Graph_Battery.get_graph(name, date, time)
-    return "Graph opens in new tab"
+    return "Graph opens in new window"
 
 if __name__ == '__main__':
    app.run()
