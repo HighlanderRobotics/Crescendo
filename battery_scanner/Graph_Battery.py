@@ -69,7 +69,7 @@ def get_voltages():
 
 def get_graph(name: str, date, time):
     fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
-    fig.write_html("battery_scanner/templates/Graph.html")
+    fig.show()
     
 def get_battery_rankings():
     ranking = {}

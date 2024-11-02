@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 import Graph_Battery
+import os
 
 app = Flask(__name__)
 
@@ -43,18 +44,14 @@ def time_chooser():
     return render_template("time_selector.html", times = list(voltages[name][date].keys()), title = name + "/" + date)
 
 
-def clear_graph():
-    open('battery_scanner/templates/Graph.html', 'w').close()
-    print('EIOGHSEIOGHNSIOGHIOh')
-    
+
 @app.route("/name/dates/times/graphs", methods = ['POST', 'GET'])
 def show_graph():
     for key, value in request.form.items():
         if(key == "timeSelector"):
             time = value
-    clear_graph()
     Graph_Battery.get_graph(name, date, time)
-    return render_template("Graph.html")
+    return "Graph opens in new tab"
 
 if __name__ == '__main__':
    app.run()
