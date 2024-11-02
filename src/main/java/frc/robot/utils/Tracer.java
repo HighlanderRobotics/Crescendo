@@ -13,22 +13,24 @@ import org.littletonrobotics.junction.Logger;
  * href="https://github.com/McQuaidRobotics/2024_Crescendo/blob/main/src/main/java/com/igknighters/util/Tracer.java">FRC
  * 3173!</a>
  *
+ * <p>A newer version of this class is being merged into WPILib for 2025, and should supersede this
+ * file once merged. The WPILib version may not support logging to akit the way we want, revisit
+ * then (might need to manually connect nt publishing to log)
+ *
  * <p>A Utility class for tracing code execution time. Will put info to Advantagekit under "Tracer".
  *
  * <pre><code>
  *
  * @Override
  * public void loopFunc() {
- *    Tracer.traceFunc("LoopFunc", super::loopFunc);
+ *    Tracer.trace("LoopFunc", super::loopFunc);
  * }
  *
  * <p>
  *
  * @Override
  * public void robotPeriodic() {
- *     Tracer.startTrace("RobotPeriodic");
- *     Tracer.traceFunc("CommandScheduler", scheduler::run);
- *     Tracer.endTrace();
+ *     Tracer.trace("CommandScheduler", scheduler::run);
  * }
  *
  * </code></pre>
@@ -159,9 +161,7 @@ public class Tracer {
   }
 
   /**
-   * Traces a function, should be used in place of {@link Tracer#startTrace(String)} and {@link
-   * Tracer#endTrace()} for functions called by user code like {@code CommandScheduler.run()} and
-   * other expensive functions.
+   * Traces a function.
    *
    * @param name the name of the trace, should be unique to the function.
    * @param runnable the function to trace.
@@ -178,9 +178,7 @@ public class Tracer {
   }
 
   /**
-   * Traces a function, should be used in place of {@link Tracer#startTrace(String)} and {@link
-   * Tracer#endTrace()} for functions called by user code like {@code CommandScheduler.run()} and
-   * other expensive functions.
+   * Traces a function.
    *
    * @param name the name of the trace, should be unique to the function.
    * @param supplier the function to trace.

@@ -1036,6 +1036,6 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void autonomousPeriodic() {
-    Tracer.traceFunc("Auto Periodic", super::autonomousPeriodic);
+    Tracer.trace("Auto Periodic", super::autonomousPeriodic);
   }
 }
