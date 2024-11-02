@@ -141,6 +141,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    SignalLogger.enableAutoLogging(false);
     RoboRioDataJNI.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
@@ -1041,5 +1042,10 @@ public class Robot extends LoggedRobot {
   /** Modifies the given joystick axis value to make teleop driving smoother. */
   private static double teleopAxisAdjustment(double x) {
     return MathUtil.applyDeadband(Math.abs(Math.pow(x, 2)) * Math.signum(x), 0.02);
+  }
+
+  @Override
+  public void autonomousPeriodic() {
+    Tracer.traceFunc("Auto Periodic", super::autonomousPeriodic);
   }
 }
