@@ -21,6 +21,7 @@ import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.utils.Tracer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -133,42 +134,54 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
   }
 
   public List<Samples> samplesSince(double timestamp) {
-    var readLock = journalLock.readLock();
-    try {
-      readLock.lock();
+    return Tracer.trace(
+        "samples since",
+        () -> {
+          var readLock = journalLock.readLock();
+          try {
+            readLock.lock();
 
-      return journal.stream()
-          .filter(s -> s.timestamp > timestamp)
-          .collect(Collectors.toUnmodifiableList());
-    } finally {
-      readLock.unlock();
-    }
+            return Tracer.trace(
+                "stream timestamps",
+                () ->
+                    journal.stream()
+                        .filter(s -> s.timestamp > timestamp)
+                        .collect(Collectors.toUnmodifiableList()));
+          } finally {
+            readLock.unlock();
+          }
+        });
   }
 
   @Override
   public void run() {
-    System.out.println("Starting Odo Thread");
     while (true) {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
-      BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalArr);
-      try {
-        writeLock.lock();
-        var filteredSignals =
-            registeredSignals.stream()
-                .filter(s -> s.signal().getStatus().equals(StatusCode.OK))
-                .collect(Collectors.toSet());
-        journal.add(
-            new Samples(
-                timestampFor(filteredSignals),
-                filteredSignals.stream()
-                    .collect(
-                        Collectors.toUnmodifiableMap(
-                            s -> new SignalID(s.type(), s.modID()),
-                            s -> s.signal().getValueAsDouble()))));
-      } finally {
-        writeLock.unlock();
-      }
+      Tracer.trace(
+          "Odometry Thread",
+          () -> {
+            Tracer.trace(
+                "wait for all",
+                () -> BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalArr));
+            try {
+              writeLock.lock();
+              var filteredSignals =
+                  registeredSignals.stream()
+                      .filter(s -> s.signal().getStatus().equals(StatusCode.OK))
+                      .collect(Collectors.toSet());
+              journal.add(
+                  new Samples(
+                      timestampFor(filteredSignals),
+                      filteredSignals.stream()
+                          .collect(
+                              Collectors.toUnmodifiableMap(
+                                  s -> new SignalID(s.type(), s.modID()),
+                                  s -> s.signal().getValueAsDouble()))));
+            } finally {
+              writeLock.unlock();
+            }
+          });
     }
   }
 
