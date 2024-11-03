@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 import Graph_Battery
 import os
+from jinja2 import Template
 
 app = Flask(__name__)
 
@@ -9,9 +10,9 @@ name = ""
 date = ""
 time = ""
 
-@app.route("/", methods = ['POST', 'GET'])
-def battery_list():
-    return render_template("Battery_Ranking.html", names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings(), title = "Battery Ranking")
+#@app.route("/", methods = ['POST', 'GET'])
+#def battery_list():
+#    return render_template("Battery_Ranking.html", names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings(), title = "Battery Ranking")
 
 @app.route("/name", methods = ['POST','GET'])
 def name_chooser():
@@ -44,14 +45,28 @@ def time_chooser():
     return render_template("time_selector.html", times = list(voltages[name][date].keys()), title = name + "/" + date)
 
 
-
 @app.route("/name/dates/times/graphs", methods = ['POST', 'GET'])
 def show_graph():
     for key, value in request.form.items():
         if(key == "timeSelector"):
             time = value
-    Graph_Battery.get_graph(name, date, time)
-    return "Graph opens in new window"
+    #Graph_Battery.get_graph(name, date, time)
+    return render_template("test.html", fig = Graph_Battery.get_graph_html(name,date,time))
+
+# the old world ^^^^
+# the new world \/ \/ \/ \/
+
+@app.route("/", methods = ['POST', 'GET'])
+def ranking_page():
+    urls = []
+    for name in list(Graph_Battery.get_battery_rankings().keys()):
+        urls.append(url_for("battery_rundown", name = name))
+    return render_template("Battery_Ranking.html", links = urls, names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings(), title = "Battery Ranking")
+
+@app.route("/<name>", methods = ['POST', 'GET'])
+def battery_rundown(name):
+    fig = Graph_Battery.get_candlestick_chart(name)
+    return render_template("Battery_Rundown.html", name = name, fig = fig)
 
 if __name__ == '__main__':
    app.run()

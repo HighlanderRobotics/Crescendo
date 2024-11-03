@@ -5,7 +5,7 @@ import csv
 import random
 
 
-RANDOM_NAMES = ["Ed", "Athena"]
+RANDOM_NAMES = ["Ed", "Athena", "Jacob"]
 PATH = "logs"
 
 battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]] = {}
@@ -53,7 +53,7 @@ for file in os.listdir(PATH):
 #tmp = battery_voltages['24-09-22']['3:50:18'].values()
 #print(sum(tmp)/len(tmp))
 #x_axis = list(battery_voltages['24-09-22']['3:50:18'].values())
-if  not __name__ == '__main__':
+if  __name__ == '__main__':
     for name in battery_voltages:
         for date in battery_voltages[name]:
             fig = go.Figure()
@@ -67,6 +67,10 @@ if  not __name__ == '__main__':
 def get_voltages():
     return battery_voltages
 
+def get_graph_html(name: str, date: str, time: str):
+    fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
+    return fig.to_html(full_html=False)
+
 def get_graph(name: str, date, time):
     fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
     fig.show()
@@ -74,34 +78,51 @@ def get_candlestick_chart_all():
     x_axis = []
     high = []
     low = []
-    start = []
-    end = []
+
     data = []
+    
+    
     
     for name in battery_voltages:
         x_axis = []
         high = []
         low = []
-        start = []
-        end = []
         for date in battery_voltages[name]:
             times = list(battery_voltages[name][date].keys())
             for time in times:
                 x_axis.append(date + " | " + time)
                 high.append(list(battery_voltages[name][date][time].values())[0])
                 low.append(list(battery_voltages[name][date][time].values())[-1])
-                start = high
-                end = low
+
         data.append(go.Candlestick(
             x = x_axis,
-            open = start,
+            open = high,
             high = high,
             low = low,
-            close = end, 
+            close = low, 
             name = name
         ))
-    print(x_axis)
+    print("IMPORtANT IMPORTANT IMPORTANT" + str(data[0].x))
     print(high)
+    x_axis = []
+    high = []
+    low = []
+    # this is a later petro problem
+    '''
+    for graph in data:
+        x_axis.append(graph.x)
+        high.append(graph.high)
+        low.append(graph.low)
+        for i in range(len(x_axis)):
+            for j in range(0, len(x_axis) - i - 1):
+                
+                # Range of the array is from 0 to n-i-1
+                # Swap the elements if the element found 
+                #is greater than the adjacent element
+                
+                if x_axis[j] > x_axis[j + 1]:
+                    x_axis[j], x_axis[j + 1] = x_axis[j + 1], x_axis[j]
+    '''
     fig = go.Figure(data)
     fig.update_layout(title = name, 
                       yaxis_title = "voltatge"
@@ -131,12 +152,12 @@ def get_candlestick_chart(name: str):
         low = low,
         close = end
     ))
-    fig.update_layout(title = name, 
+    fig.update_layout(title = "todos", 
                       yaxis_title = "voltatge"
                       )
-    fig.show()
+    return fig.to_html(full_html = False)
     
-get_candlestick_chart_all()
+#get_candlestick_chart_all()
 def get_battery_rankings():
     ranking = {}
     for name in battery_voltages:
