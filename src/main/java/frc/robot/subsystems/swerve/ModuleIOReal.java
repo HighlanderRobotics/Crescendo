@@ -29,6 +29,7 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
@@ -54,6 +55,7 @@ public class ModuleIOReal implements ModuleIO {
   private final ModuleConstants constants;
 
   // Hardware
+  // Must be accessible to sim subclass
   private final TalonFX driveTalon;
   private final TalonFX turnTalon;
   private final CANcoder cancoder;
@@ -245,19 +247,17 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
+  public void setDriveSetpoint(final double metersPerSecond, final double forceNewtons) {
     // Doesnt actually refresh drive velocity signal, but should be cached
     if (metersPerSecond == 0
-        && metersPerSecondSquared == 0
+        && forceNewtons == 0
         && MathUtil.isNear(0.0, driveVelocity.getValueAsDouble(), 0.1)) {
       setDriveVoltage(0.0);
     } else {
       driveTalon.setControl(
           driveControlVelocity
               .withVelocity(metersPerSecond)
-              .withAcceleration(metersPerSecondSquared)
-          // .withFeedForward(metersPerSecondSquared * kAVoltsPerMeterPerSecondSquared)
-          );
+              .withFeedForward(forceNewtons / DCMotor.getKrakenX60Foc(1).KtNMPerAmp));
     }
   }
 

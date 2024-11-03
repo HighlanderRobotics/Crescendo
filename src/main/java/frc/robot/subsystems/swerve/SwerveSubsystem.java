@@ -19,13 +19,10 @@ import static edu.wpi.first.units.Units.Volts;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoControlFunction;
 import com.choreo.lib.ChoreoTrajectory;
+import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
-import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
@@ -74,6 +71,7 @@ import frc.robot.Robot;
 import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalID;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
@@ -88,10 +86,12 @@ import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -256,27 +256,6 @@ public class SwerveSubsystem extends SubsystemBase {
     // mildly questionable
     VisionIOSim.pose = this::getPose3d;
 
-    AutoBuilder.configureHolonomic(
-        this::getPose, // Robot pose supplier
-        this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
-        this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-        this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
-        // ChassisSpeeds
-        new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in
-            // your Constants class
-            new PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
-            new PIDConstants(20.0, 0.0, 0.0), // Rotation PID constants
-            MAX_LINEAR_SPEED, // Max module speed, in m/s
-            DRIVE_BASE_RADIUS, // Drive base radius in meters. Distance from robot center to
-            // furthest module.
-            new ReplanningConfig(
-                false, false) // Default path replanning config. See the API for the options
-            // here
-            ),
-        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
-        this // Reference to this subsystem to set requirements
-        );
-
     PathPlannerLogging.setLogTargetPoseCallback(
         (pose) -> {
           Logger.recordOutput("PathPlanner/Target", pose);
@@ -431,6 +410,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateOdometry() {
     Logger.recordOutput("Swerve/Updates Since Last", odoThreadInputs.sampledStates.size());
     var sampleStates = odoThreadInputs.sampledStates;
+    if (sampleStates.size() == 0 || sampleStates.get(0).values().isEmpty())
+      sampleStates = getSyncSamples();
     var i = 0;
     for (var sample : sampleStates) {
       i++;
@@ -518,6 +499,24 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
+  /** Generates a set of samples without using the async thread */
+  private List<Samples> getSyncSamples() {
+    return List.of(
+        new Samples(
+            Logger.getTimestamp(),
+            Map.of(
+                new SignalID(SignalType.DRIVE, 0), modules[0].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 0), modules[0].getPosition().angle.getRotations(),
+                new SignalID(SignalType.DRIVE, 1), modules[1].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 1), modules[1].getPosition().angle.getRotations(),
+                new SignalID(SignalType.DRIVE, 2), modules[2].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 2), modules[2].getPosition().angle.getRotations(),
+                new SignalID(SignalType.DRIVE, 3), modules[3].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 3), modules[3].getPosition().angle.getRotations(),
+                new SignalID(SignalType.GYRO, PhoenixOdometryThread.GYRO_MODULE_ID),
+                    gyroInputs.yawPosition.getRotations())));
+  }
+
   private void updateVision() {
     for (var camera : cameras) {
       PhotonPipelineResult result =
@@ -541,7 +540,16 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
-  private void runVelocity(ChassisSpeeds speeds) {
+  /**
+   * Runs the drivetrain at the given robot relative speeds
+   *
+   * @param speeds robot relative target speeds
+   * @param moduleForcesX field relative force feedforward to apply to the modules. Must have the
+   *     same number of elements as there are modules.
+   * @param moduleForcesY field relative force feedforward to apply to the modules. Must have the
+   *     same number of elements as there are modules.
+   */
+  private void runVelocity(ChassisSpeeds speeds, double[] moduleForcesX, double[] moduleForcesY) {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
@@ -562,6 +570,11 @@ public class SwerveSubsystem extends SubsystemBase {
     // Log setpoint states
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
     Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+  }
+
+  private void runVelocity(ChassisSpeeds speeds) {
+    // do the allocations here matter?
+    runVelocity(speeds, new double[4], new double[4]);
   }
 
   /**
@@ -667,7 +680,9 @@ public class SwerveSubsystem extends SubsystemBase {
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(3.0, 0.0, 0.0)),
-            (ChassisSpeeds speeds) -> this.runVelocity(speeds),
+            (ChassisSpeeds speeds, ChoreoTrajectoryState state) -> {
+              this.runVelocity(speeds);
+            },
             () -> {
               Optional<Alliance> alliance = DriverStation.getAlliance();
               return alliance.isPresent() && alliance.get() == Alliance.Red;
@@ -698,8 +713,8 @@ public class SwerveSubsystem extends SubsystemBase {
    *     freedom. You can also pass in a function with the signature (Pose2d currentPose,
    *     ChoreoTrajectoryState referenceState) -&gt; ChassisSpeeds to implement a custom follower
    *     (i.e. for logging).
-   * @param outputChassisSpeeds A function that consumes the target robot-relative chassis speeds
-   *     and commands them to the robot.
+   * @param outputCallback A function that consumes the target robot-relative chassis speeds and
+   *     commands them to the robot.
    * @param mirrorTrajectory If this returns true, the path will be mirrored to the opposite side,
    *     while keeping the same coordinate system origin. This will be called every loop during the
    *     command.
@@ -710,7 +725,7 @@ public class SwerveSubsystem extends SubsystemBase {
       ChoreoTrajectory trajectory,
       Supplier<Pose2d> poseSupplier,
       ChoreoControlFunction controller,
-      Consumer<ChassisSpeeds> outputChassisSpeeds,
+      BiConsumer<ChassisSpeeds, ChoreoTrajectoryState> outputCallback,
       BooleanSupplier mirrorTrajectory,
       Subsystem... requirements) {
     var timer = new Timer();
@@ -730,15 +745,14 @@ public class SwerveSubsystem extends SubsystemBase {
           Logger.recordOutput(
               "Choreo/Target Speeds",
               trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getChassisSpeeds());
-          outputChassisSpeeds.accept(
-              controller.apply(
-                  poseSupplier.get(),
-                  trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean())));
+          var state = trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean());
+          outputCallback.accept(controller.apply(poseSupplier.get(), state), state);
         },
         (interrupted) -> {
           timer.stop();
           // if (interrupted) {
-          outputChassisSpeeds.accept(new ChassisSpeeds());
+          outputCallback.accept(
+              new ChassisSpeeds(), trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()));
           // } else {
           // outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
           // }

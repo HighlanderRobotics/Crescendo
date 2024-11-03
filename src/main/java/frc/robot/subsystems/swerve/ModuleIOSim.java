@@ -33,11 +33,12 @@ public class ModuleIOSim implements ModuleIO {
 
   private final ModuleConstants constants;
 
+  private static final DCMotor driveMotor = DCMotor.getKrakenX60Foc(1);
   private final DCMotorSim driveSim =
       // Third param is the moment of inertia of the swerve wheel
       // Used to approximate the robot inertia, not perfect but fine for the
       // Fidelity of simulation we are targeting
-      new DCMotorSim(DCMotor.getKrakenX60Foc(1), Module.DRIVE_GEAR_RATIO, 0.025);
+      new DCMotorSim(driveMotor, Module.DRIVE_GEAR_RATIO, 0.025);
   private final DCMotorSim turnSim =
       // Third param is the moment of inertia of the swerve steer
       new DCMotorSim(DCMotor.getKrakenX60Foc(1), Module.TURN_GEAR_RATIO, 0.004);
@@ -87,11 +88,15 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
+  public void setDriveSetpoint(final double metersPerSecond, final double forceNewtons) {
     setDriveVoltage(
         driveController.calculate(
                 driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS, metersPerSecond)
-            + driveFeedforward.calculate(metersPerSecond));
+            + driveFeedforward.calculate(metersPerSecond)
+            + ((forceNewtons * Module.WHEEL_RADIUS * Math.PI * 2.0)
+                * driveMotor.rOhms
+                / driveMotor.KtNMPerAmp)
+            + (driveSim.getAngularVelocityRadPerSec() / driveMotor.KvRadPerSecPerVolt));
   }
 
   @Override

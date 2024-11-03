@@ -64,24 +64,27 @@ public class Module {
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
-    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
-    return runSetpoint(
-        state,
-        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond)
-            / (Timer.getFPGATimestamp() - lastTime));
+    return runSetpoint(state, 0.0, 0.0);
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
-  public SwerveModuleState runSetpoint(SwerveModuleState state, double accel) {
+  public SwerveModuleState runSetpoint(
+      SwerveModuleState state, double forceXNewtons, double forceYNewtons) {
     // Optimize state based on current angle
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    // force on the motor is the total force vector projected onto the velocity vector
+    // to project a onto b take ||a||*cos(theta) where theta is the angle between the two vectors
+    // We want the magnitude of the projection, so we can ignore the direction of this later
+    final var theta = Math.atan2(forceYNewtons, forceXNewtons) - optimizedState.angle.getRadians();
+    final double forceNewtons = Math.hypot(forceXNewtons, forceYNewtons) * Math.cos(theta);
 
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
-        accel);
-    Logger.recordOutput(String.format("Swerve/%s Module/Accel Setpoint", inputs.prefix), accel);
+        forceNewtons);
+    Logger.recordOutput(
+        String.format("Swerve/%s Module/Force Feedforward", inputs.prefix), forceNewtons);
     lastSetpoint = optimizedState;
     lastTime = Timer.getFPGATimestamp();
     return optimizedState;
