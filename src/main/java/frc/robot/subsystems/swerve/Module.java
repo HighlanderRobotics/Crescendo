@@ -75,7 +75,7 @@ public class Module {
     // force on the motor is the total force vector projected onto the velocity vector
     // to project a onto b take ||a||*cos(theta) where theta is the angle between the two vectors
     // We want the magnitude of the projection, so we can ignore the direction of this later
-    final var theta = Math.atan2(forceYNewtons, forceXNewtons) - optimizedState.angle.getRadians();
+    final var theta = Math.atan2(forceYNewtons, forceXNewtons) - inputs.turnPosition.getRadians();
     final double forceNewtons = Math.hypot(forceXNewtons, forceYNewtons) * Math.cos(theta);
 
     io.setTurnSetpoint(optimizedState.angle);
@@ -97,6 +97,9 @@ public class Module {
   public SwerveModuleState runVoltageSetpoint(SwerveModuleState state, boolean focEnabled) {
     // Optimize state based on current angle
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    Logger.recordOutput(
+        String.format("Swerve/%s Module/Voltage Target", inputs.prefix),
+        optimizedState.speedMetersPerSecond);
 
     io.setTurnSetpoint(optimizedState.angle);
     io.setDriveVoltage(

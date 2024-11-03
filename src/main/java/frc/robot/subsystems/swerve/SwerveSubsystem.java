@@ -562,13 +562,24 @@ public class SwerveSubsystem extends SubsystemBase {
         ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
 
     // Send setpoints to modules
-    SwerveModuleState[] optimizedSetpointStates =
-        Streams.zip(
-                Arrays.stream(modules), Arrays.stream(setpointStates), (m, s) -> m.runSetpoint(s))
-            .toArray(SwerveModuleState[]::new);
+    SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[modules.length];
+    SwerveModuleState[] forceSetpoints = new SwerveModuleState[modules.length];
+    for (int i = 0; i < optimizedSetpointStates.length; i++) {
+      var robotRelForceX =
+          moduleForcesX[i] * getRotation().getCos() - moduleForcesY[i] * getRotation().getSin();
+      var robotRelForceY =
+          moduleForcesX[i] * getRotation().getSin() + moduleForcesY[i] * getRotation().getCos();
+      forceSetpoints[i] =
+          new SwerveModuleState(
+              Math.hypot(moduleForcesX[i], moduleForcesY[i]),
+              new Rotation2d(moduleForcesX[i], moduleForcesY[i]));
+      optimizedSetpointStates[i] =
+          modules[i].runSetpoint(setpointStates[i], robotRelForceX, robotRelForceY);
+    }
 
     // Log setpoint states
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    Logger.recordOutput("SwerveStates/ForceSetpoints", forceSetpoints);
     Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
   }
 
@@ -681,7 +692,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(3.0, 0.0, 0.0)),
             (ChassisSpeeds speeds, ChoreoTrajectoryState state) -> {
-              this.runVelocity(speeds);
+              this.runVelocity(speeds, state.moduleForcesX, state.moduleForcesY);
             },
             () -> {
               Optional<Alliance> alliance = DriverStation.getAlliance();
@@ -745,6 +756,12 @@ public class SwerveSubsystem extends SubsystemBase {
           Logger.recordOutput(
               "Choreo/Target Speeds",
               trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getChassisSpeeds());
+          Logger.recordOutput(
+              "Choreo/X Forces",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).moduleForcesX);
+          Logger.recordOutput(
+              "Choreo/Y Forces",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).moduleForcesY);
           var state = trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean());
           outputCallback.accept(controller.apply(poseSupplier.get(), state), state);
         },
