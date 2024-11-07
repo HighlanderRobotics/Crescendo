@@ -35,7 +35,7 @@ public class ShooterIOSim implements ShooterIO {
       new DCMotorSim(DCMotor.getKrakenX60Foc(1), ShooterSubsystem.FLYWHEEL_RATIO, 0.001);
 
   ProfiledPIDController pivotController =
-      new ProfiledPIDController(1.0, 0.0, 1.0, new Constraints(10.0, 10.0));
+      new ProfiledPIDController(100.0, 0.0, 1.0, new Constraints(10.0, 10.0));
   ArmFeedforward pivotFF = new ArmFeedforward(0.0, 0.12, 0.8);
 
   private final PIDController leftFlywheelController = new PIDController(0.5, 0.0, 0.0);

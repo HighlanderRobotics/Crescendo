@@ -51,7 +51,7 @@ public interface ModuleIO {
   }
 
   /** Use onboard PIDF to run the drive motor at the specified speed */
-  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared);
+  public void setDriveSetpoint(final double metersPerSecond, final double forceNewtons);
 
   /** Run the turn motor at the specified voltage. */
   public void setTurnVoltage(final double volts);
