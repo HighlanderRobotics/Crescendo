@@ -22,6 +22,9 @@ import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.utils.Tracer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +53,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     // But we don't!
   }
 
+  /** modID should be GYRO_MODULE_ID for the gyro signal */
   public record SignalID(SignalType type, int modID) {}
 
   public record Registration(
@@ -58,18 +62,15 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
       SignalType type,
       Set<StatusSignal<Double>> signals) {}
 
-  public record RegisteredSignal(
-      StatusSignal<Double> signal, Optional<ModuleConstants> moduleConstants, SignalType type) {}
+  /** modID should be GYRO_MODULE_ID for the gyro signal */
+  public record RegisteredSignal(StatusSignal<Double> signal, int modID, SignalType type) {}
 
   public record Samples(double timestamp, Map<SignalID, Double> values) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
 
-  // For gyros
-  private static final ModuleConstants NEGATIVE_ONE =
-      new ModuleConstants(-1, "", -1, -1, -1, Rotation2d.fromRotations(0));
-
-  private final Set<RegisteredSignal> signals = Sets.newHashSet();
+  private final Set<RegisteredSignal> registeredSignals = Sets.newHashSet();
+  private StatusSignal<Double>[] signalArr = new StatusSignal[0];
   private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
@@ -111,13 +112,23 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
       for (var registration : registrations) {
         assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
 
-        signals.addAll(
+        registeredSignals.addAll(
             registration.signals.stream()
                 .map(
                     s ->
                         new RegisteredSignal(
-                            s, registration.moduleConstants(), registration.type()))
+                            s,
+                            registration.moduleConstants().isPresent()
+                                ? registration.moduleConstants().get().id()
+                                : GYRO_MODULE_ID,
+                            registration.type()))
                 .toList());
+        registration.signals.stream()
+            .forEach(
+                (s) -> {
+                  signalArr = Arrays.copyOf(signalArr, signalArr.length + 1);
+                  signalArr[signalArr.length - 1] = s;
+                });
       }
     } finally {
       writeLock.unlock();
@@ -125,16 +136,23 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
   }
 
   public List<Samples> samplesSince(double timestamp) {
-    var readLock = journalLock.readLock();
-    try {
-      readLock.lock();
+    return Tracer.trace(
+        "samples since",
+        () -> {
+          var readLock = journalLock.readLock();
+          try {
+            readLock.lock();
 
-      return journal.stream()
-          .filter(s -> s.timestamp > timestamp)
-          .collect(Collectors.toUnmodifiableList());
-    } finally {
-      readLock.unlock();
-    }
+            return Tracer.trace(
+                "stream timestamps",
+                () ->
+                    journal.stream()
+                        .filter(s -> s.timestamp > timestamp)
+                        .collect(Collectors.toUnmodifiableList()));
+          } finally {
+            readLock.unlock();
+          }
+        });
   }
 
   @Override
@@ -142,29 +160,30 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     while (true) {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
-      // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
-      // but keeping up a symmetric array is too and it's probably negligible on latency.
-      BaseStatusSignal.waitForAll(
-          2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
-      try {
-        writeLock.lock();
-        var filteredSignals =
-            signals.stream()
-                .filter(s -> s.signal().getStatus().equals(StatusCode.OK))
-                .collect(Collectors.toSet());
-        journal.add(
-            new Samples(
-                timestampFor(filteredSignals),
-                filteredSignals.stream()
-                    .collect(
-                        Collectors.toUnmodifiableMap(
-                            s ->
-                                new SignalID(
-                                    s.type(), s.moduleConstants().orElse(NEGATIVE_ONE).id()),
-                            s -> s.signal().getValueAsDouble()))));
-      } finally {
-        writeLock.unlock();
-      }
+      Tracer.trace(
+          "Odometry Thread",
+          () -> {
+            Tracer.trace(
+                "wait for all",
+                () -> BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalArr));
+            try {
+              writeLock.lock();
+              var filteredSignals =
+                  registeredSignals.stream()
+                      .filter(s -> s.signal().getStatus().equals(StatusCode.OK))
+                      .collect(Collectors.toSet());
+              journal.add(
+                  new Samples(
+                      timestampFor(filteredSignals),
+                      filteredSignals.stream()
+                          .collect(
+                              Collectors.toUnmodifiableMap(
+                                  s -> new SignalID(s.type(), s.modID()),
+                                  s -> s.signal().getValueAsDouble()))));
+            } finally {
+              writeLock.unlock();
+            }
+          });
     }
   }
 
@@ -185,5 +204,10 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
   @Override
   public void updateInputs(OdometryThreadIOInputs inputs, double lastTimestamp) {
     inputs.sampledStates = samplesSince(lastTimestamp);
+  }
+
+  @Override
+  public void start() {
+    super.start();
   }
 }

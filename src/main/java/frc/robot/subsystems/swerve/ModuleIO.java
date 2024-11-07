@@ -19,8 +19,6 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
-    // public ModuleConstants constants =
-    //     new ModuleConstants(-1, "", 0, 0, 0, Rotation2d.fromRotations(0));
     public String prefix = "";
 
     public double drivePositionMeters = 0.0;
@@ -53,7 +51,7 @@ public interface ModuleIO {
   }
 
   /** Use onboard PIDF to run the drive motor at the specified speed */
-  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared);
+  public void setDriveSetpoint(final double metersPerSecond, final double forceNewtons);
 
   /** Run the turn motor at the specified voltage. */
   public void setTurnVoltage(final double volts);

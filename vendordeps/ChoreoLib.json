@@ -5,7 +5,8 @@
     "uuid": "287cff6e-1b60-4412-8059-f6834fb30e30",
     "frcYear": "2024",
     "mavenUrls": [
-        "https://SleipnirGroup.github.io/ChoreoLib/dep"
+        "https://SleipnirGroup.github.io/ChoreoLib/dep",
+        "https://repo1.maven.org/maven2"
     ],
     "jsonUrl": "https://SleipnirGroup.github.io/ChoreoLib/dep/ChoreoLib.json",
     "javaDependencies": [

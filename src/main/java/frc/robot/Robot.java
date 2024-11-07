@@ -46,14 +46,18 @@ import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.swerve.GyroIOPigeon2;
 import frc.robot.subsystems.swerve.GyroIOSim;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.mapleUtils.CompetitionFieldSimulation;
 import frc.robot.utils.mapleUtils.CompetitionFieldVisualizer;
 import frc.robot.utils.mapleUtils.Crescendo2024FieldSimulation;
+import java.util.HashMap;
+import java.util.function.BiConsumer;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -118,7 +122,8 @@ public class Robot extends LoggedRobot {
               : SwerveSubsystem.createSimCameras(),
           mode == RobotMode.REAL
               ? SwerveSubsystem.createTalonFXModules()
-              : SwerveSubsystem.createSimModules());
+              : SwerveSubsystem.createSimModules(),
+          PhoenixOdometryThread.getInstance());
   private final IntakeSubsystem intake = new IntakeSubsystem(new IntakeIOReal());
   private final FeederSubsystem feeder = new FeederSubsystem(new FeederIOReal());
   private final ElevatorSubsystem elevator =
@@ -153,6 +158,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotInit() {
+    SignalLogger.enableAutoLogging(false);
     RoboRioDataJNI.setBrownoutVoltage(6.0);
     // Metadata about the current code running on the robot
     Logger.recordMetadata("Codebase", "Comp2024");
@@ -172,6 +178,7 @@ public class Robot extends LoggedRobot {
         Logger.recordMetadata("GitDirty", "Unknown");
         break;
     }
+    setUpLogging();
 
     switch (mode) {
       case REAL:
@@ -464,6 +471,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
     autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
     autoChooser.addOption("Source 3", autoSource3());
+    autoChooser.addOption("Center 4", autoCenter4());
     autoChooser.addOption("Amp 5", autoAmp5());
     autoChooser.addOption("Source 4", autoSource4());
     autoChooser.addOption("Line Test Repeatedly", lineTest());
@@ -494,24 +502,53 @@ public class Robot extends LoggedRobot {
     } else {
       Logger.recordOutput("Updating Sim", false);
     }
-    CommandScheduler.getInstance().run();
-    // Update ascope mechanism visualization
-    Logger.recordOutput(
-        "Mechanism Poses",
-        new Pose3d[] {
-          shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+    Tracer.trace(
+        "RobotPeriodic",
+        () -> {
+          Tracer.trace("CommandScheduler", CommandScheduler.getInstance()::run);
+          // Update ascope mechanism visualization
+          Logger.recordOutput(
+              "Mechanism Poses",
+              new Pose3d[] {
+                shooter.getMechanismPose(), elevator.getCarriagePose(), elevator.getFirstStagePose()
+              });
+          Logger.recordOutput("Target", currentTarget);
+          Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
+          // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
+          Logger.recordOutput(
+              "Angle to target",
+              Math.atan2(
+                  FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
+                  FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
+          Logger.recordOutput(
+              "AutoAim/Actual Distance",
+              swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
         });
-    Logger.recordOutput("Target", currentTarget);
-    Logger.recordOutput("AutoAim/Speaker", FieldConstants.getSpeaker());
-    // Logger.recordOutput("Canivore Util", CANBus.getStatus("canivore").BusUtilization);
-    Logger.recordOutput(
-        "Angle to target",
-        Math.atan2(
-            FieldConstants.getSpeaker().getY() - swerve.getPose().getY(),
-            FieldConstants.getSpeaker().getX() - swerve.getPose().getX()));
-    Logger.recordOutput(
-        "AutoAim/Actual Distance",
-        swerve.getPose().minus(FieldConstants.getSpeaker()).getTranslation().getNorm());
+  }
+
+  @Override
+  public void loopFunc() {
+    Tracer.trace("Robot/LoopFunc", super::loopFunc);
+  }
+
+  private void setUpLogging() {
+    HashMap<String, Integer> commandCounts = new HashMap<>();
+    final BiConsumer<Command, Boolean> logCommandFunction =
+        (Command command, Boolean active) -> {
+          String name = command.getName();
+          int count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
+          commandCounts.put(name, count);
+          Logger.recordOutput(
+              "Commands/CommandsUnique/" + name + "_" + Integer.toHexString(command.hashCode()),
+              active.booleanValue());
+          Logger.recordOutput("Commands/CommandsAll/" + name, count > 0);
+        };
+
+    var scheduler = CommandScheduler.getInstance();
+
+    scheduler.onCommandInitialize(c -> logCommandFunction.accept(c, true));
+    scheduler.onCommandFinish(c -> logCommandFunction.accept(c, false));
+    scheduler.onCommandInterrupt(c -> logCommandFunction.accept(c, false));
   }
 
   private Command shootWithDashboard() {
@@ -756,7 +793,7 @@ public class Robot extends LoggedRobot {
                                 .getRotation()
                                 .getDegrees(),
                             0,
-                            35)),
+                            20)),
                 () -> 0.0,
                 () -> 0.0)
             .until(() -> feeder.getFirstBeambreak())
@@ -819,6 +856,47 @@ public class Robot extends LoggedRobot {
         swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).asProxy().deadlineWith(autoIntake()),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
+            .withTimeout(1.0),
+        autoStaticAutoAim());
+  }
+
+  private Command autoCenter4() {
+    return Commands.sequence(
+        autoFenderShot(),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("center 4.1"), true)
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("center 4.2"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
+            .withTimeout(1.0),
+        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
+        swerve
+            .runChoreoTraj(Choreo.getTrajectory("center 4.3"))
+            .asProxy()
+            .deadlineWith(autoIntake()),
+        autoIntake()
+            .raceWith(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.waitUntil(
+                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim());
   }
@@ -983,5 +1061,10 @@ public class Robot extends LoggedRobot {
   /** Modifies the given joystick axis value to make teleop driving smoother. */
   private static double teleopAxisAdjustment(double x) {
     return MathUtil.applyDeadband(Math.abs(Math.pow(x, 2)) * Math.signum(x), 0.02);
+  }
+
+  @Override
+  public void autonomousPeriodic() {
+    Tracer.trace("Auto Periodic", super::autonomousPeriodic);
   }
 }

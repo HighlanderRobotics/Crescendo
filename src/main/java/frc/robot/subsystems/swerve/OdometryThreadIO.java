@@ -16,8 +16,10 @@ import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public interface OdometryThreadIO {
+  public static final int GYRO_MODULE_ID = -1;
+
   public class OdometryThreadIOInputs implements LoggableInputs {
-    public List<Samples> sampledStates = List.of();
+    List<Samples> sampledStates = List.of();
 
     @Override
     public void toLog(LogTable table) {
@@ -27,7 +29,7 @@ public interface OdometryThreadIO {
         var sample = sampledStates.get(i);
         for (var signal : sample.values().entrySet()) {
           table.put(
-              i + " " + signal.getKey().type().toString() + " " + signal.getKey().modID(),
+              "Data/" + i + " " + signal.getKey().type().toString() + " " + signal.getKey().modID(),
               signal.getValue());
           modIds.add(signal.getKey().modID());
         }
@@ -50,15 +52,15 @@ public interface OdometryThreadIO {
           for (var id : modIds) {
             values.put(
                 new SignalID(SignalType.DRIVE, (int) id),
-                table.get(i + " " + SignalType.DRIVE + " " + id).getDouble());
+                table.get("Data/" + i + " " + SignalType.DRIVE + " " + id).getDouble());
             values.put(
                 new SignalID(SignalType.STEER, (int) id),
-                table.get(i + " " + SignalType.STEER + " " + id).getDouble());
+                table.get("Data/" + i + " " + SignalType.STEER + " " + id).getDouble());
           }
           try {
             values.put(
                 new SignalID(SignalType.GYRO, (int) -1),
-                table.get(i + " " + SignalType.GYRO + " " + -1).getDouble());
+                table.get("Data/" + i + " " + SignalType.GYRO + " " + GYRO_MODULE_ID).getDouble());
           } catch (NullPointerException e) {
             // We don't have a gyro this loop ig
           }

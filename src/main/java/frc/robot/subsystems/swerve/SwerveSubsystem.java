@@ -19,13 +19,10 @@ import static edu.wpi.first.units.Units.Volts;
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoControlFunction;
 import com.choreo.lib.ChoreoTrajectory;
+import com.choreo.lib.ChoreoTrajectoryState;
 import com.ctre.phoenix6.SignalLogger;
 import com.google.common.collect.Streams;
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
-import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MatBuilder;
@@ -74,6 +71,10 @@ import frc.robot.Robot;
 import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalID;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
+import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalID;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
 import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
@@ -83,15 +84,18 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import frc.robot.utils.mapleUtils.SwerveDriveSimulation;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -241,7 +245,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
 
-  public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
+  public SwerveSubsystem(
+      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs, OdometryThreadIO odoThread) {
     this.gyroIO = gyroIO;
     // Instantiate here because we need to pass in the IOs
     this.odoThread =
@@ -258,27 +263,6 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int i = 0; i < visionIOs.length; i++) {
       cameras[i] = new Vision(visionIOs[i]);
     }
-
-    AutoBuilder.configureHolonomic(
-        this::getPose, // Robot pose supplier
-        this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
-        this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-        this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
-        // ChassisSpeeds
-        new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in
-            // your Constants class
-            new PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
-            new PIDConstants(20.0, 0.0, 0.0), // Rotation PID constants
-            MAX_LINEAR_SPEED, // Max module speed, in m/s
-            DRIVE_BASE_RADIUS, // Drive base radius in meters. Distance from robot center to
-            // furthest module.
-            new ReplanningConfig(
-                false, false) // Default path replanning config. See the API for the options
-            // here
-            ),
-        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
-        this // Reference to this subsystem to set requirements
-        );
 
     PathPlannerLogging.setLogTargetPoseCallback(
         (pose) -> {
@@ -390,51 +374,69 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void periodic() {
-    for (var camera : cameras) {
-      camera.updateInputs();
-      camera.processInputs();
-    }
-    odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp);
-    Logger.processInputs("Async Odo", odoThreadInputs);
-    if (!odoThreadInputs.sampledStates.isEmpty()) {
-      lastOdometryUpdateTimestamp =
-          odoThreadInputs.sampledStates.get(odoThreadInputs.sampledStates.size() - 1).timestamp();
-    }
-    gyroIO.updateInputs(gyroInputs);
-    for (var module : modules) {
-      module.updateInputs();
-    }
-    Logger.processInputs("Swerve/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
-    }
+    Tracer.trace(
+        "SwervePeriodic",
+        () -> {
+          for (var camera : cameras) {
+            Tracer.trace("Update cam inputs", camera::updateInputs);
+            Tracer.trace("Process cam inputs", camera::processInputs);
+          }
+          Tracer.trace(
+              "Update odo inputs",
+              () -> odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp));
+          Logger.processInputs("Async Odo", odoThreadInputs);
+          if (!odoThreadInputs.sampledStates.isEmpty()) {
+            lastOdometryUpdateTimestamp =
+                odoThreadInputs
+                    .sampledStates
+                    .get(odoThreadInputs.sampledStates.size() - 1)
+                    .timestamp();
+          }
+          Tracer.trace("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
+          for (int i = 0; i < modules.length; i++) {
+            Tracer.trace(
+                "SwerveModule update inputs from " + modules[i].getPrefix() + " Module",
+                modules[i]::updateInputs);
+          }
+          Logger.processInputs("Swerve/Gyro", gyroInputs);
+          for (int i = 0; i < modules.length; i++) {
+            Tracer.trace(
+                "SwerveModule periodic from " + modules[i].getPrefix() + " Module",
+                modules[i]::periodic);
+          }
 
-    // Stop moving when disabled
-    if (DriverStation.isDisabled()) {
-      for (var module : modules) {
-        module.stop();
-      }
-    }
-    // Log empty setpoint states when disabled
-    if (DriverStation.isDisabled()) {
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-    }
+          // Stop moving when disabled
+          if (DriverStation.isDisabled()) {
+            for (var module : modules) {
+              module.stop();
+            }
+          }
+          // Log empty setpoint states when disabled
+          if (DriverStation.isDisabled()) {
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+          }
 
-    Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
-    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
-    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
-    Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
+          Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
+          Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
+          Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
+          Logger.recordOutput(
+              "ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
+          Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
-    updateOdometry();
-    updateVision();
+          Tracer.trace("Update odometry", this::updateOdometry);
+          Tracer.trace("update vision", this::updateVision);
+        });
   }
 
   private void updateOdometry() {
     Logger.recordOutput("Swerve/Updates Since Last", odoThreadInputs.sampledStates.size());
     var sampleStates = odoThreadInputs.sampledStates;
+    if (sampleStates.size() == 0 || sampleStates.get(0).values().isEmpty())
+      sampleStates = getSyncSamples();
+    var i = 0;
     for (var sample : sampleStates) {
+      i++;
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
@@ -442,23 +444,25 @@ public class SwerveSubsystem extends SubsystemBase {
       boolean hasNullModulePosition = false;
       // Technically we could have not 4 modules worth of data here but im not dealing w that
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        try {
-          modulePositions[moduleIndex] =
-              new SwerveModulePosition(
-                  sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex)),
-                  Rotation2d.fromRotations(
-                      sample
-                          .values()
-                          .get(
-                              new SignalID(
-                                  SignalType.STEER,
-                                  moduleIndex)))); // gets positions from the thread, NOT inputs
-        } catch (NullPointerException e) {
+        var dist = sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex));
+        if (dist == null) {
+          // No value at this timestamp
           hasNullModulePosition = true;
 
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
         }
+        var rot = sample.values().get(new SignalID(SignalType.STEER, moduleIndex));
+        if (rot == null) {
+          // No value at this timestamp
+          hasNullModulePosition = true;
+
+          Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
+          break;
+        }
+        modulePositions[moduleIndex] =
+            new SwerveModulePosition(
+                dist, Rotation2d.fromRotations(rot)); // gets positions from the thread, NOT inputs
         Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, true);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
@@ -469,7 +473,8 @@ public class SwerveSubsystem extends SubsystemBase {
       }
       if (hasNullModulePosition) {
         if (!gyroInputs.connected
-            || sample.values().get(new SignalID(SignalType.GYRO, -1)) == null) {
+            || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
+                == null) {
           Logger.recordOutput("Odometry/Received Gyro Update", false);
           // no modules and no gyro so we're just sad :(
         } else {
@@ -479,7 +484,11 @@ public class SwerveSubsystem extends SubsystemBase {
               Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, -1)));
           lastGyroRotation = rawGyroRotation;
           Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
-          estimator.updateWithTime(sample.timestamp(), rawGyroRotation, lastModulePositions);
+          Tracer.trace(
+              "update estimator",
+              () ->
+                  estimator.updateWithTime(
+                      sample.timestamp(), rawGyroRotation, lastModulePositions));
         }
         continue;
       }
@@ -488,14 +497,19 @@ public class SwerveSubsystem extends SubsystemBase {
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-      if (!gyroInputs.connected || sample.values().get(new SignalID(SignalType.GYRO, -1)) == null) {
+      if (!gyroInputs.connected
+          || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
+              == null) {
         Logger.recordOutput("Odometry/Received Gyro Update", false);
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
         Logger.recordOutput("Odometry/Received Gyro Update", true);
         rawGyroRotation =
-            Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, -1)));
+            Rotation2d.fromDegrees(
+                sample
+                    .values()
+                    .get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID)));
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
       }
@@ -505,6 +519,24 @@ public class SwerveSubsystem extends SubsystemBase {
       // Apply update
       estimator.updateWithTime(sample.timestamp(), rawGyroRotation, modulePositions);
     }
+  }
+
+  /** Generates a set of samples without using the async thread */
+  private List<Samples> getSyncSamples() {
+    return List.of(
+        new Samples(
+            Logger.getTimestamp(),
+            Map.of(
+                new SignalID(SignalType.DRIVE, 0), modules[0].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 0), modules[0].getPosition().angle.getRotations(),
+                new SignalID(SignalType.DRIVE, 1), modules[1].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 1), modules[1].getPosition().angle.getRotations(),
+                new SignalID(SignalType.DRIVE, 2), modules[2].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 2), modules[2].getPosition().angle.getRotations(),
+                new SignalID(SignalType.DRIVE, 3), modules[3].getPosition().distanceMeters,
+                new SignalID(SignalType.STEER, 3), modules[3].getPosition().angle.getRotations(),
+                new SignalID(SignalType.GYRO, PhoenixOdometryThread.GYRO_MODULE_ID),
+                    gyroInputs.yawPosition.getRotations())));
   }
 
   private void updateVision() {
@@ -530,7 +562,16 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
-  private void runVelocity(ChassisSpeeds speeds) {
+  /**
+   * Runs the drivetrain at the given robot relative speeds
+   *
+   * @param speeds robot relative target speeds
+   * @param moduleForcesX field relative force feedforward to apply to the modules. Must have the
+   *     same number of elements as there are modules.
+   * @param moduleForcesY field relative force feedforward to apply to the modules. Must have the
+   *     same number of elements as there are modules.
+   */
+  private void runVelocity(ChassisSpeeds speeds, double[] moduleForcesX, double[] moduleForcesY) {
     // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
@@ -543,14 +584,30 @@ public class SwerveSubsystem extends SubsystemBase {
         ChassisSpeeds.fromRobotRelativeSpeeds(discreteSpeeds, getRotation()));
 
     // Send setpoints to modules
-    SwerveModuleState[] optimizedSetpointStates =
-        Streams.zip(
-                Arrays.stream(modules), Arrays.stream(setpointStates), (m, s) -> m.runSetpoint(s))
-            .toArray(SwerveModuleState[]::new);
+    SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[modules.length];
+    SwerveModuleState[] forceSetpoints = new SwerveModuleState[modules.length];
+    for (int i = 0; i < optimizedSetpointStates.length; i++) {
+      var robotRelForceX =
+          moduleForcesX[i] * getRotation().getCos() - moduleForcesY[i] * getRotation().getSin();
+      var robotRelForceY =
+          moduleForcesX[i] * getRotation().getSin() + moduleForcesY[i] * getRotation().getCos();
+      forceSetpoints[i] =
+          new SwerveModuleState(
+              Math.hypot(moduleForcesX[i], moduleForcesY[i]),
+              new Rotation2d(moduleForcesX[i], moduleForcesY[i]));
+      optimizedSetpointStates[i] =
+          modules[i].runSetpoint(setpointStates[i], robotRelForceX, robotRelForceY);
+    }
 
     // Log setpoint states
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    Logger.recordOutput("SwerveStates/ForceSetpoints", forceSetpoints);
     Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+  }
+
+  private void runVelocity(ChassisSpeeds speeds) {
+    // do the allocations here matter?
+    runVelocity(speeds, new double[4], new double[4]);
   }
 
   /**
@@ -656,7 +713,9 @@ public class SwerveSubsystem extends SubsystemBase {
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(1.5, 0.0, 0.0),
                 new PIDController(3.0, 0.0, 0.0)),
-            (ChassisSpeeds speeds) -> this.runVelocity(speeds),
+            (ChassisSpeeds speeds, ChoreoTrajectoryState state) -> {
+              this.runVelocity(speeds, state.moduleForcesX, state.moduleForcesY);
+            },
             () -> {
               Optional<Alliance> alliance = DriverStation.getAlliance();
               return alliance.isPresent() && alliance.get() == Alliance.Red;
@@ -687,19 +746,19 @@ public class SwerveSubsystem extends SubsystemBase {
    *     freedom. You can also pass in a function with the signature (Pose2d currentPose,
    *     ChoreoTrajectoryState referenceState) -&gt; ChassisSpeeds to implement a custom follower
    *     (i.e. for logging).
-   * @param outputChassisSpeeds A function that consumes the target robot-relative chassis speeds
-   *     and commands them to the robot.
+   * @param outputCallback A function that consumes the target robot-relative chassis speeds and
+   *     commands them to the robot.
    * @param mirrorTrajectory If this returns true, the path will be mirrored to the opposite side,
    *     while keeping the same coordinate system origin. This will be called every loop during the
    *     command.
    * @param requirements The subsystem(s) to require, typically your drive subsystem only.
    * @return A command that follows a Choreo path.
    */
-  public static Command choreoFullFollowSwerveCommand(
+  public Command choreoFullFollowSwerveCommand(
       ChoreoTrajectory trajectory,
       Supplier<Pose2d> poseSupplier,
       ChoreoControlFunction controller,
-      Consumer<ChassisSpeeds> outputChassisSpeeds,
+      BiConsumer<ChassisSpeeds, ChoreoTrajectoryState> outputCallback,
       BooleanSupplier mirrorTrajectory,
       Subsystem... requirements) {
     var timer = new Timer();
@@ -719,15 +778,20 @@ public class SwerveSubsystem extends SubsystemBase {
           Logger.recordOutput(
               "Choreo/Target Speeds",
               trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).getChassisSpeeds());
-          outputChassisSpeeds.accept(
-              controller.apply(
-                  poseSupplier.get(),
-                  trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean())));
+          Logger.recordOutput(
+              "Choreo/X Forces",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).moduleForcesX);
+          Logger.recordOutput(
+              "Choreo/Y Forces",
+              trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()).moduleForcesY);
+          var state = trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean());
+          outputCallback.accept(controller.apply(poseSupplier.get(), state), state);
         },
         (interrupted) -> {
           timer.stop();
           // if (interrupted) {
-          outputChassisSpeeds.accept(new ChassisSpeeds());
+          outputCallback.accept(
+              new ChassisSpeeds(), trajectory.sample(timer.get(), mirrorTrajectory.getAsBoolean()));
           // } else {
           // outputChassisSpeeds.accept(trajectory.getFinalState().getChassisSpeeds());
           // }
@@ -737,6 +801,7 @@ public class SwerveSubsystem extends SubsystemBase {
               mirrorTrajectory.getAsBoolean()
                   ? trajectory.getFinalState().flipped().getPose()
                   : trajectory.getFinalState().getPose();
+          var vel = getVelocity();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
               && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
@@ -745,7 +810,12 @@ public class SwerveSubsystem extends SubsystemBase {
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
                               % 360)
-                      < 20.0);
+                      < 20.0)
+              && MathUtil.isNear(
+                  0.0,
+                  vel.vxMetersPerSecond * vel.vxMetersPerSecond
+                      + vel.vyMetersPerSecond * vel.vyMetersPerSecond,
+                  0.75);
         },
         requirements);
   }
@@ -813,7 +883,9 @@ public class SwerveSubsystem extends SubsystemBase {
     try {
       estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
     } catch (Exception e) {
-      System.out.println("odo reset sad :(");
+      System.out.println(
+          "odo reset sad :( (this is likely because we havent had an odometry update yet or are having odo issues)");
+      System.out.println(e.getMessage());
     }
   }
 
