@@ -27,7 +27,6 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.DriveTrainConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import java.util.Arrays;
-import frc.robot.subsystems.swerve.Module.ModuleConstants;
 
 /**
  * Physics sim implementation of module IO.
@@ -43,14 +42,16 @@ public class ModuleIOSim implements ModuleIO {
 
   private static final DCMotor driveMotor = DCMotor.getKrakenX60Foc(1);
   private final TalonFX driveTalon;
+
+  /** Update only in periodic */
+  private double driveAppliedVolts = 0.0;
+
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityTorqueCurrentFOC driveControlVelocity =
       new VelocityTorqueCurrentFOC(0.0).withSlot(1);
-  private final DCMotorSim driveSim =
-      // Third param is the moment of inertia of the swerve wheel
-      // Used to approximate the robot inertia, not perfect but fine for the
-      // Fidelity of simulation we are targeting
-      new DCMotorSim(driveMotor, Module.DRIVE_GEAR_RATIO, 0.025);
+  public SwerveModulePhysicsSimulationResults driveSimResults =
+      new SwerveModulePhysicsSimulationResults();
+
   private final DCMotorSim turnSim =
       // Third param is the moment of inertia of the swerve steer
       new DCMotorSim(DCMotor.getKrakenX60Foc(1), Module.TURN_GEAR_RATIO, 0.004);
@@ -70,13 +71,12 @@ public class ModuleIOSim implements ModuleIO {
   public void updateInputs(final ModuleIOInputs inputs) {
     final var driveSimState = driveTalon.getSimState();
     driveSimState.Orientation = ChassisReference.Clockwise_Positive;
-    // driveSimState.setSupplyVoltage(RoboRioSim.getVInVoltage());
-    driveSim.setInput(driveSimState.getMotorVoltage());
 
-    driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
     driveSimState.setRotorVelocity(
-        (driveSim.getAngularVelocityRPM() / 60.0) * Module.DRIVE_GEAR_RATIO);
+        (driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS_METERS)
+            * Module.DRIVE_GEAR_RATIO);
+    driveAppliedVolts = driveSimState.getMotorVoltage();
 
     inputs.prefix = constants.prefix();
 
@@ -84,13 +84,13 @@ public class ModuleIOSim implements ModuleIO {
         driveSimResults.driveWheelFinalRevolutions * 2 * Math.PI * Module.WHEEL_RADIUS_METERS;
     inputs.driveVelocityMetersPerSec =
         driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS_METERS;
-    inputs.driveAppliedVolts = driveSimState.getMotorVoltage();
+    inputs.driveAppliedVolts = driveAppliedVolts;
     inputs.driveCurrentAmps =
-        new double[] {Math.abs(getSimulationTorque() / DRIVE_MOTOR.KtNMPerAmp)};
+        new double[] {Math.abs(getSimulationTorque() / driveMotor.KtNMPerAmp)};
     inputs.driveSupplyCurrentAmps =
         Math.abs(
-            (driveSimState.getMotorVoltage() / RoboRioSim.getVInVoltage())
-                * (getSimulationTorque() / DRIVE_MOTOR.KtNMPerAmp));
+            (driveAppliedVolts / RoboRioSim.getVInVoltage())
+                * (getSimulationTorque() / driveMotor.KtNMPerAmp));
 
     inputs.turnAbsolutePosition =
         new Rotation2d(turnSim.getAngularPositionRad()).plus(turnAbsoluteInitPosition);
@@ -128,8 +128,8 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   public double getSimulationTorque() {
-    return DRIVE_MOTOR.getTorque(
-        DRIVE_MOTOR.getCurrent(
+    return driveMotor.getTorque(
+        driveMotor.getCurrent(
             driveSimResults.driveWheelFinalVelocityRadPerSec * Module.DRIVE_GEAR_RATIO,
             driveAppliedVolts));
   }

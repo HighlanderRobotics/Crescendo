@@ -20,8 +20,6 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
-import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.utils.Tracer;
 import java.util.Arrays;
