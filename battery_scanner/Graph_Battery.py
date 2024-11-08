@@ -3,13 +3,14 @@ import plotly.graph_objects as go
 import os
 import csv
 import random
+from Battery import Battery
 
 
 RANDOM_NAMES = ["Ed", "Athena", "Jacob"]
 PATH = "logs"
 
 battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]] = {}
-
+batteries: list[Battery] = []
 index = 0 
 for file in os.listdir(PATH):
     f = os.path.join(PATH, file)
@@ -53,7 +54,40 @@ for file in os.listdir(PATH):
 #tmp = battery_voltages['24-09-22']['3:50:18'].values()
 #print(sum(tmp)/len(tmp))
 #x_axis = list(battery_voltages['24-09-22']['3:50:18'].values())
-if  __name__ == '__main__':
+for file in os.listdir(PATH):
+    f = os.path.join(PATH, file)
+    match: str = f[26:len(f) - 4]
+    name = RANDOM_NAMES[index]
+    voltages: dict[float,float] = {}
+    counter = 0
+    index += 1
+    
+    if(index == len(RANDOM_NAMES)):
+        index = 0
+    print(index)
+    if(os.path.isfile(f)):
+        with open(f) as csv_file:
+            reader = csv.reader(csv_file)
+            for row in reader:
+             #   print(row)
+                if(counter == 0):
+                    counter += 1
+                elif(row[1] == "/SystemStats/BatteryVoltage"):
+                    voltages[float(row[0])] = float(row[2])
+            found_battery = False
+            for battery in batteries:
+                if(battery.get_name() == name):
+                    found_battery = True
+                    battery.apply_match(match)
+                    battery.apply_voltage(voltages)
+            if(not found_battery):
+                battery = Battery(name)
+                battery.apply_match(match)
+                battery.apply_voltage(voltages)
+                batteries.append(battery)
+for battery in batteries:
+    print(battery.get_name() + " " + str(battery.get_health()))
+if not __name__ == '__main__':
     for name in battery_voltages:
         for date in battery_voltages[name]:
             fig = go.Figure()
