@@ -505,7 +505,9 @@ public class SwerveSubsystem extends SubsystemBase {
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
         Logger.recordOutput("Vision/Vision Pose2d From " + camera.getName(), visionPose.toPose2d());
-        Logger.recordOutput("Vision/" + camera.getName() + " pose", visionPose.plus(camera.inputs.constants.robotToCamera()));
+        Logger.recordOutput(
+            "Vision/" + camera.getName() + " pose",
+            visionPose.plus(camera.inputs.constants.robotToCamera()));
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
