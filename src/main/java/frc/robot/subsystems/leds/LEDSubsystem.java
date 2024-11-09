@@ -102,10 +102,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   public Command defaultStateDisplayCmd(
-      BooleanSupplier enabled,
-      BooleanSupplier inRange,
-      BooleanSupplier inNeutral,
-      Supplier<Target> target) {
+      BooleanSupplier enabled, BooleanSupplier inRange, Supplier<Target> target) {
     return Commands.either(
             Commands.select(
                 Map.of(
@@ -119,10 +116,7 @@ public class LEDSubsystem extends SubsystemBase {
                     this.setBlinkingCmd(new Color("#ff7777"), new Color(), 10.0)
                         .until(() -> target.get() != Target.AMP || !enabled.getAsBoolean()),
                     Target.FEED,
-                    this.setBlinkingCmd(
-                            () -> new Color("#0000ff"),
-                            () -> inNeutral.getAsBoolean() ? new Color("#00ff00") : new Color(),
-                            10.0)
+                    this.setBlinkingCmd(new Color("#0000ff"), new Color(), 10.0)
                         .until(() -> target.get() != Target.FEED || !enabled.getAsBoolean()),
                     Target.SUBWOOFER,
                     this.setBlinkingCmd(new Color("#ff0000"), new Color(), 10.0)

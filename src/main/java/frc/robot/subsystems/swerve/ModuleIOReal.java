@@ -32,10 +32,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
+import java.util.Optional;
 
 /**
  * Module IO implementation for Talon FX drive motor controller, Talon FX turn motor controller, and
@@ -53,7 +51,7 @@ public class ModuleIOReal implements ModuleIO {
   // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = true;
 
-  private final String name;
+  private final ModuleConstants constants;
 
   // Hardware
   private final TalonFX driveTalon;
@@ -65,6 +63,7 @@ public class ModuleIOReal implements ModuleIO {
   private final StatusSignal<Double> driveVelocity;
   private final StatusSignal<Double> driveAppliedVolts;
   private final StatusSignal<Double> driveCurrent;
+  private final StatusSignal<Double> driveSupplyCurrent;
 
   private final StatusSignal<Double> turnAbsolutePosition;
   private final StatusSignal<Double> turnPosition;
@@ -75,17 +74,15 @@ public class ModuleIOReal implements ModuleIO {
   // Control modes
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
-  // private final VelocityVoltage driveCurrentVelocity =
-  //     new VelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
-  private final VelocityTorqueCurrentFOC driveCurrentVelocity =
+  private final VelocityTorqueCurrentFOC driveControlVelocity =
       new VelocityTorqueCurrentFOC(0.0).withSlot(1);
+  // new VelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
   private final double kAVoltsPerMeterPerSecondSquared;
-  private final double kAAmpsPerMeterPerSecondSquared;
 
   public ModuleIOReal(ModuleConstants constants) {
-    name = constants.prefix();
+    this.constants = constants;
 
     driveTalon = new TalonFX(constants.driveID(), "canivore");
     turnTalon = new TalonFX(constants.turnID(), "canivore");
@@ -96,6 +93,8 @@ public class ModuleIOReal implements ModuleIO {
     // TODO: Do we want to limit supply current?
     driveConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    // driveConfig.CurrentLimits.SupplyCurrentThreshold = 30.0;
+    // driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
@@ -112,19 +111,18 @@ public class ModuleIOReal implements ModuleIO {
     driveConfig.Slot0.kP = 2.0;
     driveConfig.Slot0.kD = 0.2;
 
-    kAAmpsPerMeterPerSecondSquared = 4.5;
     // Current control gains
     driveConfig.Slot1.kV = 0.0;
-    driveConfig.Slot1.kA = kAAmpsPerMeterPerSecondSquared;
-    driveConfig.Slot1.kS = 11.0;
-    driveConfig.Slot1.kP = 150.0;
-    driveConfig.Slot1.kD = 0.0;
+    driveConfig.Slot1.kA = (9.37 / 483.0) / Module.DRIVE_ROTOR_TO_METERS; // 3.07135116146;
+    driveConfig.Slot1.kS = 14.0;
+    driveConfig.Slot1.kP = 100.0;
+    driveConfig.Slot1.kD = 1.0;
 
     driveConfig.TorqueCurrent.TorqueNeutralDeadband = 10.0;
 
     driveConfig.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
     driveConfig.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_ACCELERATION;
-    driveConfig.MotionMagic.MotionMagicJerk = SwerveSubsystem.MAX_LINEAR_ACCELERATION / 0.1;
+    // driveConfig.MotionMagic.MotionMagicJerk = SwerveSubsystem.MAX_LINEAR_ACCELERATION / 0.1;
 
     driveTalon.getConfigurator().apply(driveConfig);
 
@@ -169,6 +167,7 @@ public class ModuleIOReal implements ModuleIO {
     driveVelocity = driveTalon.getVelocity();
     driveAppliedVolts = driveTalon.getMotorVoltage();
     driveCurrent = driveTalon.getStatorCurrent();
+    driveSupplyCurrent = driveTalon.getSupplyCurrent();
 
     turnAbsolutePosition = cancoder.getAbsolutePosition();
     turnPosition = turnTalon.getPosition();
@@ -178,8 +177,16 @@ public class ModuleIOReal implements ModuleIO {
 
     PhoenixOdometryThread.getInstance()
         .registerSignals(
-            new Registration(driveTalon, ImmutableSet.of(drivePosition)),
-            new Registration(turnTalon, ImmutableSet.of(turnPosition)));
+            new Registration(
+                driveTalon,
+                Optional.of(constants),
+                SignalType.DRIVE,
+                ImmutableSet.of(drivePosition)),
+            new Registration(
+                turnTalon,
+                Optional.of(constants),
+                SignalType.STEER,
+                ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
@@ -188,6 +195,7 @@ public class ModuleIOReal implements ModuleIO {
         driveVelocity,
         driveAppliedVolts,
         driveCurrent,
+        driveSupplyCurrent,
         turnAbsolutePosition,
         turnVelocity,
         turnAppliedVolts,
@@ -198,46 +206,32 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples) {
+  public void updateInputs(final ModuleIOInputs inputs) {
     BaseStatusSignal.refreshAll(
         drivePosition,
         driveVelocity,
         driveAppliedVolts,
         driveCurrent,
+        driveSupplyCurrent,
         turnAbsolutePosition,
         turnPosition,
         turnVelocity,
         turnAppliedVolts,
         turnCurrent);
 
+    inputs.prefix = constants.prefix();
+
     inputs.drivePositionMeters = drivePosition.getValueAsDouble();
     inputs.driveVelocityMetersPerSec = driveVelocity.getValueAsDouble();
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
+    inputs.driveSupplyCurrentAmps = driveSupplyCurrent.getValueAsDouble();
 
     inputs.turnAbsolutePosition = Rotation2d.fromRotations(turnAbsolutePosition.getValueAsDouble());
     inputs.turnPosition = Rotation2d.fromRotations(turnPosition.getValueAsDouble());
     inputs.turnVelocityRadPerSec = Units.rotationsToRadians(turnVelocity.getValueAsDouble());
     inputs.turnAppliedVolts = turnAppliedVolts.getValueAsDouble();
     inputs.turnCurrentAmps = new double[] {turnCurrent.getValueAsDouble()};
-
-    inputs.odometryTimestamps =
-        asyncOdometrySamples.stream().mapToDouble(s -> s.timestamp()).toArray();
-    inputs.odometryDrivePositionsMeters =
-        asyncOdometrySamples.stream()
-            .map(s -> s.values().get(drivePosition))
-            .map(NullableDouble::new)
-            .toArray(NullableDouble[]::new);
-    inputs.odometryTurnPositions =
-        asyncOdometrySamples.stream()
-            // should be after offset + gear ratio
-            .map(s -> s.values().get(turnPosition))
-            .map(
-                d ->
-                    d == null
-                        ? new NullableRotation2d(null)
-                        : new NullableRotation2d(Rotation2d.fromRotations(d)))
-            .toArray(NullableRotation2d[]::new);
   }
 
   @Override
@@ -259,19 +253,16 @@ public class ModuleIOReal implements ModuleIO {
       setDriveVoltage(0.0);
     } else {
       driveTalon.setControl(
-          driveCurrentVelocity
+          driveControlVelocity
               .withVelocity(metersPerSecond)
-              .withFeedForward(metersPerSecondSquared * kAAmpsPerMeterPerSecondSquared));
+              .withAcceleration(metersPerSecondSquared)
+          // .withFeedForward(metersPerSecondSquared * kAVoltsPerMeterPerSecondSquared)
+          );
     }
   }
 
   @Override
   public void setTurnSetpoint(final Rotation2d rotation) {
     turnTalon.setControl(turnPID.withPosition(rotation.getRotations()));
-  }
-
-  @Override
-  public String getModuleName() {
-    return name;
   }
 }

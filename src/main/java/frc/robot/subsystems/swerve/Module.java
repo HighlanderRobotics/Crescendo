@@ -18,16 +18,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
+import edu.wpi.first.wpilibj.Timer;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
   // Represents per-module constants
   public record ModuleConstants(
-      String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
+      int id, String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
 
   // Global constants
   public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
@@ -46,44 +43,36 @@ public class Module {
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
 
-  private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
-
   private SwerveModuleState lastSetpoint = new SwerveModuleState();
+  private double lastTime = Timer.getFPGATimestamp();
 
   public Module(final ModuleIO io) {
     this.io = io;
   }
 
-  /**
-   * Update inputs without running the rest of the periodic logic. This is useful since these
-   * updates need to be properly thread-locked.
-   */
-  public void updateInputs(final List<Samples> asyncOdometrySamples) {
-    io.updateInputs(inputs, asyncOdometrySamples);
+  /** Update inputs without running the rest of the periodic logic. */
+  public void updateInputs() {
+    io.updateInputs(inputs);
   }
 
   public void periodic() {
-    Logger.processInputs(String.format("Swerve/%s Module", io.getModuleName()), inputs);
+    Logger.processInputs(String.format("Swerve/%s Module", inputs.prefix), inputs);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Available", io.getModuleName()),
+        String.format("Swerve/%s Module/Voltage Available", inputs.prefix),
         Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
-
-    // Calculate positions for odometry
-    int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
-    odometryPositions = new SwerveModulePosition[sampleCount];
-    for (int i = 0; i < sampleCount; i++) {
-      NullableDouble positionMeters = inputs.odometryDrivePositionsMeters[i];
-      NullableRotation2d angle = inputs.odometryTurnPositions[i];
-      if (angle.get() == null || positionMeters.get() == null) {
-        odometryPositions[i] = null; // SwerveSubsystem deals with this
-      } else {
-        odometryPositions[i] = new SwerveModulePosition(positionMeters.get(), angle.get());
-      }
-    }
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
+    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    return runSetpoint(
+        state,
+        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond)
+            / (Timer.getFPGATimestamp() - lastTime));
+  }
+
+  /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
+  public SwerveModuleState runSetpoint(SwerveModuleState state, double accel) {
     // Optimize state based on current angle
     final var optimizedState = SwerveModuleState.optimize(state, getAngle());
 
@@ -91,9 +80,10 @@ public class Module {
     io.setDriveSetpoint(
         optimizedState.speedMetersPerSecond
             * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
-        (optimizedState.speedMetersPerSecond - lastSetpoint.speedMetersPerSecond) / 0.020);
-
+        accel);
+    Logger.recordOutput(String.format("Swerve/%s Module/Accel Setpoint", inputs.prefix), accel);
     lastSetpoint = optimizedState;
+    lastTime = Timer.getFPGATimestamp();
     return optimizedState;
   }
 
@@ -153,6 +143,11 @@ public class Module {
     return inputs.drivePositionMeters;
   }
 
+  /** Returns this modules prefix ie "Back Left" */
+  public String getPrefix() {
+    return inputs.prefix;
+  }
+
   /**
    * Returns the current drive velocity of the module in meters per second withat normal sampling
    * frequency.
@@ -174,15 +169,5 @@ public class Module {
   /** Returns the drive velocity in meters/sec. */
   public double getCharacterizationVelocity() {
     return inputs.driveVelocityMetersPerSec;
-  }
-
-  /** Returns the timestamps of the samples received this cycle from PhoenixOdometryThread. */
-  public double[] getOdometryTimestamps() {
-    return inputs.odometryTimestamps;
-  }
-
-  /** Returns the module positions received this cycle from PhoenixOdometryThread. */
-  public SwerveModulePosition[] getOdometryPositions() {
-    return odometryPositions;
   }
 }

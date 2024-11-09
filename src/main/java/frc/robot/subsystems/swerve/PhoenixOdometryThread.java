@@ -20,9 +20,13 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Sets;
+import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.utils.Tracer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -38,14 +42,33 @@ import org.littletonrobotics.junction.Logger;
  * "waitForAll" blocking method to enable more consistent sampling. This also allows Phoenix Pro
  * users to benefit from lower latency between devices using CANivore time synchronization.
  */
-public class PhoenixOdometryThread extends Thread {
-  public record Registration(ParentDevice device, Set<StatusSignal<Double>> signals) {}
+public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
+  public enum SignalType {
+    DRIVE,
+    STEER,
+    GYRO;
+    // In theory we could measure other types of info in this thread
+    // But we don't!
+  }
 
-  public record Samples(double timestamp, Map<StatusSignal<Double>, Double> values) {}
+  /** modID should be GYRO_MODULE_ID for the gyro signal */
+  public record SignalID(SignalType type, int modID) {}
+
+  public record Registration(
+      ParentDevice device,
+      Optional<ModuleConstants> moduleConstants,
+      SignalType type,
+      Set<StatusSignal<Double>> signals) {}
+
+  /** modID should be GYRO_MODULE_ID for the gyro signal */
+  public record RegisteredSignal(StatusSignal<Double> signal, int modID, SignalType type) {}
+
+  public record Samples(double timestamp, Map<SignalID, Double> values) {}
 
   private final ReadWriteLock journalLock = new ReentrantReadWriteLock(true);
 
-  private final Set<StatusSignal<Double>> signals = Sets.newHashSet();
+  private final Set<RegisteredSignal> registeredSignals = Sets.newHashSet();
+  private StatusSignal<Double>[] signalArr = new StatusSignal[0];
   private final Queue<Samples> journal;
 
   private static PhoenixOdometryThread instance = null;
@@ -87,37 +110,47 @@ public class PhoenixOdometryThread extends Thread {
       for (var registration : registrations) {
         assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
 
-        signals.addAll(registration.signals);
+        registeredSignals.addAll(
+            registration.signals.stream()
+                .map(
+                    s ->
+                        new RegisteredSignal(
+                            s,
+                            registration.moduleConstants().isPresent()
+                                ? registration.moduleConstants().get().id()
+                                : GYRO_MODULE_ID,
+                            registration.type()))
+                .toList());
+        registration.signals.stream()
+            .forEach(
+                (s) -> {
+                  signalArr = Arrays.copyOf(signalArr, signalArr.length + 1);
+                  signalArr[signalArr.length - 1] = s;
+                });
       }
     } finally {
       writeLock.unlock();
     }
   }
 
-  public List<Samples> samplesSince(double timestamp, Set<StatusSignal<Double>> signals) {
-    var readLock = journalLock.readLock();
-    try {
-      readLock.lock();
-
-      return journal.stream()
-          .filter(s -> s.timestamp > timestamp)
-          .map(
-              s -> {
-                var filteredValues =
-                    s.values.entrySet().stream()
-                        .filter(e -> signals.contains(e.getKey()))
-                        .collect(
-                            Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-                return new Samples(s.timestamp, filteredValues);
-              })
-          .collect(Collectors.toUnmodifiableList());
-    } finally {
-      readLock.unlock();
-    }
-  }
-
   public List<Samples> samplesSince(double timestamp) {
-    return samplesSince(timestamp, signals);
+    return Tracer.trace(
+        "samples since",
+        () -> {
+          var readLock = journalLock.readLock();
+          try {
+            readLock.lock();
+
+            return Tracer.trace(
+                "stream timestamps",
+                () ->
+                    journal.stream()
+                        .filter(s -> s.timestamp > timestamp)
+                        .collect(Collectors.toUnmodifiableList()));
+          } finally {
+            readLock.unlock();
+          }
+        });
   }
 
   @Override
@@ -125,32 +158,38 @@ public class PhoenixOdometryThread extends Thread {
     while (true) {
       // Wait for updates from all signals
       var writeLock = journalLock.writeLock();
-      // NOTE (kevinclark): The toArray here in a tight loop is kind of ugly
-      // but keeping up a symmetric array is too and it's probably negligible on latency.
-      BaseStatusSignal.waitForAll(
-          2.0 / Module.ODOMETRY_FREQUENCY_HZ, signals.toArray(new BaseStatusSignal[0]));
-      try {
-        writeLock.lock();
-        var filteredSignals =
-            signals.stream()
-                .filter(s -> s.getStatus().equals(StatusCode.OK))
-                .collect(Collectors.toSet());
-        journal.add(
-            new Samples(
-                timestampFor(filteredSignals),
-                filteredSignals.stream()
-                    .collect(Collectors.toUnmodifiableMap(s -> s, s -> s.getValueAsDouble()))));
-      } finally {
-        writeLock.unlock();
-      }
+      Tracer.trace(
+          "Odometry Thread",
+          () -> {
+            Tracer.trace(
+                "wait for all",
+                () -> BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalArr));
+            try {
+              writeLock.lock();
+              var filteredSignals =
+                  registeredSignals.stream()
+                      .filter(s -> s.signal().getStatus().equals(StatusCode.OK))
+                      .collect(Collectors.toSet());
+              journal.add(
+                  new Samples(
+                      timestampFor(filteredSignals),
+                      filteredSignals.stream()
+                          .collect(
+                              Collectors.toUnmodifiableMap(
+                                  s -> new SignalID(s.type(), s.modID()),
+                                  s -> s.signal().getValueAsDouble()))));
+            } finally {
+              writeLock.unlock();
+            }
+          });
     }
   }
 
-  private double timestampFor(Set<StatusSignal<Double>> signals) {
+  private double timestampFor(Set<RegisteredSignal> signals) {
     double timestamp = Logger.getRealTimestamp() / 1e6;
 
     final double totalLatency =
-        signals.stream().mapToDouble(s -> s.getTimestamp().getLatency()).sum();
+        signals.stream().mapToDouble(s -> s.signal().getTimestamp().getLatency()).sum();
 
     // Account for mean latency for a "good enough" timestamp
     if (!signals.isEmpty()) {
@@ -158,5 +197,15 @@ public class PhoenixOdometryThread extends Thread {
     }
 
     return timestamp;
+  }
+
+  @Override
+  public void updateInputs(OdometryThreadIOInputs inputs, double lastTimestamp) {
+    inputs.sampledStates = samplesSince(lastTimestamp);
+  }
+
+  @Override
+  public void start() {
+    super.start();
   }
 }

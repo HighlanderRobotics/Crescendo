@@ -97,7 +97,4 @@ public class ShooterIOSim implements ShooterIO {
   public void resetPivotPosition(Rotation2d rotation) {
     pivotSim.setState(rotation.getRadians(), 0.0);
   }
-
-  @Override
-  public void setFlyhweelCurrentLimit(final double stator, final double supply) {}
 }

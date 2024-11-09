@@ -48,7 +48,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
@@ -74,12 +73,17 @@ import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.Robot.RobotMode;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalID;
+import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
+import frc.robot.subsystems.swerve.SwerveSubsystem.AutoAimStates;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.utils.Tracer;
 import frc.robot.utils.autoaim.AutoAim;
 import frc.robot.utils.autoaim.ShotData;
 import java.io.File;
@@ -123,20 +127,21 @@ public class SwerveSubsystem extends SubsystemBase {
   public static final double HEADING_VOLTAGE_KP = 4.0;
 
   public static final ModuleConstants frontLeft =
-      new ModuleConstants("Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
+      new ModuleConstants(0, "Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
-      new ModuleConstants("Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
+      new ModuleConstants(1, "Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
   public static final ModuleConstants backLeft =
-      new ModuleConstants("Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
+      new ModuleConstants(2, "Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
   public static final ModuleConstants backRight =
-      new ModuleConstants("Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
+      new ModuleConstants(3, "Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
 
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules; // FL, FR, BL, BR
+  private final OdometryThreadIO odoThread;
+  private final OdometryThreadIOInputs odoThreadInputs = new OdometryThreadIOInputs();
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  private Pose2d pose = new Pose2d();
 
   /** For delta tracking with PhoenixOdometryThread* */
   private SwerveModulePosition[] lastModulePositions =
@@ -154,7 +159,7 @@ public class SwerveSubsystem extends SubsystemBase {
   public static AprilTagFieldLayout fieldTags;
 
   private SwerveDrivePoseEstimator estimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, pose);
+      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
   Vector<N3> odoStdDevs = VecBuilder.fill(0.3, 0.3, 0.01);
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
@@ -212,7 +217,7 @@ public class SwerveSubsystem extends SubsystemBase {
                   Units.inchesToMeters(10.380),
                   Units.inchesToMeters(7.381)),
               new Rotation3d(
-                  Units.degreesToRadians(180.0),
+                  Units.degreesToRadians(0.0),
                   Units.degreesToRadians(-28.125),
                   Units.degreesToRadians(120))),
           LEFT_CAMERA_MATRIX,
@@ -228,13 +233,15 @@ public class SwerveSubsystem extends SubsystemBase {
               new Rotation3d(0, Units.degreesToRadians(-28.125), Units.degreesToRadians(210))),
           RIGHT_CAMERA_MATRIX,
           RIGHT_DIST_COEFFS);
-  private SwerveDriveOdometry odometry;
 
   private final SysIdRoutine moduleSteerRoutine;
   private final SysIdRoutine driveRoutine;
 
-  public SwerveSubsystem(GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs) {
+  public SwerveSubsystem(
+      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs, OdometryThreadIO odoThread) {
     this.gyroIO = gyroIO;
+    this.odoThread = odoThread;
+    odoThread.start();
     cameras = new Vision[visionIOs.length];
     new AutoAim();
     modules = new Module[moduleIOs.length];
@@ -242,7 +249,6 @@ public class SwerveSubsystem extends SubsystemBase {
     for (int i = 0; i < moduleIOs.length; i++) {
       modules[i] = new Module(moduleIOs[i]);
     }
-    PhoenixOdometryThread.getInstance().start();
     for (int i = 0; i < visionIOs.length; i++) {
       cameras[i] = new Vision(visionIOs[i]);
     }
@@ -251,7 +257,7 @@ public class SwerveSubsystem extends SubsystemBase {
     VisionIOSim.pose = this::getPose3d;
 
     AutoBuilder.configureHolonomic(
-        () -> pose, // Robot pose supplier
+        this::getPose, // Robot pose supplier
         this::setPose, // Method to reset odometry (will be called if your auto has a starting pose)
         this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
         this::runVelocity, // Method that will drive the robot given ROBOT RELATIVE
@@ -282,8 +288,6 @@ public class SwerveSubsystem extends SubsystemBase {
         (path) -> Logger.recordOutput("PathPlanner/Active Path", path.toArray(Pose2d[]::new)));
     Logger.recordOutput("PathPlanner/Target", new Pose2d());
     Logger.recordOutput("PathPlanner/Absolute Translation Error", 0.0);
-
-    odometry = new SwerveDriveOdometry(kinematics, getRotation(), getModulePositions());
 
     moduleSteerRoutine =
         new SysIdRoutine(
@@ -343,10 +347,10 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public static ModuleIO[] createSimModules() {
     return new ModuleIO[] {
-      new ModuleIOSim("FrontLeft"),
-      new ModuleIOSim("FrontRight"),
-      new ModuleIOSim("BackLeft"),
-      new ModuleIOSim("BackRight")
+      new ModuleIOSim(frontLeft),
+      new ModuleIOSim(frontRight),
+      new ModuleIOSim(backLeft),
+      new ModuleIOSim(backRight)
     };
   }
 
@@ -369,81 +373,93 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public void periodic() {
-    for (var camera : cameras) {
-      camera.updateInputs();
-      camera.processInputs();
-    }
-    var odometrySamples =
-        PhoenixOdometryThread.getInstance().samplesSince(lastOdometryUpdateTimestamp);
-    if (!odometrySamples.isEmpty()) {
-      lastOdometryUpdateTimestamp = odometrySamples.get(odometrySamples.size() - 1).timestamp();
-    }
-    gyroIO.updateInputs(gyroInputs, odometrySamples);
-    for (var module : modules) {
-      module.updateInputs(odometrySamples);
-    }
-    Logger.processInputs("Swerve/Gyro", gyroInputs);
-    for (var module : modules) {
-      module.periodic();
-    }
+    Tracer.trace(
+        "SwervePeriodic",
+        () -> {
+          for (var camera : cameras) {
+            Tracer.trace("Update cam inputs", camera::updateInputs);
+            Tracer.trace("Process cam inputs", camera::processInputs);
+          }
+          Tracer.trace(
+              "Update odo inputs",
+              () -> odoThread.updateInputs(odoThreadInputs, lastOdometryUpdateTimestamp));
+          Logger.processInputs("Async Odo", odoThreadInputs);
+          if (!odoThreadInputs.sampledStates.isEmpty()) {
+            lastOdometryUpdateTimestamp =
+                odoThreadInputs
+                    .sampledStates
+                    .get(odoThreadInputs.sampledStates.size() - 1)
+                    .timestamp();
+          }
+          Tracer.trace("update gyro inputs", () -> gyroIO.updateInputs(gyroInputs));
+          for (int i = 0; i < modules.length; i++) {
+            Tracer.trace(
+                "SwerveModule update inputs from " + modules[i].getPrefix() + " Module",
+                modules[i]::updateInputs);
+          }
+          Logger.processInputs("Swerve/Gyro", gyroInputs);
+          for (int i = 0; i < modules.length; i++) {
+            Tracer.trace(
+                "SwerveModule periodic from " + modules[i].getPrefix() + " Module",
+                modules[i]::periodic);
+          }
 
-    // Stop moving when disabled
-    if (DriverStation.isDisabled()) {
-      for (var module : modules) {
-        module.stop();
-      }
-    }
-    // Log empty setpoint states when disabled
-    if (DriverStation.isDisabled()) {
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-    }
+          // Stop moving when disabled
+          if (DriverStation.isDisabled()) {
+            for (var module : modules) {
+              module.stop();
+            }
+          }
+          // Log empty setpoint states when disabled
+          if (DriverStation.isDisabled()) {
+            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+          }
 
-    Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
-    Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
-    Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
-    Logger.recordOutput("ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
-    Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
+          Logger.recordOutput("ShotData/Angle", AutoAimStates.curShotData.getRotation());
+          Logger.recordOutput("ShotData/Left RPM", AutoAimStates.curShotData.getLeftRPS());
+          Logger.recordOutput("ShotData/Right RPM", AutoAimStates.curShotData.getRightRPS());
+          Logger.recordOutput(
+              "ShotData/Flight Time", AutoAimStates.curShotData.getFlightTimeSeconds());
+          Logger.recordOutput("ShotData/Lookahead", AutoAimStates.lookaheadTime);
 
-    updateOdometry();
-    updateVision();
-
-    Logger.recordOutput("Odometry/Fused Pose", estimator.getEstimatedPosition());
-    Logger.recordOutput("Odometry/Pure Pose", pose);
-    Logger.recordOutput(
-        "Odometry/Fused to Odo Deviation", estimator.getEstimatedPosition().minus(pose));
+          Tracer.trace("Update odometry", this::updateOdometry);
+          Tracer.trace("update vision", this::updateVision);
+        });
   }
 
   private void updateOdometry() {
-    for (int i = 0; i < modules.length; i++) {
-      Logger.recordOutput(
-          "Swerve/Updates Since Last " + i, modules[i].getOdometryTimestamps().length);
-    }
-    double[] sampleTimestamps =
-        modules[0].getOdometryTimestamps(); // All signals are sampled together
-    int sampleCount =
-        Arrays.stream(modules).mapToInt(m -> m.getOdometryTimestamps().length).min().getAsInt();
-    // if the gyro isnt connected, dont worry about it
-    if (gyroInputs.connected) {
-      sampleCount = Math.min(sampleCount, gyroInputs.odometryTimestamps.length);
-    }
-    for (int deltaIndex = 0; deltaIndex < sampleCount; deltaIndex++) {
+    Logger.recordOutput("Swerve/Updates Since Last", odoThreadInputs.sampledStates.size());
+    var sampleStates = odoThreadInputs.sampledStates;
+    var i = 0;
+    for (var sample : sampleStates) {
+      i++;
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
           new SwerveModulePosition[4]; // change in positions since the last update
       boolean hasNullModulePosition = false;
+      // Technically we could have not 4 modules worth of data here but im not dealing w that
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        modulePositions[moduleIndex] =
-            modules[moduleIndex]
-                .getOdometryPositions()[deltaIndex]; // gets positions from the thread, NOT inputs
-        // we can't do any odo updates if we are not getting module data
-        if (modulePositions[moduleIndex] == null) {
+        var dist = sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex));
+        if (dist == null) {
+          // No value at this timestamp
           hasNullModulePosition = true;
 
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
         }
+        var rot = sample.values().get(new SignalID(SignalType.STEER, moduleIndex));
+        if (rot == null) {
+          // No value at this timestamp
+          hasNullModulePosition = true;
+
+          Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
+          break;
+        }
+        modulePositions[moduleIndex] =
+            new SwerveModulePosition(
+                dist, Rotation2d.fromRotations(rot)); // gets positions from the thread, NOT inputs
         Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, true);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
@@ -453,17 +469,23 @@ public class SwerveSubsystem extends SubsystemBase {
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
       if (hasNullModulePosition) {
-        if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
+        if (!gyroInputs.connected
+            || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
+                == null) {
           Logger.recordOutput("Odometry/Received Gyro Update", false);
           // no modules and no gyro so we're just sad :(
         } else {
           Logger.recordOutput("Odometry/Received Gyro Update", true);
-          rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
-          var twist = new Twist2d(0, 0, rawGyroRotation.minus(lastGyroRotation).getRadians());
-          pose = pose.exp(twist);
+          // null here is checked by if clause
+          rawGyroRotation =
+              Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, -1)));
           lastGyroRotation = rawGyroRotation;
           Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
-          // TODO prob cant update estimator but maybe?
+          Tracer.trace(
+              "update estimator",
+              () ->
+                  estimator.updateWithTime(
+                      sample.timestamp(), rawGyroRotation, lastModulePositions));
         }
         continue;
       }
@@ -472,22 +494,27 @@ public class SwerveSubsystem extends SubsystemBase {
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-      if (!gyroInputs.connected || gyroInputs.odometryYawPositions[deltaIndex].get() == null) {
+      if (!gyroInputs.connected
+          || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
+              == null) {
         Logger.recordOutput("Odometry/Received Gyro Update", false);
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
         Logger.recordOutput("Odometry/Received Gyro Update", true);
-        rawGyroRotation = gyroInputs.odometryYawPositions[deltaIndex].get();
+        rawGyroRotation =
+            Rotation2d.fromDegrees(
+                sample
+                    .values()
+                    .get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID)));
         twist =
             new Twist2d(twist.dx, twist.dy, rawGyroRotation.minus(lastGyroRotation).getRadians());
       }
       // Apply the twist (change since last sample) to the current pose
-      pose = pose.exp(twist);
       lastGyroRotation = rawGyroRotation;
       Logger.recordOutput("Odometry/Gyro Rotation", lastGyroRotation);
       // Apply update
-      estimator.updateWithTime(sampleTimestamps[deltaIndex], rawGyroRotation, modulePositions);
+      estimator.updateWithTime(sample.timestamp(), rawGyroRotation, modulePositions);
     }
   }
 
@@ -500,7 +527,6 @@ public class SwerveSubsystem extends SubsystemBase {
       try {
         var estPose = camera.update(result);
         var visionPose = estPose.get().estimatedPose;
-        // pose = pose.interpolate(visionPose.toPose2d(), 0.1);
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, newResult);
         Logger.recordOutput("Vision/Vision Pose From " + camera.getName(), visionPose);
@@ -639,11 +665,11 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command runChoreoTraj(ChoreoTrajectory traj, boolean resetPose) {
     return choreoFullFollowSwerveCommand(
             traj,
-            () -> DriverStation.getMatchTime() > 12.0 ? pose : getPose(),
+            this::getPose,
             Choreo.choreoSwerveController(
-                new PIDController(1.0, 0.0, 0.0),
-                new PIDController(1.0, 0.0, 0.0),
-                new PIDController(6.0, 0.0, 0.0)),
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(1.5, 0.0, 0.0),
+                new PIDController(3.0, 0.0, 0.0)),
             (ChassisSpeeds speeds) -> this.runVelocity(speeds),
             () -> {
               Optional<Alliance> alliance = DriverStation.getAlliance();
@@ -683,7 +709,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param requirements The subsystem(s) to require, typically your drive subsystem only.
    * @return A command that follows a Choreo path.
    */
-  public static Command choreoFullFollowSwerveCommand(
+  public Command choreoFullFollowSwerveCommand(
       ChoreoTrajectory trajectory,
       Supplier<Pose2d> poseSupplier,
       ChoreoControlFunction controller,
@@ -725,6 +751,7 @@ public class SwerveSubsystem extends SubsystemBase {
               mirrorTrajectory.getAsBoolean()
                   ? trajectory.getFinalState().flipped().getPose()
                   : trajectory.getFinalState().getPose();
+          var vel = getVelocity();
           Logger.recordOutput("Swerve/Current Traj End Pose", finalPose);
           return timer.hasElapsed(trajectory.getTotalTime())
               && (MathUtil.isNear(finalPose.getX(), poseSupplier.get().getX(), 0.4)
@@ -733,7 +760,12 @@ public class SwerveSubsystem extends SubsystemBase {
                           (poseSupplier.get().getRotation().getDegrees()
                                   - finalPose.getRotation().getDegrees())
                               % 360)
-                      < 90.0);
+                      < 20.0)
+              && MathUtil.isNear(
+                  0.0,
+                  vel.vxMetersPerSecond * vel.vxMetersPerSecond
+                      + vel.vyMetersPerSecond * vel.vyMetersPerSecond,
+                  0.75);
         },
         requirements);
   }
@@ -798,13 +830,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /** Sets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    this.pose = pose;
     try {
       estimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
     } catch (Exception e) {
-      System.out.println("odo reset sad :(");
+      System.out.println(
+          "odo reset sad :( (this is likely because we havent had an odometry update yet or are having odo issues)");
+      System.out.println(e.getMessage());
     }
-    odometry.resetPosition(lastGyroRotation, getModulePositions(), pose);
   }
 
   public void setYaw(Rotation2d yaw) {
@@ -823,7 +855,7 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   public static VisionConstants[] getCameraConstants() {
-    return new VisionConstants[] {leftCamConstants, rightCamConstants};
+    return new VisionConstants[] {rightCamConstants};
   }
 
   /**

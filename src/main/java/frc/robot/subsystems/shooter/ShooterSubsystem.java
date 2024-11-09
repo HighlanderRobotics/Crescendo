@@ -94,33 +94,6 @@ public class ShooterSubsystem extends SubsystemBase {
     return inputs.pivotRotation;
   }
 
-  public Command runIdleFlywheelCmd(Supplier<Rotation2d> rotation) {
-    return this.run(
-        () -> {
-          rotationGoal = rotation.get();
-          Logger.recordOutput("Shooter/Rotation Setpoint", rotation.get().getRadians());
-          Logger.recordOutput(
-              "Shooter/Pivot Error Degrees",
-              inputs.pivotRotation.getDegrees() - rotation.get().getDegrees());
-          Logger.recordOutput(
-              "Shooter/Pivot At Target",
-              MathUtil.isNear(
-                  rotation.get().getDegrees(), inputs.pivotRotation.getDegrees(), 0.25));
-          io.setFlywheelVoltage(0, 0);
-          io.setPivotSetpoint(rotation.get());
-        });
-  }
-
-  public Command runStateCmd(
-      Supplier<Rotation2d> rotation,
-      DoubleSupplier left,
-      DoubleSupplier right,
-      double statorLimit,
-      double supplyLimit) {
-    return this.runStateCmd(rotation, left, right)
-        .beforeStarting(() -> io.setFlyhweelCurrentLimit(statorLimit, supplyLimit));
-  }
-
   public Command runStateCmd(
       Supplier<Rotation2d> rotation, DoubleSupplier left, DoubleSupplier right) {
     return this.run(

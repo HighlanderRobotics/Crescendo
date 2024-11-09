@@ -14,33 +14,28 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
-import frc.robot.utils.NullableDouble;
-import frc.robot.utils.NullableRotation2d;
-import java.util.List;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
+    public String prefix = "";
+
     public double drivePositionMeters = 0.0;
     public double driveVelocityMetersPerSec = 0.0;
     public double driveAppliedVolts = 0.0;
     public double[] driveCurrentAmps = new double[] {};
+    public double driveSupplyCurrentAmps = 0.0;
 
     public Rotation2d turnAbsolutePosition = new Rotation2d();
     public Rotation2d turnPosition = new Rotation2d();
     public double turnVelocityRadPerSec = 0.0;
     public double turnAppliedVolts = 0.0;
     public double[] turnCurrentAmps = new double[] {};
-
-    public NullableDouble[] odometryDrivePositionsMeters = new NullableDouble[] {};
-    public NullableRotation2d[] odometryTurnPositions = new NullableRotation2d[] {};
-    public double[] odometryTimestamps = new double[] {};
   }
 
   /** Updates the set of loggable inputs. */
-  public void updateInputs(final ModuleIOInputs inputs, final List<Samples> asyncOdometrySamples);
+  public void updateInputs(final ModuleIOInputs inputs);
 
   /** Run the drive motor at the specified voltage. */
   public default void setDriveVoltage(final double volts) {
@@ -63,7 +58,4 @@ public interface ModuleIO {
 
   /** Use onboard PIDF to run the turn motor to the specified rotation */
   public void setTurnSetpoint(final Rotation2d rotation);
-
-  /** Gets the name of the swerve module for logging purposes, should be constant per-module. */
-  public String getModuleName();
 }

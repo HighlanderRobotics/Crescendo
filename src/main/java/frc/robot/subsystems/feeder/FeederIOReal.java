@@ -35,8 +35,6 @@ public class FeederIOReal implements FeederIO {
 
     config.CurrentLimits.StatorCurrentLimitEnable = true;
     config.CurrentLimits.StatorCurrentLimit = 40.0;
-    config.CurrentLimits.SupplyCurrentLimitEnable = true;
-    config.CurrentLimits.SupplyCurrentLimit = 15.0;
 
     config.Slot0.kV = 0.12;
     config.Slot0.kP = 0.1;

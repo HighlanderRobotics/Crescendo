@@ -21,7 +21,7 @@ public class AutoAim {
   public static final ShotData FENDER_SHOT =
       new ShotData(Rotation2d.fromDegrees(61.0), 50.0, 60.0, 0.25); // ToF is an estimate
   public static final ShotData FEED_SHOT =
-      new ShotData(Rotation2d.fromDegrees(55.0), 55.0, 65.0, 1.0); // ToF is an estimate
+      new ShotData(Rotation2d.fromDegrees(50.0), 50.0, 60.0, 1.0); // ToF is an estimate
 
   static {
     shotMap.put(
