@@ -13,6 +13,9 @@
 
 package frc.robot.subsystems.swerve;
 
+import static frc.robot.DriveTrainConstants.DRIVE_GEAR_RATIO;
+import static frc.robot.DriveTrainConstants.DRIVE_MOTOR;
+
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -22,6 +25,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.DriveTrainConstants;
@@ -40,7 +44,7 @@ public class ModuleIOSim implements ModuleIO {
 
   private final ModuleConstants constants;
 
-  private static final DCMotor driveMotor = DCMotor.getKrakenX60Foc(1);
+  private static final DCMotor driveMotor = DCMotor.getKrakenX60Foc(1).withReduction(DRIVE_GEAR_RATIO);
   private final TalonFX driveTalon;
 
   /** Update only in periodic */
@@ -64,20 +68,26 @@ public class ModuleIOSim implements ModuleIO {
   public ModuleIOSim(final ModuleConstants constants) {
     this.constants = constants;
     driveTalon = new TalonFX(constants.driveID());
-    driveTalon.getConfigurator().apply(ModuleIOReal.DRIVE_CONFIG);
+    driveTalon
+        .getConfigurator()
+        .apply(ModuleIOReal.DRIVE_CONFIG.withSlot1(ModuleIOReal.DRIVE_CONFIG.Slot1.withKS(0.0)));
   }
 
   @Override
   public void updateInputs(final ModuleIOInputs inputs) {
     final var driveSimState = driveTalon.getSimState();
+    driveSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
     driveSimState.Orientation = ChassisReference.Clockwise_Positive;
-
-    turnSim.update(LOOP_PERIOD_SECS);
+    var rotorVelRotPS = (driveSimResults.driveWheelFinalVelocityRadPerSec)
+            * Module.DRIVE_GEAR_RATIO
+            / (Math.PI * 2);
     driveSimState.setRotorVelocity(
-        (driveSimResults.driveWheelFinalVelocityRadPerSec * Module.WHEEL_RADIUS_METERS)
-            * Module.DRIVE_GEAR_RATIO);
-    driveAppliedVolts = driveSimState.getMotorVoltage();
-
+        rotorVelRotPS);
+    driveAppliedVolts =
+        DRIVE_MOTOR.getVoltage(
+            MathUtil.clamp(driveSimState.getTorqueCurrent(), -120.0, 120.0),
+            rotorVelRotPS / DRIVE_GEAR_RATIO);
+            
     inputs.prefix = constants.prefix();
 
     inputs.drivePositionMeters =
@@ -102,7 +112,7 @@ public class ModuleIOSim implements ModuleIO {
 
   @Override
   public void setDriveVoltage(final double volts, final boolean focEnabled) {
-    driveTalon.setControl(driveVoltage.withOutput(volts).withEnableFOC(focEnabled));
+    driveTalon.setControl(driveVoltage.withOutput(volts).withEnableFOC(false));
   }
 
   @Override
@@ -113,8 +123,8 @@ public class ModuleIOSim implements ModuleIO {
 
   @Override
   public void setDriveSetpoint(final double metersPerSecond, final double forceNewtons) {
-    driveTalon.setControl(
-        driveControlVelocity.withVelocity(metersPerSecond).withFeedForward(forceNewtons));
+    // driveTalon.setControl(
+    // driveControlVelocity.withVelocity(metersPerSecond).withFeedForward(forceNewtons));
   }
 
   @Override
@@ -125,13 +135,14 @@ public class ModuleIOSim implements ModuleIO {
 
   public void updateSim(double dt) {
     turnSim.update(dt);
+    
   }
 
   public double getSimulationTorque() {
-    return driveMotor.getTorque(
-        driveMotor.getCurrent(
-            driveSimResults.driveWheelFinalVelocityRadPerSec * Module.DRIVE_GEAR_RATIO,
-            driveAppliedVolts));
+    final var simState = driveTalon.getSimState();
+    simState.setSupplyVoltage(RobotController.getBatteryVoltage());
+    simState.Orientation = ChassisReference.Clockwise_Positive;
+    return MathUtil.clamp(simState.getTorqueCurrent(), -120.0, 120.0);
   }
 
   public Rotation2d getSimulationSteerFacing() {

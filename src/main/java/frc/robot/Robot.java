@@ -490,21 +490,21 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
-    if (mode == RobotMode.SIM) {
-      if (fieldSim != null) {
-        Logger.recordOutput("Updating Sim", true);
-        fieldSim.updateSimulationWorld();
-      } else {
-        Logger.recordOutput("Updating Sim", false);
-      }
-
-      fieldVisualizer.updateObjectsToDashboardAndTelemetry();
-    } else {
-      Logger.recordOutput("Updating Sim", false);
-    }
     Tracer.trace(
         "RobotPeriodic",
         () -> {
+          if (mode == RobotMode.SIM) {
+            if (fieldSim != null) {
+              Logger.recordOutput("Updating Sim", true);
+              fieldSim.updateSimulationWorld();
+            } else {
+              Logger.recordOutput("Updating Sim", false);
+            }
+
+            fieldVisualizer.updateObjectsToDashboardAndTelemetry();
+          } else {
+            Logger.recordOutput("Updating Sim", false);
+          }
           Tracer.trace("CommandScheduler", CommandScheduler.getInstance()::run);
           // Update ascope mechanism visualization
           Logger.recordOutput(
