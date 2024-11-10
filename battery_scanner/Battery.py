@@ -10,11 +10,13 @@ class Battery:
     def get_name(self):
         return self.name
     
-    def apply_match(self, match: str):
+    def add_match(self, match: str):
         self.matches.append(match)
     
-    def apply_voltage(self, voltage: dict[float,float]):
+    def add_voltage(self, voltage: dict[float,float]):
         self.voltages.append(voltage)
+        
+    
         
     def __str__(self):
         return f"{self.name} \n {self.matches} \n {self.voltages}"

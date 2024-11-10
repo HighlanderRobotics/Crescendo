@@ -5,68 +5,58 @@ from jinja2 import Template
 
 app = Flask(__name__)
 
-voltages = Graph_Battery.get_voltages()
-name = ""
-date = ""
-time = ""
-
-#@app.route("/", methods = ['POST', 'GET'])
-#def battery_list():
-#    return render_template("Battery_Ranking.html", names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings(), title = "Battery Ranking")
-
-@app.route("/name", methods = ['POST','GET'])
-def name_chooser():
-    
-    return render_template("name_selector.html", names = list(voltages.keys()))
-    
-@app.route("/name/dates", methods = ["POST", "GET"])
-def date_chooser():
-    global name, date, time
-    for key, value in request.form.items():
-        if(key == "nameSelector"):
-            name = value
-    print(name)
-    print(date)
-    print(time)
-    return render_template("date_selector.html", dates = list(voltages[name].keys()), title = name)
-
-@app.route("/name/dates/times", methods = ["POST", "GET"])
-def time_chooser():
-    global name, date, time
-    for key, value in request.form.items():
- 
-        if(key == "dateSelector"):
-            print(value + "DWDADWDAD")
-            date = value
-    print(name)
-    print(date)
-    print(time)
-    
-    return render_template("time_selector.html", times = list(voltages[name][date].keys()), title = name + "/" + date)
-
-
-@app.route("/name/dates/times/graphs", methods = ['POST', 'GET'])
-def show_graph():
-    for key, value in request.form.items():
-        if(key == "timeSelector"):
-            time = value
-    #Graph_Battery.get_graph(name, date, time)
-    return render_template("test.html", fig = Graph_Battery.get_graph_html(name,date,time))
-
-# the old world ^^^^
-# the new world \/ \/ \/ \/
-
 @app.route("/", methods = ['POST', 'GET'])
 def ranking_page():
     urls = []
     for name in list(Graph_Battery.get_battery_rankings().keys()):
         urls.append(url_for("battery_rundown", name = name))
+    urls.reverse()
     return render_template("Battery_Ranking.html", links = urls, names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings(), title = "Battery Ranking")
+
 
 @app.route("/<name>", methods = ['POST', 'GET'])
 def battery_rundown(name):
-    fig = Graph_Battery.get_candlestick_chart(name)
-    return render_template("Battery_Rundown.html", name = name, fig = fig)
+    for battery in Graph_Battery.get_batteries():
+        if(battery.get_name() == name):
+           fig = Graph_Battery.get_candlestick_chart(battery)
+           print("IMPORTANT IMPORTANT IMPORTANt")
+    try:
+        return render_template("Battery_Rundown.html", name = name, fig = fig)
+    except:
+        return render_template("Battery_Rundown.html", name = name, fig = "<h2>Sorry! No battery could be found with that name. This shouldnt happen.</h2>")
 
+@app.route("/<name>/matches", methods = ['POST', 'GET'])
+def battery_matches(name):
+    urls = []
+    matches = []
+    for battery in Graph_Battery.get_batteries():
+        if(battery.get_name() == name):
+           matches = battery.matches
+    for match in matches:
+        urls.append(url_for("match", name = name, match = match))
+    return render_template("Battery_Matches.html", links = urls, matches = matches, title = f"Matches for {name}")
+
+@app.route("/<name>/<match>", methods = ['POST', 'GET'])
+def match(name, match):
+    for battery in Graph_Battery.get_batteries():
+        if(battery.get_name() == name):
+           fig = Graph_Battery.get_match_graph(battery, match)
+    try:
+        return render_template("Match_Display.html", name = name, match = match, fig = fig)
+    except:
+        return render_template("Match_Display.html", name = name, match = match, fig = "<h2>Sorry! No match could be found with that name. This shouldnt happen.</h2>")
+
+
+@app.route("/matches", methods = ['POST', 'GET'])
+def matches():
+    urls: list[str] = []
+    matches: list[str] = Graph_Battery.get_matches()
+    batteries: list[str] = []
+    for i in range(len(matches)):
+        for battery in Graph_Battery.get_batteries():
+            if(battery.matches.count(matches[i]) > 0):
+                batteries.append(battery.get_name())
+        urls.append(url_for("match", name = batteries[i], match = matches[i]))
+    return render_template("Matches.html", links = urls, matches = matches, title = "All Matches - Chezy 2024")
 if __name__ == '__main__':
    app.run()

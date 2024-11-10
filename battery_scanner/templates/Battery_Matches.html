@@ -5,8 +5,9 @@
 </head>
 <body>
     <h1>{{title}}</h1>
+    
     <ul>
-        {% for match in matches|reverse %}
+        {% for match in matches%}
             <li><a href = "{{links.pop(0)}}">{{match|string}}</a></li>
         {% endfor %}
     </ul>

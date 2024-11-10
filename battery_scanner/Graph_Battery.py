@@ -11,103 +11,56 @@ PATH = "logs"
 
 battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]] = {}
 batteries: list[Battery] = []
+matches: list[str] = []
 index = 0 
 for file in os.listdir(PATH):
     f = os.path.join(PATH, file)
-    # change to include battery name later on 
-    # so {name:{file/date:{timestamp:value}}}
-    # alternative option: {name:{date:{time:{timestamp:value}}}}
-    counter: int = 0
-    date: str = f[9:17]
-    time: str = ':'.join(f[19:26].split('-'))
-    key = date + " / " + time
-    name = RANDOM_NAMES[index]
-    index += 1
-    if(index == len(RANDOM_NAMES)):
-        index = 0
-    print(index)
-    #RANDOM_NAMES.remove(name)
-    print(date + " " + name)
-    if(not name in battery_voltages.keys()):
-        
-        battery_voltages[name] = {}
-    print(battery_voltages[name].keys())
-    print("d")
-    if(not date in battery_voltages[name].keys()):
-        print("leog")
-        battery_voltages[name][date] = {}
-    print(battery_voltages[name].keys())
-  #  print(date)
- #   print(time)
-    battery_voltages[name][date][time] = {}
- #   print(battery_voltages)
-    if(os.path.isfile(f)):
-        with open(f) as csv_file:
-            reader = csv.reader(csv_file)
-            for row in reader:
-             #   print(row)
-                if(counter == 0):
-                    counter += 1
-                elif(row[1] == "/SystemStats/BatteryVoltage"):
-                    battery_voltages[name][date][time][float(row[0])] = float(row[2])
-#print(battery_voltages['24-09-22'].keys())
-#tmp = battery_voltages['24-09-22']['3:50:18'].values()
-#print(sum(tmp)/len(tmp))
-#x_axis = list(battery_voltages['24-09-22']['3:50:18'].values())
-for file in os.listdir(PATH):
-    f = os.path.join(PATH, file)
-    match: str = f[26:len(f) - 4]
+    match: str = f[27:len(f) - 4]
     name = RANDOM_NAMES[index]
     voltages: dict[float,float] = {}
     counter = 0
-    index += 1
-    
-    if(index == len(RANDOM_NAMES)):
+    index +=1 
+    if (index == len(RANDOM_NAMES)):
         index = 0
-    print(index)
+    
     if(os.path.isfile(f)):
         with open(f) as csv_file:
             reader = csv.reader(csv_file)
             for row in reader:
-             #   print(row)
                 if(counter == 0):
                     counter += 1
                 elif(row[1] == "/SystemStats/BatteryVoltage"):
                     voltages[float(row[0])] = float(row[2])
             found_battery = False
+            matches.append(match)
             for battery in batteries:
                 if(battery.get_name() == name):
                     found_battery = True
-                    battery.apply_match(match)
-                    battery.apply_voltage(voltages)
+                    battery.add_match(match)
+                    battery.add_voltage(voltages)
             if(not found_battery):
                 battery = Battery(name)
-                battery.apply_match(match)
-                battery.apply_voltage(voltages)
+                battery.add_match(match)
+                battery.add_voltage(voltages)
                 batteries.append(battery)
-for battery in batteries:
-    print(battery.get_name() + " " + str(battery.get_health()))
-if not __name__ == '__main__':
-    for name in battery_voltages:
-        for date in battery_voltages[name]:
-            fig = go.Figure()
-            print(battery_voltages[name].keys())
-            for time in battery_voltages[name][date]:
-                fig.add_trace(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
-                print(time + " " + date + " " + name)
-            fig.update_layout(title=date + " / " + name)
-            fig.show()
         
-def get_voltages():
-    return battery_voltages
+def get_batteries():
+    return batteries;
 
-def get_graph_html(name: str, date: str, time: str):
-    fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
-    return fig.to_html(full_html=False)
+def get_matches():
+    return matches
 
-def get_graph(name: str, date, time):
-    fig = go.Figure(go.Scatter(x=list(battery_voltages[name][date][time].keys()), y=list(battery_voltages[name][date][time].values()), name=time))
-    fig.show()
+def get_match_graph(battery: Battery, match: str):
+    fig = go.Figure()
+    voltages = battery.voltages
+    matches = battery.matches
+    fig.add_trace(go.Scatter(
+        x= list(voltages[matches.index(match)].keys()),
+        y = list(voltages[matches.index(match)].values())
+    ))
+    return fig.to_html(full_html = False)
+
+# do not use
 def get_candlestick_chart_all():
     x_axis = []
     high = []
@@ -162,58 +115,38 @@ def get_candlestick_chart_all():
                       yaxis_title = "voltatge"
                       )
     fig.show()
-def get_candlestick_chart(name: str):
+
+def get_candlestick_chart(battery: Battery):
     x_axis = []
     high = []
     low = []
-    start = []
-    end = []
+    matches = battery.matches
+    voltages = battery.voltages
     fig = go.Figure()
-    for date in battery_voltages[name]:
-        times = list(battery_voltages[name][date].keys())
-        for time in times:
-            x_axis.append(date + " | " + time)
-            high.append(list(battery_voltages[name][date][time].values())[0])
-            low.append(list(battery_voltages[name][date][time].values())[-1])
-            start = high
-            end = low
-    print(x_axis)
-    print(high)
+    for i in range(len(matches)):
+        x_axis.append(matches[i])
+        high.append(list(voltages[i].values())[0])
+        low.append(list(voltages[i].values())[-1])
+    
     fig.add_trace(go.Candlestick(
         x = x_axis,
-        open = start,
+        open = high,
         high = high,
         low = low,
-        close = end
-    ))
-    fig.update_layout(title = "todos", 
-                      yaxis_title = "voltatge"
-                      )
+        close = low
+    )) 
+    print(high)  
+    fig.update_layout(
+        title = battery.get_name(), 
+        yaxis_title = "Voltage",
+        xaxis_title = "Match"
+    )
     return fig.to_html(full_html = False)
-    
+
 #get_candlestick_chart_all()
 def get_battery_rankings():
     ranking = {}
-    for name in battery_voltages:
-        last_date = list(battery_voltages[name].keys())[-1]
-        last_time = list(battery_voltages[name][last_date].keys())[-1]
-        ranking[name] = list(battery_voltages[name][last_date][last_time].values())[0]
-    print(ranking)
+    for battery in batteries:
+        ranking[battery.get_name()] = battery.get_health()
     ranking = dict(sorted(ranking.items(), key=lambda x: x[1]))
-    print(ranking)
     return ranking
-
-        
-'''
-
-
-bbafor date in battery_voltages:
-    plt.figure()
-    print(battery_voltages.keys())
-    for time in battery_voltages[date]:
-        plt.plot(list(battery_voltages[date][time].values()), label = time)
-plt.ylabel("Voltage")
-plt.xlabel("'timestamp'")
-plt.legend()
-plt.show()
-'''
