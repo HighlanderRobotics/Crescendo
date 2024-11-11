@@ -57,6 +57,7 @@ def matches():
             if(battery.matches.count(matches[i]) > 0):
                 batteries.append(battery.get_name())
         urls.append(url_for("match", name = batteries[i], match = matches[i]))
+    urls.reverse()
     return render_template("Matches.html", links = urls, matches = matches, title = "All Matches - Chezy 2024")
 if __name__ == '__main__':
    app.run()

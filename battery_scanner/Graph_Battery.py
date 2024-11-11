@@ -38,12 +38,17 @@ for file in os.listdir(PATH):
                     found_battery = True
                     battery.add_match(match)
                     battery.add_voltage(voltages)
+                    
             if(not found_battery):
                 battery = Battery(name)
                 battery.add_match(match)
                 battery.add_voltage(voltages)
                 batteries.append(battery)
-        
+
+for battery in batteries:
+   # battery.process_voltages()
+   pass
+
 def get_batteries():
     return batteries;
 
