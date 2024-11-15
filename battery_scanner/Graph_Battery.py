@@ -18,6 +18,7 @@ for file in os.listdir(PATH):
     match: str = f[27:len(f) - 4]
     name = RANDOM_NAMES[index]
     voltages: dict[float,float] = {}
+    enables: dict[float, bool] = {}
     counter = 0
     index +=1 
     if (index == len(RANDOM_NAMES)):
@@ -31,6 +32,10 @@ for file in os.listdir(PATH):
                     counter += 1
                 elif(row[1] == "/SystemStats/BatteryVoltage"):
                     voltages[float(row[0])] = float(row[2])
+                elif(row[1] == "/DriverStation/Enabled"):
+                    enables[float(row[0])] = (row[2] == "true")
+                   # print(float(row[0]))
+           # print(enables)
             found_battery = False
             matches.append(match)
             for battery in batteries:
@@ -38,11 +43,14 @@ for file in os.listdir(PATH):
                     found_battery = True
                     battery.add_match(match)
                     battery.add_voltage(voltages)
-                    
+                    battery.add_enables(enables)
+                    battery.process_voltages()
             if(not found_battery):
                 battery = Battery(name)
                 battery.add_match(match)
                 battery.add_voltage(voltages)
+                battery.add_enables(enables)
+                battery.process_voltages()
                 batteries.append(battery)
 
 for battery in batteries:
@@ -57,12 +65,15 @@ def get_matches():
 
 def get_match_graph(battery: Battery, match: str):
     fig = go.Figure()
+    enables = battery.enabled
     voltages = battery.voltages
     matches = battery.matches
     fig.add_trace(go.Scatter(
         x= list(voltages[matches.index(match)].keys()),
         y = list(voltages[matches.index(match)].values())
     ))
+    #print(enables[matches.index(match)])
+    fig.add_vline(list(enables[matches.index(match)].values()).index(False))
     return fig.to_html(full_html = False)
 
 # do not use
