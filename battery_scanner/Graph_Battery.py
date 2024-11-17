@@ -33,7 +33,7 @@ for file in os.listdir(PATH):
                 elif(row[1] == "/SystemStats/BatteryVoltage"):
                     voltages[float(row[0])] = float(row[2])
                 elif(row[1] == "/DriverStation/Enabled"):
-                    print(str(row[2]) + " / " + str(match))
+                 #   print(str(row[2]) + " / " + str(match))
                     enables[float(row[0])] = (row[2] == "true")
                    # print(float(row[0]))
            # print(enables)
@@ -45,13 +45,13 @@ for file in os.listdir(PATH):
                     battery.add_match(match)
                     battery.add_voltage(voltages)
                     battery.add_enables(enables)
-                    battery.process_voltages()
+                    battery.shorten_voltages()
             if(not found_battery):
                 battery = Battery(name)
                 battery.add_match(match)
                 battery.add_voltage(voltages)
                 battery.add_enables(enables)
-                battery.process_voltages()
+                battery.shorten_voltages()
                 batteries.append(battery)
 
 for battery in batteries:
@@ -74,8 +74,9 @@ def get_match_graph(battery: Battery, match: str):
         y = list(voltages[matches.index(match)].values())
     ))
     #print(enables[matches.index(match)])
-    print(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
-    fig.add_vline(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
+    #print(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
+    fig.add_vline(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)], line_dash="dash", annotation_text = "Enabled")
+    fig.add_vline(list(enables[matches.index(match)].keys())[[i for i, n in enumerate(list(enables[matches.index(match)].values())) if n == False][-1]], line_dash="dash", annotation_text = "Disabled")
     return fig.to_html(full_html = False)
 
 # do not use
@@ -139,7 +140,7 @@ def get_candlestick_chart(battery: Battery):
     high = []
     low = []
     matches = battery.matches
-    voltages = battery.voltages
+    voltages = battery.unfiltered_voltages
     fig = go.Figure()
     for i in range(len(matches)):
         x_axis.append(matches[i])
