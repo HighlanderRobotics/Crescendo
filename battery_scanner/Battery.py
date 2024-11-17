@@ -8,6 +8,7 @@ class Battery:
         self.enabled: list[dict[float,bool]] = []
         self.matches = []
         
+        
     def get_health(self):
         return list(self.unfiltered_voltages[-1].values())[-2]
     

@@ -13,46 +13,52 @@ battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]]
 batteries: list[Battery] = []
 matches: list[str] = []
 index = 0 
-for file in os.listdir(PATH):
-    f = os.path.join(PATH, file)
-    match: str = f[27:len(f) - 4]
-    name = RANDOM_NAMES[index]
-    voltages: dict[float,float] = {}
-    enables: dict[float, bool] = {}
-    counter = 0
-    index +=1 
-    if (index == len(RANDOM_NAMES)):
-        index = 0
+for folder in os.listdir(PATH):
+    print(PATH + "\\" + folder)
     
-    if(os.path.isfile(f)):
-        with open(f) as csv_file:
-            reader = csv.reader(csv_file)
-            for row in reader:
-                if(counter == 0):
-                    counter += 1
-                elif(row[1] == "/SystemStats/BatteryVoltage"):
-                    voltages[float(row[0])] = float(row[2])
-                elif(row[1] == "/DriverStation/Enabled"):
-                 #   print(str(row[2]) + " / " + str(match))
-                    enables[float(row[0])] = (row[2] == "true")
-                   # print(float(row[0]))
-           # print(enables)
-            found_battery = False
-            matches.append(match)
-            for battery in batteries:
-                if(battery.get_name() == name):
-                    found_battery = True
+    for file in os.listdir(PATH + "\\" + folder):
+        print(file)
+        f = os.path.join(PATH + "\\" + folder, file)
+        print(f)
+        print(f[38:len(f) - 4])
+        match: str = f[38:len(f) - 4]
+        name = RANDOM_NAMES[index]
+        voltages: dict[float,float] = {}
+        enables: dict[float, bool] = {}
+        counter = 0
+        index +=1 
+        if (index == len(RANDOM_NAMES)):
+            index = 0
+
+        if(os.path.isfile(f)):
+            with open(f) as csv_file:
+                reader = csv.reader(csv_file)
+                for row in reader:
+                    if(counter == 0):
+                        counter += 1
+                    elif(row[1] == "/SystemStats/BatteryVoltage"):
+                        voltages[float(row[0])] = float(row[2])
+                    elif(row[1] == "/DriverStation/Enabled"):
+                        #   print(str(row[2]) + " / " + str(match))
+                        enables[float(row[0])] = (row[2] == "true")
+                        # print(float(row[0]))
+                # print(enables)
+                found_battery = False
+                matches.append(match)
+                for battery in batteries:
+                    if(battery.get_name() == name):
+                        found_battery = True
+                        battery.add_match(match)
+                        battery.add_voltage(voltages)
+                        battery.add_enables(enables)
+                        battery.shorten_voltages()
+                if(not found_battery):
+                    battery = Battery(name)
                     battery.add_match(match)
                     battery.add_voltage(voltages)
                     battery.add_enables(enables)
                     battery.shorten_voltages()
-            if(not found_battery):
-                battery = Battery(name)
-                battery.add_match(match)
-                battery.add_voltage(voltages)
-                battery.add_enables(enables)
-                battery.shorten_voltages()
-                batteries.append(battery)
+                    batteries.append(battery)
 
 for battery in batteries:
    # battery.process_voltages()
