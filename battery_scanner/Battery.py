@@ -9,7 +9,7 @@ class Battery:
         self.matches = []
         
     def get_health(self):
-        return list(self.voltages[-1].values())[-2]
+        return list(self.unfiltered_voltages[-1].values())[-2]
     
     def get_name(self):
         return self.name
@@ -50,7 +50,7 @@ class Battery:
             print(list(self.enabled[self.matches.index(match)].values()))
             try:
                 
-                time_disabled = list(self.enabled[self.matches.index(match)].keys())[[i for i, n in enumerate(list(self.enabled[self.matches.index(match)].values())) if n == False][1]]   
+                time_disabled = list(self.enabled[self.matches.index(match)].keys())[[i for i, n in enumerate(list(self.enabled[self.matches.index(match)].values())) if n == False][-1]]   
             except:
                 continue
             match_voltage =  list(self.voltages[self.matches.index(match)].keys())
@@ -59,17 +59,17 @@ class Battery:
             for i in range(len(match_voltage)):
                 
                 if(math.isclose(match_voltage[i], time_disabled, rel_tol = 0.1)):
-                    index = i - 500
+                    index = i + int(time_disabled)
                     break
             
             match_index = self.matches.index(match)
-            enabled_index = list(self.enabled[self.matches.index(match)].values()).index(False)
+            
             self.voltages[match_index] = dict(zip(list(self.voltages[match_index].keys())[:index], list(self.voltages[match_index].values())[:index]))
            # self.enabled[match_index] = dict(zip(list(self.enabled[match_index].keys())[:enabled_index], list(self.enabled[match_index].values())[:enabled_index]))
             
     def shorten_voltages(self):
         self.shorten_voltages_front()
-        self.shorten_voltages_end()
+       # self.shorten_voltages_end() # just dont use for now, needs fixing
 
         
     def __str__(self):
