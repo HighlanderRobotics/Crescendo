@@ -26,7 +26,8 @@ class Battery:
         new_voltages: list[dict[float,float]] = []
         new_enables: list[dict[float,float]] = []
         for i in range(len(self.voltages)):
-            if(len(self.enabled[0]) == {}):
+            
+            if(self.enabled[0] == {}):
                 self.enabled = [self.enabled[1]]
             Voltages = list(self.voltages[i].values())
             VTimestamps = list(self.voltages[i].keys())
@@ -36,7 +37,7 @@ class Battery:
             
             enable_start_time = ETimestamps[Enabled.index(True)]
            # print(enable_start_time)
-            enable_start_index = VTimestamps.index(enable_start_time)
+            enable_start_index = ETimestamps.index(enable_start_time)
             
             new_voltages.append(dict(zip(VTimestamps[enable_start_index:], Voltages[enable_start_index:])))
             new_enables.append(dict(zip(ETimestamps[enable_start_index:], Enabled[enable_start_index:])))

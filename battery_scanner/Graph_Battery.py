@@ -33,6 +33,7 @@ for file in os.listdir(PATH):
                 elif(row[1] == "/SystemStats/BatteryVoltage"):
                     voltages[float(row[0])] = float(row[2])
                 elif(row[1] == "/DriverStation/Enabled"):
+                    print(str(row[2]) + " / " + str(match))
                     enables[float(row[0])] = (row[2] == "true")
                    # print(float(row[0]))
            # print(enables)
@@ -73,7 +74,8 @@ def get_match_graph(battery: Battery, match: str):
         y = list(voltages[matches.index(match)].values())
     ))
     #print(enables[matches.index(match)])
-    fig.add_vline(list(enables[matches.index(match)].values()).index(False))
+    print(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
+    fig.add_vline(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
     return fig.to_html(full_html = False)
 
 # do not use
