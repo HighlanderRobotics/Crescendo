@@ -169,8 +169,8 @@ out/
 .fleet
 
 # Simulation GUI and other tools window save file
-*-window.json
-*-ds.json
+simgui-window.json
+simgui-ds.json
 simgui.json
 
 # CTRE sim files
