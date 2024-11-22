@@ -26,11 +26,22 @@ public class Autos {
 
   private Supplier<Command> staticAutoAim;
 
-  private static boolean isInitialized = false;
+  private static Autos instance = null;
 
-  private static Autos instance = new Autos();
-
-  private Autos() {}
+  private Autos(
+      IntakeSubsystem intake,
+      ShooterSubsystem shooter,
+      FeederSubsystem feeder,
+      SwerveSubsystem swerve,
+      CarriageSubsystem carriage,
+      Supplier<Command> staticAutoAim) {
+    this.intake = intake;
+    this.shooter = shooter;
+    this.feeder = feeder;
+    this.swerve = swerve;
+    this.carriage = carriage;
+    this.staticAutoAim = staticAutoAim;
+  }
 
   public static void init(
       IntakeSubsystem intakeSubsystem,
@@ -39,17 +50,18 @@ public class Autos {
       SwerveSubsystem swerveSubsystem,
       CarriageSubsystem carriageSubsystem,
       Supplier<Command> staticAutoAim) {
-    isInitialized = true;
-    instance.intake = intakeSubsystem;
-    instance.shooter = shooterSubsystem;
-    instance.feeder = feederSubsystem;
-    instance.swerve = swerveSubsystem;
-    instance.carriage = carriageSubsystem;
-    instance.staticAutoAim = staticAutoAim;
+    instance =
+        new Autos(
+            intakeSubsystem,
+            shooterSubsystem,
+            feederSubsystem,
+            swerveSubsystem,
+            carriageSubsystem,
+            staticAutoAim);
   }
 
   public static Autos getInstance() {
-    if (!isInitialized) {
+    if (instance == null) {
       throw new NullPointerException("Instance is not initialized!");
     }
     return instance;
@@ -286,8 +298,8 @@ public class Autos {
 
   private Command runChoreoTrajWithIntake(String trajName, boolean resetPose) {
     return swerve
-            .runChoreoTraj(Choreo.getTrajectory(trajName), resetPose)
-            .asProxy()
-            .deadlineWith(autoIntake());
+        .runChoreoTraj(Choreo.getTrajectory(trajName), resetPose)
+        .asProxy()
+        .deadlineWith(autoIntake());
   }
 }
