@@ -59,29 +59,21 @@ public class Autos {
 
   public Command amp4() {
     return Commands.sequence(
+        // Shoot preload
         autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("amp 4 local.1", true),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim()
             .andThen(Commands.print("Done with auto static auto aim"))
             .beforeStarting(Commands.print("Before auto static auto aim!!!")),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("amp 4 local.2", false),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("amp 4 local.3", false),
         autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
         autoStaticAutoAim());
   }
@@ -89,10 +81,7 @@ public class Autos {
   public Command source3() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("source 3.1", true),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -101,10 +90,7 @@ public class Autos {
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("source 3.2", false),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -118,10 +104,7 @@ public class Autos {
   public Command source4() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 4.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("source 4.1", true),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -130,10 +113,7 @@ public class Autos {
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 4.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("source 4.2", false),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -142,10 +122,7 @@ public class Autos {
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 4.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("source 4.3", false),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -159,22 +136,19 @@ public class Autos {
   public Command amp5() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 5.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("amp 5.1", true),
         autoStaticAutoAim(),
         swerve
             .runChoreoTraj(Choreo.getTrajectory("amp 5.2"))
             .asProxy()
             .deadlineWith(Commands.waitSeconds(1.0).andThen(autoIntake())),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).asProxy().deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("amp 5.3", false),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
         autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).asProxy().deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("amp 5.4", false),
         autoIntake()
             .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
             .withTimeout(1.0),
@@ -184,10 +158,7 @@ public class Autos {
   public Command center4() {
     return Commands.sequence(
         autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 4.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("center 4.1", true),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -196,10 +167,7 @@ public class Autos {
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 4.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("center 4.2", false),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -208,10 +176,7 @@ public class Autos {
                         () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
             .withTimeout(1.0),
         autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 4.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
+        runChoreoTrajWithIntake("center 4.3", false),
         autoIntake()
             .raceWith(
                 Commands.sequence(
@@ -317,5 +282,12 @@ public class Autos {
                 .unless(() -> !feeder.getFirstBeambreak()))
         .asProxy()
         .withTimeout(4.0);
+  }
+
+  private Command runChoreoTrajWithIntake(String trajName, boolean resetPose) {
+    return swerve
+            .runChoreoTraj(Choreo.getTrajectory(trajName), resetPose)
+            .asProxy()
+            .deadlineWith(autoIntake());
   }
 }
