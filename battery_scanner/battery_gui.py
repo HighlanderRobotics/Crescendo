@@ -31,7 +31,7 @@ def battery_matches(name):
     matches = []
     for battery in Graph_Battery.get_batteries():
         if(battery.get_name() == name):
-           matches = battery.matches
+           matches = battery.matches["Chezy 2024"]
     for match in matches:
         urls.append(url_for("match", name = name, match = match))
     return render_template("Battery_Matches.html", links = urls, matches = matches, title = f"Matches for {name}")
@@ -54,7 +54,7 @@ def matches():
     batteries: list[str] = []
     for i in range(len(matches)):
         for battery in Graph_Battery.get_batteries():
-            if(battery.matches.count(matches[i]) > 0):
+            if(battery.matches["Chezy 2024"].count(matches[i]) > 0):
                 batteries.append(battery.get_name())
         urls.append(url_for("match", name = batteries[i], match = matches[i]))
     urls.reverse()

@@ -13,12 +13,12 @@ battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]]
 batteries: list[Battery] = []
 matches: list[str] = []
 index = 0 
-for folder in os.listdir(PATH):
-    print(PATH + "\\" + folder)
+for tourney in os.listdir(PATH):
+    print(PATH + "\\" + tourney)
     
-    for file in os.listdir(PATH + "\\" + folder):
+    for file in os.listdir(PATH + "\\" + tourney):
         print(file)
-        f = os.path.join(PATH + "\\" + folder, file)
+        f = os.path.join(PATH + "\\" + tourney, file)
         print(f)
         print(f[38:len(f) - 4])
         match: str = f[38:len(f) - 4]
@@ -48,21 +48,21 @@ for folder in os.listdir(PATH):
                 for battery in batteries:
                     if(battery.get_name() == name):
                         found_battery = True
-                        battery.add_match(match)
-                        battery.add_voltage(voltages)
-                        battery.add_enables(enables)
+                        battery.add_match(tourney, match)
+                        battery.add_voltage(tourney, voltages)
+                        battery.add_enables(tourney, enables)
                         battery.shorten_voltages()
                 if(not found_battery):
                     battery = Battery(name)
-                    battery.add_match(match)
-                    battery.add_voltage(voltages)
-                    battery.add_enables(enables)
+                    battery.add_match(tourney, match)
+                    battery.add_voltage(tourney, voltages)
+                    battery.add_enables(tourney, enables)
                     battery.shorten_voltages()
                     batteries.append(battery)
 
 for battery in batteries:
-   # battery.process_voltages()
-   pass
+    pass
+  #  battery.get_recentest_tournament();
 
 def get_batteries():
     return batteries;
@@ -76,13 +76,13 @@ def get_match_graph(battery: Battery, match: str):
     voltages = battery.voltages
     matches = battery.matches
     fig.add_trace(go.Scatter(
-        x= list(voltages[matches.index(match)].keys()),
-        y = list(voltages[matches.index(match)].values())
+        x= list(voltages["Chezy 2024"][matches["Chezy 2024"].index(match)].keys()),
+        y = list(voltages["Chezy 2024"][matches["Chezy 2024"].index(match)].values())
     ))
     #print(enables[matches.index(match)])
     #print(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
-    fig.add_vline(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)], line_dash="dash", annotation_text = "Enabled")
-    fig.add_vline(list(enables[matches.index(match)].keys())[[i for i, n in enumerate(list(enables[matches.index(match)].values())) if n == False][-1]], line_dash="dash", annotation_text = "Disabled")
+  #  fig.add_vline(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)], line_dash="dash", annotation_text = "Enabled")
+  #  fig.add_vline(list(enables[matches.index(match)].keys())[[i for i, n in enumerate(list(enables[matches.index(match)].values())) if n == False][-1]], line_dash="dash", annotation_text = "Disabled")
     return fig.to_html(full_html = False)
 
 # do not use
@@ -145,8 +145,8 @@ def get_candlestick_chart(battery: Battery):
     x_axis = []
     high = []
     low = []
-    matches = battery.matches
-    voltages = battery.unfiltered_voltages
+    matches = battery.matches["Chezy 2024"]
+    voltages = battery.unfiltered_voltages["Chezy 2024"]
     fig = go.Figure()
     for i in range(len(matches)):
         x_axis.append(matches[i])
