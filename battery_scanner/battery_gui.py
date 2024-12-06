@@ -36,13 +36,13 @@ def battery_matches(name):
         urls.append(url_for("match", name = name, match = match))
     return render_template("Battery_Matches.html", links = urls, matches = matches, title = f"Matches for {name}")
 
-@app.route("/<name>/<match>", methods = ['POST', 'GET'])
-def match(name, match):
+@app.route("/<name>/<tournament>/<match>", methods = ['POST', 'GET'])
+def match(name, tournament, match):
     for battery in Graph_Battery.get_batteries():
         if(battery.get_name() == name):
-           fig = Graph_Battery.get_match_graph(battery, match)
+           fig = Graph_Battery.get_match_graph(battery, match, tournament)
     try:
-        return render_template("Match_Display.html", name = name, match = match, fig = fig)
+        return render_template("Match_Display.html", name = name, match = match, fig = fig, tournament = tournament)
     except:
         return render_template("Match_Display.html", name = name, match = match, fig = "<h2>Sorry! No match could be found with that name. This shouldnt happen.</h2>")
 
@@ -65,7 +65,7 @@ def matches():
                 if(battery.matches[tourney].count(matches[tourney][i]) > 0):
                     batteries[tourney].append(battery.get_name())
             print(str(urls) + " LINKS LONKS INLINS LINKS LONIMNKS LINKS LINKS LINKS LINKS LINKS LINKS")
-            urls[tourney].append(url_for("match", name = batteries[tourney][i], match = matches[tourney][i]))
+            urls[tourney].append(url_for("match", name = batteries[tourney][i], tournament = tourney, match = matches[tourney][i]))
         urls[tourney].reverse()
     print(urls)
     return render_template("Matches.html", links = urls, matches = matches, title = "All Matches", touraments = list(matches.keys()))

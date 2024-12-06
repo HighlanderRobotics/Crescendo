@@ -80,14 +80,14 @@ def get_batteries():
 def get_matches():
     return matches
 
-def get_match_graph(battery: Battery, match: str):
+def get_match_graph(battery: Battery, match: str, tournament: str):
     fig = go.Figure()
     enables = battery.enabled
     voltages = battery.voltages
     matches = battery.matches
     fig.add_trace(go.Scatter(
-        x= list(voltages["Chezy 2024"][matches["Chezy 2024"].index(match)].keys()),
-        y = list(voltages["Chezy 2024"][matches["Chezy 2024"].index(match)].values())
+        x= list(voltages[tournament][matches[tournament].index(match)].keys()),
+        y = list(voltages[tournament][matches[tournament].index(match)].values())
     ))
     #print(enables[matches.index(match)])
     #print(list(enables[matches.index(match)].keys())[list(enables[matches.index(match)].values()).index(True)])
