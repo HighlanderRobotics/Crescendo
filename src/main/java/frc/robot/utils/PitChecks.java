@@ -88,4 +88,17 @@ public class PitChecks {
                               )
               );
   }
+
+  public enum TestResult {
+      SUCCESS("00ff00", "Test successful"),
+      FAILURE("ff0000", "Test failure"),
+      UNKNOWN("ffff00", "Test not run yet");
+
+      final String color;
+      final String msg;
+      TestResult(String color, String msg) {
+          this.color = color;
+          this.msg = msg;
+      }
+  }
 }
