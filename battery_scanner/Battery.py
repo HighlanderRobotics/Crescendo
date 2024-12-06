@@ -8,9 +8,11 @@ class Battery:
         self.enabled: dict[str,list[dict[float,bool]]] = {}
         self.matches: dict[str,list] = {}
     
-    def get_recentest_tournament(self):
-        for torunament, matches in self.matches:
-            print(matches)
+    def get_tournaments(self):
+        return list(self.matches.keys())
+    
+    def get_most_recent_tournament(self):
+        return list(self.matches.keys())[-1]
         
     def get_health(self):
         return list(self.unfiltered_voltages["Chezy 2024"][-1].values())[-2]

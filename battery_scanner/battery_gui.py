@@ -49,15 +49,25 @@ def match(name, match):
 
 @app.route("/matches", methods = ['POST', 'GET'])
 def matches():
-    urls: list[str] = []
-    matches: list[str] = Graph_Battery.get_matches()
-    batteries: list[str] = []
-    for i in range(len(matches)):
-        for battery in Graph_Battery.get_batteries():
-            if(battery.matches["Chezy 2024"].count(matches[i]) > 0):
-                batteries.append(battery.get_name())
-        urls.append(url_for("match", name = batteries[i], match = matches[i]))
-    urls.reverse()
-    return render_template("Matches.html", links = urls, matches = matches, title = "All Matches - Chezy 2024")
+    urls = {}
+    matches = Graph_Battery.get_matches()
+    batteries = {}
+    for tourney in list(matches.keys()):
+        if(tourney not in list(matches.keys())):
+            matches[tourney] = []
+        if(tourney not in list(batteries.keys())):
+            batteries[tourney] = []
+        if(tourney not in list(urls.keys())):
+            urls[tourney] = []
+        for i in range(len(matches[tourney])):
+            for battery in Graph_Battery.get_batteries():
+                print(matches.keys())
+                if(battery.matches[tourney].count(matches[tourney][i]) > 0):
+                    batteries[tourney].append(battery.get_name())
+            print(str(urls) + " LINKS LONKS INLINS LINKS LONIMNKS LINKS LINKS LINKS LINKS LINKS LINKS")
+            urls[tourney].append(url_for("match", name = batteries[tourney][i], match = matches[tourney][i]))
+        urls[tourney].reverse()
+    print(urls)
+    return render_template("Matches.html", links = urls, matches = matches, title = "All Matches", touraments = list(matches.keys()))
 if __name__ == '__main__':
    app.run()

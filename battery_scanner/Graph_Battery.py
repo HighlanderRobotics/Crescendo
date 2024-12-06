@@ -6,22 +6,26 @@ import random
 from Battery import Battery
 
 
-RANDOM_NAMES = ["Ed", "Athena", "Jacob"]
+RANDOM_NAMES = ["Ed", "Athena", "Jacob", "Lewy"]
 PATH = "logs"
 
 battery_voltages: dict[str, dict[str, dict[str, dict[str, dict[float, float]]]]] = {}
 batteries: list[Battery] = []
-matches: list[str] = []
+matches: dict[list[str]] = {}
 index = 0 
 for tourney in os.listdir(PATH):
     print(PATH + "\\" + tourney)
     
+    if(tourney not in list(matches.keys())):
+        matches[tourney] = []
+    
     for file in os.listdir(PATH + "\\" + tourney):
-        print(file)
+        print("file" + file)
         f = os.path.join(PATH + "\\" + tourney, file)
         print(f)
         print(f[38:len(f) - 4])
-        match: str = f[38:len(f) - 4]
+        match: str = file[22: len(file) - 4]
+        print("match: " + match)
         name = RANDOM_NAMES[index]
         voltages: dict[float,float] = {}
         enables: dict[float, bool] = {}
@@ -44,7 +48,7 @@ for tourney in os.listdir(PATH):
                         # print(float(row[0]))
                 # print(enables)
                 found_battery = False
-                matches.append(match)
+                matches[tourney].append(match)
                 for battery in batteries:
                     if(battery.get_name() == name):
                         found_battery = True
@@ -59,10 +63,16 @@ for tourney in os.listdir(PATH):
                     battery.add_enables(tourney, enables)
                     battery.shorten_voltages()
                     batteries.append(battery)
-
+    for battery in batteries.copy():
+        print(len(batteries))
+        if(battery.get_name() == ""):
+            batteries.remove(battery)
+            print("removed battery")
+        
 for battery in batteries:
-    pass
-  #  battery.get_recentest_tournament();
+    print(battery.get_tournaments())
+    print(battery.get_name())
+    
 
 def get_batteries():
     return batteries;
