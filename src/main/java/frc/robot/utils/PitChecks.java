@@ -105,7 +105,7 @@ public class PitChecks {
 
 
   private static void pushResult(String name, TestResult result) {
-      SmartDashboard.putString(name, result.color);
-      Logger.recordOutput(name, result.msg);
+      SmartDashboard.putString("Pit Checks/" + name, result.color);
+      Logger.recordOutput("Pit Checks/" + name, result.msg);
   }
 }
