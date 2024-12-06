@@ -5,6 +5,7 @@
 package frc.robot.utils;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
@@ -16,6 +17,19 @@ import org.littletonrobotics.junction.Logger;
 /** Add your docs here. */
 public class PitChecks {
 
+  enum TestResult {
+      SUCCESS("00ff00", "Test successful"),
+      FAILURE("ff0000", "Test failure"),
+      UNKNOWN("ffff00", "Test not completed");
+
+      final String color;
+      final String msg;
+      TestResult(String color, String msg) {
+          this.color = color;
+          this.msg = msg;
+      }
+  }
+
   public static Command runCheck(
       Supplier<double[]> expectedValues,
       DoubleSupplier tolerance,
@@ -24,7 +38,7 @@ public class PitChecks {
       double time,
       String name) {
     return cmd.withTimeout(time * 2)
-        .beforeStarting(() -> Logger.recordOutput(name, "ffff00"))
+        .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
         .alongWith(
             Commands.waitSeconds(time)
                 .finallyDo(
@@ -34,9 +48,9 @@ public class PitChecks {
                             expectedValues.get()[i],
                             outputValues.get()[i],
                             tolerance.getAsDouble())) {
-                          Logger.recordOutput(name, "00ff00");
+                          pushResult(name, TestResult.SUCCESS);
                         } else {
-                          Logger.recordOutput(name, "ff0000");
+                          pushResult(name, TestResult.FAILURE);
                         }
                       }
                     }));
@@ -49,7 +63,7 @@ public class PitChecks {
           double time,
           String name) {
       return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> Logger.recordOutput(name, "ffff00"))
+              .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
               .alongWith(
                       Commands.waitSeconds(time)
                               .finallyDo(
@@ -59,46 +73,39 @@ public class PitChecks {
                                                       expectedValues.get()[i],
                                                       outputValues.get()[i],
                                                       tolerance.get()[i])) {
-                                                  Logger.recordOutput(name, "00ff00");
+                                                  Logger.recordOutput(name, TestResult.SUCCESS.msg);
                                               } else {
-                                                  Logger.recordOutput(name, "ff0000");
+                                                  Logger.recordOutput(name, TestResult.FAILURE.msg);
                                               }
                                             }
                                       }));
   }
 
+  // Accepts if the output is true
   public static Command runCheck(
-          BooleanSupplier expected,
           BooleanSupplier output,
           Command cmd,
           double time,
           String name) {
       return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> Logger.recordOutput(name, "ffff00"))
+              .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
               .alongWith(
                       Commands.waitSeconds(time)
                               .finallyDo(
                                       () -> {
-                                          if (expected.getAsBoolean() == output.getAsBoolean()) {
-                                              Logger.recordOutput(name, "00ff00");
+                                          if (output.getAsBoolean()) {
+                                              pushResult(name, TestResult.SUCCESS);
                                           } else {
-                                              Logger.recordOutput(name, "ff0000");
+                                              pushResult(name, TestResult.FAILURE);
                                           }
                                       }
                               )
               );
   }
 
-  public enum TestResult {
-      SUCCESS("00ff00", "Test successful"),
-      FAILURE("ff0000", "Test failure"),
-      UNKNOWN("ffff00", "Test not run yet");
 
-      final String color;
-      final String msg;
-      TestResult(String color, String msg) {
-          this.color = color;
-          this.msg = msg;
-      }
+  private static void pushResult(String name, TestResult result) {
+      SmartDashboard.putString(name, result.color);
+      Logger.recordOutput(name, result.msg);
   }
 }
