@@ -1030,5 +1030,15 @@ public class Robot extends LoggedRobot {
             shooter.runFlywheelsCmd(() -> 50, () -> 50),
             1,
             "Flywheel Currents Check"));
+    pitChecker.addOption(
+        "Pivot Angle Check",
+        PitChecks.runCheck(
+            () -> new double[] {10},
+            () -> new double[] {0.2},
+            () -> new double[] {shooter.getPivotAngle().getDegrees()},
+            shooter.runStateCmd(
+                Rotation2d.fromDegrees(10), 0, 0), // TODO: Make sure this makes sense
+            2,
+            "Pivot Angle Check"));
   }
 }

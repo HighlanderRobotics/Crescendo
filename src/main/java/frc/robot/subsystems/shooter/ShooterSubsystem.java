@@ -233,4 +233,8 @@ public class ShooterSubsystem extends SubsystemBase {
   public double getLeftFlywheelVelocityRotsPerSec() {
     return inputs.flywheelLeftVelocityRotationsPerSecond;
   }
+
+  public Rotation2d getPivotAngle() {
+    return inputs.pivotRotation;
+  }
 }
