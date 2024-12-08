@@ -65,40 +65,14 @@ public class PitChecks {
                           i++) { // assumes it's the same length
                         if (MathUtil.isNear(
                             expectedValues.get()[i],
-                            outputValues.get()[i],
-                            tolerance.getAsDouble())) {
+                            measuredValues.get()[i],
+                            tolerance.get()[i])) {
                           pushResult(name, TestState.SUCCESS);
                         } else {
                           pushResult(name, TestState.FAILURE);
                         }
                       }
                     }));
-  }
-  public static Command runCheck(
-          Supplier<double[]> expectedValues,
-          Supplier<double[]> tolerance,
-          Supplier<double[]> outputValues,
-          Command cmd,
-          double time,
-          String name) {
-      return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
-              .alongWith(
-                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
-                      Commands.waitSeconds(time)
-                              .finallyDo(
-                                      () -> {
-                                          for (int i = 0; i < expectedValues.get().length; i++) { // assumes it's the same length
-                                              if (MathUtil.isNear(
-                                                      expectedValues.get()[i],
-                                                      outputValues.get()[i],
-                                                      tolerance.get()[i])) {
-                                                  Logger.recordOutput(name, TestState.SUCCESS.msg);
-                                              } else {
-                                                  Logger.recordOutput(name, TestState.FAILURE.msg);
-                                              }
-                                            }
-                                      }));
   }
 
   // Accepts if the output is true
