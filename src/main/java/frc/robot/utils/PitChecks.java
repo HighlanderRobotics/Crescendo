@@ -98,6 +98,29 @@ public class PitChecks {
               );
   }
 
+  public static Command runCheck(
+          double threshold,
+          DoubleSupplier measured,
+          Command cmd,
+          double time,
+          String name) {
+      return cmd.withTimeout(time * 2)
+              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
+              .alongWith(
+                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
+                      Commands.waitSeconds(time)
+                              .finallyDo(
+                                      () -> {
+                                          if (measured.getAsDouble() < threshold) {
+                                              pushResult(name, TestState.SUCCESS);
+                                          } else {
+                                              pushResult(name, TestState.FAILURE);
+                                          }
+                                      }
+                              )
+              );
+  }
+
   private static void pushResult(String name, TestState result) {
       SmartDashboard.putString("Pit Checks/" + name, result.color);
       Logger.recordOutput("Pit Checks/" + name, result.msg);
