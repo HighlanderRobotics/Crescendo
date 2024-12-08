@@ -16,18 +16,22 @@ import org.littletonrobotics.junction.Logger;
 /** Add your docs here. */
 public class PitChecks {
 
-  enum TestResult {
-    SUCCESS("00ff00", "Test successful"),
-    FAILURE("ff0000", "Test failure"),
-    UNKNOWN("ffff00", "Test not completed");
+  enum TestState {
+      // Green
+      SUCCESS("00ff00", "Test successful"),
+      // Red
+      FAILURE("ff0000", "Test failure"),
+      // Yellow
+      IN_PROGRESS("ffff00", "In progress"),
+      // Gray
+      UNKNOWN("dbdbdb", "Test not completed");
 
-    final String color;
-    final String msg;
-
-    TestResult(String color, String msg) {
-      this.color = color;
-      this.msg = msg;
-    }
+      final String color;
+      final String msg;
+      TestState(String color, String msg) {
+          this.color = color;
+          this.msg = msg;
+      }
   }
 /**
    * Runs a pit check for reaching some target value (position, speed, etc.). If you are checking
@@ -50,8 +54,9 @@ public class PitChecks {
       double time,
       String name) {
     return cmd.withTimeout(time * 2)
-        .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
+        .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
         .alongWith(
+            Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
             Commands.waitSeconds(time)
                 .finallyDo(
                     () -> {
@@ -59,33 +64,68 @@ public class PitChecks {
                           i < expectedValues.get().length;
                           i++) { // assumes it's the same length
                         if (MathUtil.isNear(
-                            expectedValues.get()[i], measuredValues.get()[i], tolerance.get()[i])) {
-                          Logger.recordOutput(name, TestResult.SUCCESS.msg);
+                            expectedValues.get()[i],
+                            outputValues.get()[i],
+                            tolerance.getAsDouble())) {
+                          pushResult(name, TestState.SUCCESS);
                         } else {
-                          Logger.recordOutput(name, TestResult.FAILURE.msg);
+                          pushResult(name, TestState.FAILURE);
                         }
                       }
                     }));
   }
-
-  // Accepts if the measured is true
-  public static Command runCheck(BooleanSupplier measured, Command cmd, double time, String name) {
-    return cmd.withTimeout(time * 2)
-        .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
-        .alongWith(
-            Commands.waitSeconds(time)
-                .finallyDo(
-                    () -> {
-                      if (measured.getAsBoolean()) {
-                        pushResult(name, TestResult.SUCCESS);
-                      } else {
-                        pushResult(name, TestResult.FAILURE);
-                      }
-                    }));
+  public static Command runCheck(
+          Supplier<double[]> expectedValues,
+          Supplier<double[]> tolerance,
+          Supplier<double[]> outputValues,
+          Command cmd,
+          double time,
+          String name) {
+      return cmd.withTimeout(time * 2)
+              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
+              .alongWith(
+                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
+                      Commands.waitSeconds(time)
+                              .finallyDo(
+                                      () -> {
+                                          for (int i = 0; i < expectedValues.get().length; i++) { // assumes it's the same length
+                                              if (MathUtil.isNear(
+                                                      expectedValues.get()[i],
+                                                      outputValues.get()[i],
+                                                      tolerance.get()[i])) {
+                                                  Logger.recordOutput(name, TestState.SUCCESS.msg);
+                                              } else {
+                                                  Logger.recordOutput(name, TestState.FAILURE.msg);
+                                              }
+                                            }
+                                      }));
   }
 
-  private static void pushResult(String name, TestResult result) {
-    SmartDashboard.putString("Pit Checks/" + name, result.color);
-    Logger.recordOutput("Pit Checks/" + name, result.msg);
+  // Accepts if the output is true
+  public static Command runCheck(
+          BooleanSupplier output,
+          Command cmd,
+          double time,
+          String name) {
+      return cmd.withTimeout(time * 2)
+              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
+              .alongWith(
+                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
+                      Commands.waitSeconds(time)
+                              .finallyDo(
+                                      () -> {
+                                          if (output.getAsBoolean()) {
+                                              pushResult(name, TestState.SUCCESS);
+                                          } else {
+                                              pushResult(name, TestState.FAILURE);
+                                          }
+                                      }
+                              )
+              );
+  }
+
+  private static void pushResult(String name, TestState result) {
+      SmartDashboard.putString("Pit Checks/" + name, result.color);
+      Logger.recordOutput("Pit Checks/" + name, result.msg);
   }
 }
