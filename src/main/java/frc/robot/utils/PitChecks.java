@@ -17,14 +17,19 @@ import org.littletonrobotics.junction.Logger;
 /** Add your docs here. */
 public class PitChecks {
 
-  enum TestResult {
+  enum TestState {
+      // Green
       SUCCESS("00ff00", "Test successful"),
+      // Red
       FAILURE("ff0000", "Test failure"),
-      UNKNOWN("ffff00", "Test not completed");
+      // Yellow
+      IN_PROGRESS("ffff00", "In progress"),
+      // Gray
+      UNKNOWN("dbdbdb", "Test not completed");
 
       final String color;
       final String msg;
-      TestResult(String color, String msg) {
+      TestState(String color, String msg) {
           this.color = color;
           this.msg = msg;
       }
@@ -38,8 +43,9 @@ public class PitChecks {
       double time,
       String name) {
     return cmd.withTimeout(time * 2)
-        .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
+        .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
         .alongWith(
+            Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
             Commands.waitSeconds(time)
                 .finallyDo(
                     () -> {
@@ -48,9 +54,9 @@ public class PitChecks {
                             expectedValues.get()[i],
                             outputValues.get()[i],
                             tolerance.getAsDouble())) {
-                          pushResult(name, TestResult.SUCCESS);
+                          pushResult(name, TestState.SUCCESS);
                         } else {
-                          pushResult(name, TestResult.FAILURE);
+                          pushResult(name, TestState.FAILURE);
                         }
                       }
                     }));
@@ -63,8 +69,9 @@ public class PitChecks {
           double time,
           String name) {
       return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
+              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
               .alongWith(
+                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
                       Commands.waitSeconds(time)
                               .finallyDo(
                                       () -> {
@@ -73,9 +80,9 @@ public class PitChecks {
                                                       expectedValues.get()[i],
                                                       outputValues.get()[i],
                                                       tolerance.get()[i])) {
-                                                  Logger.recordOutput(name, TestResult.SUCCESS.msg);
+                                                  Logger.recordOutput(name, TestState.SUCCESS.msg);
                                               } else {
-                                                  Logger.recordOutput(name, TestResult.FAILURE.msg);
+                                                  Logger.recordOutput(name, TestState.FAILURE.msg);
                                               }
                                             }
                                       }));
@@ -88,15 +95,16 @@ public class PitChecks {
           double time,
           String name) {
       return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> pushResult(name, TestResult.UNKNOWN))
+              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
               .alongWith(
+                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
                       Commands.waitSeconds(time)
                               .finallyDo(
                                       () -> {
                                           if (output.getAsBoolean()) {
-                                              pushResult(name, TestResult.SUCCESS);
+                                              pushResult(name, TestState.SUCCESS);
                                           } else {
-                                              pushResult(name, TestResult.FAILURE);
+                                              pushResult(name, TestState.FAILURE);
                                           }
                                       }
                               )
@@ -104,7 +112,7 @@ public class PitChecks {
   }
 
 
-  private static void pushResult(String name, TestResult result) {
+  private static void pushResult(String name, TestState result) {
       SmartDashboard.putString("Pit Checks/" + name, result.color);
       Logger.recordOutput("Pit Checks/" + name, result.msg);
   }
