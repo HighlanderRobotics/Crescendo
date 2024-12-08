@@ -990,7 +990,8 @@ public class Robot extends LoggedRobot {
             () -> swerve.getModuleRotations(),
             swerve.turnToPositionCmd(Rotation2d.fromDegrees(90)),
             1,
-            "Swerve Rotation Check"));
+            "Swerve Rotation Check"
+    ));
     pitChecker.addOption(
             "Run Swerve Currents Check",
             PitChecks.runCheck(
@@ -1004,7 +1005,7 @@ public class Robot extends LoggedRobot {
                     swerve.runVelocityCmd(() -> new ChassisSpeeds(1, 1, 0)),
                     1,
                     "Swerve Currents Check"
-            ));
+    ));
     pitChecker.addOption(
             "Run Flywheel Velocity Check",
             PitChecks.runCheck(
@@ -1014,6 +1015,16 @@ public class Robot extends LoggedRobot {
                     shooter.runFlywheelsCmd(() -> 50, () -> 50),
                     1,
                     "Flywheel Velocity Check"
-            ));
+    ));
+    pitChecker.addOption(
+            "Run Flywheel Currents Check",
+            PitChecks.runCheck(
+                    () -> new double[] {100, 100}, // May be low
+                    () -> new double[] {shooter.getLeftFlywheelVelocityRotsPerSec(), shooter.getRightFlywheelVelocityRotsPerSec()},
+                    shooter.runFlywheelsCmd(() -> 50, () -> 50),
+                    1,
+                    "Flywheel Currents Check"
+            )
+    );
   }
 }
