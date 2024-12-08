@@ -1005,5 +1005,15 @@ public class Robot extends LoggedRobot {
                     1,
                     "Swerve Currents Check"
             ));
+    pitChecker.addOption(
+            "Run Flywheel Velocity Check",
+            PitChecks.runCheck(
+                    () -> new double[] {50, 50},
+                    () -> new double[] {2, 2}, // Do these make sense??
+                    () -> new double[] {shooter.getLeftFlywheelVelocityRotsPerSec(), shooter.getRightFlywheelVelocityRotsPerSec()},
+                    shooter.runFlywheelsCmd(() -> 50, () -> 50),
+                    1,
+                    "Flywheel Velocity Check"
+            ));
   }
 }

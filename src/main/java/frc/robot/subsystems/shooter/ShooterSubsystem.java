@@ -225,4 +225,12 @@ public class ShooterSubsystem extends SubsystemBase {
         && MathUtil.isNear(rightGoal, inputs.flywheelRightVelocityRotationsPerSecond, 1.0)
         && MathUtil.isNear(0.0, inputs.pivotVelocityRotationsPerSecond, 0.05);
   }
+
+  public double getRightFlywheelVelocityRotsPerSec() {
+      return inputs.flywheelRightVelocityRotationsPerSecond;
+  }
+
+    public double getLeftFlywheelVelocityRotsPerSec() {
+        return inputs.flywheelLeftVelocityRotationsPerSecond;
+    }
 }
