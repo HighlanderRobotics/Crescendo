@@ -1046,6 +1046,15 @@ public class SwerveSubsystem extends SubsystemBase {
         });
   }
 
+  public double[] getModuleRotations() {
+    SwerveModulePosition[] positions = getModulePositions();
+    double[] rotations = new double[4];
+    for (int i = 0; i < 4; i++) {
+      rotations[i] = positions[i].angle.getDegrees();
+    }
+    return rotations;
+  }
+
   public Module[] getModules() {
     return modules;
   }
