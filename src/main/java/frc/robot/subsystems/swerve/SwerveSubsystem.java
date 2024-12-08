@@ -1045,4 +1045,8 @@ public class SwerveSubsystem extends SubsystemBase {
           }
         });
   }
+
+  public Module[] getModules() {
+    return modules;
+  }
 }

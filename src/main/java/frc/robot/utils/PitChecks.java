@@ -93,7 +93,7 @@ public class PitChecks {
   }
 
   public static Command runCheck(
-      double threshold, DoubleSupplier measured, Command cmd, double time, String name) {
+      Supplier<double[]> thresholds, Supplier<double[]> measured, Command cmd, double time, String name) {
     return cmd.withTimeout(time * 2)
         .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
         .alongWith(
@@ -101,11 +101,13 @@ public class PitChecks {
             Commands.waitSeconds(time)
                 .finallyDo(
                     () -> {
-                      if (measured.getAsDouble() < threshold) {
-                        pushResult(name, TestState.SUCCESS);
-                      } else {
-                        pushResult(name, TestState.FAILURE);
-                      }
+                      for (int i = 0; i < thresholds.get().length; i++){
+                            if (measured.get()[i] < thresholds.get()[i]) {
+                                pushResult(name, TestState.SUCCESS);
+                            } else {
+                                pushResult(name, TestState.FAILURE);
+                            }
+                        }
                     }));
   }
 

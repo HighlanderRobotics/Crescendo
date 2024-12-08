@@ -165,4 +165,6 @@ public class Module {
   public double getCharacterizationVelocity() {
     return inputs.driveVelocityMetersPerSec;
   }
+
+  public double getCurrentAmps() {return inputs.driveSupplyCurrentAmps; }
 }

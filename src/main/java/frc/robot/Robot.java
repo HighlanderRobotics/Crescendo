@@ -991,5 +991,19 @@ public class Robot extends LoggedRobot {
             swerve.turnToPositionCmd(Rotation2d.fromDegrees(90)),
             1,
             "Swerve Rotation Check"));
+    pitChecker.addOption(
+            "Run Swerve Currents Check",
+            PitChecks.runCheck(
+                    () -> new double[] {125, 125, 125, 125}, // Do these make sense
+                    () -> new double[] {
+                            swerve.getModules()[0].getCurrentAmps(),
+                            swerve.getModules()[1].getCurrentAmps(),
+                            swerve.getModules()[2].getCurrentAmps(),
+                            swerve.getModules()[3].getCurrentAmps()
+                    },
+                    swerve.runVelocityCmd(() -> new ChassisSpeeds(1, 1, 0)),
+                    1,
+                    "Swerve Currents Check"
+            ));
   }
 }
