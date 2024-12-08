@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.simulation.RoboRioDataJNI;
@@ -18,7 +17,6 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.Timer;
@@ -29,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.autonomous.Autos;
 import frc.robot.subsystems.carriage.CarriageIOReal;
 import frc.robot.subsystems.carriage.CarriageSubsystem;
 import frc.robot.subsystems.elevator.ElevatorIOReal;
@@ -187,6 +186,9 @@ public class Robot extends LoggedRobot {
     Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may
     // be added.
     SignalLogger.setPath("/media/sda1/");
+
+    // Initialize the Autos singleton
+    Autos.init(intake, shooter, feeder, swerve, carriage, this::staticAutoAim);
 
     // Default Commands here
     swerve.setDefaultCommand(
@@ -452,12 +454,12 @@ public class Robot extends LoggedRobot {
 
     autoChooser.addOption("None", Commands.none());
     autoChooser.addOption("Shoot Preload", teleopAutoAim());
-    autoChooser.addDefaultOption("Amp 4 Wing", autoAmp4Wing());
-    autoChooser.addOption("Source 3", autoSource3());
-    autoChooser.addOption("Center 4", autoCenter4());
-    autoChooser.addOption("Amp 5", autoAmp5());
-    autoChooser.addOption("Source 4", autoSource4());
-    autoChooser.addOption("Line Test Repeatedly", lineTest());
+    autoChooser.addDefaultOption("Amp 4 Wing", Autos.getInstance().amp4());
+    autoChooser.addOption("Source 3", Autos.getInstance().source3());
+    autoChooser.addOption("Center 4", Autos.getInstance().center4());
+    autoChooser.addOption("Amp 5", Autos.getInstance().amp5());
+    autoChooser.addOption("Source 4", Autos.getInstance().source4());
+    autoChooser.addOption("Line Test Repeatedly", Autos.getInstance().lineTest());
 
     // Dashboard command buttons
     SmartDashboard.putData("Shooter shoot", shootWithDashboard());
@@ -695,266 +697,6 @@ public class Robot extends LoggedRobot {
 
   private Command staticAutoAim(double tolerance) {
     return staticAutoAim(() -> tolerance);
-  }
-
-  private Command autoStaticAutoAim() {
-    return feeder
-        .indexCmd()
-        .deadlineWith(
-            swerve.runVelocityCmd(() -> new ChassisSpeeds()),
-            Commands.repeatingSequence(
-                shooter
-                    .runFlywheelsCmd(() -> 0.0, () -> 0.0)
-                    .unless(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0)
-                    .until(() -> feeder.getFirstBeambreak() && swerve.getDistanceToSpeaker() < 8.0),
-                shooter.runStateCmd(
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS())))
-        .until(() -> feeder.getFirstBeambreak())
-        .unless(() -> feeder.getFirstBeambreak())
-        .withTimeout(1.0)
-        .andThen(
-            staticAutoAim(6.0)
-                .deadlineWith(
-                    intake.runVoltageCmd(0, 0).asProxy(), carriage.runVoltageCmd(0).asProxy())
-                .withTimeout(2.0)
-                .unless(() -> !feeder.getFirstBeambreak()))
-        .asProxy()
-        .withTimeout(4.0);
-  }
-
-  private Command autoFenderShot() {
-    return shooter
-        .runStateCmd(
-            AutoAim.FENDER_SHOT.getRotation(),
-            AutoAim.FENDER_SHOT.getLeftRPS(),
-            AutoAim.FENDER_SHOT.getRightRPS())
-        .raceWith(
-            feeder
-                .runVelocityCmd(0.0)
-                .until(() -> shooter.isAtGoal())
-                .andThen(
-                    feeder
-                        .runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY)
-                        .raceWith(
-                            Commands.waitUntil(() -> !feeder.getFirstBeambreak())
-                                .andThen(Commands.waitSeconds(0.1)))))
-        .asProxy();
-  }
-
-  private Command autoIntake() {
-    return Commands.parallel(
-        intake
-            .runVelocityCmd(50.0, 30.0)
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .asProxy(),
-        feeder.indexCmd().asProxy(),
-        carriage
-            .runVoltageCmd(CarriageSubsystem.INDEXING_VOLTAGE)
-            .until(() -> feeder.getFirstBeambreak())
-            .asProxy(),
-        shooter
-            .runStateCmd(
-                () ->
-                    Rotation2d.fromDegrees(
-                        MathUtil.clamp(
-                            AutoAim.shotMap
-                                .get(swerve.getDistanceToSpeaker())
-                                .getRotation()
-                                .getDegrees(),
-                            0,
-                            20)),
-                () -> 0.0,
-                () -> 0.0)
-            .until(() -> feeder.getFirstBeambreak())
-            .unless(() -> feeder.getFirstBeambreak())
-            .andThen(
-                shooter.runStateCmd(
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRotation(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getLeftRPS(),
-                    () -> AutoAim.shotMap.get(swerve.getDistanceToSpeaker()).getRightRPS()))
-            .asProxy());
-  }
-
-  private Command autoAmp4Wing() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
-        autoStaticAutoAim()
-            .andThen(Commands.print("Done with auto static auto aim"))
-            .beforeStarting(Commands.print("Before auto static auto aim!!!")),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
-        autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 4 local.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake().until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak()),
-        autoStaticAutoAim());
-  }
-
-  private Command autoAmp5() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 5.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoStaticAutoAim(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("amp 5.2"))
-            .asProxy()
-            .deadlineWith(Commands.waitSeconds(1.0).andThen(autoIntake())),
-        autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.3")).asProxy().deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
-        autoStaticAutoAim(),
-        swerve.runChoreoTraj(Choreo.getTrajectory("amp 5.4")).asProxy().deadlineWith(autoIntake()),
-        autoIntake()
-            .until(() -> carriage.getBeambreak() || feeder.getFirstBeambreak())
-            .withTimeout(1.0),
-        autoStaticAutoAim());
-  }
-
-  private Command autoCenter4() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 4.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 4.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("center 4.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim());
-  }
-
-  private Command autoSource3() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 3.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim());
-  }
-
-  private Command autoSource4() {
-    return Commands.sequence(
-        autoFenderShot(),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 4.1"), true)
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 4.2"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim().unless(() -> !feeder.getFirstBeambreak()),
-        swerve
-            .runChoreoTraj(Choreo.getTrajectory("source 4.3"))
-            .asProxy()
-            .deadlineWith(autoIntake()),
-        autoIntake()
-            .raceWith(
-                Commands.sequence(
-                    Commands.waitSeconds(0.25),
-                    Commands.waitUntil(
-                        () -> carriage.getBeambreak() || feeder.getFirstBeambreak())))
-            .withTimeout(1.0),
-        autoStaticAutoAim());
-  }
-
-  private Command lineTest() {
-    ChoreoTrajectory traj = Choreo.getTrajectory("line test");
-    return Commands.sequence(
-        Commands.runOnce(
-            () -> {
-              if (DriverStation.getAlliance().isPresent()
-                  && DriverStation.getAlliance().get().equals(Alliance.Red)) {
-                swerve.setPose(traj.flipped().getInitialPose());
-              } else {
-                swerve.setPose(traj.getInitialPose());
-              }
-            }),
-        swerve.runChoreoTraj(traj).repeatedly());
   }
 
   private Command ampHeadingSnap(DoubleSupplier x, DoubleSupplier y) {
