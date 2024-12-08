@@ -990,41 +990,45 @@ public class Robot extends LoggedRobot {
             () -> swerve.getModuleRotations(),
             swerve.turnToPositionCmd(Rotation2d.fromDegrees(90)),
             1,
-            "Swerve Rotation Check"
-    ));
+            "Swerve Rotation Check"));
     pitChecker.addOption(
-            "Run Swerve Currents Check",
-            PitChecks.runCheck(
-                    () -> new double[] {125, 125, 125, 125}, // Do these make sense
-                    () -> new double[] {
-                            swerve.getModules()[0].getCurrentAmps(),
-                            swerve.getModules()[1].getCurrentAmps(),
-                            swerve.getModules()[2].getCurrentAmps(),
-                            swerve.getModules()[3].getCurrentAmps()
-                    },
-                    swerve.runVelocityCmd(() -> new ChassisSpeeds(1, 1, 0)),
-                    1,
-                    "Swerve Currents Check"
-    ));
+        "Run Swerve Currents Check",
+        PitChecks.runCheck(
+            () -> new double[] {125, 125, 125, 125}, // Do these make sense
+            () ->
+                new double[] {
+                  swerve.getModules()[0].getCurrentAmps(),
+                  swerve.getModules()[1].getCurrentAmps(),
+                  swerve.getModules()[2].getCurrentAmps(),
+                  swerve.getModules()[3].getCurrentAmps()
+                },
+            swerve.runVelocityCmd(() -> new ChassisSpeeds(1, 1, 0)),
+            1,
+            "Swerve Currents Check"));
     pitChecker.addOption(
-            "Run Flywheel Velocity Check",
-            PitChecks.runCheck(
-                    () -> new double[] {50, 50},
-                    () -> new double[] {2, 2}, // Do these make sense??
-                    () -> new double[] {shooter.getLeftFlywheelVelocityRotsPerSec(), shooter.getRightFlywheelVelocityRotsPerSec()},
-                    shooter.runFlywheelsCmd(() -> 50, () -> 50),
-                    1,
-                    "Flywheel Velocity Check"
-    ));
+        "Run Flywheel Velocity Check",
+        PitChecks.runCheck(
+            () -> new double[] {50, 50},
+            () -> new double[] {2, 2}, // Do these make sense??
+            () ->
+                new double[] {
+                  shooter.getLeftFlywheelVelocityRotsPerSec(),
+                  shooter.getRightFlywheelVelocityRotsPerSec()
+                },
+            shooter.runFlywheelsCmd(() -> 50, () -> 50),
+            1,
+            "Flywheel Velocity Check"));
     pitChecker.addOption(
-            "Run Flywheel Currents Check",
-            PitChecks.runCheck(
-                    () -> new double[] {100, 100}, // May be low
-                    () -> new double[] {shooter.getLeftFlywheelVelocityRotsPerSec(), shooter.getRightFlywheelVelocityRotsPerSec()},
-                    shooter.runFlywheelsCmd(() -> 50, () -> 50),
-                    1,
-                    "Flywheel Currents Check"
-            )
-    );
+        "Run Flywheel Currents Check",
+        PitChecks.runCheck(
+            () -> new double[] {100, 100}, // May be low
+            () ->
+                new double[] {
+                  shooter.getLeftFlywheelVelocityRotsPerSec(),
+                  shooter.getRightFlywheelVelocityRotsPerSec()
+                },
+            shooter.runFlywheelsCmd(() -> 50, () -> 50),
+            1,
+            "Flywheel Currents Check"));
   }
 }

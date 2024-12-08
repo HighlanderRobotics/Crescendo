@@ -166,5 +166,7 @@ public class Module {
     return inputs.driveVelocityMetersPerSec;
   }
 
-  public double getCurrentAmps() {return inputs.driveSupplyCurrentAmps; }
+  public double getCurrentAmps() {
+    return inputs.driveSupplyCurrentAmps;
+  }
 }

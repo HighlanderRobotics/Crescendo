@@ -227,10 +227,10 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public double getRightFlywheelVelocityRotsPerSec() {
-      return inputs.flywheelRightVelocityRotationsPerSecond;
+    return inputs.flywheelRightVelocityRotationsPerSecond;
   }
 
-    public double getLeftFlywheelVelocityRotsPerSec() {
-        return inputs.flywheelLeftVelocityRotationsPerSecond;
-    }
+  public double getLeftFlywheelVelocityRotsPerSec() {
+    return inputs.flywheelLeftVelocityRotationsPerSecond;
+  }
 }

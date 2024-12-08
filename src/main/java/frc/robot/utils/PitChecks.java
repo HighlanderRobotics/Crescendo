@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -93,7 +92,11 @@ public class PitChecks {
   }
 
   public static Command runCheck(
-      Supplier<double[]> thresholds, Supplier<double[]> measured, Command cmd, double time, String name) {
+      Supplier<double[]> thresholds,
+      Supplier<double[]> measured,
+      Command cmd,
+      double time,
+      String name) {
     return cmd.withTimeout(time * 2)
         .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
         .alongWith(
@@ -101,13 +104,13 @@ public class PitChecks {
             Commands.waitSeconds(time)
                 .finallyDo(
                     () -> {
-                      for (int i = 0; i < thresholds.get().length; i++){
-                            if (measured.get()[i] < thresholds.get()[i]) {
-                                pushResult(name, TestState.SUCCESS);
-                            } else {
-                                pushResult(name, TestState.FAILURE);
-                            }
+                      for (int i = 0; i < thresholds.get().length; i++) {
+                        if (measured.get()[i] < thresholds.get()[i]) {
+                          pushResult(name, TestState.SUCCESS);
+                        } else {
+                          pushResult(name, TestState.FAILURE);
                         }
+                      }
                     }));
   }
 
