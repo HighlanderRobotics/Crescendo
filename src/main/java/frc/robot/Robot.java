@@ -985,9 +985,9 @@ public class Robot extends LoggedRobot {
     pitChecker.addOption(
         "Run Swerve Rotation Check",
         PitChecks.runCheck(
-            () -> new double[] {90},
-            () -> new double[] {1}, // TODO
-            () -> new double[] {swerve.getRotation().getDegrees()},
+            () -> new double[] {90, 90, 90, 90},
+            () -> new double[] {10}, // TODO
+            () -> swerve.getModuleRotations(),
             swerve.turnToPositionCmd(Rotation2d.fromDegrees(90)),
             1,
             "Swerve Rotation Check"));
