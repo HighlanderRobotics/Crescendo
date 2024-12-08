@@ -87,6 +87,7 @@ public class Robot extends LoggedRobot {
   private ChoreoTrajectory activeChoreoTrajectory;
   private LoggedDashboardChooser<Command> autoChooser =
       new LoggedDashboardChooser<>("Auto Chooser");
+  private LoggedDashboardChooser<Command> pitChecker = new LoggedDashboardChooser<>("Pit Checker");
 
   private LoggedDashboardNumber dashShotDegrees =
       new LoggedDashboardNumber("Rotation (degrees)", 37.0);
@@ -469,6 +470,10 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
+    try {
+      SmartDashboard.putData("Run Pit Check", pitChecker.get());
+    } catch (NullPointerException e) {
+    }
     CommandScheduler.getInstance().run();
     // Update ascope mechanism visualization
     Logger.recordOutput(
@@ -961,11 +966,11 @@ public class Robot extends LoggedRobot {
   }
 
   public void addPitChecks() {
-    SmartDashboard.putData(
-        "Run Swerve Check",
+    pitChecker.addOption(
+        "Run Swerve Velocity Check",
         PitChecks.runCheck(
             () -> new double[] {1, 1, 0},
-            () -> 0.2, //TODO does this make sense?
+            () -> new double[] {0.2, 0.2, 0.2}, // TODO does this make sense?
             () ->
                 new double[] {
                   swerve.getVelocity().vxMetersPerSecond,
@@ -974,6 +979,17 @@ public class Robot extends LoggedRobot {
                 },
             swerve.runVelocityCmd(() -> new ChassisSpeeds(1, 1, 0)),
             1,
-            "Swerve Check"));
+            "Swerve Velocity Check"));
+    // honestly the way this should probably work is to go in a circle and check how well it's
+    // tracking but that is a later me problem
+    pitChecker.addOption(
+        "Run Swerve Rotation Check",
+        PitChecks.runCheck(
+            () -> new double[] {90},
+            () -> new double[] {1}, // TODO
+            () -> new double[] {swerve.getRotation().getDegrees()},
+            swerve.turnToPositionCmd(Rotation2d.fromDegrees(90)),
+            1,
+            "Swerve Rotation Check"));
   }
 }

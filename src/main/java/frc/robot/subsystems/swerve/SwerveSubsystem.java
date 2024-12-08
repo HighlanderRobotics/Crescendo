@@ -1036,4 +1036,13 @@ public class SwerveSubsystem extends SubsystemBase {
         driveRoutine.dynamic(Direction.kReverse),
         this.runOnce(() -> SignalLogger.stop()));
   }
+
+  public Command turnToPositionCmd(Rotation2d rotation) {
+    return this.run(
+        () -> {
+          for (int i = 0; i < modules.length; i++) {
+            modules[i].runSetpoint(new SwerveModuleState(0.0, rotation));
+          }
+        });
+  }
 }
