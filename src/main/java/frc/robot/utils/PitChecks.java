@@ -17,23 +17,25 @@ import org.littletonrobotics.junction.Logger;
 public class PitChecks {
 
   enum TestState {
-      // Green
-      SUCCESS("00ff00", "Test successful"),
-      // Red
-      FAILURE("ff0000", "Test failure"),
-      // Yellow
-      IN_PROGRESS("ffff00", "In progress"),
-      // Gray
-      UNKNOWN("dbdbdb", "Test not completed");
+    // Green
+    SUCCESS("00ff00", "Test successful"),
+    // Red
+    FAILURE("ff0000", "Test failure"),
+    // Yellow
+    IN_PROGRESS("ffff00", "In progress"),
+    // Gray
+    UNKNOWN("dbdbdb", "Test not completed");
 
-      final String color;
-      final String msg;
-      TestState(String color, String msg) {
-          this.color = color;
-          this.msg = msg;
-      }
+    final String color;
+    final String msg;
+
+    TestState(String color, String msg) {
+      this.color = color;
+      this.msg = msg;
+    }
   }
-/**
+
+  /**
    * Runs a pit check for reaching some target value (position, speed, etc.). If you are checking
    * multiple values, the order of those values in the arrays (expectedValues, tolerances,
    * measuredValues) must all be the same.
@@ -64,9 +66,7 @@ public class PitChecks {
                           i < expectedValues.get().length;
                           i++) { // assumes it's the same length
                         if (MathUtil.isNear(
-                            expectedValues.get()[i],
-                            measuredValues.get()[i],
-                            tolerance.get()[i])) {
+                            expectedValues.get()[i], measuredValues.get()[i], tolerance.get()[i])) {
                           pushResult(name, TestState.SUCCESS);
                         } else {
                           pushResult(name, TestState.FAILURE);
@@ -76,53 +76,41 @@ public class PitChecks {
   }
 
   // Accepts if the output is true
-  public static Command runCheck(
-          BooleanSupplier output,
-          Command cmd,
-          double time,
-          String name) {
-      return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
-              .alongWith(
-                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
-                      Commands.waitSeconds(time)
-                              .finallyDo(
-                                      () -> {
-                                          if (output.getAsBoolean()) {
-                                              pushResult(name, TestState.SUCCESS);
-                                          } else {
-                                              pushResult(name, TestState.FAILURE);
-                                          }
-                                      }
-                              )
-              );
+  public static Command runCheck(BooleanSupplier output, Command cmd, double time, String name) {
+    return cmd.withTimeout(time * 2)
+        .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
+        .alongWith(
+            Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
+            Commands.waitSeconds(time)
+                .finallyDo(
+                    () -> {
+                      if (output.getAsBoolean()) {
+                        pushResult(name, TestState.SUCCESS);
+                      } else {
+                        pushResult(name, TestState.FAILURE);
+                      }
+                    }));
   }
 
   public static Command runCheck(
-          double threshold,
-          DoubleSupplier measured,
-          Command cmd,
-          double time,
-          String name) {
-      return cmd.withTimeout(time * 2)
-              .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
-              .alongWith(
-                      Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
-                      Commands.waitSeconds(time)
-                              .finallyDo(
-                                      () -> {
-                                          if (measured.getAsDouble() < threshold) {
-                                              pushResult(name, TestState.SUCCESS);
-                                          } else {
-                                              pushResult(name, TestState.FAILURE);
-                                          }
-                                      }
-                              )
-              );
+      double threshold, DoubleSupplier measured, Command cmd, double time, String name) {
+    return cmd.withTimeout(time * 2)
+        .beforeStarting(() -> pushResult(name, TestState.UNKNOWN))
+        .alongWith(
+            Commands.runOnce(() -> pushResult(name, TestState.IN_PROGRESS)),
+            Commands.waitSeconds(time)
+                .finallyDo(
+                    () -> {
+                      if (measured.getAsDouble() < threshold) {
+                        pushResult(name, TestState.SUCCESS);
+                      } else {
+                        pushResult(name, TestState.FAILURE);
+                      }
+                    }));
   }
 
   private static void pushResult(String name, TestState result) {
-      SmartDashboard.putString("Pit Checks/" + name, result.color);
-      Logger.recordOutput("Pit Checks/" + name, result.msg);
+    SmartDashboard.putString("Pit Checks/" + name, result.color);
+    Logger.recordOutput("Pit Checks/" + name, result.msg);
   }
 }
