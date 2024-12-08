@@ -29,6 +29,7 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
@@ -51,9 +52,49 @@ public class ModuleIOReal implements ModuleIO {
   // Constants
   private static final boolean IS_TURN_MOTOR_INVERTED = true;
 
+  // Constant so sim can access it
+  public static final TalonFXConfiguration DRIVE_CONFIG = new TalonFXConfiguration();
+
+  static {
+    // Current limits
+    // TODO: Do we want to limit supply current?
+    DRIVE_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
+    DRIVE_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
+    // driveConfig.CurrentLimits.SupplyCurrentThreshold = 30.0;
+    // driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
+    DRIVE_CONFIG.CurrentLimits.StatorCurrentLimit = 120.0;
+    DRIVE_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
+    // Inverts
+    DRIVE_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    DRIVE_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    // Sensor
+    // Meters per second
+    DRIVE_CONFIG.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
+    // Voltage Controls Gains
+    DRIVE_CONFIG.Slot0.kV = 2.381;
+    DRIVE_CONFIG.Slot0.kA = 0.65;
+    DRIVE_CONFIG.Slot0.kS = 0.04;
+    DRIVE_CONFIG.Slot0.kP = 2.0;
+    DRIVE_CONFIG.Slot0.kD = 0.2;
+
+    // Current control gains
+    DRIVE_CONFIG.Slot1.kV = 0.0;
+    DRIVE_CONFIG.Slot1.kA = (9.37 / 483.0) / Module.DRIVE_ROTOR_TO_METERS; // 3.07135116146;
+    DRIVE_CONFIG.Slot1.kS = 14.0;
+    DRIVE_CONFIG.Slot1.kP = 100.0;
+    DRIVE_CONFIG.Slot1.kD = 1.0;
+
+    DRIVE_CONFIG.TorqueCurrent.TorqueNeutralDeadband = 10.0;
+
+    DRIVE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
+    DRIVE_CONFIG.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_ACCELERATION;
+    // driveConfig.MotionMagic.MotionMagicJerk = SwerveSubsystem.MAX_LINEAR_ACCELERATION / 0.1;
+  }
+
   private final ModuleConstants constants;
 
   // Hardware
+  // Must be accessible to sim subclass
   private final TalonFX driveTalon;
   private final TalonFX turnTalon;
   private final CANcoder cancoder;
@@ -88,43 +129,9 @@ public class ModuleIOReal implements ModuleIO {
     turnTalon = new TalonFX(constants.turnID(), "canivore");
     cancoder = new CANcoder(constants.cancoderID(), "canivore");
 
-    var driveConfig = new TalonFXConfiguration();
-    // Current limits
-    // TODO: Do we want to limit supply current?
-    driveConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
-    driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    // driveConfig.CurrentLimits.SupplyCurrentThreshold = 30.0;
-    // driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
-    driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
-    driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    // Inverts
-    driveConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    driveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    // Sensor
-    // Meters per second
-    driveConfig.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
-    // Voltage Controls Gains
-    driveConfig.Slot0.kV = 2.381;
-    kAVoltsPerMeterPerSecondSquared = 0.65;
-    driveConfig.Slot0.kA = kAVoltsPerMeterPerSecondSquared;
-    driveConfig.Slot0.kS = 0.04;
-    driveConfig.Slot0.kP = 2.0;
-    driveConfig.Slot0.kD = 0.2;
+    kAVoltsPerMeterPerSecondSquared = DRIVE_CONFIG.Slot0.kA;
 
-    // Current control gains
-    driveConfig.Slot1.kV = 0.0;
-    driveConfig.Slot1.kA = (9.37 / 483.0) / Module.DRIVE_ROTOR_TO_METERS; // 3.07135116146;
-    driveConfig.Slot1.kS = 14.0;
-    driveConfig.Slot1.kP = 100.0;
-    driveConfig.Slot1.kD = 1.0;
-
-    driveConfig.TorqueCurrent.TorqueNeutralDeadband = 10.0;
-
-    driveConfig.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
-    driveConfig.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_ACCELERATION;
-    // driveConfig.MotionMagic.MotionMagicJerk = SwerveSubsystem.MAX_LINEAR_ACCELERATION / 0.1;
-
-    driveTalon.getConfigurator().apply(driveConfig);
+    driveTalon.getConfigurator().apply(DRIVE_CONFIG);
 
     var turnConfig = new TalonFXConfiguration();
     // Current limits
@@ -245,19 +252,17 @@ public class ModuleIOReal implements ModuleIO {
   }
 
   @Override
-  public void setDriveSetpoint(final double metersPerSecond, final double metersPerSecondSquared) {
+  public void setDriveSetpoint(final double metersPerSecond, final double forceNewtons) {
     // Doesnt actually refresh drive velocity signal, but should be cached
     if (metersPerSecond == 0
-        && metersPerSecondSquared == 0
+        && forceNewtons == 0
         && MathUtil.isNear(0.0, driveVelocity.getValueAsDouble(), 0.1)) {
       setDriveVoltage(0.0);
     } else {
       driveTalon.setControl(
           driveControlVelocity
               .withVelocity(metersPerSecond)
-              .withAcceleration(metersPerSecondSquared)
-          // .withFeedForward(metersPerSecondSquared * kAVoltsPerMeterPerSecondSquared)
-          );
+              .withFeedForward(forceNewtons / DCMotor.getKrakenX60Foc(1).KtNMPerAmp));
     }
   }
 
