@@ -967,7 +967,7 @@ public class Robot extends LoggedRobot {
 
   public void addPitChecks() {
     pitChecker.addOption(
-        "Run Swerve Velocity Check",
+        "Swerve Velocity Check",
         PitChecks.runCheck(
             () -> new double[] {1, 1, 0},
             () -> new double[] {0.2, 0.2, 0.2}, // TODO does this make sense?
@@ -983,7 +983,7 @@ public class Robot extends LoggedRobot {
     // honestly the way this should probably work is to go in a circle and check how well it's
     // tracking but that is a later me problem
     pitChecker.addOption(
-        "Run Swerve Rotation Check",
+        "Swerve Rotation Check",
         PitChecks.runCheck(
             () -> new double[] {90, 90, 90, 90},
             () -> new double[] {10}, // TODO
@@ -992,7 +992,7 @@ public class Robot extends LoggedRobot {
             1,
             "Swerve Rotation Check"));
     pitChecker.addOption(
-        "Run Swerve Currents Check",
+        "Swerve Currents Check",
         PitChecks.runCheck(
             () -> new double[] {125, 125, 125, 125}, // Do these make sense
             () ->
@@ -1006,7 +1006,7 @@ public class Robot extends LoggedRobot {
             1,
             "Swerve Currents Check"));
     pitChecker.addOption(
-        "Run Flywheel Velocity Check",
+        "Flywheel Velocity Check",
         PitChecks.runCheck(
             () -> new double[] {50, 50},
             () -> new double[] {2, 2}, // Do these make sense??
@@ -1019,7 +1019,7 @@ public class Robot extends LoggedRobot {
             1,
             "Flywheel Velocity Check"));
     pitChecker.addOption(
-        "Run Flywheel Currents Check",
+        "Flywheel Currents Check",
         PitChecks.runCheck(
             () -> new double[] {100, 100}, // May be low
             () ->
