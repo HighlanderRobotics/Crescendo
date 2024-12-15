@@ -155,14 +155,16 @@ def get_candlestick_chart(battery: Battery):
     x_axis = []
     high = []
     low = []
-    matches = battery.matches["Chezy 2024"]
-    voltages = battery.unfiltered_voltages["Chezy 2024"]
-    fig = go.Figure()
-    for i in range(len(matches)):
-        x_axis.append(matches[i])
-        high.append(list(voltages[i].values())[0])
-        low.append(list(voltages[i].values())[-1])
     
+    fig = go.Figure()
+    for tournament in battery.get_tournaments():
+        matches = battery.matches[tournament]
+        voltages = battery.unfiltered_voltages[tournament]
+        for i in range(len(matches)):
+            x_axis.append(tournament + " " + matches[i])
+            high.append(list(voltages[i].values())[0])
+            low.append(list(voltages[i].values())[-1])
+        
     fig.add_trace(go.Candlestick(
         x = x_axis,
         open = high,

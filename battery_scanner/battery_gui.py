@@ -27,14 +27,27 @@ def battery_rundown(name):
 
 @app.route("/<name>/matches", methods = ['POST', 'GET'])
 def battery_matches(name):
-    urls = []
-    matches = []
+    urls = {}
+    matches = {}
+    tournaments = []
     for battery in Graph_Battery.get_batteries():
         if(battery.get_name() == name):
-           matches = battery.matches["Chezy 2024"]
-    for match in matches:
-        urls.append(url_for("match", name = name, match = match))
-    return render_template("Battery_Matches.html", links = urls, matches = matches, title = f"Matches for {name}")
+            tournaments = battery.get_tournaments()
+            for tournament in tournaments:
+                if(tournament not in list(matches.keys())):
+                    matches[tournament] = []
+                if(tournament not in list(urls.keys())):
+                    urls[tournament] = []
+                matches[tournament] = battery.matches[tournament]
+    for tournament in tournaments:
+        for match in matches[tournament]:
+            urls[tournament].append(url_for("match", name = name, match = match, tournament = tournament))
+        urls[tournament].reverse()
+    print(list(matches.keys()))
+    print(urls.values())
+    print(matches)
+    
+    return render_template("Battery_Matches.html", links = urls, matches = matches, title = f"Matches for {name}", tournaments = list(matches.keys()))
 
 @app.route("/<name>/<tournament>/<match>", methods = ['POST', 'GET'])
 def match(name, tournament, match):

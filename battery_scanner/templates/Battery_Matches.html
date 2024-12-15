@@ -5,12 +5,15 @@
 </head>
 <body>
     <h1>{{title}}</h1>
-    
-    <ul>
-        {% for match in matches%}
-            <li><a href = "{{links.pop(0)}}">{{match|string}}</a></li>
-        {% endfor %}
-    </ul>
+    {% for tourney in tournaments %}
+        <h3>{{tourney}}</h3>
+        <ul>
+            {% for match in matches[tourney|string]|reverse %}  
+                <li><a href = "{{links[tourney].pop(0)|string }}">{{match|string}}</a></li>
+            {% endfor %}
+        </ul>
+
+    {% endfor %}
     <!--<a href = "/name">Battery Graph Chooser</a>-->
 </body>
 </html>
