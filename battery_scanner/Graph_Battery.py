@@ -172,7 +172,6 @@ def get_candlestick_chart(battery: Battery):
         low = low,
         close = low
     )) 
-    print(high)  
     fig.update_layout(
         title = battery.get_name(), 
         yaxis_title = "Voltage",

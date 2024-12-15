@@ -4,7 +4,11 @@
      
 </head>
 <body>
-    <h1>{{title}}</h1>
+    <h1>Battery Ranking</h1>
+    <pre>
+    Health based on the most recent full charge of the battery,
+    effectivley the highest charge it can hold
+    </pre>
     <ul>
         {% for name in names|reverse %}
             <li><a href = "{{links.pop(0)}}">{{name + ": " + ranking[name]|string|truncate(6,true,"") + "V"}}</a></li>

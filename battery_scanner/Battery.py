@@ -15,7 +15,9 @@ class Battery:
         return list(self.matches.keys())[-1]
         
     def get_health(self):
-        return list(self.unfiltered_voltages["Chezy 2024"][-1].values())[-2]
+        print("heatl")
+        print(list(self.unfiltered_voltages[self.get_most_recent_tournament()][-1].values())[0])
+        return list(self.unfiltered_voltages[self.get_most_recent_tournament()][-1].values())[0]
     
     def get_name(self):
         return self.name
@@ -29,7 +31,6 @@ class Battery:
             self.matches[tournament].append(match)
     
     def add_voltage(self, tournament: str, voltage: dict[float,float]):
-        print(list(self.voltages.keys()))
         if(tournament in list(self.voltages.keys())):
             
             self.voltages[tournament].append(voltage)

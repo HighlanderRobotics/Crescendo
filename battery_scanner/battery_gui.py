@@ -11,7 +11,7 @@ def ranking_page():
     for name in list(Graph_Battery.get_battery_rankings().keys()):
         urls.append(url_for("battery_rundown", name = name))
     urls.reverse()
-    return render_template("Battery_Ranking.html", links = urls, names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings(), title = "Battery Ranking")
+    return render_template("Battery_Ranking.html", links = urls, names = list(Graph_Battery.get_battery_rankings().keys()), ranking = Graph_Battery.get_battery_rankings())
 
 
 @app.route("/<name>", methods = ['POST', 'GET'])
@@ -19,7 +19,6 @@ def battery_rundown(name):
     for battery in Graph_Battery.get_batteries():
         if(battery.get_name() == name):
            fig = Graph_Battery.get_candlestick_chart(battery)
-           print("IMPORTANT IMPORTANT IMPORTANt")
     try:
         return render_template("Battery_Rundown.html", name = name, fig = fig)
     except:
@@ -43,9 +42,6 @@ def battery_matches(name):
         for match in matches[tournament]:
             urls[tournament].append(url_for("match", name = name, match = match, tournament = tournament))
         urls[tournament].reverse()
-    print(list(matches.keys()))
-    print(urls.values())
-    print(matches)
     
     return render_template("Battery_Matches.html", links = urls, matches = matches, title = f"Matches for {name}", tournaments = list(matches.keys()))
 
@@ -77,10 +73,8 @@ def matches():
                 print(matches.keys())
                 if(battery.matches[tourney].count(matches[tourney][i]) > 0):
                     batteries[tourney].append(battery.get_name())
-            print(str(urls) + " LINKS LONKS INLINS LINKS LONIMNKS LINKS LINKS LINKS LINKS LINKS LINKS")
             urls[tourney].append(url_for("match", name = batteries[tourney][i], tournament = tourney, match = matches[tourney][i]))
         urls[tourney].reverse()
-    print(urls)
     return render_template("Matches.html", links = urls, matches = matches, title = "All Matches", touraments = list(matches.keys()))
 if __name__ == '__main__':
    app.run()
