@@ -293,21 +293,22 @@ public class Robot extends LoggedRobot {
             Commands.parallel(
                     shooter.run(() -> {}), feeder.runVelocityCmd(FeederSubsystem.INDEXING_VELOCITY))
                 .withTimeout(0.5))
-        .whileTrue(
-            speakerHeadingSnap(
-                    () ->
-                        -teleopAxisAdjustment(controller.getLeftY())
-                            * demoModeScaling
-                            * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    () ->
-                        -teleopAxisAdjustment(controller.getLeftX())
-                            * demoModeScaling
-                            * SwerveSubsystem.MAX_LINEAR_SPEED)
-                .until(
-                    () ->
-                        controller.getHID().getRightTriggerAxis() > 0.5
-                            && currentTarget == Target.SPEAKER)
-                .unless(() -> controller.getHID().getRightBumper()));
+    // .whileTrue(
+    //     speakerHeadingSnap(
+    //             () ->
+    //                 -teleopAxisAdjustment(controller.getLeftY())
+    //                     * demoModeScaling
+    //                     * SwerveSubsystem.MAX_LINEAR_SPEED,
+    //             () ->
+    //                 -teleopAxisAdjustment(controller.getLeftX())
+    //                     * demoModeScaling
+    //                     * SwerveSubsystem.MAX_LINEAR_SPEED)
+    //         .until(
+    //             () ->
+    //                 controller.getHID().getRightTriggerAxis() > 0.5
+    //                     && currentTarget == Target.SPEAKER)
+    //         .unless(() -> controller.getHID().getRightBumper()))
+    ;
     controller
         .rightTrigger()
         .and(() -> currentTarget == Target.SUBWOOFER)
@@ -351,20 +352,21 @@ public class Robot extends LoggedRobot {
             () ->
                 (currentTarget == Target.SPEAKER && controller.getHID().getRightTriggerAxis() < 0.5)
                     || currentTarget.isSpeakerAlike())
-        .whileTrue(
-            speakerHeadingSnap(
-                    () ->
-                        -teleopAxisAdjustment(controller.getLeftY())
-                            * demoModeScaling
-                            * SwerveSubsystem.MAX_LINEAR_SPEED,
-                    () ->
-                        -teleopAxisAdjustment(controller.getLeftX())
-                            * demoModeScaling
-                            * SwerveSubsystem.MAX_LINEAR_SPEED)
-                .until(
-                    () ->
-                        controller.getHID().getRightTriggerAxis() > 0.5
-                            && currentTarget == Target.SPEAKER));
+    // .whileTrue(
+    //     speakerHeadingSnap(
+    //             () ->
+    //                 -teleopAxisAdjustment(controller.getLeftY())
+    //                     * demoModeScaling
+    //                     * SwerveSubsystem.MAX_LINEAR_SPEED,
+    //             () ->
+    //                 -teleopAxisAdjustment(controller.getLeftX())
+    //                     * demoModeScaling
+    //                     * SwerveSubsystem.MAX_LINEAR_SPEED)
+    //         .until(
+    //             () ->
+    //                 controller.getHID().getRightTriggerAxis() > 0.5
+    //                     && currentTarget == Target.SPEAKER));
+    ;
     controller
         .leftBumper()
         .and(controller.rightTrigger().negate())
@@ -384,19 +386,18 @@ public class Robot extends LoggedRobot {
                         .until(() -> !feeder.getFirstBeambreak()))
                 .until(controller.rightTrigger())
                 .unless(controller.rightTrigger()));
-    controller
-        .rightBumper()
-        .and(() -> currentTarget == Target.AMP)
-        .whileTrue(
-            ampHeadingSnap(
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftY())
-                        * demoModeScaling
-                        * SwerveSubsystem.MAX_LINEAR_SPEED,
-                () ->
-                    -teleopAxisAdjustment(controller.getLeftX())
-                        * demoModeScaling
-                        * SwerveSubsystem.MAX_LINEAR_SPEED));
+    controller.rightBumper().and(() -> currentTarget == Target.AMP)
+    // .whileTrue(
+    //     ampHeadingSnap(
+    //         () ->
+    //             -teleopAxisAdjustment(controller.getLeftY())
+    //                 * demoModeScaling
+    //                 * SwerveSubsystem.MAX_LINEAR_SPEED,
+    //         () ->
+    //             -teleopAxisAdjustment(controller.getLeftX())
+    //                 * demoModeScaling
+    //                 * SwerveSubsystem.MAX_LINEAR_SPEED));
+    ;
 
     controller
         .x()
